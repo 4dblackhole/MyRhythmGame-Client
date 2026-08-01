@@ -8,6 +8,8 @@
 
 #include <array>
 #include <filesystem>
+#include <memory>
+#include <optional>
 #include <random>
 #include <stdexcept>
 #include <string_view>
@@ -114,6 +116,8 @@ void ColoredCubeScene::Initialize(const mrg::EngineServices& services)
     cubes_[1].SetUvTransform(textures->MakeCoverUvTransform(1));
     cubes_[2].ClearTexture();
     cubes_[3].ClearTexture();
+
+    InitializeOptionsUi(services);
 }
 
 void ColoredCubeScene::Update(
@@ -125,6 +129,8 @@ void ColoredCubeScene::Update(
         scenes.Quit();
         return;
     }
+
+    UpdateOptionsUi(context);
 
     std::string_view selectedSceneId;
     if (context.input.WasKeyPressed(
@@ -163,15 +169,19 @@ void ColoredCubeScene::Update(
     }
 
     UpdateCamera(context);
-    const float totalSeconds = static_cast<float>(context.totalSeconds);
+    if (rotationEnabled_)
+    {
+        animationSeconds_ += static_cast<float>(context.deltaSeconds) *
+            rotationSpeedScale_;
+    }
     for (std::size_t index = 0; index < cubes_.size(); ++index)
     {
         const XMFLOAT3& initial = initialRotations_[index];
         const XMFLOAT3& velocity = angularVelocities_[index];
         cubes_[index].Transform().SetRotationRollPitchYaw(
-            initial.x + velocity.x * totalSeconds,
-            initial.y + velocity.y * totalSeconds,
-            initial.z + velocity.z * totalSeconds);
+            initial.x + velocity.x * animationSeconds_,
+            initial.y + velocity.y * animationSeconds_,
+            initial.z + velocity.z * animationSeconds_);
     }
 }
 
@@ -184,6 +194,26 @@ void ColoredCubeScene::Render(
     {
         cube.Submit(context, camera_);
     }
+
+    if (optionsUi_ == nullptr)
+    {
+        return;
+    }
+
+    if (!worldSpaceUi_)
+    {
+        uiRenderer_.SubmitScreen(optionsUi_->Canvas(), context, {20.0F, 20.0F});
+        return;
+    }
+
+    XMFLOAT4X4 viewProjection{};
+    XMStoreFloat4x4(&viewProjection, camera_.ViewProjectionMatrix());
+    uiRenderer_.SubmitPlane(
+        optionsUi_->Canvas(),
+        context,
+        uiSurfaceWorld_,
+        {3.2F, 2.1F},
+        viewProjection);
 }
 
 void ColoredCubeScene::OnResize(
@@ -211,6 +241,156 @@ void ColoredCubeScene::Shutdown() noexcept
     {
         cube.Reset();
     }
+    optionsUi_.reset();
+    uiRenderer_.Shutdown();
+}
+
+void ColoredCubeScene::InitializeOptionsUi(
+    const mrg::EngineServices& services)
+{
+    uiRenderer_.Initialize(services.meshRendering, services.textRendering);
+
+    XMStoreFloat4x4(
+        &uiSurfaceWorld_,
+        XMMatrixRotationY(XMConvertToRadians(14.0F)) *
+            XMMatrixTranslation(0.0F, 0.0F, -0.65F));
+    optionsUi_ = std::make_unique<mrg::ui::WorldSpaceCanvas>(
+        mrg::ui::UiSize{320.0F, 210.0F},
+        std::make_unique<mrg::ui::PlaneUiSurface>(
+            3.2F,
+            2.1F,
+            uiSurfaceWorld_));
+
+    auto& panel = optionsUi_->Canvas().Root().EmplaceChild<mrg::ui::UiPanel>();
+    panel.SetBounds({0.0F, 0.0F, 320.0F, 210.0F});
+    panel.SetStyle({
+        {0.055F, 0.075F, 0.11F, 0.94F},
+        {0.065F, 0.085F, 0.12F, 0.94F},
+        {0.055F, 0.075F, 0.11F, 0.94F},
+        {0.055F, 0.075F, 0.11F, 0.60F}});
+
+    auto& title = panel.EmplaceChild<mrg::ui::UiLabel>(L"OPTIONS  [F2: SPACE]");
+    title.SetBounds({16.0F, 10.0F, 288.0F, 32.0F});
+    title.SetFontSize(19.0F);
+    title.SetTextColor({0.62F, 0.84F, 1.0F, 1.0F});
+
+    auto& rotation = panel.EmplaceChild<mrg::ui::UiToggle>(
+        L"CUBE ROTATION",
+        true);
+    rotation.SetBounds({16.0F, 50.0F, 288.0F, 40.0F});
+    rotationToggleId_ = rotation.Id();
+
+    auto& speedLabel = panel.EmplaceChild<mrg::ui::UiLabel>(L"ROTATION SPEED");
+    speedLabel.SetBounds({16.0F, 94.0F, 132.0F, 34.0F});
+    speedLabel.SetFontSize(15.0F);
+
+    auto& speed = panel.EmplaceChild<mrg::ui::UiSlider>(0.2727F);
+    speed.SetBounds({150.0F, 94.0F, 154.0F, 34.0F});
+    speedSliderId_ = speed.Id();
+
+    auto& presentation = panel.EmplaceChild<mrg::ui::UiComboBox>();
+    presentation.SetItems({L"SCREEN SPACE", L"WORLD PLANE"});
+    presentation.SetBounds({16.0F, 142.0F, 288.0F, 48.0F});
+    presentationComboId_ = presentation.Id();
+}
+
+void ColoredCubeScene::UpdateOptionsUi(const mrg::UpdateContext& context)
+{
+    if (optionsUi_ == nullptr)
+    {
+        return;
+    }
+    if (context.input.WasKeyPressed(VK_F2))
+    {
+        worldSpaceUi_ = !worldSpaceUi_;
+        if (auto* combo = dynamic_cast<mrg::ui::UiComboBox*>(
+                optionsUi_->Canvas().FindElement(presentationComboId_)))
+        {
+            combo->SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
+        }
+        uiInput_.Reset(optionsUi_->Canvas());
+    }
+
+    const mrg::ui::UiPoint screenPointer{
+        static_cast<float>(context.input.MousePositionX()),
+        static_cast<float>(context.input.MousePositionY())};
+    std::optional<mrg::ui::UiPoint> canvasPointer;
+    if (context.input.IsMouseInsideWindow())
+    {
+        if (!worldSpaceUi_)
+        {
+            canvasPointer = mrg::ui::MapScreenPointer(
+                screenPointer,
+                {static_cast<float>(width_), static_cast<float>(height_)},
+                optionsUi_->Canvas().LogicalSize(),
+                {20.0F, 20.0F});
+        }
+        else
+        {
+            XMFLOAT4X4 viewProjection{};
+            XMStoreFloat4x4(&viewProjection, camera_.ViewProjectionMatrix());
+            const auto ray = mrg::ui::CreateWorldPointerRay(
+                screenPointer,
+                {static_cast<float>(width_), static_cast<float>(height_)},
+                viewProjection);
+            if (ray.has_value())
+            {
+                canvasPointer = optionsUi_->MapPointer(*ray);
+            }
+        }
+    }
+
+    mrg::ui::UiPointerInput pointer{};
+    pointer.available = canvasPointer.has_value();
+    pointer.position = canvasPointer.value_or(mrg::ui::UiPoint{});
+    pointer.leftButtonDown = context.input.IsMouseButtonDown(
+        mrg::platform::MouseButton::Left);
+    pointer.leftButtonPressed = context.input.WasMouseButtonPressed(
+        mrg::platform::MouseButton::Left);
+    pointer.leftButtonReleased = context.input.WasMouseButtonReleased(
+        mrg::platform::MouseButton::Left);
+    pointer.timestampTicks = LatestPointerTimestamp(context.input);
+    uiInput_.Process(optionsUi_->Canvas(), pointer);
+    ApplyUiActions();
+}
+
+void ColoredCubeScene::ApplyUiActions()
+{
+    for (const mrg::ui::UiAction& action : optionsUi_->Canvas().TakeActions())
+    {
+        if (action.source == rotationToggleId_ &&
+            action.type == mrg::ui::UiActionType::ValueChanged)
+        {
+            rotationEnabled_ = action.value > 0.5F;
+        }
+        else if (action.source == speedSliderId_ &&
+            action.type == mrg::ui::UiActionType::ValueChanged)
+        {
+            rotationSpeedScale_ = 0.25F + action.value * 2.75F;
+        }
+        else if (action.source == presentationComboId_ &&
+            action.type == mrg::ui::UiActionType::SelectionChanged)
+        {
+            worldSpaceUi_ = action.selectedIndex == 1;
+            uiInput_.Reset(optionsUi_->Canvas());
+        }
+    }
+}
+
+std::int64_t ColoredCubeScene::LatestPointerTimestamp(
+    const mrg::platform::InputState& input) const noexcept
+{
+    std::int64_t result{};
+    for (const mrg::platform::InputEvent& event : input.Events())
+    {
+        if (event.type == mrg::platform::InputEventType::MouseButtonPressed ||
+            event.type == mrg::platform::InputEventType::MouseButtonReleased ||
+            event.type == mrg::platform::InputEventType::MouseMoved)
+        {
+            result = event.performanceCounterTicks;
+        }
+    }
+    return result;
 }
 
 void ColoredCubeScene::UpdateCamera(
