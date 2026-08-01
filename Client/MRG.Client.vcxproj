@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{E5555555-5555-4555-8555-555555555555}</ProjectGuid>
+    <RootNamespace>MRGClient</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(BaseOutputPath)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(BaseIntermediateOutputPath)$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>MyRhythmGame</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\Dependencies\MRG-Engine\Engine\SDK;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(FmodLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="App\ColoredCubeGame.h" />
+    <ClInclude Include="GameFlow\SceneIds.h" />
+    <ClInclude Include="GameScene\BlankScene.h" />
+    <ClInclude Include="GameScene\ColoredCubeScene.h" />
+    <ClInclude Include="GameScene\GradientCubeScene.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="App\ColoredCubeGame.cpp" />
+    <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="GameScene\BlankScene.cpp" />
+    <ClCompile Include="GameScene\ColoredCubeScene.cpp" />
+    <ClCompile Include="GameScene\GradientCubeScene.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\awhc.png">
+      <AssetTargetPath>awhc.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\bwhc.png">
+      <AssetTargetPath>bwhc.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
+      <AssetTargetPath>fonts\PressStart2P-Regular.ttf</AssetTargetPath>
+    </None>
+    <None Include="Assets\Fonts\PressStart2P-OFL.txt">
+      <AssetTargetPath>fonts\PressStart2P-OFL.txt</AssetTargetPath>
+    </None>
+    <None Include="Assets\Fonts\Rajdhani-SemiBold.ttf">
+      <AssetTargetPath>fonts\Rajdhani-SemiBold.ttf</AssetTargetPath>
+    </None>
+    <None Include="Assets\Fonts\Rajdhani-OFL.txt">
+      <AssetTargetPath>fonts\Rajdhani-OFL.txt</AssetTargetPath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dependencies\MRG-Engine\Engine\SDK\MRG.Core.vcxproj">
+      <Project>{78888888-8888-4888-8888-888888888888}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <FmodRuntime Include="$(FmodLibraryDir)\fmodL.dll" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <FmodRuntime Include="$(FmodLibraryDir)\fmod.dll" />
+  </ItemGroup>
+  <Target Name="CopyRuntimeFiles" AfterTargets="Build">
+    <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <MakeDir Directories="$(OutDir)assets" />
+    <MakeDir Directories="$(OutDir)assets\fonts" />
+    <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(Configuration)' == 'Debug' and !Exists('$(FmodLibraryDir)\fmodL_vc.lib')" Text="FMOD debug x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />
+    <Error Condition="'$(Configuration)' == 'Release' and !Exists('$(FmodLibraryDir)\fmod_vc.lib')" Text="FMOD release x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />
+  </Target>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
