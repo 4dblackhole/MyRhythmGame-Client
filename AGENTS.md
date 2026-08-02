@@ -26,6 +26,12 @@ This file applies to the entire repository except the independently versioned
 - Bundle each redistributed font license beside the font asset.
 - Keep game option behavior in Client code. Use engine `UiCanvas` actions and
   surface mapping rather than adding game-specific widgets to the engine.
+- Keep functions readable as they grow. If a function performs multiple
+  operations, extract each operation into a clearly named helper/private
+  function. If a long function still represents one cohesive operation, add
+  short section comments at each meaningful phase boundary to explain the
+  intent and required ordering; do not add comments that merely restate an
+  obvious statement.
 
 ## Verification
 
