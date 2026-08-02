@@ -6,13 +6,16 @@
 
 #include <DirectXMath.h>
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <random>
 #include <stdexcept>
+#include <string>
 #include <string_view>
+#include <vector>
 
 using namespace DirectX;
 
@@ -24,6 +27,61 @@ namespace
         return mrg::platform::ResolveExecutableRelativePath(
             std::filesystem::path(L"assets") / fileName);
     }
+
+    [[nodiscard]] std::wstring Utf8ToWide(const std::string_view value)
+    {
+        if (value.empty())
+        {
+            return {};
+        }
+        const int length = MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            value.data(),
+            static_cast<int>(value.size()),
+            nullptr,
+            0);
+        if (length <= 0)
+        {
+            return L"(unreadable device name)";
+        }
+
+        std::wstring result(static_cast<std::size_t>(length), L'\0');
+        MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            value.data(),
+            static_cast<int>(value.size()),
+            result.data(),
+            length);
+        return result;
+    }
+
+    [[nodiscard]] std::wstring AudioBackendName(
+        const mrg::audio::AudioOutputBackend backend)
+    {
+        switch (backend)
+        {
+        case mrg::audio::AudioOutputBackend::Wasapi:
+            return L"WASAPI";
+        case mrg::audio::AudioOutputBackend::Asio:
+            return L"ASIO";
+        case mrg::audio::AudioOutputBackend::NoSound:
+            return L"NO SOUND";
+        default:
+            return L"AUTO";
+        }
+    }
+
+    constexpr mrg::ui::UiSize AudioPanelSize{380.0F, 210.0F};
+    constexpr float AudioPanelVisibleX = 20.0F;
+    constexpr float AudioPanelY = 250.0F;
+}
+
+ColoredCubeScene::ColoredCubeScene(
+    const bool startWithWorldSpaceUi) noexcept
+    : worldSpaceUi_(startWithWorldSpaceUi)
+{
 }
 
 void ColoredCubeScene::Initialize(const mrg::EngineServices& services)
@@ -118,6 +176,7 @@ void ColoredCubeScene::Initialize(const mrg::EngineServices& services)
     cubes_[3].ClearTexture();
 
     InitializeOptionsUi(services);
+    InitializeAudioOptionsUi(services);
 }
 
 void ColoredCubeScene::Update(
@@ -130,7 +189,8 @@ void ColoredCubeScene::Update(
         return;
     }
 
-    UpdateOptionsUi(context);
+    const bool audioConsumedPointer = UpdateAudioOptionsUi(context);
+    UpdateOptionsUi(context, !audioConsumedPointer);
 
     std::string_view selectedSceneId;
     if (context.input.WasKeyPressed(
@@ -195,25 +255,31 @@ void ColoredCubeScene::Render(
         cube.Submit(context, camera_);
     }
 
-    if (optionsUi_ == nullptr)
-    {
-        return;
-    }
-
-    if (!worldSpaceUi_)
+    if (optionsUi_ != nullptr && !worldSpaceUi_)
     {
         uiRenderer_.SubmitScreen(optionsUi_->Canvas(), context, {20.0F, 20.0F});
-        return;
+    }
+    else if (optionsUi_ != nullptr && optionsCanvasTexture_ != nullptr)
+    {
+        // The complete Canvas, including DirectWrite glyphs, is first drawn
+        // into a texture. Sampling that texture on the segmented mesh bends
+        // both rectangles and text with the exact same UV mapping used by
+        // MeshUvUiSurface for pointer input.
+        uiRenderer_.RenderToTexture(
+            optionsUi_->Canvas(),
+            optionsCanvasTexture_,
+            context);
+        curvedOptionsSurface_.Submit(context, camera_);
     }
 
-    XMFLOAT4X4 viewProjection{};
-    XMStoreFloat4x4(&viewProjection, camera_.ViewProjectionMatrix());
-    uiRenderer_.SubmitPlane(
-        optionsUi_->Canvas(),
-        context,
-        uiSurfaceWorld_,
-        {3.2F, 2.1F},
-        viewProjection);
+    if (audioOptionsUi_ != nullptr &&
+        audioPanelX_ > -AudioPanelSize.width)
+    {
+        uiRenderer_.SubmitScreen(
+            *audioOptionsUi_,
+            context,
+            {audioPanelX_, AudioPanelY});
+    }
 }
 
 void ColoredCubeScene::OnResize(
@@ -241,7 +307,18 @@ void ColoredCubeScene::Shutdown() noexcept
     {
         cube.Reset();
     }
+    curvedOptionsSurface_.Reset();
+    optionsCanvasTexture_.reset();
     optionsUi_.reset();
+    audioOptionsUi_.reset();
+    audioDevices_.clear();
+    if (audioSystem_ != nullptr &&
+        popSound_ != mrg::audio::InvalidAudioSoundHandle)
+    {
+        audioSystem_->UnloadSound(popSound_);
+    }
+    popSound_ = mrg::audio::InvalidAudioSoundHandle;
+    audioSystem_ = nullptr;
     uiRenderer_.Shutdown();
 }
 
@@ -254,12 +331,34 @@ void ColoredCubeScene::InitializeOptionsUi(
         &uiSurfaceWorld_,
         XMMatrixRotationY(XMConvertToRadians(14.0F)) *
             XMMatrixTranslation(0.0F, 0.0F, -0.65F));
+    const mrg::geometry::CurvedRectangleShape curvedSurface(
+        3.2F,
+        2.1F,
+        XMConvertToRadians(58.0F),
+        40);
     optionsUi_ = std::make_unique<mrg::ui::WorldSpaceCanvas>(
         mrg::ui::UiSize{320.0F, 210.0F},
-        std::make_unique<mrg::ui::PlaneUiSurface>(
-            3.2F,
-            2.1F,
+        std::make_unique<mrg::ui::MeshUvUiSurface>(
+            curvedSurface,
             uiSurfaceWorld_));
+
+    optionsCanvasTexture_ = uiRenderer_.CreateCanvasRenderTarget(960, 630);
+    const mrg::graphics::GpuMeshHandle surfaceMesh =
+        services.meshRendering.CreateMesh<
+            mrg::geometry::VertexPositionUvColor>(curvedSurface);
+    const mrg::graphics::MaterialInstanceHandle surfaceMaterial =
+        services.meshRendering.CreateMaterial(
+            mrg::graphics::BuiltInMaterial::
+                UnlitVertexColorTextureArray);
+    surfaceMaterial->SetTextureSet(optionsCanvasTexture_->Textures());
+    curvedOptionsSurface_.SetMesh(surfaceMesh);
+    curvedOptionsSurface_.SetMaterial(surfaceMaterial);
+    curvedOptionsSurface_.SetTextureIndex(0);
+    curvedOptionsSurface_.Transform().SetRotationRollPitchYaw(
+        0.0F,
+        XMConvertToRadians(14.0F),
+        0.0F);
+    curvedOptionsSurface_.Transform().SetPosition(0.0F, 0.0F, -0.65F);
 
     auto& panel = optionsUi_->Canvas().Root().EmplaceChild<mrg::ui::UiPanel>();
     panel.SetBounds({0.0F, 0.0F, 320.0F, 210.0F});
@@ -289,12 +388,15 @@ void ColoredCubeScene::InitializeOptionsUi(
     speedSliderId_ = speed.Id();
 
     auto& presentation = panel.EmplaceChild<mrg::ui::UiComboBox>();
-    presentation.SetItems({L"SCREEN SPACE", L"WORLD PLANE"});
+    presentation.SetItems({L"SCREEN SPACE", L"WORLD CURVED"});
+    presentation.SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
     presentation.SetBounds({16.0F, 142.0F, 288.0F, 48.0F});
     presentationComboId_ = presentation.Id();
 }
 
-void ColoredCubeScene::UpdateOptionsUi(const mrg::UpdateContext& context)
+void ColoredCubeScene::UpdateOptionsUi(
+    const mrg::UpdateContext& context,
+    const bool allowPointerInput)
 {
     if (optionsUi_ == nullptr)
     {
@@ -315,7 +417,7 @@ void ColoredCubeScene::UpdateOptionsUi(const mrg::UpdateContext& context)
         static_cast<float>(context.input.MousePositionX()),
         static_cast<float>(context.input.MousePositionY())};
     std::optional<mrg::ui::UiPoint> canvasPointer;
-    if (context.input.IsMouseInsideWindow())
+    if (allowPointerInput && context.input.IsMouseInsideWindow())
     {
         if (!worldSpaceUi_)
         {
@@ -374,6 +476,228 @@ void ColoredCubeScene::ApplyUiActions()
             worldSpaceUi_ = action.selectedIndex == 1;
             uiInput_.Reset(optionsUi_->Canvas());
         }
+    }
+}
+
+void ColoredCubeScene::InitializeAudioOptionsUi(
+    const mrg::EngineServices& services)
+{
+    audioSystem_ = &services.audio;
+    audioDevices_.assign(
+        services.audio.OutputDevices().begin(),
+        services.audio.OutputDevices().end());
+    audioOptionsUi_ = std::make_unique<mrg::ui::UiCanvas>(AudioPanelSize);
+
+    auto& panel = audioOptionsUi_->Root().EmplaceChild<mrg::ui::UiPanel>();
+    panel.SetBounds({0.0F, 0.0F, AudioPanelSize.width, AudioPanelSize.height});
+    panel.SetStyle({
+        {0.045F, 0.055F, 0.085F, 0.97F},
+        {0.055F, 0.070F, 0.105F, 0.97F},
+        {0.035F, 0.045F, 0.070F, 0.97F},
+        {0.045F, 0.055F, 0.085F, 0.70F}});
+
+    auto& title = panel.EmplaceChild<mrg::ui::UiLabel>(
+        L"AUDIO OUTPUT  [TAB: CLOSE]");
+    title.SetBounds({16.0F, 10.0F, 348.0F, 32.0F});
+    title.SetFontSize(18.0F);
+    title.SetTextColor({0.58F, 0.86F, 1.0F, 1.0F});
+
+    auto& deviceCombo = panel.EmplaceChild<mrg::ui::UiComboBox>();
+    std::vector<std::wstring> deviceNames;
+    deviceNames.reserve(audioDevices_.size());
+    std::size_t activeDeviceIndex = audioDevices_.size();
+    for (std::size_t index = 0; index < audioDevices_.size(); ++index)
+    {
+        const mrg::audio::AudioDeviceInfo& device = audioDevices_[index];
+        deviceNames.push_back(
+            L"[" + AudioBackendName(device.backend) + L"] " +
+            Utf8ToWide(device.name));
+        if (device.backend == services.audio.ActiveOutput() &&
+            device.driverIndex == services.audio.ActiveDriverIndex())
+        {
+            activeDeviceIndex = index;
+        }
+    }
+    if (deviceNames.empty())
+    {
+        deviceNames.push_back(L"NO WASAPI / ASIO DEVICE FOUND");
+        deviceCombo.SetEnabled(false);
+    }
+    deviceCombo.SetItems(std::move(deviceNames));
+    if (activeDeviceIndex < audioDevices_.size())
+    {
+        deviceCombo.SetSelectedIndex(activeDeviceIndex);
+    }
+    deviceCombo.SetBounds({16.0F, 50.0F, 348.0F, 48.0F});
+    deviceCombo.SetFontSize(14.0F);
+    audioDeviceComboId_ = deviceCombo.Id();
+
+    auto& status = panel.EmplaceChild<mrg::ui::UiLabel>(
+        L"ACTIVE: " + AudioBackendName(services.audio.ActiveOutput()));
+    status.SetBounds({16.0F, 106.0F, 348.0F, 34.0F});
+    status.SetFontSize(15.0F);
+    status.SetTextColor({0.62F, 1.0F, 0.72F, 1.0F});
+    audioStatusLabelId_ = status.Id();
+
+    auto& hint = panel.EmplaceChild<mrg::ui::UiLabel>(
+        L"CLICK TO CYCLE DRIVER   |   Z: PLAY pop.wav");
+    hint.SetBounds({16.0F, 150.0F, 348.0F, 40.0F});
+    hint.SetFontSize(13.0F);
+    hint.SetTextColor({0.76F, 0.78F, 0.86F, 1.0F});
+
+    std::string errorMessage;
+    popSound_ = services.audio.LoadSound(
+        RuntimeAssetPath(L"sounds\\pop.wav"),
+        errorMessage);
+    if (popSound_ == mrg::audio::InvalidAudioSoundHandle)
+    {
+        throw std::runtime_error(
+            "Failed to load assets/sounds/pop.wav: " + errorMessage);
+    }
+}
+
+bool ColoredCubeScene::UpdateAudioOptionsUi(
+    const mrg::UpdateContext& context)
+{
+    if (audioOptionsUi_ == nullptr)
+    {
+        return false;
+    }
+
+    UpdateAudioPanelMotion(context);
+
+    if (context.input.WasKeyPressed(static_cast<std::uint16_t>('Z')))
+    {
+        TryPlayPopSound(context.audio);
+    }
+
+    const std::optional<mrg::ui::UiPoint> canvasPointer =
+        MapAudioPanelPointer(context.input);
+
+    mrg::ui::UiPointerInput pointer{};
+    pointer.available = canvasPointer.has_value();
+    pointer.position = canvasPointer.value_or(mrg::ui::UiPoint{});
+    pointer.leftButtonDown = context.input.IsMouseButtonDown(
+        mrg::platform::MouseButton::Left);
+    pointer.leftButtonPressed = context.input.WasMouseButtonPressed(
+        mrg::platform::MouseButton::Left);
+    pointer.leftButtonReleased = context.input.WasMouseButtonReleased(
+        mrg::platform::MouseButton::Left);
+    pointer.timestampTicks = LatestPointerTimestamp(context.input);
+    audioUiInput_.Process(*audioOptionsUi_, pointer);
+    ApplyAudioUiActions();
+    return canvasPointer.has_value();
+}
+
+void ColoredCubeScene::UpdateAudioPanelMotion(
+    const mrg::UpdateContext& context)
+{
+    if (context.input.WasKeyPressed(VK_TAB))
+    {
+        audioPanelOpen_ = !audioPanelOpen_;
+        audioUiInput_.Reset(*audioOptionsUi_);
+    }
+
+    const float targetX = audioPanelOpen_
+        ? AudioPanelVisibleX
+        : -AudioPanelSize.width - 2.0F;
+    const float maximumStep =
+        1150.0F * static_cast<float>(context.deltaSeconds);
+    audioPanelX_ += std::clamp(
+        targetX - audioPanelX_,
+        -maximumStep,
+        maximumStep);
+}
+
+void ColoredCubeScene::TryPlayPopSound(mrg::audio::AudioSystem& audio)
+{
+    std::string errorMessage;
+    if (popSound_ == mrg::audio::InvalidAudioSoundHandle)
+    {
+        SetAudioStatus(L"pop.wav IS NOT LOADED");
+    }
+    else if (!audio.PlaySound(popSound_, errorMessage))
+    {
+        SetAudioStatus(L"PLAY FAILED: " + Utf8ToWide(errorMessage));
+    }
+    else
+    {
+        SetAudioStatus(
+            L"PLAYED VIA " + AudioBackendName(audio.ActiveOutput()));
+    }
+}
+
+std::optional<mrg::ui::UiPoint> ColoredCubeScene::MapAudioPanelPointer(
+    const mrg::platform::InputState& input) const noexcept
+{
+    if (!input.IsMouseInsideWindow())
+    {
+        return std::nullopt;
+    }
+    return mrg::ui::MapScreenPointer(
+        {
+            static_cast<float>(input.MousePositionX()),
+            static_cast<float>(input.MousePositionY())},
+        {static_cast<float>(width_), static_cast<float>(height_)},
+        AudioPanelSize,
+        {audioPanelX_, AudioPanelY});
+}
+
+void ColoredCubeScene::ApplyAudioUiActions()
+{
+    for (const mrg::ui::UiAction& action : audioOptionsUi_->TakeActions())
+    {
+        if (action.source != audioDeviceComboId_ ||
+            action.type != mrg::ui::UiActionType::SelectionChanged ||
+            action.selectedIndex >= audioDevices_.size() ||
+            audioSystem_ == nullptr)
+        {
+            continue;
+        }
+
+        const mrg::audio::AudioDeviceInfo& selected =
+            audioDevices_[action.selectedIndex];
+        std::string errorMessage;
+        if (!audioSystem_->SelectOutputDevice(selected, errorMessage))
+        {
+            SetAudioStatus(L"SWITCH FAILED: " + Utf8ToWide(errorMessage));
+
+            // The service commits only successful switches. Reflect the still
+            // active device instead of leaving the failed choice displayed.
+            if (auto* combo = dynamic_cast<mrg::ui::UiComboBox*>(
+                    audioOptionsUi_->FindElement(audioDeviceComboId_)))
+            {
+                for (std::size_t index = 0;
+                     index < audioDevices_.size();
+                     ++index)
+                {
+                    if (audioDevices_[index].backend ==
+                            audioSystem_->ActiveOutput() &&
+                        audioDevices_[index].driverIndex ==
+                            audioSystem_->ActiveDriverIndex())
+                    {
+                        combo->SetSelectedIndex(index);
+                        break;
+                    }
+                }
+            }
+            continue;
+        }
+
+        SetAudioStatus(L"ACTIVE: " + AudioBackendName(selected.backend));
+    }
+}
+
+void ColoredCubeScene::SetAudioStatus(std::wstring text)
+{
+    if (audioOptionsUi_ == nullptr)
+    {
+        return;
+    }
+    if (auto* status = dynamic_cast<mrg::ui::UiLabel*>(
+            audioOptionsUi_->FindElement(audioStatusLabelId_)))
+    {
+        status->SetText(std::move(text));
     }
 }
 

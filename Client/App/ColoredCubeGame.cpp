@@ -56,7 +56,8 @@ void ColoredCubeGame::RegisterScenes(mrg::scene::SceneManager& scenes)
     // factories create objects lazily when ChangeScene enters their route.
     if (!scenes.RegisterScene<ColoredCubeScene>(
             std::string(game::scene_ids::ColoredCube),
-            SceneRetention::KeepAlive) ||
+            SceneRetention::KeepAlive,
+            smokeTest_) ||
         !scenes.RegisterScene<BlankScene>(
             std::string(game::scene_ids::Blank),
             SceneRetention::KeepAlive) ||

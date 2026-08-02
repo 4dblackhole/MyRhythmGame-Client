@@ -16,6 +16,9 @@
     <Filter Include="Assets\Fonts">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555554}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Sounds">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\ColoredCubeGame.h">
@@ -69,6 +72,9 @@
     </None>
     <None Include="Assets\Fonts\Rajdhani-OFL.txt">
       <Filter>Assets\Fonts</Filter>
+    </None>
+    <None Include="Assets\Sounds\pop.wav">
+      <Filter>Assets\Sounds</Filter>
     </None>
   </ItemGroup>
 </Project>

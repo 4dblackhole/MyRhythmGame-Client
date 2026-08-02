@@ -40,8 +40,8 @@ flowchart TD
 ## 시작 순서
 
 `Client/App/Main.cpp`의 `wWinMain`이 유일한 프로그램 진입점이다.
-`--smoke-test` 명령행 인수가 있으면 동일한 경로로 초기화하되, 창을 숨기고
-세 번 렌더링한 뒤 종료하도록 Client 설정만 바뀐다.
+`--smoke-test` 명령행 인수가 있으면 동일한 경로로 초기화하되, 창을 숨기고 곡면
+Canvas render-target 경로로 세 번 렌더링한 뒤 종료하도록 Client 설정만 바뀐다.
 
 ```text
 wWinMain
@@ -84,7 +84,10 @@ wWinMain
                │  ├─ 두 SRV를 한 TextureSet 디스크립터 배열로 구성
                │  ├─ CubeShape를 PositionUvColor GpuMesh로 한 번 업로드
                │  ├─ 공통 textured MaterialInstance를 한 번 생성
-               │  └─ 같은 mesh/material을 무작위 Transform의 MeshInstance 네 개에 연결
+               │  ├─ 같은 mesh/material을 무작위 Transform의 MeshInstance 네 개에 연결
+               │  ├─ 옵션 Canvas용 render target과 CurvedRectangleShape를 생성
+               │  ├─ 감지된 WASAPI/ASIO 장치로 오디오 패널을 구성
+               │  └─ assets/sounds/pop.wav를 AudioSystem에 등록
                ├─ ColoredCubeScene::BeginScene
                └─ ColoredCubeScene::OnResize
 ```
@@ -104,10 +107,10 @@ wWinMain
 | 플랫폼 | `Win32Window`, `InputState` | HWND, 메시지 펌프, Raw Input 상태/이벤트 |
 | 시간 | `HighResolutionClock` | QPC 기반 전체 시간과 각 Update의 경과 시간 계산 |
 | 그래픽 | `D3D12Renderer`, `MeshRenderSystem`, `TextureManager`, `TextRenderSystem` | device, queue, swap chain, frame resources, 공통 MaterialTemplate, 독립 크기 Texture2D와 SRV heap, GPU mesh 인스턴스 배치, DirectWrite 레이아웃과 D3D12 글리프 아틀라스 |
-| 오디오 | `AudioSystem`, 선택된 `IAudioBackend` | 오디오 장치 정보와 DSP clock을 제공; 현재 기본 구현은 FMOD |
+| 오디오 | `AudioSystem`, 선택된 `IAudioBackend` | WASAPI/ASIO 장치 정보, 실행 중 안전한 장치 전환, sound handle과 DSP clock을 제공; 현재 기본 구현은 FMOD |
 | 클라이언트 | `ColoredCubeGame` | 창/오디오/스케줄 설정과 등록할 장면 정의 |
 | 장면 | `SceneManager`, `ColoredCubeScene` | 현재 활성 장면은 `Cube`; `BlankScene`은 등록만 되었고 아직 생성되지 않음 |
-| Cube 장면 | `MeshInstance` 4개, `Camera` | 같은 GpuMesh/Material handle, 장면별 Transform·UV·texture index를 보관 |
+| Cube 장면 | `MeshInstance` 4개, 곡면 UI MeshInstance, 두 UiCanvas, `Camera` | 큐브, 화면/곡면 옵션, 슬라이드 오디오 패널을 보관 |
 
 세 `GradientCubeScene` 경로와 `BlankScene` 객체는 초기화 직후에는 존재하지
 않는다. `ColoredCubeScene`에서

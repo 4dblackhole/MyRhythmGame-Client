@@ -96,6 +96,9 @@
     <None Include="Assets\Fonts\Rajdhani-OFL.txt">
       <AssetTargetPath>fonts\Rajdhani-OFL.txt</AssetTargetPath>
     </None>
+    <None Include="Assets\Sounds\pop.wav">
+      <AssetTargetPath>sounds\pop.wav</AssetTargetPath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Dependencies\MRG-Engine\Engine\SDK\MRG.Core.vcxproj">
@@ -112,6 +115,7 @@
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
     <MakeDir Directories="$(OutDir)assets\fonts" />
+    <MakeDir Directories="$(OutDir)assets\sounds" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">

@@ -49,6 +49,10 @@ FMOD SDK 및 DLL은 저장소에 포함하지 않는다.
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-test
 ```
 
+샘플 화면에서는 `F2`로 화면/곡면 UI를 전환하고, `Tab`으로 왼쪽 오디오 패널을
+열거나 닫는다. 패널의 ComboBox를 클릭하면 감지된 WASAPI/ASIO 장치를 순환하며,
+`Z`를 누르면 현재 출력으로 `Client/Assets/Sounds/pop.wav`를 재생한다.
+
 ## 엔진 버전 갱신
 
 ```powershell
