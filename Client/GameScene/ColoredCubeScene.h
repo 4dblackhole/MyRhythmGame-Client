@@ -38,6 +38,9 @@ private:
     void TryPlayPopSound(mrg::audio::AudioSystem& audio);
     [[nodiscard]] std::optional<mrg::ui::UiPoint> MapAudioPanelPointer(
         const mrg::platform::InputState& input) const noexcept;
+    void RefreshAudioDeviceChoices();
+    void SelectAudioBackend(std::size_t backendIndex);
+    void ApplyAudioDeviceSelection(std::size_t audioDeviceIndex);
     void ApplyAudioUiActions();
     void SetAudioStatus(std::wstring text);
     [[nodiscard]] std::int64_t LatestPointerTimestamp(
@@ -66,11 +69,15 @@ private:
     std::unique_ptr<mrg::ui::UiCanvas> audioOptionsUi_;
     mrg::ui::UiInputRouter audioUiInput_;
     std::vector<mrg::audio::AudioDeviceInfo> audioDevices_;
+    std::vector<std::size_t> filteredAudioDeviceIndices_;
     mrg::audio::AudioSystem* audioSystem_{};
     mrg::audio::AudioSoundHandle popSound_{
         mrg::audio::InvalidAudioSoundHandle};
+    mrg::ui::UiElementId audioBackendComboId_{};
     mrg::ui::UiElementId audioDeviceComboId_{};
     mrg::ui::UiElementId audioStatusLabelId_{};
+    mrg::audio::AudioOutputBackend selectedAudioBackend_{
+        mrg::audio::AudioOutputBackend::Automatic};
     float audioPanelX_{-390.0F};
     bool audioPanelOpen_{};
 };

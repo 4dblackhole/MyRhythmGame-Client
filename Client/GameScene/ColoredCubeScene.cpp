@@ -62,6 +62,8 @@ namespace
     {
         switch (backend)
         {
+        case mrg::audio::AudioOutputBackend::Automatic:
+            return L"SYSTEM DEFAULT";
         case mrg::audio::AudioOutputBackend::Wasapi:
             return L"WASAPI";
         case mrg::audio::AudioOutputBackend::Asio:
@@ -73,7 +75,61 @@ namespace
         }
     }
 
-    constexpr mrg::ui::UiSize AudioPanelSize{380.0F, 210.0F};
+    [[nodiscard]] std::wstring AudioBackendSelectorName(
+        const mrg::audio::AudioOutputBackend backend)
+    {
+        switch (backend)
+        {
+        case mrg::audio::AudioOutputBackend::Automatic:
+            return L"SYSTEM DEFAULT (FMOD AUTO)";
+        case mrg::audio::AudioOutputBackend::Wasapi:
+            return L"WASAPI";
+        case mrg::audio::AudioOutputBackend::Asio:
+            return L"ASIO";
+        default:
+            return L"UNAVAILABLE";
+        }
+    }
+
+    [[nodiscard]] std::wstring AudioDeviceSelectorName(
+        const mrg::audio::AudioDeviceInfo& device)
+    {
+        if (device.driverIndex < 0)
+        {
+            return L"WINDOWS DEFAULT OUTPUT";
+        }
+
+        std::wstring result = L"[" +
+            std::to_wstring(device.driverIndex) + L"] " +
+            Utf8ToWide(device.name);
+        if (device.sampleRate > 0)
+        {
+            result += L"  " + std::to_wstring(device.sampleRate) + L" Hz";
+        }
+        return result;
+    }
+
+    constexpr std::array AudioBackendChoices{
+        mrg::audio::AudioOutputBackend::Automatic,
+        mrg::audio::AudioOutputBackend::Wasapi,
+        mrg::audio::AudioOutputBackend::Asio};
+
+    [[nodiscard]] std::optional<std::size_t> FindAudioBackendChoice(
+        const mrg::audio::AudioOutputBackend backend) noexcept
+    {
+        for (std::size_t index = 0;
+             index < AudioBackendChoices.size();
+             ++index)
+        {
+            if (AudioBackendChoices[index] == backend)
+            {
+                return index;
+            }
+        }
+        return std::nullopt;
+    }
+
+    constexpr mrg::ui::UiSize AudioPanelSize{380.0F, 278.0F};
     constexpr float AudioPanelVisibleX = 20.0F;
     constexpr float AudioPanelY = 250.0F;
 }
@@ -482,6 +538,8 @@ void ColoredCubeScene::ApplyUiActions()
 void ColoredCubeScene::InitializeAudioOptionsUi(
     const mrg::EngineServices& services)
 {
+    // Preserve the engine-owned service reference and take a snapshot of the
+    // backend/device choices that this scene can present to the player.
     audioSystem_ = &services.audio;
     audioDevices_.assign(
         services.audio.OutputDevices().begin(),
@@ -502,48 +560,65 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     title.SetFontSize(18.0F);
     title.SetTextColor({0.58F, 0.86F, 1.0F, 1.0F});
 
+    // The first ComboBox selects an output API. DirectSound is not offered:
+    // FMOD 2.x no longer exposes a DirectSound output backend. Its closest
+    // supported baseline is the explicit FMOD automatic/default path.
+    auto& backendLabel = panel.EmplaceChild<mrg::ui::UiLabel>(L"OUTPUT API");
+    backendLabel.SetBounds({16.0F, 42.0F, 348.0F, 18.0F});
+    backendLabel.SetFontSize(12.0F);
+    backendLabel.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+
+    auto& backendCombo = panel.EmplaceChild<mrg::ui::UiComboBox>();
+    std::vector<std::wstring> backendNames;
+    backendNames.reserve(AudioBackendChoices.size());
+    for (const mrg::audio::AudioOutputBackend backend : AudioBackendChoices)
+    {
+        backendNames.push_back(AudioBackendSelectorName(backend));
+    }
+    backendCombo.SetItems(std::move(backendNames));
+    selectedAudioBackend_ = services.audio.ActiveOutput();
+    const std::optional<std::size_t> activeBackendChoice =
+        FindAudioBackendChoice(selectedAudioBackend_);
+    if (activeBackendChoice.has_value())
+    {
+        backendCombo.SetSelectedIndex(*activeBackendChoice);
+    }
+    else
+    {
+        // No-sound/unknown output has no matching selectable API. Keep the
+        // UI on the default path so the player can still choose a device.
+        selectedAudioBackend_ = mrg::audio::AudioOutputBackend::Automatic;
+    }
+    backendCombo.SetBounds({16.0F, 60.0F, 348.0F, 38.0F});
+    backendCombo.SetFontSize(14.0F);
+    audioBackendComboId_ = backendCombo.Id();
+
+    auto& deviceLabel = panel.EmplaceChild<mrg::ui::UiLabel>(L"DEVICE");
+    deviceLabel.SetBounds({16.0F, 106.0F, 348.0F, 18.0F});
+    deviceLabel.SetFontSize(12.0F);
+    deviceLabel.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+
     auto& deviceCombo = panel.EmplaceChild<mrg::ui::UiComboBox>();
-    std::vector<std::wstring> deviceNames;
-    deviceNames.reserve(audioDevices_.size());
-    std::size_t activeDeviceIndex = audioDevices_.size();
-    for (std::size_t index = 0; index < audioDevices_.size(); ++index)
-    {
-        const mrg::audio::AudioDeviceInfo& device = audioDevices_[index];
-        deviceNames.push_back(
-            L"[" + AudioBackendName(device.backend) + L"] " +
-            Utf8ToWide(device.name));
-        if (device.backend == services.audio.ActiveOutput() &&
-            device.driverIndex == services.audio.ActiveDriverIndex())
-        {
-            activeDeviceIndex = index;
-        }
-    }
-    if (deviceNames.empty())
-    {
-        deviceNames.push_back(L"NO WASAPI / ASIO DEVICE FOUND");
-        deviceCombo.SetEnabled(false);
-    }
-    deviceCombo.SetItems(std::move(deviceNames));
-    if (activeDeviceIndex < audioDevices_.size())
-    {
-        deviceCombo.SetSelectedIndex(activeDeviceIndex);
-    }
-    deviceCombo.SetBounds({16.0F, 50.0F, 348.0F, 48.0F});
+    deviceCombo.SetBounds({16.0F, 124.0F, 348.0F, 42.0F});
     deviceCombo.SetFontSize(14.0F);
     audioDeviceComboId_ = deviceCombo.Id();
 
     auto& status = panel.EmplaceChild<mrg::ui::UiLabel>(
         L"ACTIVE: " + AudioBackendName(services.audio.ActiveOutput()));
-    status.SetBounds({16.0F, 106.0F, 348.0F, 34.0F});
+    status.SetBounds({16.0F, 176.0F, 348.0F, 34.0F});
     status.SetFontSize(15.0F);
     status.SetTextColor({0.62F, 1.0F, 0.72F, 1.0F});
     audioStatusLabelId_ = status.Id();
 
     auto& hint = panel.EmplaceChild<mrg::ui::UiLabel>(
-        L"CLICK TO CYCLE DRIVER   |   Z: PLAY pop.wav");
-    hint.SetBounds({16.0F, 150.0F, 348.0F, 40.0F});
-    hint.SetFontSize(13.0F);
+        L"TOP: OUTPUT API   /   BOTTOM: DEVICE   /   Z: PLAY pop.wav");
+    hint.SetBounds({16.0F, 220.0F, 348.0F, 38.0F});
+    hint.SetFontSize(12.0F);
     hint.SetTextColor({0.76F, 0.78F, 0.86F, 1.0F});
+
+    // Filter the lower ComboBox after all its controls exist. The active
+    // driver is selected without changing the already running audio output.
+    RefreshAudioDeviceChoices();
 
     std::string errorMessage;
     popSound_ = services.audio.LoadSound(
@@ -643,48 +718,136 @@ std::optional<mrg::ui::UiPoint> ColoredCubeScene::MapAudioPanelPointer(
         {audioPanelX_, AudioPanelY});
 }
 
+void ColoredCubeScene::RefreshAudioDeviceChoices()
+{
+    if (audioOptionsUi_ == nullptr)
+    {
+        return;
+    }
+    auto* combo = dynamic_cast<mrg::ui::UiComboBox*>(
+        audioOptionsUi_->FindElement(audioDeviceComboId_));
+    if (combo == nullptr)
+    {
+        return;
+    }
+
+    // Rebuild the lower ComboBox from only the devices belonging to the
+    // backend currently selected in the upper ComboBox.
+    filteredAudioDeviceIndices_.clear();
+    std::vector<std::wstring> deviceNames;
+    std::size_t activeSelection = 0;
+    for (std::size_t index = 0; index < audioDevices_.size(); ++index)
+    {
+        const mrg::audio::AudioDeviceInfo& device = audioDevices_[index];
+        if (device.backend != selectedAudioBackend_)
+        {
+            continue;
+        }
+
+        if (audioSystem_ != nullptr &&
+            device.backend == audioSystem_->ActiveOutput() &&
+            device.driverIndex == audioSystem_->ActiveDriverIndex())
+        {
+            activeSelection = filteredAudioDeviceIndices_.size();
+        }
+        filteredAudioDeviceIndices_.push_back(index);
+        deviceNames.push_back(AudioDeviceSelectorName(device));
+    }
+
+    if (deviceNames.empty())
+    {
+        combo->SetItems({L"NO DEVICE FOUND FOR THIS OUTPUT API"});
+        combo->SetEnabled(false);
+        return;
+    }
+
+    combo->SetEnabled(true);
+    combo->SetItems(std::move(deviceNames));
+    combo->SetSelectedIndex(activeSelection);
+}
+
+void ColoredCubeScene::SelectAudioBackend(const std::size_t backendIndex)
+{
+    if (backendIndex >= AudioBackendChoices.size())
+    {
+        return;
+    }
+
+    selectedAudioBackend_ = AudioBackendChoices[backendIndex];
+    RefreshAudioDeviceChoices();
+    if (filteredAudioDeviceIndices_.empty())
+    {
+        SetAudioStatus(L"NO DEVICE FOUND: " +
+            AudioBackendName(selectedAudioBackend_));
+        return;
+    }
+
+    // Selecting an API immediately applies its first device. This makes an
+    // ASIO backend with only one driver selectable despite the current simple
+    // ComboBox widget using click-to-cycle instead of a popup list.
+    ApplyAudioDeviceSelection(filteredAudioDeviceIndices_.front());
+}
+
+void ColoredCubeScene::ApplyAudioDeviceSelection(
+    const std::size_t audioDeviceIndex)
+{
+    if (audioSystem_ == nullptr || audioDeviceIndex >= audioDevices_.size())
+    {
+        return;
+    }
+
+    const mrg::audio::AudioDeviceInfo& selected =
+        audioDevices_[audioDeviceIndex];
+    std::string errorMessage;
+    if (!audioSystem_->SelectOutputDevice(selected, errorMessage))
+    {
+        SetAudioStatus(L"SWITCH FAILED: " + Utf8ToWide(errorMessage));
+
+        // The engine leaves the previous backend intact on failure. Restore
+        // both ComboBoxes to that active backend/driver instead of displaying
+        // a request that did not become effective.
+        selectedAudioBackend_ = audioSystem_->ActiveOutput();
+        if (const auto activeBackend =
+                FindAudioBackendChoice(selectedAudioBackend_);
+            activeBackend.has_value())
+        {
+            if (auto* backendCombo = dynamic_cast<mrg::ui::UiComboBox*>(
+                    audioOptionsUi_->FindElement(audioBackendComboId_)))
+            {
+                backendCombo->SetSelectedIndex(*activeBackend);
+            }
+        }
+        else
+        {
+            selectedAudioBackend_ = mrg::audio::AudioOutputBackend::Automatic;
+        }
+        RefreshAudioDeviceChoices();
+        return;
+    }
+
+    SetAudioStatus(
+        L"ACTIVE: " + AudioBackendName(audioSystem_->ActiveOutput()));
+}
+
 void ColoredCubeScene::ApplyAudioUiActions()
 {
     for (const mrg::ui::UiAction& action : audioOptionsUi_->TakeActions())
     {
-        if (action.source != audioDeviceComboId_ ||
-            action.type != mrg::ui::UiActionType::SelectionChanged ||
-            action.selectedIndex >= audioDevices_.size() ||
-            audioSystem_ == nullptr)
+        if (action.type != mrg::ui::UiActionType::SelectionChanged)
         {
             continue;
         }
-
-        const mrg::audio::AudioDeviceInfo& selected =
-            audioDevices_[action.selectedIndex];
-        std::string errorMessage;
-        if (!audioSystem_->SelectOutputDevice(selected, errorMessage))
+        if (action.source == audioBackendComboId_)
         {
-            SetAudioStatus(L"SWITCH FAILED: " + Utf8ToWide(errorMessage));
-
-            // The service commits only successful switches. Reflect the still
-            // active device instead of leaving the failed choice displayed.
-            if (auto* combo = dynamic_cast<mrg::ui::UiComboBox*>(
-                    audioOptionsUi_->FindElement(audioDeviceComboId_)))
-            {
-                for (std::size_t index = 0;
-                     index < audioDevices_.size();
-                     ++index)
-                {
-                    if (audioDevices_[index].backend ==
-                            audioSystem_->ActiveOutput() &&
-                        audioDevices_[index].driverIndex ==
-                            audioSystem_->ActiveDriverIndex())
-                    {
-                        combo->SetSelectedIndex(index);
-                        break;
-                    }
-                }
-            }
+            SelectAudioBackend(action.selectedIndex);
             continue;
         }
-
-        SetAudioStatus(L"ACTIVE: " + AudioBackendName(selected.backend));
+        if (action.source == audioDeviceComboId_ &&
+            action.selectedIndex < filteredAudioDeviceIndices_.size())
+        {
+            ApplyAudioDeviceSelection(
+                filteredAudioDeviceIndices_[action.selectedIndex]);
+        }
     }
 }
 
