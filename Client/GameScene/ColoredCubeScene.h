@@ -38,6 +38,8 @@ private:
     void TryPlayPopSound(mrg::audio::AudioSystem& audio);
     [[nodiscard]] std::optional<mrg::ui::UiPoint> MapAudioPanelPointer(
         const mrg::platform::InputState& input) const noexcept;
+    [[nodiscard]] bool RefreshAudioDeviceSnapshot(
+        std::string& errorMessage);
     void RefreshAudioDeviceChoices();
     void SelectAudioBackend(std::size_t backendIndex);
     void ApplyAudioDeviceSelection(std::size_t audioDeviceIndex);

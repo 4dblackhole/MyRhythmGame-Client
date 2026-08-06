@@ -544,12 +544,13 @@ void ColoredCubeScene::ApplyUiActions()
 void ColoredCubeScene::InitializeAudioOptionsUi(
     const mrg::EngineServices& services)
 {
-    // Preserve the engine-owned service reference and take a snapshot of the
-    // backend/device choices that this scene can present to the player.
+    // Preserve the engine-owned service reference and explicitly refresh the
+    // backend snapshot. This makes ASIO drivers connected after engine startup
+    // visible before the first device ComboBox is populated.
     audioSystem_ = &services.audio;
-    audioDevices_.assign(
-        services.audio.OutputDevices().begin(),
-        services.audio.OutputDevices().end());
+    std::string refreshError;
+    const bool devicesRefreshed =
+        RefreshAudioDeviceSnapshot(refreshError);
     audioOptionsUi_ = std::make_unique<mrg::ui::UiCanvas>(AudioPanelSize);
 
     auto& panel = audioOptionsUi_->Root().EmplaceChild<mrg::ui::UiPanel>();
@@ -615,6 +616,10 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     status.SetFontSize(15.0F);
     status.SetTextColor({0.62F, 1.0F, 0.72F, 1.0F});
     audioStatusLabelId_ = status.Id();
+    if (!devicesRefreshed)
+    {
+        status.SetText(L"DEVICE REFRESH FAILED: " + Utf8ToWide(refreshError));
+    }
 
     auto& hint = panel.EmplaceChild<mrg::ui::UiLabel>(
         L"TOP: OUTPUT API   /   BOTTOM: DEVICE   /   Z: PLAY pop.wav");
@@ -772,6 +777,22 @@ void ColoredCubeScene::RefreshAudioDeviceChoices()
     combo->SetSelectedIndex(activeSelection);
 }
 
+bool ColoredCubeScene::RefreshAudioDeviceSnapshot(
+    std::string& errorMessage)
+{
+    if (audioSystem_ == nullptr)
+    {
+        errorMessage = "The audio system is unavailable.";
+        return false;
+    }
+
+    const bool refreshed =
+        audioSystem_->RefreshOutputDevices(errorMessage);
+    const auto& devices = audioSystem_->OutputDevices();
+    audioDevices_.assign(devices.begin(), devices.end());
+    return refreshed;
+}
+
 void ColoredCubeScene::SelectAudioBackend(const std::size_t backendIndex)
 {
     if (backendIndex >= AudioBackendChoices.size())
@@ -779,12 +800,22 @@ void ColoredCubeScene::SelectAudioBackend(const std::size_t backendIndex)
         return;
     }
 
+    std::string refreshError;
+    const bool refreshed = RefreshAudioDeviceSnapshot(refreshError);
     selectedAudioBackend_ = AudioBackendChoices[backendIndex];
     RefreshAudioDeviceChoices();
+    if (!refreshed)
+    {
+        SetAudioStatus(
+            L"DEVICE REFRESH FAILED: " + Utf8ToWide(refreshError));
+    }
     if (filteredAudioDeviceIndices_.empty())
     {
-        SetAudioStatus(L"NO DEVICE FOUND: " +
-            AudioBackendName(selectedAudioBackend_));
+        if (refreshed)
+        {
+            SetAudioStatus(L"NO DEVICE FOUND: " +
+                AudioBackendName(selectedAudioBackend_));
+        }
         return;
     }
 

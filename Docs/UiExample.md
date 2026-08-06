@@ -25,8 +25,9 @@ view-projection으로 pointer Ray를 만든 뒤, 표시 mesh와 같은 정점/�
 
 오디오 패널은 닫혔을 때 화면 왼쪽 바깥에 있고 `Tab`을 누르면 Update의
 `deltaSeconds`로 X 위치를 보간해 나타난다. 위 ComboBox에서 API를 바꾸면 해당
-API의 첫 driver가 즉시 적용되고, 아래 ComboBox는 같은 API의 다른 driver를 순환해
-선택한다. 장치 전환은 새 FMOD system 초기화와 `pop.wav` 재등록이 모두 성공한 뒤에만
+API 목록을 다시 열거한 다음 첫 driver를 즉시 적용하고, 아래 ComboBox는 같은
+API의 다른 driver를 순환해 선택한다. 따라서 실행 중 연결된 ASIO 장치도 API를
+선택할 때 갱신된다. 장치 전환은 새 FMOD system 초기화와 `pop.wav` 재등록이 모두 성공한 뒤에만
 확정되므로 실패한 ASIO 선택은 기존 출력을 끊지 않는다.
 
 현재 FMOD 2.x에는 DirectSound output backend가 없으므로 첫 항목은 실제
