@@ -252,17 +252,17 @@ void ColoredCubeScene::Update(
     if (context.input.WasKeyPressed(
         static_cast<std::uint16_t>('1')))
     {
-        selectedSceneId = game::scene_ids::BlueGradient;
+        selectedSceneId = game::scene_ids::MeshExample;
     }
     else if (context.input.WasKeyPressed(
         static_cast<std::uint16_t>('2')))
     {
-        selectedSceneId = game::scene_ids::RedGradient;
+        selectedSceneId = game::scene_ids::CollisionExample;
     }
     else if (context.input.WasKeyPressed(
         static_cast<std::uint16_t>('3')))
     {
-        selectedSceneId = game::scene_ids::GreenGradient;
+        selectedSceneId = game::scene_ids::WidgetExample;
     }
 
     if (!selectedSceneId.empty())
@@ -270,7 +270,7 @@ void ColoredCubeScene::Update(
         if (!scenes.ChangeScene(selectedSceneId))
         {
             throw std::runtime_error(
-                "Failed to queue a gradient cube Scene route.");
+                "Failed to queue an engine feature example Scene route.");
         }
         return;
     }
@@ -448,6 +448,12 @@ void ColoredCubeScene::InitializeOptionsUi(
     presentation.SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
     presentation.SetBounds({16.0F, 142.0F, 288.0F, 48.0F});
     presentationComboId_ = presentation.Id();
+
+    auto& examples = panel.EmplaceChild<mrg::ui::UiLabel>(
+        L"1:MESH   2:COLLISION   3:WIDGETS");
+    examples.SetBounds({16.0F, 190.0F, 288.0F, 18.0F});
+    examples.SetFontSize(11.0F);
+    examples.SetTextColor({0.68F, 0.78F, 0.92F, 1.0F});
 }
 
 void ColoredCubeScene::UpdateOptionsUi(

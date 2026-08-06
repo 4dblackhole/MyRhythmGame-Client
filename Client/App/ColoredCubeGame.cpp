@@ -3,16 +3,21 @@
 #include "GameFlow/SceneIds.h"
 #include "GameScene/BlankScene.h"
 #include "GameScene/ColoredCubeScene.h"
-#include "GameScene/GradientCubeScene.h"
+#include "GameScene/Examples/CollisionExampleScene.h"
+#include "GameScene/Examples/MeshExampleScene.h"
+#include "GameScene/Examples/WidgetExampleScene.h"
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 ColoredCubeGame::ColoredCubeGame(
     const bool smokeTest,
-    const bool showPerformanceOverlay) noexcept
+    const bool showPerformanceOverlay,
+    std::string initialSceneId) noexcept
     : smokeTest_(smokeTest),
-      showPerformanceOverlay_(showPerformanceOverlay)
+      showPerformanceOverlay_(showPerformanceOverlay),
+      initialSceneId_(std::move(initialSceneId))
 {
 }
 
@@ -61,21 +66,15 @@ void ColoredCubeGame::RegisterScenes(mrg::scene::SceneManager& scenes)
         !scenes.RegisterScene<BlankScene>(
             std::string(game::scene_ids::Blank),
             SceneRetention::KeepAlive) ||
-        !scenes.RegisterScene<GradientCubeScene>(
-            std::string(game::scene_ids::BlueGradient),
-            SceneRetention::DestroyOnExit,
-            GradientCubeTheme::Blue,
-            std::size_t{1}) ||
-        !scenes.RegisterScene<GradientCubeScene>(
-            std::string(game::scene_ids::RedGradient),
-            SceneRetention::DestroyOnExit,
-            GradientCubeTheme::Red,
-            std::size_t{2}) ||
-        !scenes.RegisterScene<GradientCubeScene>(
-            std::string(game::scene_ids::GreenGradient),
-            SceneRetention::DestroyOnExit,
-            GradientCubeTheme::Green,
-            std::size_t{3}))
+        !scenes.RegisterScene<MeshExampleScene>(
+            std::string(game::scene_ids::MeshExample),
+            SceneRetention::DestroyOnExit) ||
+        !scenes.RegisterScene<CollisionExampleScene>(
+            std::string(game::scene_ids::CollisionExample),
+            SceneRetention::DestroyOnExit) ||
+        !scenes.RegisterScene<WidgetExampleScene>(
+            std::string(game::scene_ids::WidgetExample),
+            SceneRetention::DestroyOnExit))
     {
         throw std::runtime_error("Failed to register the Client Scene routes.");
     }
@@ -83,5 +82,5 @@ void ColoredCubeGame::RegisterScenes(mrg::scene::SceneManager& scenes)
 
 std::string_view ColoredCubeGame::InitialSceneId() const noexcept
 {
-    return game::scene_ids::ColoredCube;
+    return initialSceneId_;
 }

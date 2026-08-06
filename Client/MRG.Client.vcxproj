@@ -68,14 +68,18 @@
     <ClInclude Include="GameFlow\SceneIds.h" />
     <ClInclude Include="GameScene\BlankScene.h" />
     <ClInclude Include="GameScene\ColoredCubeScene.h" />
-    <ClInclude Include="GameScene\GradientCubeScene.h" />
+    <ClInclude Include="GameScene\Examples\CollisionExampleScene.h" />
+    <ClInclude Include="GameScene\Examples\MeshExampleScene.h" />
+    <ClInclude Include="GameScene\Examples\WidgetExampleScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\ColoredCubeGame.cpp" />
     <ClCompile Include="App\Main.cpp" />
     <ClCompile Include="GameScene\BlankScene.cpp" />
     <ClCompile Include="GameScene\ColoredCubeScene.cpp" />
-    <ClCompile Include="GameScene\GradientCubeScene.cpp" />
+    <ClCompile Include="GameScene\Examples\CollisionExampleScene.cpp" />
+    <ClCompile Include="GameScene\Examples\MeshExampleScene.cpp" />
+    <ClCompile Include="GameScene\Examples\WidgetExampleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\awhc.png">

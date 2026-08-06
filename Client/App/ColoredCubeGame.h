@@ -3,6 +3,7 @@
 
 #include "MRG_Core.h"
 
+#include <string>
 #include <string_view>
 
 class ColoredCubeGame final : public mrg::scene::SceneGameClient
@@ -10,7 +11,8 @@ class ColoredCubeGame final : public mrg::scene::SceneGameClient
 public:
     explicit ColoredCubeGame(
         bool smokeTest,
-        bool showPerformanceOverlay = false) noexcept;
+        bool showPerformanceOverlay,
+        std::string initialSceneId) noexcept;
 
     [[nodiscard]] mrg::EngineConfig GetEngineConfig() const override;
 
@@ -21,4 +23,5 @@ protected:
 private:
     bool smokeTest_{};
     bool showPerformanceOverlay_{};
+    std::string initialSceneId_;
 };

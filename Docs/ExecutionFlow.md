@@ -18,7 +18,7 @@ flowchart TD
     SceneClient --> Manager["SceneManager"]
     Manager --> Cube["ColoredCubeScene"]
     Manager --> Blank["BlankScene"]
-    Manager -. "1 / 2 / 3 경로 진입 때 동적 생성" .-> Gradient["GradientCubeScene (DestroyOnExit)"]
+    Manager -. "1 / 2 / 3 경로 진입 때 동적 생성" .-> Examples["Mesh / Collision / Widget ExampleScene (DestroyOnExit)"]
 ```
 
 - `Run`은 실행 중인 시스템 객체를 스택에 소유한다. 즉, `Win32Window`,
@@ -77,7 +77,7 @@ wWinMain
             ├─ SceneManager::Initialize(services)
             ├─ ColoredCubeGame::RegisterScenes
             │  ├─ Cube / Blank 팩토리를 KeepAlive 정책으로 등록
-            │  └─ Gradient.Blue / Red / Green 팩토리를 DestroyOnExit 정책으로 등록
+            │  └─ Example.Mesh / Collision / Widgets 팩토리를 DestroyOnExit 정책으로 등록
             └─ SceneManager::Start("Cube")
                ├─ ColoredCubeScene 생성 → ColoredCubeScene::Initialize
                │  ├─ 서로 다른 크기의 PNG 두 장을 독립 Texture2D로 업로드
@@ -112,10 +112,11 @@ wWinMain
 | 장면 | `SceneManager`, `ColoredCubeScene` | 현재 활성 장면은 `Cube`; `BlankScene`은 등록만 되었고 아직 생성되지 않음 |
 | Cube 장면 | `MeshInstance` 4개, 곡면 UI MeshInstance, 두 UiCanvas, `Camera` | 큐브, 화면/곡면 옵션, 슬라이드 오디오 패널을 보관 |
 
-세 `GradientCubeScene` 경로와 `BlankScene` 객체는 초기화 직후에는 존재하지
-않는다. `ColoredCubeScene`에서
-숫자 1/2/3을 눌렀을 때 각각 청색 1개, 적색 2개, 녹색 3개 큐브 설정으로
-생성되며, 그 Scene에서 Space를 누르면 `Cube`로 복귀한 뒤 삭제된다.
+세 엔진 기능 예제 Scene과 `BlankScene` 객체는 초기화 직후에는 존재하지 않는다.
+`ColoredCubeScene`에서 숫자 1/2/3을 누르면 각각 Mesh 생성, Mesh 충돌,
+위젯 동적 추가/삭제 예제가 생성되며, 그 Scene에서 Space를 누르면 `Cube`로
+복귀한 뒤 삭제된다. 각 API의 짧은 사용 예시는 `Docs/EngineFeatureExamples.md`에
+정리되어 있다.
 
 `EngineServices` 자체는 `Run`의 지역 변수지만, 담긴 시스템 객체들은
 `Run`이 끝날 때까지 살아 있다. 현 구조에서 `SceneManager`는 등록된 팩토리가
@@ -185,7 +186,7 @@ sequenceDiagram
 현재 활성 장면만 `Update`, `Render`, `OnResize`를 받는다. `ColoredCubeScene`은
 `Escape`로 `SceneManager::Quit`, `Space`로 등록된 `BlankScene` 전환을
 요청한다. 숫자 1/2/3은 Client 중앙 `GameFlow/SceneIds.h`에서 각각의
-Gradient 경로 ID를 선택해 동일한 `ChangeScene`으로 전환을 요청한다.
+Example 경로 ID를 선택해 동일한 `ChangeScene`으로 전환을 요청한다.
 
 `ChangeScene`은 즉시 장면을 교체하지 않고 `pendingAction_`에 요청만 넣는다.
 `SceneManager::Update`는 기존 장면의 `Update`가 반환한 **다음**
@@ -212,20 +213,20 @@ oldScene::Update 반환
 
 ```text
 ColoredCubeScene::Update에서 숫자 키 입력
-→ 선택한 Gradient Scene ID를 pendingSceneId에 보관
+→ 선택한 Example Scene ID를 pendingSceneId에 보관
 → ColoredCubeScene::Update 반환
-→ 등록한 팩토리로 새 GradientCubeScene 생성
-→ GradientCubeScene::Initialize
+→ 등록한 팩토리로 새 Example Scene 생성
+→ Example Scene::Initialize
 → ColoredCubeScene::EndScene
-→ GradientCubeScene::BeginScene / OnResize
+→ Example Scene::BeginScene / OnResize
 ```
 
-Gradient Scene에서 Space를 누르면 등록된 `Cube` 전환을 요청한다.
+Example Scene에서 Space를 누르면 등록된 `Cube` 전환을 요청한다.
 
 ```text
-GradientCubeScene::Update 반환
-→ GradientCubeScene::EndScene
-→ GradientCubeScene::Shutdown
+Example Scene::Update 반환
+→ Example Scene::EndScene
+→ Example Scene::Shutdown
 → DestroyOnExit 객체의 unique_ptr 삭제
 → ColoredCubeScene::BeginScene / OnResize
 ```

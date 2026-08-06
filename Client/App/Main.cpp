@@ -7,10 +7,12 @@
 #endif
 
 #include "ColoredCubeGame.h"
+#include "GameFlow/SceneIds.h"
 
 #include <Windows.h>
 
 #include <memory>
+#include <string>
 #include <string_view>
 
 namespace
@@ -25,6 +27,26 @@ namespace
             flags | _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
         _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
 #endif
+    }
+
+    [[nodiscard]] std::string SelectInitialSceneId(
+        const std::wstring_view commandLine)
+    {
+        if (commandLine.find(L"--example=mesh") != std::wstring_view::npos)
+        {
+            return std::string(game::scene_ids::MeshExample);
+        }
+        if (commandLine.find(L"--example=collision") !=
+            std::wstring_view::npos)
+        {
+            return std::string(game::scene_ids::CollisionExample);
+        }
+        if (commandLine.find(L"--example=widgets") !=
+            std::wstring_view::npos)
+        {
+            return std::string(game::scene_ids::WidgetExample);
+        }
+        return std::string(game::scene_ids::ColoredCube);
     }
 }
 
@@ -51,5 +73,6 @@ int WINAPI wWinMain(
     // still start hidden and let Raw Input F1 toggle the display.
     return mrg::Run(std::make_unique<ColoredCubeGame>(
         smokeTest,
-        showPerformanceOverlay));
+        showPerformanceOverlay,
+        SelectInitialSceneId(commandLine)));
 }

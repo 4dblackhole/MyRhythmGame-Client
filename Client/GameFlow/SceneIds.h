@@ -8,7 +8,7 @@ namespace game::scene_ids
 {
     inline constexpr std::string_view ColoredCube = "Cube";
     inline constexpr std::string_view Blank = "Blank";
-    inline constexpr std::string_view BlueGradient = "Gradient.Blue";
-    inline constexpr std::string_view RedGradient = "Gradient.Red";
-    inline constexpr std::string_view GreenGradient = "Gradient.Green";
+    inline constexpr std::string_view MeshExample = "Example.Mesh";
+    inline constexpr std::string_view CollisionExample = "Example.Collision";
+    inline constexpr std::string_view WidgetExample = "Example.Widgets";
 }
