@@ -137,17 +137,16 @@ sequenceDiagram
 
     Run->>Win: PumpMessages()
     Note over Win: 이번 Update의 transient input 초기화 후<br/>Raw Input 메시지를 순서대로 반영
-    Run->>Run: HighResolutionClock::Tick, delta clamp, F1/resize/주사율 변경 처리
+    Run->>Run: HighResolutionClock::Tick, delta clamp, resize/주사율 변경 처리
     Run->>Client: Update(UpdateContext)
-    Client->>Client: 활성 scene.Update 후 지연된 전환 적용
+    Client->>Client: 활성 scene.Update 후 지연된 전환 적용<br/>Client 전역 훅에서 F1/성능 표본 처리
     opt audio deadline 도달
         Run->>Audio: Update()
     end
     opt render deadline 도달 및 창이 최소화되지 않음
         Run->>GPU: BeginFrame(clear color)
         Note over GPU: 재사용할 백 버퍼가 아직 GPU에 있으면 그때만 wait
-        Run->>Client: Render(RenderContext) → mesh/text Submit
-        Run->>GPU: 성능 overlay text Submit(F1 활성 시)
+        Run->>Client: Render(RenderContext) → scene mesh/text Submit<br/>Client 전역 훅에서 overlay text Submit
         Run->>GPU: EndFrame() → mesh flush → text flush → Execute → Present(0)
     end
 ```

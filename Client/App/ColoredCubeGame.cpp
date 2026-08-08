@@ -7,6 +7,7 @@
 #include "GameScene/Examples/MeshExampleScene.h"
 #include "GameScene/Examples/WidgetExampleScene.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -16,7 +17,7 @@ ColoredCubeGame::ColoredCubeGame(
     const bool showPerformanceOverlay,
     std::string initialSceneId) noexcept
     : smokeTest_(smokeTest),
-      showPerformanceOverlay_(showPerformanceOverlay),
+      showPerformanceOverlay_(smokeTest || showPerformanceOverlay),
       initialSceneId_(std::move(initialSceneId))
 {
 }
@@ -36,18 +37,6 @@ mrg::EngineConfig ColoredCubeGame::GetEngineConfig() const
         mrg::audio::AudioOutputBackend::Automatic;
     config.audio.fallBackToWasapi = true;
     config.audio.allowNoSoundFallback = true;
-    config.performanceOverlay.framesPerSecondFontFile =
-        L"assets\\fonts\\PressStart2P-Regular.ttf";
-    config.performanceOverlay.updatesPerSecondFontFile =
-        L"assets\\fonts\\Rajdhani-SemiBold.ttf";
-    config.performanceOverlay.framesPerSecondFontSizePixels = 15.0F;
-    config.performanceOverlay.updatesPerSecondFontSizePixels = 23.0F;
-    config.performanceOverlay.framesPerSecondColor =
-        {0.10F, 0.36F, 0.92F, 1.0F};
-    config.performanceOverlay.updatesPerSecondColor =
-        {0.90F, 0.18F, 0.38F, 1.0F};
-    config.performanceOverlay.initiallyVisible =
-        smokeTest_ || showPerformanceOverlay_;
     config.showWindow = !smokeTest_;
     config.autoExitAfterRenderedFrames = smokeTest_ ? 3 : 0;
     return config;
@@ -83,4 +72,150 @@ void ColoredCubeGame::RegisterScenes(mrg::scene::SceneManager& scenes)
 std::string_view ColoredCubeGame::InitialSceneId() const noexcept
 {
     return initialSceneId_;
+}
+
+void ColoredCubeGame::OnClientInitialized(
+    const mrg::EngineServices& services)
+{
+    // The Client deliberately owns its presentation resources. The Engine
+    // supplies TextRenderSystem as a service, but does not choose fonts or
+    // draw a game-specific performance overlay.
+    framesPerSecondFont_ = services.textRendering.LoadFontFile(
+        mrg::platform::ResolveExecutableRelativePath(
+            L"assets\\fonts\\PressStart2P-Regular.ttf"));
+    updatesPerSecondFont_ = services.textRendering.LoadFontFile(
+        mrg::platform::ResolveExecutableRelativePath(
+            L"assets\\fonts\\Rajdhani-SemiBold.ttf"));
+}
+
+void ColoredCubeGame::OnClientUpdated(const mrg::UpdateContext& context)
+{
+    // Visibility is a game policy: F1 affects only this Client's overlay,
+    // not Engine scheduling or the performance measurement itself.
+    if (context.input.WasKeyPressed(VK_F1))
+    {
+        showPerformanceOverlay_ = !showPerformanceOverlay_;
+    }
+
+    if (!context.performance.hasMeasurement ||
+        context.performance.measurementIndex ==
+            lastPerformanceMeasurementIndex_)
+    {
+        return;
+    }
+
+    RefreshPerformanceText(context.performance);
+    lastPerformanceMeasurementIndex_ =
+        context.performance.measurementIndex;
+}
+
+void ColoredCubeGame::OnClientRendered(
+    const mrg::graphics::RenderContext& context)
+{
+    if (!showPerformanceOverlay_ || context.textRendering == nullptr ||
+        framesPerSecondFont_ == nullptr || updatesPerSecondFont_ == nullptr)
+    {
+        return;
+    }
+
+    // Keep the layout independent from a Scene's camera and leave room for
+    // the window edge, regardless of the current render-target size.
+    constexpr float rightMarginPixels = 20.0F;
+    constexpr float bottomMarginPixels = 20.0F;
+    constexpr float lineGapPixels = 4.0F;
+    constexpr float layoutWidthPixels = 300.0F;
+    constexpr float framesPerSecondFontSizePixels = 15.0F;
+    constexpr float updatesPerSecondFontSizePixels = 23.0F;
+    constexpr DirectX::XMFLOAT4 framesPerSecondColor{
+        0.10F, 0.36F, 0.92F, 1.0F};
+    constexpr DirectX::XMFLOAT4 updatesPerSecondColor{
+        0.90F, 0.18F, 0.38F, 1.0F};
+
+    const float viewportWidth = static_cast<float>(context.width);
+    const float viewportHeight = static_cast<float>(context.height);
+    const float availableWidth = std::max(
+        viewportWidth - rightMarginPixels,
+        1.0F);
+    const float layoutWidth = std::min(layoutWidthPixels, availableWidth);
+    const float layoutX = std::max(availableWidth - layoutWidth, 0.0F);
+    const float framesLineHeight = framesPerSecondFontSizePixels * 1.5F;
+    const float updatesLineHeight = updatesPerSecondFontSizePixels * 1.5F;
+    const float updatesY = std::max(
+        viewportHeight - bottomMarginPixels - updatesLineHeight,
+        0.0F);
+    const float framesY = std::max(
+        updatesY - lineGapPixels - framesLineHeight,
+        0.0F);
+
+    SubmitPerformanceLine(
+        *context.textRendering,
+        framesPerSecondText_,
+        framesPerSecondFont_,
+        framesPerSecondFontSizePixels,
+        framesPerSecondColor,
+        layoutX,
+        framesY,
+        layoutWidth,
+        framesLineHeight);
+    SubmitPerformanceLine(
+        *context.textRendering,
+        updatesPerSecondText_,
+        updatesPerSecondFont_,
+        updatesPerSecondFontSizePixels,
+        updatesPerSecondColor,
+        layoutX,
+        updatesY,
+        layoutWidth,
+        updatesLineHeight);
+}
+
+void ColoredCubeGame::OnClientShuttingDown() noexcept
+{
+    // Font data belongs to the TextRenderSystem, so release Client handles
+    // while EngineServices are still valid.
+    updatesPerSecondFont_.reset();
+    framesPerSecondFont_.reset();
+}
+
+void ColoredCubeGame::RefreshPerformanceText(
+    const mrg::PerformanceStatistics& performance)
+{
+    framesPerSecondText_ =
+        L"FPS: " + std::to_wstring(performance.framesPerSecond);
+    updatesPerSecondText_ =
+        L"UPS: " + std::to_wstring(performance.updatesPerSecond);
+}
+
+void ColoredCubeGame::SubmitPerformanceLine(
+    mrg::graphics::TextRenderSystem& textRendering,
+    const std::wstring_view text,
+    const mrg::graphics::FontHandle& font,
+    const float fontSizePixels,
+    const DirectX::XMFLOAT4& color,
+    const float layoutX,
+    const float layoutY,
+    const float layoutWidth,
+    const float lineHeight)
+{
+    mrg::graphics::TextDrawCommand command;
+    command.positionPixels = {layoutX, layoutY};
+    command.layoutSizePixels = {layoutWidth, lineHeight};
+    command.horizontalAlignment =
+        mrg::graphics::TextHorizontalAlignment::Trailing;
+    command.verticalAlignment =
+        mrg::graphics::TextVerticalAlignment::Center;
+    command.style.font = font;
+    command.style.fontSizePixels = fontSizePixels;
+
+    // A small shadow keeps the Client-selected colors legible over bright
+    // and textured Scene content.
+    command.positionPixels.x += 1.5F;
+    command.positionPixels.y += 1.5F;
+    command.style.color = {0.0F, 0.0F, 0.0F, 0.65F};
+    textRendering.Submit(text, command);
+
+    command.positionPixels.x -= 1.5F;
+    command.positionPixels.y -= 1.5F;
+    command.style.color = color;
+    textRendering.Submit(text, command);
 }
