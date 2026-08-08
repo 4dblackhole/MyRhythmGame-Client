@@ -47,9 +47,13 @@ This file applies to the entire repository except the independently versioned
   `git submodule sync --recursive` and `git submodule update --init
   --recursive`, and verify that both repositories are on the intended latest
   commits before declaring the task complete.
+- After validation succeeds, publish the task branch, create or update its PR,
+  mark it ready, and merge it into `main` as part of the normal completion
+  workflow. For combined changes, merge the engine first, update the Client
+  gitlink to the resulting engine `main` commit, and only then merge the Client.
 - Never claim that `main` is current while a required PR remains open. Do not
-  merge a PR or otherwise change remote `main` without explicit authorization;
-  report that remaining integration step instead.
+  bypass failed checks, merge conflicts, or branch protection; report such a
+  blocker instead. Preserve unrelated working-tree files while synchronizing.
 
 ## Verification
 
