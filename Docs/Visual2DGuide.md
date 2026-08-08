@@ -156,9 +156,9 @@ inputRouter_.Process(*canvas_, pointer);
 table에서 texture index로 선택되므로 크기를 강제로 맞출 필요가 없다.
 
 ```cpp
-const auto normal = visualRenderer_.LoadImage(
+const auto normal = services.visual2DRendering.LoadImage(
     RuntimeAssetPath(L"Images\\ButtonNormal.png"));
-const auto hover = visualRenderer_.LoadImage(
+const auto hover = services.visual2DRendering.LoadImage(
     RuntimeAssetPath(L"Images\\ButtonHover.png"));
 
 mrg::visual2d::VisualStyle style{};
@@ -188,8 +188,8 @@ context를 뚫고 나가지 않는다.
 서로 다른 Canvas는 `SubmitScreen`의 `canvasZOrder`로 순서를 정한다.
 
 ```cpp
-visualRenderer_.SubmitScreen(optionsCanvas, context, {}, 0);
-visualRenderer_.SubmitScreen(audioCanvas, context, {}, 1); // 전체가 더 앞
+context.visual2DRendering->SubmitScreen(optionsCanvas, context, {}, 0);
+context.visual2DRendering->SubmitScreen(audioCanvas, context, {}, 1); // 전체가 더 앞
 ```
 
 ## 평면과 곡면 표시

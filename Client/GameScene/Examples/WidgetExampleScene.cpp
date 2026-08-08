@@ -32,7 +32,6 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
 {
     width_ = services.windowWidth;
     height_ = services.windowHeight;
-    uiRenderer_.Initialize(services.meshRendering, services.textRendering);
     canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
     canvas_->SetViewportSize(
         {static_cast<float>(width_), static_cast<float>(height_)});
@@ -296,7 +295,7 @@ void WidgetExampleScene::Render(
 {
     if (canvas_ != nullptr)
     {
-        uiRenderer_.SubmitScreen(*canvas_, context);
+        context.visual2DRendering->SubmitScreen(*canvas_, context);
     }
 }
 
@@ -321,7 +320,6 @@ void WidgetExampleScene::Shutdown() noexcept
     }
     dynamicWidgetIds_.clear();
     canvas_.reset();
-    uiRenderer_.Shutdown();
 }
 
 std::int64_t WidgetExampleScene::LatestPointerTimestamp(
