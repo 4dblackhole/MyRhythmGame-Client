@@ -34,6 +34,23 @@ This file applies to the entire repository except the independently versioned
   intent and required ordering; do not add comments that merely restate an
   obvious statement.
 
+## Repository synchronization
+
+- Treat synchronization as part of every completed engine/Client task. Fetch
+  both repositories, verify the local work branch matches its upstream, and
+  report exact commit IDs when handing work back.
+- When the engine commit changes, first make that commit available on the
+  engine remote, then update and commit the `Dependencies/MRG-Engine` gitlink.
+  Verify that `git ls-files -s Dependencies/MRG-Engine` and
+  `git -C Dependencies/MRG-Engine rev-parse HEAD` name the same commit.
+- After approved PRs are merged, fast-forward the Client `main`, run
+  `git submodule sync --recursive` and `git submodule update --init
+  --recursive`, and verify that both repositories are on the intended latest
+  commits before declaring the task complete.
+- Never claim that `main` is current while a required PR remains open. Do not
+  merge a PR or otherwise change remote `main` without explicit authorization;
+  report that remaining integration step instead.
+
 ## Verification
 
 After changes, initialize the submodule and rebuild
