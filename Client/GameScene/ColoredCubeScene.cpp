@@ -417,7 +417,7 @@ void ColoredCubeScene::Render(
         context.visual2DRendering->SubmitScreen(
             *audioOptionsUi_,
             context,
-            {},
+            AudioPanelScreenOrigin(),
             AudioCanvasZOrder);
     }
 }
@@ -436,11 +436,6 @@ void ColoredCubeScene::OnResize(
                 ? static_cast<float>(width_) /
                     static_cast<float>(height_)
                 : 1.0F);
-    }
-    if (audioOptionsUi_ != nullptr && width_ > 0 && height_ > 0)
-    {
-        audioOptionsUi_->SetViewportSize(
-            {static_cast<float>(width_), static_cast<float>(height_)});
     }
 }
 
@@ -680,9 +675,12 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     audioSystem_ = &services.audio;
     const auto& initialDrivers = services.audio.OutputDrivers();
     audioDevices_.assign(initialDrivers.begin(), initialDrivers.end());
-    audioOptionsUi_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
-    audioOptionsUi_->SetViewportSize(
-        {static_cast<float>(width_), static_cast<float>(height_)});
+    // This Canvas owns only the panel's logical area. Screen placement and
+    // slide animation are supplied as the Canvas origin during rendering and
+    // pointer mapping, keeping its internal tree independent of the viewport.
+    audioOptionsUi_ = std::make_unique<mrg::visual2d::Visual2DCanvas>(
+        AudioPanelSize,
+        mrg::visual2d::CanvasScaleMode::Fixed);
 
     // Widget2 is the readable dark base. Widget1 is a light, decorative
     // highlight layer so both user-provided frames can share one panel without
@@ -708,11 +706,10 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
         {0.020F, 0.035F, 0.090F, 0.84F});
 
     auto& panel = audioOptionsUi_->CreateNode(
-        mrg::visual2d::Anchor::MiddleLeft,
+        mrg::visual2d::Anchor::TopLeft,
         "AudioOptions.Panel");
     panel.SetBounds(
-        {audioPanelX_, 0.0F, AudioPanelSize.width, AudioPanelSize.height});
-    audioPanelId_ = panel.Id();
+        {0.0F, 0.0F, AudioPanelSize.width, AudioPanelSize.height});
     mrg::visual2d::VisualStyle panelStyle{};
     panelStyle.normal = {1.0F, 1.0F, 1.0F, 1.0F};
     panelStyle.hovered = panelStyle.normal;
@@ -914,9 +911,8 @@ bool ColoredCubeScene::UpdateAudioOptionsUi(
     audioUiInput_.Process(*audioOptionsUi_, pointer);
     ApplyAudioUiActions();
 
-    // MapScreenPointer covers the entire full-screen Canvas, not just the
-    // sliding panel. Only an actual Visual2D hit/capture may block the options
-    // Canvas and camera that are rendered behind it.
+    // Only an actual node hit/capture in this panel-sized Canvas may block the
+    // options Canvas and camera rendered behind it.
     return hadPointerCapture ||
         audioUiInput_.HoveredNode() != 0 ||
         audioUiInput_.CapturedNode() != 0;
@@ -946,14 +942,9 @@ void ColoredCubeScene::UpdateAudioPanelMotion(
         return;
     }
 
-    if (mrg::visual2d::Visual2DNode* panel =
-            audioOptionsUi_->FindNode(audioPanelId_))
-    {
-        panel->SetPosition({audioPanelX_, 0.0F});
-        // The pointer may be stationary while the animated panel moves under
-        // it. Refresh the cached hit only on frames that changed geometry.
-        audioUiInput_.InvalidateHitTest();
-    }
+    // The Canvas origin moved under a potentially stationary pointer, so the
+    // cached hover must be refreshed even though no node transform changed.
+    audioUiInput_.InvalidateHitTest();
 }
 
 void ColoredCubeScene::TryPlayPopSound(mrg::audio::AudioSystem& audio)
@@ -987,22 +978,30 @@ std::optional<mrg::visual2d::Point> ColoredCubeScene::MapAudioPanelPointer(
             static_cast<float>(input.MousePositionX()),
             static_cast<float>(input.MousePositionY())},
         {static_cast<float>(width_), static_cast<float>(height_)},
-        *audioOptionsUi_);
+        *audioOptionsUi_,
+        AudioPanelScreenOrigin());
     if (!canvasPointer.has_value() || audioUiInput_.CapturedNode() != 0)
     {
         return canvasPointer;
     }
 
-    // The current popup remains inside the audio panel. Reject the rest of
-    // the full-screen Canvas before recursive hit testing, especially while
-    // the closed panel is completely off-screen.
-    const mrg::visual2d::Visual2DNode* panel =
-        audioOptionsUi_->FindNode(audioPanelId_);
-    if (panel == nullptr || !panel->BoundsInCanvas().Contains(*canvasPointer))
+    // Preserve out-of-panel positions only while a control owns pointer
+    // capture; otherwise this minimal Canvas must not intercept the scene.
+    if (canvasPointer->x < 0.0F || canvasPointer->y < 0.0F ||
+        canvasPointer->x > AudioPanelSize.width ||
+        canvasPointer->y > AudioPanelSize.height)
     {
         return std::nullopt;
     }
     return canvasPointer;
+}
+
+mrg::visual2d::Point ColoredCubeScene::AudioPanelScreenOrigin()
+    const noexcept
+{
+    return {
+        audioPanelX_,
+        (static_cast<float>(height_) - AudioPanelSize.height) * 0.5F};
 }
 
 void ColoredCubeScene::RefreshAudioDeviceChoices()

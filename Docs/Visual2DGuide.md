@@ -41,6 +41,23 @@ badge.AddComponent<mrg::visual2d::SpriteVisualComponent>();
 창 크기가 바뀔 때마다 `SetViewportSize`를 호출한다. 앵커 Transform이 새 논리 폭과
 높이에 맞춰 갱신되므로 각 모서리·변 중앙·화면 중앙 기준 배치가 유지된다.
 
+Canvas가 반드시 전체 화면일 필요는 없다. 독립 패널은 필요한 최소 논리 크기로
+`Fixed` Canvas를 만들고, 화면 배치는 `SubmitScreen`과 `MapScreenPointer`에 같은
+원점을 전달한다. 이 경우 패널 내부 노드 좌표는 열림/닫힘 애니메이션과 무관하게
+유지된다.
+
+```cpp
+mrg::visual2d::Visual2DCanvas panelCanvas(
+    {480.0F, 340.0F},
+    mrg::visual2d::CanvasScaleMode::Fixed);
+mrg::visual2d::Point panelOrigin{panelX, panelY};
+
+context.visual2DRendering->SubmitScreen(
+    panelCanvas, context, panelOrigin, 1);
+const auto localPointer = mrg::visual2d::MapScreenPointer(
+    mousePosition, viewportSize, panelCanvas, panelOrigin);
+```
+
 ## Sprite와 동작 컴포넌트
 
 아무 동작이 없는 Sprite는 시각 컴포넌트 하나만 가진다.
@@ -186,6 +203,9 @@ apply.GetComponent<mrg::visual2d::SpriteVisualComponent>()->SetStyle(style);
 context를 뚫고 나가지 않는다.
 
 서로 다른 Canvas는 `SubmitScreen`의 `canvasZOrder`로 순서를 정한다.
+렌더러는 먼저 Canvas별 depth band를 고르고, 그 band 안에서만 해당 Canvas 트리의
+paint order를 배치한다. 따라서 뒤쪽 Canvas의 자식이 아무리 높은 `ZIndex`를 가져도
+앞쪽 Canvas 위로 넘어오지 않는다.
 
 ```cpp
 context.visual2DRendering->SubmitScreen(optionsCanvas, context, {}, 0);
@@ -202,6 +222,9 @@ context.visual2DRendering->SubmitScreen(audioCanvas, context, {}, 1); // 전체�
 `MeshUvVisual2DSurface`가 world ray 충돌점의 UV를 반환하고,
 `WorldSpaceVisual2DCanvas::MapPointer`가 이를 Canvas 좌표로 바꾼다. 따라서
 회전된 평면과 UV가 있는 곡면에서도 같은 입력 라우터와 동작 컴포넌트를 쓴다.
+메시 Surface는 생성 시 로컬 공간 BVH를 한 번 만들며, 포인터 ray마다 모든
+삼각형을 선형 검사하지 않는다. BVH는 임의의 곡면 삼각형 메시를 다루므로 평면에
+한정되는 QuadTree보다 이 경로에 적합하고, Raycast 중 추가 할당도 하지 않는다.
 
 ## 프레임 처리
 
