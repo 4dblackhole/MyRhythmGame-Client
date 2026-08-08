@@ -936,14 +936,23 @@ void ColoredCubeScene::UpdateAudioPanelMotion(
         : -AudioPanelSize.width - 2.0F;
     const float maximumStep =
         1150.0F * static_cast<float>(context.deltaSeconds);
+    const float previousPanelX = audioPanelX_;
     audioPanelX_ += std::clamp(
         targetX - audioPanelX_,
         -maximumStep,
         maximumStep);
+    if (audioPanelX_ == previousPanelX)
+    {
+        return;
+    }
+
     if (mrg::visual2d::Visual2DNode* panel =
             audioOptionsUi_->FindNode(audioPanelId_))
     {
         panel->SetPosition({audioPanelX_, 0.0F});
+        // The pointer may be stationary while the animated panel moves under
+        // it. Refresh the cached hit only on frames that changed geometry.
+        audioUiInput_.InvalidateHitTest();
     }
 }
 
@@ -972,12 +981,28 @@ std::optional<mrg::visual2d::Point> ColoredCubeScene::MapAudioPanelPointer(
     {
         return std::nullopt;
     }
-    return mrg::visual2d::MapScreenPointer(
+    const std::optional<mrg::visual2d::Point> canvasPointer =
+        mrg::visual2d::MapScreenPointer(
         {
             static_cast<float>(input.MousePositionX()),
             static_cast<float>(input.MousePositionY())},
         {static_cast<float>(width_), static_cast<float>(height_)},
         *audioOptionsUi_);
+    if (!canvasPointer.has_value() || audioUiInput_.CapturedNode() != 0)
+    {
+        return canvasPointer;
+    }
+
+    // The current popup remains inside the audio panel. Reject the rest of
+    // the full-screen Canvas before recursive hit testing, especially while
+    // the closed panel is completely off-screen.
+    const mrg::visual2d::Visual2DNode* panel =
+        audioOptionsUi_->FindNode(audioPanelId_);
+    if (panel == nullptr || !panel->BoundsInCanvas().Contains(*canvasPointer))
+    {
+        return std::nullopt;
+    }
+    return canvasPointer;
 }
 
 void ColoredCubeScene::RefreshAudioDeviceChoices()
