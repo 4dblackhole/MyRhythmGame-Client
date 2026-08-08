@@ -70,7 +70,7 @@ int WINAPI wWinMain(
     // The hidden smoke-test path uses the identical initialization and frame
     // loop, but asks the Client configuration to exit after three renders.
     // The overlay option exists for visual regression capture; normal runs
-    // still start hidden and let Raw Input F1 toggle the display.
+    // start hidden and ColoredCubeGame handles the Raw Input F1 toggle.
     return mrg::Run(std::make_unique<ColoredCubeGame>(
         smokeTest,
         showPerformanceOverlay,
