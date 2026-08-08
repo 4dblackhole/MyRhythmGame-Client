@@ -39,7 +39,9 @@
 - device: `ComboBoxBehaviorComponent`
 - 입력 대상: `RectangleCollider2DComponent` + 동작 컴포넌트
 
-`Widget1.png`, `Widget2.png`는 `D3D12Visual2DRenderer::LoadImage`로 로드된다.
+`Widget1.png`, `Widget2.png`는 엔진 소유
+`EngineServices::visual2DRendering.LoadImage`로 로드된다. Scene은 렌더러를
+생성하거나 종료하지 않고 Canvas와 이미지 핸들만 소유한다.
 두 PNG 크기가 달라도 독립 Texture2D와 하나의 descriptor table을 사용한다.
 장식용 하이라이트에는 충돌/입력 컴포넌트가 없으므로 조작을 가로막지 않는다.
 

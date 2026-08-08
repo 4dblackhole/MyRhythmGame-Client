@@ -57,10 +57,12 @@ private:
     std::array<mrg::scene::MeshInstance, 4> cubes_;
     std::array<DirectX::XMFLOAT3, 4> initialRotations_{};
     std::array<DirectX::XMFLOAT3, 4> angularVelocities_{};
-    mrg::graphics::D3D12Visual2DRenderer uiRenderer_;
     std::unique_ptr<mrg::visual2d::WorldSpaceVisual2DCanvas> optionsUi_;
     mrg::visual2d::Visual2DInputRouter uiInput_;
     mrg::graphics::RenderTargetTextureHandle optionsCanvasTexture_;
+    // Hidden smoke tests render the same Canvas into a second target to
+    // validate multiple Visual2D texture passes in one engine frame.
+    mrg::graphics::RenderTargetTextureHandle visual2DValidationTexture_;
     mrg::scene::MeshInstance curvedOptionsSurface_;
     DirectX::XMFLOAT4X4 uiSurfaceWorld_{};
     mrg::visual2d::NodeId rotationToggleId_{};
@@ -70,6 +72,7 @@ private:
     float rotationSpeedScale_{1.0F};
     bool rotationEnabled_{true};
     bool worldSpaceUi_{};
+    bool validateMultipleVisual2DPasses_{};
 
     std::unique_ptr<mrg::visual2d::Visual2DCanvas> audioOptionsUi_;
     mrg::visual2d::Visual2DInputRouter audioUiInput_;

@@ -36,7 +36,6 @@ private:
     std::uint32_t height_{720};
     std::unique_ptr<mrg::visual2d::Visual2DCanvas> canvas_;
     mrg::visual2d::Visual2DInputRouter inputRouter_;
-    mrg::graphics::D3D12Visual2DRenderer uiRenderer_;
     mrg::visual2d::NodeId dynamicContainerId_{};
     mrg::visual2d::NodeId addButtonId_{};
     mrg::visual2d::NodeId removeButtonId_{};

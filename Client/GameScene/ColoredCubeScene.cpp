@@ -208,7 +208,8 @@ namespace
 
 ColoredCubeScene::ColoredCubeScene(
     const bool startWithWorldSpaceUi) noexcept
-    : worldSpaceUi_(startWithWorldSpaceUi)
+    : worldSpaceUi_(startWithWorldSpaceUi),
+      validateMultipleVisual2DPasses_(startWithWorldSpaceUi)
 {
 }
 
@@ -385,7 +386,7 @@ void ColoredCubeScene::Render(
 
     if (optionsUi_ != nullptr && !worldSpaceUi_)
     {
-        uiRenderer_.SubmitScreen(
+        context.visual2DRendering->SubmitScreen(
             optionsUi_->Canvas(),
             context,
             {20.0F, 20.0F},
@@ -396,17 +397,24 @@ void ColoredCubeScene::Render(
         // The complete Canvas, including images and DirectWrite glyphs, is
         // first drawn into a texture. The segmented mesh bends that texture;
         // MeshUvVisual2DSurface uses the same UVs for pointer input.
-        uiRenderer_.RenderToTexture(
+        context.visual2DRendering->RenderToTexture(
             optionsUi_->Canvas(),
             optionsCanvasTexture_,
             context);
+        if (visual2DValidationTexture_ != nullptr)
+        {
+            context.visual2DRendering->RenderToTexture(
+                optionsUi_->Canvas(),
+                visual2DValidationTexture_,
+                context);
+        }
         curvedOptionsSurface_.Submit(context, camera_);
     }
 
     if (audioOptionsUi_ != nullptr &&
         audioPanelX_ > -AudioPanelSize.width)
     {
-        uiRenderer_.SubmitScreen(
+        context.visual2DRendering->SubmitScreen(
             *audioOptionsUi_,
             context,
             {},
@@ -445,6 +453,7 @@ void ColoredCubeScene::Shutdown() noexcept
         cube.Reset();
     }
     curvedOptionsSurface_.Reset();
+    visual2DValidationTexture_.reset();
     optionsCanvasTexture_.reset();
     optionsUi_.reset();
     audioOptionsUi_.reset();
@@ -453,14 +462,11 @@ void ColoredCubeScene::Shutdown() noexcept
     // system leaves scope.
     popSound_.reset();
     audioSystem_ = nullptr;
-    uiRenderer_.Shutdown();
 }
 
 void ColoredCubeScene::InitializeOptionsUi(
     const mrg::EngineServices& services)
 {
-    uiRenderer_.Initialize(services.meshRendering, services.textRendering);
-
     XMStoreFloat4x4(
         &uiSurfaceWorld_,
         XMMatrixRotationY(XMConvertToRadians(14.0F)) *
@@ -476,7 +482,13 @@ void ColoredCubeScene::InitializeOptionsUi(
             curvedSurface,
             uiSurfaceWorld_));
 
-    optionsCanvasTexture_ = uiRenderer_.CreateCanvasRenderTarget(960, 630);
+    optionsCanvasTexture_ =
+        services.visual2DRendering.CreateCanvasRenderTarget(960, 630);
+    if (validateMultipleVisual2DPasses_)
+    {
+        visual2DValidationTexture_ =
+            services.visual2DRendering.CreateCanvasRenderTarget(480, 315);
+    }
     const mrg::graphics::GpuMeshHandle surfaceMesh =
         services.meshRendering.CreateMesh<
             mrg::geometry::VertexPositionUvColor>(curvedSurface);
@@ -675,10 +687,12 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     // Widget2 is the readable dark base. Widget1 is a light, decorative
     // highlight layer so both user-provided frames can share one panel without
     // intercepting its controls.
-    const mrg::visual2d::ImageHandle audioPanelBase = uiRenderer_.LoadImage(
-        RuntimeAssetPath(L"images\\Widget2.png"));
-    const mrg::visual2d::ImageHandle audioPanelHighlight = uiRenderer_.LoadImage(
-        RuntimeAssetPath(L"images\\Widget1.png"));
+    const mrg::visual2d::ImageHandle audioPanelBase =
+        services.visual2DRendering.LoadImage(
+            RuntimeAssetPath(L"images\\Widget2.png"));
+    const mrg::visual2d::ImageHandle audioPanelHighlight =
+        services.visual2DRendering.LoadImage(
+            RuntimeAssetPath(L"images\\Widget1.png"));
     const mrg::visual2d::VisualStyle titleStyle = MakeStaticStyle(
         {0.035F, 0.105F, 0.235F, 0.92F});
     const mrg::visual2d::VisualStyle sectionLabelStyle = MakeStaticStyle(
