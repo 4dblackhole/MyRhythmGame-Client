@@ -12,8 +12,20 @@
 
 namespace
 {
-    constexpr mrg::ui::UiSize CanvasSize{520.0F, 360.0F};
+    constexpr mrg::visual2d::Size CanvasSize{520.0F, 360.0F};
     constexpr std::size_t MaximumDynamicWidgets = 6;
+
+    template <typename ComponentType>
+    [[nodiscard]] ComponentType& RequireComponent(
+        mrg::visual2d::Visual2DNode& node)
+    {
+        ComponentType* component = node.GetComponent<ComponentType>();
+        if (component == nullptr)
+        {
+            throw std::logic_error("The Visual2D node is missing a component.");
+        }
+        return *component;
+    }
 }
 
 void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
@@ -21,7 +33,9 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
     width_ = services.windowWidth;
     height_ = services.windowHeight;
     uiRenderer_.Initialize(services.meshRendering, services.textRendering);
-    canvas_ = std::make_unique<mrg::ui::UiCanvas>(CanvasSize);
+    canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
+    canvas_->SetViewportSize(
+        {static_cast<float>(width_), static_cast<float>(height_)});
     BuildCanvas();
 
     // Begin with one runtime-created widget so the mutable child region is
@@ -31,53 +45,68 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
 
 void WidgetExampleScene::BuildCanvas()
 {
-    auto& panel = canvas_->Root().EmplaceChild<mrg::ui::UiPanel>();
+    auto& panel = canvas_->CreateNode(
+        mrg::visual2d::Anchor::Center,
+        "WidgetExample.Panel");
     panel.SetBounds({0.0F, 0.0F, CanvasSize.width, CanvasSize.height});
-    panel.SetStyle({
+    panel.AddComponent<mrg::visual2d::SpriteVisualComponent>().SetStyle({
         {0.045F, 0.065F, 0.11F, 0.96F},
         {0.055F, 0.080F, 0.13F, 0.96F},
         {0.035F, 0.050F, 0.09F, 0.96F},
         {0.045F, 0.065F, 0.11F, 0.70F}});
 
-    auto& title = panel.EmplaceChild<mrg::ui::UiLabel>(
-        L"3  RUNTIME WIDGET OWNERSHIP");
-    title.SetBounds({20.0F, 12.0F, 480.0F, 36.0F});
-    title.SetFontSize(23.0F);
-    title.SetTextColor({0.52F, 0.84F, 1.0F, 1.0F});
+    auto& title = mrg::visual2d::CreateLabel(
+        panel,
+        {20.0F, 12.0F, 480.0F, 36.0F},
+        L"3  RUNTIME COMPONENT WIDGETS");
+    auto& titleText = RequireComponent<mrg::visual2d::TextVisualComponent>(title);
+    titleText.SetFontSize(23.0F);
+    titleText.SetTextColor({0.52F, 0.84F, 1.0F, 1.0F});
 
-    auto& addButton = panel.EmplaceChild<mrg::ui::UiButton>(
+    auto& addButton = mrg::visual2d::CreateButton(
+        panel,
+        {20.0F, 56.0F, 232.0F, 46.0F},
         L"ADD WIDGET  [A]");
-    addButton.SetBounds({20.0F, 56.0F, 232.0F, 46.0F});
-    addButton.SetFontSize(17.0F);
+    RequireComponent<mrg::visual2d::TextVisualComponent>(addButton).
+        SetFontSize(17.0F);
     addButtonId_ = addButton.Id();
 
-    auto& removeButton = panel.EmplaceChild<mrg::ui::UiButton>(
+    auto& removeButton = mrg::visual2d::CreateButton(
+        panel,
+        {268.0F, 56.0F, 232.0F, 46.0F},
         L"REMOVE LAST  [D]");
-    removeButton.SetBounds({268.0F, 56.0F, 232.0F, 46.0F});
-    removeButton.SetFontSize(17.0F);
+    RequireComponent<mrg::visual2d::TextVisualComponent>(removeButton).
+        SetFontSize(17.0F);
     removeButtonId_ = removeButton.Id();
 
-    auto& dynamicContainer = panel.EmplaceChild<mrg::ui::UiPanel>();
-    dynamicContainer.SetBounds({20.0F, 118.0F, 480.0F, 150.0F});
-    dynamicContainer.SetStyle({
+    auto& dynamicContainer = mrg::visual2d::CreatePanel(
+        panel,
+        {20.0F, 118.0F, 480.0F, 150.0F},
+        "DynamicWidgetContainer");
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(dynamicContainer).
+        SetStyle({
         {0.08F, 0.10F, 0.16F, 0.95F},
         {0.08F, 0.10F, 0.16F, 0.95F},
         {0.08F, 0.10F, 0.16F, 0.95F},
         {0.08F, 0.10F, 0.16F, 0.65F}});
     dynamicContainerId_ = dynamicContainer.Id();
 
-    auto& status = panel.EmplaceChild<mrg::ui::UiLabel>(
-        L"Canvas owns widgets through unique_ptr children.");
-    status.SetBounds({20.0F, 280.0F, 480.0F, 32.0F});
-    status.SetFontSize(16.0F);
-    status.SetTextColor({0.64F, 1.0F, 0.72F, 1.0F});
+    auto& status = mrg::visual2d::CreateLabel(
+        panel,
+        {20.0F, 280.0F, 480.0F, 32.0F},
+        L"Canvas owns nodes; behavior is attached as components.");
+    auto& statusText = RequireComponent<mrg::visual2d::TextVisualComponent>(status);
+    statusText.SetFontSize(16.0F);
+    statusText.SetTextColor({0.64F, 1.0F, 0.72F, 1.0F});
     statusLabelId_ = status.Id();
 
-    auto& hint = panel.EmplaceChild<mrg::ui::UiLabel>(
+    auto& hint = mrg::visual2d::CreateLabel(
+        panel,
+        {20.0F, 318.0F, 480.0F, 28.0F},
         L"CLICK A DYNAMIC WIDGET   |   SPACE: BACK");
-    hint.SetBounds({20.0F, 318.0F, 480.0F, 28.0F});
-    hint.SetFontSize(15.0F);
-    hint.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+    auto& hintText = RequireComponent<mrg::visual2d::TextVisualComponent>(hint);
+    hintText.SetFontSize(15.0F);
+    hintText.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
 }
 
 void WidgetExampleScene::Update(
@@ -99,6 +128,7 @@ void WidgetExampleScene::Update(
         return;
     }
 
+    canvas_->Update(context.deltaSeconds);
     ProcessPointer(context.input);
     if (context.input.WasKeyPressed(static_cast<std::uint16_t>('A')))
     {
@@ -113,19 +143,18 @@ void WidgetExampleScene::Update(
 void WidgetExampleScene::ProcessPointer(
     const mrg::platform::InputState& input)
 {
-    const std::optional<mrg::ui::UiPoint> canvasPointer =
+    const std::optional<mrg::visual2d::Point> canvasPointer =
         input.IsMouseInsideWindow()
-            ? mrg::ui::MapScreenPointer(
+            ? mrg::visual2d::MapScreenPointer(
                   {static_cast<float>(input.MousePositionX()),
                    static_cast<float>(input.MousePositionY())},
                   {static_cast<float>(width_), static_cast<float>(height_)},
-                  CanvasSize,
-                  CanvasOrigin())
+                  *canvas_)
             : std::nullopt;
 
-    mrg::ui::UiPointerInput pointer{};
+    mrg::visual2d::PointerInput pointer{};
     pointer.available = canvasPointer.has_value();
-    pointer.position = canvasPointer.value_or(mrg::ui::UiPoint{});
+    pointer.position = canvasPointer.value_or(mrg::visual2d::Point{});
     pointer.leftButtonDown = input.IsMouseButtonDown(
         mrg::platform::MouseButton::Left);
     pointer.leftButtonPressed = input.WasMouseButtonPressed(
@@ -139,9 +168,9 @@ void WidgetExampleScene::ProcessPointer(
 
 void WidgetExampleScene::ApplyUiActions()
 {
-    for (const mrg::ui::UiAction& action : canvas_->TakeActions())
+    for (const mrg::visual2d::Action& action : canvas_->TakeActions())
     {
-        if (action.type != mrg::ui::UiActionType::Clicked)
+        if (action.type != mrg::visual2d::ActionType::Clicked)
         {
             continue;
         }
@@ -179,24 +208,24 @@ void WidgetExampleScene::AddDynamicWidget()
         return;
     }
 
-    auto* container = dynamic_cast<mrg::ui::UiPanel*>(
-        canvas_->FindElement(dynamicContainerId_));
+    auto* container = canvas_->FindNode(dynamicContainerId_);
     if (container == nullptr)
     {
         throw std::runtime_error("The dynamic widget container is missing.");
     }
 
-    // EmplaceChild transfers ownership to the retained UI tree. Only the
-    // stable ID is retained by the Scene because vector growth and deletion
-    // make long-lived raw child pointers unnecessary.
+    // The Canvas owns the node while the button behavior remains a removable
+    // component. Only a stable ID is retained across later mutations.
     const std::size_t slot = dynamicWidgetIds_.size();
-    auto& widget = container->EmplaceChild<mrg::ui::UiButton>(
-        L"DYNAMIC WIDGET #" + std::to_wstring(nextWidgetNumber_++));
     const float x = slot % 2 == 0 ? 8.0F : 244.0F;
     const float y = static_cast<float>(slot / 2) * 48.0F + 6.0F;
-    widget.SetBounds({x, y, 228.0F, 40.0F});
-    widget.SetFontSize(15.0F);
-    widget.SetStyle({
+    auto& widget = mrg::visual2d::CreateButton(
+        *container,
+        {x, y, 228.0F, 40.0F},
+        L"DYNAMIC WIDGET #" + std::to_wstring(nextWidgetNumber_++));
+    RequireComponent<mrg::visual2d::TextVisualComponent>(widget).
+        SetFontSize(15.0F);
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(widget).SetStyle({
         {0.18F, 0.28F, 0.52F, 1.0F},
         {0.26F, 0.42F, 0.72F, 1.0F},
         {0.10F, 0.18F, 0.38F, 1.0F},
@@ -217,8 +246,7 @@ void WidgetExampleScene::RemoveLastDynamicWidget()
         return;
     }
 
-    auto* container = dynamic_cast<mrg::ui::UiPanel*>(
-        canvas_->FindElement(dynamicContainerId_));
+    auto* container = canvas_->FindNode(dynamicContainerId_);
     if (container == nullptr)
     {
         throw std::runtime_error("The dynamic widget container is missing.");
@@ -227,7 +255,7 @@ void WidgetExampleScene::RemoveLastDynamicWidget()
     // Reset first so the input router cannot retain hover/capture state for a
     // child that RemoveChild is about to destroy.
     inputRouter_.Reset(*canvas_);
-    const mrg::ui::UiElementId removedId = dynamicWidgetIds_.back();
+    const mrg::visual2d::NodeId removedId = dynamicWidgetIds_.back();
     if (!container->RemoveChild(removedId))
     {
         throw std::runtime_error("Failed to remove the dynamic UI child.");
@@ -242,11 +270,11 @@ void WidgetExampleScene::RemoveLastDynamicWidget()
 
 void WidgetExampleScene::RefreshControlState()
 {
-    if (mrg::ui::UiElement* add = canvas_->FindElement(addButtonId_))
+    if (mrg::visual2d::Visual2DNode* add = canvas_->FindNode(addButtonId_))
     {
         add->SetEnabled(dynamicWidgetIds_.size() < MaximumDynamicWidgets);
     }
-    if (mrg::ui::UiElement* remove = canvas_->FindElement(removeButtonId_))
+    if (mrg::visual2d::Visual2DNode* remove = canvas_->FindNode(removeButtonId_))
     {
         remove->SetEnabled(!dynamicWidgetIds_.empty());
     }
@@ -254,10 +282,12 @@ void WidgetExampleScene::RefreshControlState()
 
 void WidgetExampleScene::SetStatus(std::wstring text)
 {
-    if (auto* label = dynamic_cast<mrg::ui::UiLabel*>(
-            canvas_->FindElement(statusLabelId_)))
+    if (mrg::visual2d::Visual2DNode* node = canvas_->FindNode(statusLabelId_))
     {
-        label->SetText(std::move(text));
+        if (auto* label = node->GetComponent<mrg::visual2d::TextVisualComponent>())
+        {
+            label->SetText(std::move(text));
+        }
     }
 }
 
@@ -266,7 +296,7 @@ void WidgetExampleScene::Render(
 {
     if (canvas_ != nullptr)
     {
-        uiRenderer_.SubmitScreen(*canvas_, context, CanvasOrigin());
+        uiRenderer_.SubmitScreen(*canvas_, context);
     }
 }
 
@@ -276,6 +306,11 @@ void WidgetExampleScene::OnResize(
 {
     width_ = width;
     height_ = height;
+    if (canvas_ != nullptr && width_ > 0 && height_ > 0)
+    {
+        canvas_->SetViewportSize(
+            {static_cast<float>(width_), static_cast<float>(height_)});
+    }
 }
 
 void WidgetExampleScene::Shutdown() noexcept
@@ -287,13 +322,6 @@ void WidgetExampleScene::Shutdown() noexcept
     dynamicWidgetIds_.clear();
     canvas_.reset();
     uiRenderer_.Shutdown();
-}
-
-mrg::ui::UiPoint WidgetExampleScene::CanvasOrigin() const noexcept
-{
-    return {
-        std::max(20.0F, (static_cast<float>(width_) - CanvasSize.width) * 0.5F),
-        std::max(92.0F, (static_cast<float>(height_) - CanvasSize.height) * 0.5F)};
 }
 
 std::int64_t WidgetExampleScene::LatestPointerTimestamp(

@@ -88,6 +88,12 @@
     <None Include="Assets\bwhc.png">
       <AssetTargetPath>bwhc.png</AssetTargetPath>
     </None>
+    <None Include="Assets\Images\Widget1.png">
+      <AssetTargetPath>images\Widget1.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\Images\Widget2.png">
+      <AssetTargetPath>images\Widget2.png</AssetTargetPath>
+    </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <AssetTargetPath>fonts\PressStart2P-Regular.ttf</AssetTargetPath>
     </None>
@@ -118,6 +124,7 @@
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
+    <MakeDir Directories="$(OutDir)assets\images" />
     <MakeDir Directories="$(OutDir)assets\fonts" />
     <MakeDir Directories="$(OutDir)assets\sounds" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />

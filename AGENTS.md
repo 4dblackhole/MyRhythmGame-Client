@@ -24,14 +24,32 @@ This file applies to the entire repository except the independently versioned
 - Preserve timestamped Raw Input events for future rhythm judgement.
 - Keep Client `.vcxproj.filters` paths synchronized with physical directories.
 - Bundle each redistributed font license beside the font asset.
-- Keep game option behavior in Client code. Use engine `UiCanvas` actions and
-  surface mapping rather than adding game-specific widgets to the engine.
+- Keep game option behavior in Client code. Compose it from engine
+  `Visual2DNode` components, Canvas actions, and surface mapping rather than
+  adding game-specific widget classes to the engine.
 - Keep functions readable as they grow. If a function performs multiple
   operations, extract each operation into a clearly named helper/private
   function. If a long function still represents one cohesive operation, add
   short section comments at each meaningful phase boundary to explain the
   intent and required ordering; do not add comments that merely restate an
   obvious statement.
+
+## Repository synchronization
+
+- Treat synchronization as part of every completed engine/Client task. Fetch
+  both repositories, verify the local work branch matches its upstream, and
+  report exact commit IDs when handing work back.
+- When the engine commit changes, first make that commit available on the
+  engine remote, then update and commit the `Dependencies/MRG-Engine` gitlink.
+  Verify that `git ls-files -s Dependencies/MRG-Engine` and
+  `git -C Dependencies/MRG-Engine rev-parse HEAD` name the same commit.
+- After approved PRs are merged, fast-forward the Client `main`, run
+  `git submodule sync --recursive` and `git submodule update --init
+  --recursive`, and verify that both repositories are on the intended latest
+  commits before declaring the task complete.
+- Never claim that `main` is current while a required PR remains open. Do not
+  merge a PR or otherwise change remote `main` without explicit authorization;
+  report that remaining integration step instead.
 
 ## Verification
 

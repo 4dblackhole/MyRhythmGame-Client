@@ -19,6 +19,9 @@
     <Filter Include="Assets\Fonts">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555554}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Images">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555558}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Assets\Sounds">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
     </Filter>
@@ -75,6 +78,12 @@
     </None>
     <None Include="Assets\bwhc.png">
       <Filter>Assets</Filter>
+    </None>
+    <None Include="Assets\Images\Widget1.png">
+      <Filter>Assets\Images</Filter>
+    </None>
+    <None Include="Assets\Images\Widget2.png">
+      <Filter>Assets\Images</Filter>
     </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <Filter>Assets\Fonts</Filter>

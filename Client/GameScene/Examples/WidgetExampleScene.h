@@ -29,19 +29,18 @@ private:
     void RemoveLastDynamicWidget();
     void RefreshControlState();
     void SetStatus(std::wstring text);
-    [[nodiscard]] mrg::ui::UiPoint CanvasOrigin() const noexcept;
     [[nodiscard]] std::int64_t LatestPointerTimestamp(
         const mrg::platform::InputState& input) const noexcept;
 
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
-    std::unique_ptr<mrg::ui::UiCanvas> canvas_;
-    mrg::ui::UiInputRouter inputRouter_;
-    mrg::graphics::D3D12UiRenderer uiRenderer_;
-    mrg::ui::UiElementId dynamicContainerId_{};
-    mrg::ui::UiElementId addButtonId_{};
-    mrg::ui::UiElementId removeButtonId_{};
-    mrg::ui::UiElementId statusLabelId_{};
-    std::vector<mrg::ui::UiElementId> dynamicWidgetIds_;
+    std::unique_ptr<mrg::visual2d::Visual2DCanvas> canvas_;
+    mrg::visual2d::Visual2DInputRouter inputRouter_;
+    mrg::graphics::D3D12Visual2DRenderer uiRenderer_;
+    mrg::visual2d::NodeId dynamicContainerId_{};
+    mrg::visual2d::NodeId addButtonId_{};
+    mrg::visual2d::NodeId removeButtonId_{};
+    mrg::visual2d::NodeId statusLabelId_{};
+    std::vector<mrg::visual2d::NodeId> dynamicWidgetIds_;
     std::uint32_t nextWidgetNumber_{1};
 };

@@ -48,7 +48,7 @@ wWinMain
 └─ std::make_unique<ColoredCubeGame>(smokeTest)
    └─ mrg::Run(client)
       ├─ client->GetEngineConfig()
-      ├─ ComApartment: CoInitializeEx(COINIT_MULTITHREADED)
+      ├─ ComApartment: CoInitializeEx(COINIT_APARTMENTTHREADED)
       ├─ HighResolutionClock: QPC 주파수와 시작 counter 기록
       ├─ Win32Window::Initialize(..., InputState)
       │  ├─ 윈도우 클래스 등록 및 HWND 생성
@@ -86,8 +86,8 @@ wWinMain
                │  ├─ 공통 textured MaterialInstance를 한 번 생성
                │  ├─ 같은 mesh/material을 무작위 Transform의 MeshInstance 네 개에 연결
                │  ├─ 옵션 Canvas용 render target과 CurvedRectangleShape를 생성
-               │  ├─ 감지된 WASAPI/ASIO 장치로 오디오 패널을 구성
-               │  └─ assets/sounds/pop.wav를 AudioSystem에 등록
+               │  ├─ 현재 FMOD output의 driver snapshot과 DSP buffer 길이로 오디오 패널을 구성
+               │  └─ assets/sounds/pop.wav를 Client 소유 AudioClip으로 생성
                ├─ ColoredCubeScene::BeginScene
                └─ ColoredCubeScene::OnResize
 ```
@@ -107,10 +107,10 @@ wWinMain
 | 플랫폼 | `Win32Window`, `InputState` | HWND, 메시지 펌프, Raw Input 상태/이벤트 |
 | 시간 | `HighResolutionClock` | QPC 기반 전체 시간과 각 Update의 경과 시간 계산 |
 | 그래픽 | `D3D12Renderer`, `MeshRenderSystem`, `TextureManager`, `TextRenderSystem` | device, queue, swap chain, frame resources, 공통 MaterialTemplate, 독립 크기 Texture2D와 SRV heap, GPU mesh 인스턴스 배치, DirectWrite 레이아웃과 D3D12 글리프 아틀라스 |
-| 오디오 | `AudioSystem`, 선택된 `IAudioBackend` | WASAPI/ASIO 장치 정보, 실행 중 안전한 장치 전환, sound handle과 DSP clock을 제공; 현재 기본 구현은 FMOD |
+| 오디오 | `AudioSystem`, 선택된 `IAudioBackend`, Client 소유 `AudioClip` | 현재 output의 driver 정보, output API/driver 전환, mixer sample/buffer 설정과 DSP clock을 제공; 현재 기본 구현은 FMOD |
 | 클라이언트 | `ColoredCubeGame` | 창/오디오/스케줄 설정과 등록할 장면 정의 |
 | 장면 | `SceneManager`, `ColoredCubeScene` | 현재 활성 장면은 `Cube`; `BlankScene`은 등록만 되었고 아직 생성되지 않음 |
-| Cube 장면 | `MeshInstance` 4개, 곡면 UI MeshInstance, 두 UiCanvas, `Camera` | 큐브, 화면/곡면 옵션, 슬라이드 오디오 패널을 보관 |
+| Cube 장면 | `MeshInstance` 4개, 곡면 Visual2D MeshInstance, 두 `Visual2DCanvas`, `Camera` | 큐브, 화면/곡면 옵션, 슬라이드 오디오 패널을 보관 |
 
 세 엔진 기능 예제 Scene과 `BlankScene` 객체는 초기화 직후에는 존재하지 않는다.
 `ColoredCubeScene`에서 숫자 1/2/3을 누르면 각각 Mesh 생성, Mesh 충돌,
