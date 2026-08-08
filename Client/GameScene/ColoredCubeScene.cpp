@@ -710,6 +710,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     panelStyle.disabledImage = audioPanelBase;
     panel.AddComponent<mrg::visual2d::SpriteVisualComponent>().SetStyle(
         panelStyle);
+    // The complete visible panel is one front-most input surface. Controls
+    // remain preferred because child nodes are hit-tested before the parent.
+    panel.AddComponent<mrg::visual2d::RectangleCollider2DComponent>();
 
     auto& panelHighlight = mrg::visual2d::CreateSprite(
         panel,
@@ -880,6 +883,8 @@ bool ColoredCubeScene::UpdateAudioOptionsUi(
 
     const std::optional<mrg::visual2d::Point> canvasPointer =
         MapAudioPanelPointer(context.input);
+    const bool hadPointerCapture =
+        audioUiInput_.CapturedNode() != 0;
 
     mrg::visual2d::PointerInput pointer{};
     pointer.available = canvasPointer.has_value();
@@ -894,7 +899,13 @@ bool ColoredCubeScene::UpdateAudioOptionsUi(
     pointer.timestampTicks = LatestPointerTimestamp(context.input);
     audioUiInput_.Process(*audioOptionsUi_, pointer);
     ApplyAudioUiActions();
-    return canvasPointer.has_value();
+
+    // MapScreenPointer covers the entire full-screen Canvas, not just the
+    // sliding panel. Only an actual Visual2D hit/capture may block the options
+    // Canvas and camera that are rendered behind it.
+    return hadPointerCapture ||
+        audioUiInput_.HoveredNode() != 0 ||
+        audioUiInput_.CapturedNode() != 0;
 }
 
 void ColoredCubeScene::UpdateAudioPanelMotion(
