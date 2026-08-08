@@ -40,6 +40,8 @@ private:
     void TryPlayPopSound(mrg::audio::AudioSystem& audio);
     [[nodiscard]] std::optional<mrg::visual2d::Point> MapAudioPanelPointer(
         const mrg::platform::InputState& input) const noexcept;
+    [[nodiscard]] mrg::visual2d::Point AudioPanelScreenOrigin()
+        const noexcept;
     void RefreshAudioDeviceChoices();
     void RefreshAudioBufferLengthChoice();
     void SelectAudioBackend(std::size_t backendIndex);
@@ -83,7 +85,6 @@ private:
     mrg::visual2d::NodeId audioDeviceComboId_{};
     mrg::visual2d::NodeId audioBufferLengthComboId_{};
     mrg::visual2d::NodeId audioStatusLabelId_{};
-    mrg::visual2d::NodeId audioPanelId_{};
     mrg::audio::AudioOutputBackend selectedAudioBackend_{
         mrg::audio::AudioOutputBackend::Automatic};
     float audioPanelX_{-490.0F};

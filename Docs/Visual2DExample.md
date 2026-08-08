@@ -28,9 +28,10 @@
 
 ## 오디오 Canvas
 
-오디오 Canvas는 기본 `1280x720` FixedHeight 좌표계를 사용한다. 패널은
-`MiddleLeft` 앵커 아래에 있어 화면비가 바뀌어도 왼쪽 변의 세로 중앙을
-기준으로 움직인다. `Tab`을 누르면 노드의 X 위치를 `deltaSeconds`로 보간한다.
+오디오 Canvas는 패널에 필요한 `480x340` 영역만 차지하는 `Fixed` Canvas다.
+내부 패널은 항상 Canvas의 `(0,0)`에 두고, 화면 왼쪽 중앙에서 계산한 Canvas 원점의
+X 좌표를 `deltaSeconds`로 보간한다. 렌더링과 입력 매핑에 같은 원점을 전달하므로
+화면비가 바뀌어도 표시·히트박스·슬라이드 위치가 일치한다.
 
 각 컨트롤은 파생 위젯 클래스가 아니라 다음 컴포넌트 조합이다.
 
@@ -52,4 +53,5 @@ DSP sample 수 변경 시 Client 소유 `AudioClip`을 해제하고 mixer를 다
 
 화면 Z-Order는 옵션 Canvas `0`, 오디오 Canvas `1`이다. 따라서 오디오 패널의
 전체 트리가 옵션 트리보다 앞에 있으며, ComboBox popup도 자신의 부모 트리
-순서를 그대로 따른다.
+순서를 그대로 따른다. Canvas depth band가 먼저 결정되고 각 band 안에서만 트리의
+`ZIndex`가 적용되므로 옵션 Canvas의 자식이 오디오 Canvas 앞으로 튀어나오지 않는다.
