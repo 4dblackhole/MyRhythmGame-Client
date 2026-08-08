@@ -49,8 +49,10 @@ FMOD SDK 및 DLL은 저장소에 포함하지 않는다.
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-test
 ```
 
-샘플 화면에서는 `F2`로 화면/곡면 UI를 전환하고, `Tab`으로 왼쪽 오디오 패널을
-열거나 닫는다. 패널의 ComboBox를 클릭하면 감지된 WASAPI/ASIO 장치를 순환하며,
+샘플 화면에서는 `F2`로 화면/곡면 Visual2D 표시를 전환하고, `Tab`으로 왼쪽 오디오 패널을
+열거나 닫는다. 첫 ComboBox는 AUTO/WASAPI/ASIO output을 실제로 전환하고 두 번째
+ComboBox는 현재 output에서 감지된 driver를 선택한다. 세 번째 ComboBox에서는
+FMOD DSP buffer당 sample 수를 변경하며 기본값은 256이다.
 `Z`를 누르면 현재 출력으로 `Client/Assets/Sounds/pop.wav`를 재생한다.
 
 ## 엔진 버전 갱신
@@ -65,3 +67,8 @@ git commit -m "Update MRG-Engine"
 
 엔진 자체 수정은 `MRG-Engine` 저장소에서 먼저 커밋·검증·push한 뒤 Client의
 submodule 포인터를 갱신한다.
+
+# Visual2D 문서
+
+- [Sprite·위젯 통합 구조, 앵커, 입력 및 PNG 디자인](Docs/Visual2DGuide.md)
+- [ColoredCubeScene Visual2D 예제](Docs/Visual2DExample.md)

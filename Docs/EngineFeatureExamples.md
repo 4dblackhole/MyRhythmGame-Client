@@ -9,7 +9,7 @@ Scene으로 이동한다. 세 Scene은 모두 `DestroyOnExit`이므로 진입할
 | --- | --- | --- |
 | `1` | `MeshExampleScene` | 기본 Shape, 사용자 정의 Shape, 컴파일타임 정점 형식, GPU Mesh, Material, MeshInstance, 텍스트 |
 | `2` | `CollisionExampleScene` | 렌더 Mesh와 충돌체의 상태 동기화, `Sphere3D`-`Obb3D` 충돌, 결과 색상 표시 |
-| `3` | `WidgetExampleScene` | Canvas 소유권, 위젯 동적 추가/삭제, 안정적인 ID 검색, 포인터 입력과 UI Action |
+| `3` | `WidgetExampleScene` | Visual2D 컴포넌트 조합, 동적 추가/삭제, 안정적인 ID 검색, 포인터 입력과 Action |
 
 모든 예제에서 `Space`는 메인 Scene 복귀, `Escape`는 종료다.
 
@@ -90,17 +90,20 @@ const bool colliding =
 D3D12에 의존하지 않으므로 Update에서 여러 번 호출해도 렌더 주기와 결합되지
 않는다.
 
-## 3. 위젯 동적 추가와 삭제
+## 3. Visual2D 위젯 동적 추가와 삭제
 
 [WidgetExampleScene.cpp](../Client/GameScene/Examples/WidgetExampleScene.cpp)는
 `ADD WIDGET`/`REMOVE LAST` 버튼과 `A`/`D` 키로 Canvas의 자식을 변경한다.
 
-추가는 부모의 `EmplaceChild`를 사용한다. 반환된 참조는 초기 설정에만 쓰고,
-Scene은 이후 검색과 삭제를 위해 `UiElementId`를 저장한다.
+위젯 팩토리는 상속된 Button 객체가 아니라 여러 컴포넌트가 붙은 일반
+`Visual2DNode`를 만든다. 반환된 참조는 초기 설정에만 쓰고, Scene은 이후 검색과
+삭제를 위해 `NodeId`를 저장한다.
 
 ```cpp
-auto& widget = container.EmplaceChild<mrg::ui::UiButton>(L"DYNAMIC");
-widget.SetBounds({8.0F, 6.0F, 228.0F, 40.0F});
+auto& widget = mrg::visual2d::CreateButton(
+    container,
+    {8.0F, 6.0F, 228.0F, 40.0F},
+    L"DYNAMIC");
 dynamicWidgetIds.push_back(widget.Id());
 ```
 
@@ -114,16 +117,16 @@ container.RemoveChild(dynamicWidgetIds.back());
 dynamicWidgetIds.pop_back();
 ```
 
-마우스 상태는 `UiPointerInput`으로 변환해 라우터에 전달하고, 버튼 동작은
+마우스 상태는 `PointerInput`으로 변환해 라우터에 전달하고, 버튼 동작은
 Canvas의 Action 큐로 받는다.
 
 ```cpp
 inputRouter.Process(canvas, pointer);
-for (const mrg::ui::UiAction& action : canvas.TakeActions())
+for (const mrg::visual2d::Action& action : canvas.TakeActions())
 {
-    if (action.type == mrg::ui::UiActionType::Clicked)
+    if (action.type == mrg::visual2d::ActionType::Clicked)
     {
-        // action.source의 UiElementId로 동작을 구분한다.
+        // action.source의 NodeId로 동작을 구분한다.
     }
 }
 ```

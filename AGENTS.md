@@ -24,8 +24,9 @@ This file applies to the entire repository except the independently versioned
 - Preserve timestamped Raw Input events for future rhythm judgement.
 - Keep Client `.vcxproj.filters` paths synchronized with physical directories.
 - Bundle each redistributed font license beside the font asset.
-- Keep game option behavior in Client code. Use engine `UiCanvas` actions and
-  surface mapping rather than adding game-specific widgets to the engine.
+- Keep game option behavior in Client code. Compose it from engine
+  `Visual2DNode` components, Canvas actions, and surface mapping rather than
+  adding game-specific widget classes to the engine.
 - Keep functions readable as they grow. If a function performs multiple
   operations, extract each operation into a clearly named helper/private
   function. If a long function still represents one cohesive operation, add

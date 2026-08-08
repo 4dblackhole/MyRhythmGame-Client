@@ -21,6 +21,18 @@ using namespace DirectX;
 
 namespace
 {
+    template <typename ComponentType>
+    [[nodiscard]] ComponentType& RequireComponent(
+        mrg::visual2d::Visual2DNode& node)
+    {
+        ComponentType* component = node.GetComponent<ComponentType>();
+        if (component == nullptr)
+        {
+            throw std::logic_error("The Visual2D node is missing a component.");
+        }
+        return *component;
+    }
+
     [[nodiscard]] std::filesystem::path RuntimeAssetPath(
         const wchar_t* fileName)
     {
@@ -114,6 +126,15 @@ namespace
         mrg::audio::AudioOutputBackend::Wasapi,
         mrg::audio::AudioOutputBackend::Asio};
 
+    constexpr std::array<std::uint32_t, 7> AudioBufferLengthChoices{
+        64,
+        128,
+        256,
+        512,
+        1024,
+        2048,
+        4096};
+
     [[nodiscard]] std::optional<std::size_t> FindAudioBackendChoice(
         const mrg::audio::AudioOutputBackend backend) noexcept
     {
@@ -129,9 +150,60 @@ namespace
         return std::nullopt;
     }
 
-    constexpr mrg::ui::UiSize AudioPanelSize{380.0F, 278.0F};
+    [[nodiscard]] std::optional<std::size_t> FindAudioBufferLengthChoice(
+        const std::uint32_t bufferLength) noexcept
+    {
+        for (std::size_t index = 0;
+             index < AudioBufferLengthChoices.size();
+             ++index)
+        {
+            if (AudioBufferLengthChoices[index] == bufferLength)
+            {
+                return index;
+            }
+        }
+        return std::nullopt;
+    }
+
+    [[nodiscard]] std::wstring AudioBufferLengthSelectorName(
+        const std::uint32_t bufferLength)
+    {
+        std::wstring result = std::to_wstring(bufferLength) + L" SAMPLES";
+        if (bufferLength == 256)
+        {
+            result += L" (DEFAULT)";
+        }
+        return result;
+    }
+
+    [[nodiscard]] mrg::visual2d::VisualStyle MakeWidgetStyle(
+        const mrg::visual2d::Color normal,
+        const mrg::visual2d::Color hovered,
+        const mrg::visual2d::Color pressed,
+        const mrg::visual2d::Color disabled) noexcept
+    {
+        mrg::visual2d::VisualStyle style{};
+        style.normal = normal;
+        style.hovered = hovered;
+        style.pressed = pressed;
+        style.disabled = disabled;
+        return style;
+    }
+
+    [[nodiscard]] mrg::visual2d::VisualStyle MakeStaticStyle(
+        const mrg::visual2d::Color color) noexcept
+    {
+        // Labels may have a readable background, but all interaction states
+        // stay identical so they are not mistaken for clickable controls.
+        return MakeWidgetStyle(color, color, color, color);
+    }
+
+    constexpr mrg::visual2d::Size AudioPanelSize{480.0F, 340.0F};
+    constexpr float AudioPanelContentWidth = AudioPanelSize.width - 32.0F;
     constexpr float AudioPanelVisibleX = 20.0F;
-    constexpr float AudioPanelY = 250.0F;
+    constexpr std::uint32_t OptionsCanvasZOrder = 0;
+    constexpr std::uint32_t AudioCanvasZOrder = 1;
+    constexpr std::int32_t ComboBoxPopupZIndex = 100;
 }
 
 ColoredCubeScene::ColoredCubeScene(
@@ -284,7 +356,7 @@ void ColoredCubeScene::Update(
         return;
     }
 
-    UpdateCamera(context);
+    UpdateCamera(context, audioConsumedPointer);
     if (rotationEnabled_)
     {
         animationSeconds_ += static_cast<float>(context.deltaSeconds) *
@@ -313,14 +385,17 @@ void ColoredCubeScene::Render(
 
     if (optionsUi_ != nullptr && !worldSpaceUi_)
     {
-        uiRenderer_.SubmitScreen(optionsUi_->Canvas(), context, {20.0F, 20.0F});
+        uiRenderer_.SubmitScreen(
+            optionsUi_->Canvas(),
+            context,
+            {20.0F, 20.0F},
+            OptionsCanvasZOrder);
     }
     else if (optionsUi_ != nullptr && optionsCanvasTexture_ != nullptr)
     {
-        // The complete Canvas, including DirectWrite glyphs, is first drawn
-        // into a texture. Sampling that texture on the segmented mesh bends
-        // both rectangles and text with the exact same UV mapping used by
-        // MeshUvUiSurface for pointer input.
+        // The complete Canvas, including images and DirectWrite glyphs, is
+        // first drawn into a texture. The segmented mesh bends that texture;
+        // MeshUvVisual2DSurface uses the same UVs for pointer input.
         uiRenderer_.RenderToTexture(
             optionsUi_->Canvas(),
             optionsCanvasTexture_,
@@ -334,7 +409,8 @@ void ColoredCubeScene::Render(
         uiRenderer_.SubmitScreen(
             *audioOptionsUi_,
             context,
-            {audioPanelX_, AudioPanelY});
+            {},
+            AudioCanvasZOrder);
     }
 }
 
@@ -353,6 +429,11 @@ void ColoredCubeScene::OnResize(
                     static_cast<float>(height_)
                 : 1.0F);
     }
+    if (audioOptionsUi_ != nullptr && width_ > 0 && height_ > 0)
+    {
+        audioOptionsUi_->SetViewportSize(
+            {static_cast<float>(width_), static_cast<float>(height_)});
+    }
 }
 
 void ColoredCubeScene::Shutdown() noexcept
@@ -368,12 +449,9 @@ void ColoredCubeScene::Shutdown() noexcept
     optionsUi_.reset();
     audioOptionsUi_.reset();
     audioDevices_.clear();
-    if (audioSystem_ != nullptr &&
-        popSound_ != mrg::audio::InvalidAudioSoundHandle)
-    {
-        audioSystem_->UnloadSound(popSound_);
-    }
-    popSound_ = mrg::audio::InvalidAudioSoundHandle;
+    // AudioClip owns the FMOD sound. Release it before the engine-owned audio
+    // system leaves scope.
+    popSound_.reset();
     audioSystem_ = nullptr;
     uiRenderer_.Shutdown();
 }
@@ -392,9 +470,9 @@ void ColoredCubeScene::InitializeOptionsUi(
         2.1F,
         XMConvertToRadians(58.0F),
         40);
-    optionsUi_ = std::make_unique<mrg::ui::WorldSpaceCanvas>(
-        mrg::ui::UiSize{320.0F, 210.0F},
-        std::make_unique<mrg::ui::MeshUvUiSurface>(
+    optionsUi_ = std::make_unique<mrg::visual2d::WorldSpaceVisual2DCanvas>(
+        mrg::visual2d::Size{320.0F, 210.0F},
+        std::make_unique<mrg::visual2d::MeshUvVisual2DSurface>(
             curvedSurface,
             uiSurfaceWorld_));
 
@@ -416,44 +494,78 @@ void ColoredCubeScene::InitializeOptionsUi(
         0.0F);
     curvedOptionsSurface_.Transform().SetPosition(0.0F, 0.0F, -0.65F);
 
-    auto& panel = optionsUi_->Canvas().Root().EmplaceChild<mrg::ui::UiPanel>();
+    auto& panel = optionsUi_->Canvas().CreateNode(
+        mrg::visual2d::Anchor::TopLeft,
+        "Options.Panel");
     panel.SetBounds({0.0F, 0.0F, 320.0F, 210.0F});
-    panel.SetStyle({
+    panel.AddComponent<mrg::visual2d::SpriteVisualComponent>().SetStyle({
         {0.055F, 0.075F, 0.11F, 0.94F},
         {0.065F, 0.085F, 0.12F, 0.94F},
         {0.055F, 0.075F, 0.11F, 0.94F},
         {0.055F, 0.075F, 0.11F, 0.60F}});
 
-    auto& title = panel.EmplaceChild<mrg::ui::UiLabel>(L"OPTIONS  [F2: SPACE]");
-    title.SetBounds({16.0F, 10.0F, 288.0F, 32.0F});
-    title.SetFontSize(19.0F);
-    title.SetTextColor({0.62F, 0.84F, 1.0F, 1.0F});
+    auto& title = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 8.0F, 288.0F, 28.0F},
+        L"OPTIONS  [F2: SPACE]");
+    auto& titleText = RequireComponent<mrg::visual2d::TextVisualComponent>(title);
+    titleText.SetFontSize(19.0F);
+    titleText.SetTextColor({0.62F, 0.84F, 1.0F, 1.0F});
 
-    auto& rotation = panel.EmplaceChild<mrg::ui::UiToggle>(
+    auto& rotation = mrg::visual2d::CreateToggle(
+        panel,
+        {16.0F, 44.0F, 288.0F, 36.0F},
         L"CUBE ROTATION",
         true);
-    rotation.SetBounds({16.0F, 50.0F, 288.0F, 40.0F});
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(rotation).SetStyle(
+        MakeWidgetStyle(
+        {0.075F, 0.145F, 0.285F, 0.98F},
+        {0.13F, 0.285F, 0.52F, 1.0F},
+        {0.035F, 0.085F, 0.19F, 1.0F},
+        {0.035F, 0.065F, 0.12F, 0.58F}));
     rotationToggleId_ = rotation.Id();
 
-    auto& speedLabel = panel.EmplaceChild<mrg::ui::UiLabel>(L"ROTATION SPEED");
-    speedLabel.SetBounds({16.0F, 94.0F, 132.0F, 34.0F});
-    speedLabel.SetFontSize(15.0F);
+    auto& speedLabel = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 90.0F, 124.0F, 28.0F},
+        L"ROTATION SPEED");
+    RequireComponent<mrg::visual2d::TextVisualComponent>(speedLabel).
+        SetFontSize(14.0F);
 
-    auto& speed = panel.EmplaceChild<mrg::ui::UiSlider>(0.2727F);
-    speed.SetBounds({150.0F, 94.0F, 154.0F, 34.0F});
+    auto& speed = mrg::visual2d::CreateSlider(
+        panel,
+        {148.0F, 90.0F, 156.0F, 28.0F},
+        0.2727F);
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(speed).SetStyle(
+        MakeWidgetStyle(
+        {0.075F, 0.145F, 0.285F, 0.98F},
+        {0.13F, 0.285F, 0.52F, 1.0F},
+        {0.035F, 0.085F, 0.19F, 1.0F},
+        {0.035F, 0.065F, 0.12F, 0.58F}));
     speedSliderId_ = speed.Id();
 
-    auto& presentation = panel.EmplaceChild<mrg::ui::UiComboBox>();
-    presentation.SetItems({L"SCREEN SPACE", L"WORLD CURVED"});
-    presentation.SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
-    presentation.SetBounds({16.0F, 142.0F, 288.0F, 48.0F});
+    auto& presentation = mrg::visual2d::CreateCycleSelector(
+        panel,
+        {16.0F, 128.0F, 288.0F, 40.0F},
+        {L"SCREEN SPACE", L"WORLD CURVED"});
+    RequireComponent<mrg::visual2d::CycleSelectorBehaviorComponent>(
+        presentation).SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(presentation).
+        SetStyle(MakeWidgetStyle(
+        {0.075F, 0.145F, 0.285F, 0.98F},
+        {0.13F, 0.285F, 0.52F, 1.0F},
+        {0.035F, 0.085F, 0.19F, 1.0F},
+        {0.035F, 0.065F, 0.12F, 0.58F}));
     presentationComboId_ = presentation.Id();
 
-    auto& examples = panel.EmplaceChild<mrg::ui::UiLabel>(
+    auto& examples = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 184.0F, 288.0F, 18.0F},
         L"1:MESH   2:COLLISION   3:WIDGETS");
-    examples.SetBounds({16.0F, 190.0F, 288.0F, 18.0F});
-    examples.SetFontSize(11.0F);
-    examples.SetTextColor({0.68F, 0.78F, 0.92F, 1.0F});
+    auto& examplesText =
+        RequireComponent<mrg::visual2d::TextVisualComponent>(examples);
+    examplesText.SetFontSize(11.0F);
+    examplesText.SetTextColor({0.68F, 0.78F, 0.92F, 1.0F});
 }
 
 void ColoredCubeScene::UpdateOptionsUi(
@@ -464,36 +576,41 @@ void ColoredCubeScene::UpdateOptionsUi(
     {
         return;
     }
+    optionsUi_->Canvas().Update(context.deltaSeconds);
     if (context.input.WasKeyPressed(VK_F2))
     {
         worldSpaceUi_ = !worldSpaceUi_;
-        if (auto* combo = dynamic_cast<mrg::ui::UiComboBox*>(
-                optionsUi_->Canvas().FindElement(presentationComboId_)))
+        if (mrg::visual2d::Visual2DNode* node =
+                optionsUi_->Canvas().FindNode(presentationComboId_))
         {
-            combo->SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
+            if (auto* combo = node->GetComponent<
+                    mrg::visual2d::CycleSelectorBehaviorComponent>())
+            {
+                combo->SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
+            }
         }
         uiInput_.Reset(optionsUi_->Canvas());
     }
 
-    const mrg::ui::UiPoint screenPointer{
+    const mrg::visual2d::Point screenPointer{
         static_cast<float>(context.input.MousePositionX()),
         static_cast<float>(context.input.MousePositionY())};
-    std::optional<mrg::ui::UiPoint> canvasPointer;
+    std::optional<mrg::visual2d::Point> canvasPointer;
     if (allowPointerInput && context.input.IsMouseInsideWindow())
     {
         if (!worldSpaceUi_)
         {
-            canvasPointer = mrg::ui::MapScreenPointer(
+            canvasPointer = mrg::visual2d::MapScreenPointer(
                 screenPointer,
                 {static_cast<float>(width_), static_cast<float>(height_)},
-                optionsUi_->Canvas().LogicalSize(),
+                optionsUi_->Canvas(),
                 {20.0F, 20.0F});
         }
         else
         {
             XMFLOAT4X4 viewProjection{};
             XMStoreFloat4x4(&viewProjection, camera_.ViewProjectionMatrix());
-            const auto ray = mrg::ui::CreateWorldPointerRay(
+            const auto ray = mrg::visual2d::CreateWorldPointerRay(
                 screenPointer,
                 {static_cast<float>(width_), static_cast<float>(height_)},
                 viewProjection);
@@ -504,15 +621,16 @@ void ColoredCubeScene::UpdateOptionsUi(
         }
     }
 
-    mrg::ui::UiPointerInput pointer{};
+    mrg::visual2d::PointerInput pointer{};
     pointer.available = canvasPointer.has_value();
-    pointer.position = canvasPointer.value_or(mrg::ui::UiPoint{});
+    pointer.position = canvasPointer.value_or(mrg::visual2d::Point{});
     pointer.leftButtonDown = context.input.IsMouseButtonDown(
         mrg::platform::MouseButton::Left);
     pointer.leftButtonPressed = context.input.WasMouseButtonPressed(
         mrg::platform::MouseButton::Left);
     pointer.leftButtonReleased = context.input.WasMouseButtonReleased(
         mrg::platform::MouseButton::Left);
+    pointer.wheelDelta = context.input.MouseWheelDelta();
     pointer.timestampTicks = LatestPointerTimestamp(context.input);
     uiInput_.Process(optionsUi_->Canvas(), pointer);
     ApplyUiActions();
@@ -520,20 +638,20 @@ void ColoredCubeScene::UpdateOptionsUi(
 
 void ColoredCubeScene::ApplyUiActions()
 {
-    for (const mrg::ui::UiAction& action : optionsUi_->Canvas().TakeActions())
+    for (const mrg::visual2d::Action& action : optionsUi_->Canvas().TakeActions())
     {
         if (action.source == rotationToggleId_ &&
-            action.type == mrg::ui::UiActionType::ValueChanged)
+            action.type == mrg::visual2d::ActionType::ValueChanged)
         {
             rotationEnabled_ = action.value > 0.5F;
         }
         else if (action.source == speedSliderId_ &&
-            action.type == mrg::ui::UiActionType::ValueChanged)
+            action.type == mrg::visual2d::ActionType::ValueChanged)
         {
             rotationSpeedScale_ = 0.25F + action.value * 2.75F;
         }
         else if (action.source == presentationComboId_ &&
-            action.type == mrg::ui::UiActionType::SelectionChanged)
+            action.type == mrg::visual2d::ActionType::SelectionChanged)
         {
             worldSpaceUi_ = action.selectedIndex == 1;
             uiInput_.Reset(optionsUi_->Canvas());
@@ -544,51 +662,105 @@ void ColoredCubeScene::ApplyUiActions()
 void ColoredCubeScene::InitializeAudioOptionsUi(
     const mrg::EngineServices& services)
 {
-    // Preserve the engine-owned service reference and explicitly refresh the
-    // backend snapshot. This makes ASIO drivers connected after engine startup
-    // visible before the first device ComboBox is populated.
+    // The backend already enumerated the current output after FMOD finished
+    // initializing. The Scene reads that snapshot without creating probes or
+    // refreshing unrelated output APIs.
     audioSystem_ = &services.audio;
-    std::string refreshError;
-    const bool devicesRefreshed =
-        RefreshAudioDeviceSnapshot(refreshError);
-    audioOptionsUi_ = std::make_unique<mrg::ui::UiCanvas>(AudioPanelSize);
+    const auto& initialDrivers = services.audio.OutputDrivers();
+    audioDevices_.assign(initialDrivers.begin(), initialDrivers.end());
+    audioOptionsUi_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
+    audioOptionsUi_->SetViewportSize(
+        {static_cast<float>(width_), static_cast<float>(height_)});
 
-    auto& panel = audioOptionsUi_->Root().EmplaceChild<mrg::ui::UiPanel>();
-    panel.SetBounds({0.0F, 0.0F, AudioPanelSize.width, AudioPanelSize.height});
-    panel.SetStyle({
-        {0.045F, 0.055F, 0.085F, 0.97F},
-        {0.055F, 0.070F, 0.105F, 0.97F},
-        {0.035F, 0.045F, 0.070F, 0.97F},
-        {0.045F, 0.055F, 0.085F, 0.70F}});
+    // Widget2 is the readable dark base. Widget1 is a light, decorative
+    // highlight layer so both user-provided frames can share one panel without
+    // intercepting its controls.
+    const mrg::visual2d::ImageHandle audioPanelBase = uiRenderer_.LoadImage(
+        RuntimeAssetPath(L"images\\Widget2.png"));
+    const mrg::visual2d::ImageHandle audioPanelHighlight = uiRenderer_.LoadImage(
+        RuntimeAssetPath(L"images\\Widget1.png"));
+    const mrg::visual2d::VisualStyle titleStyle = MakeStaticStyle(
+        {0.035F, 0.105F, 0.235F, 0.92F});
+    const mrg::visual2d::VisualStyle sectionLabelStyle = MakeStaticStyle(
+        {0.020F, 0.045F, 0.105F, 0.66F});
+    const mrg::visual2d::VisualStyle controlStyle = MakeWidgetStyle(
+        {0.055F, 0.120F, 0.265F, 0.96F},
+        {0.105F, 0.245F, 0.470F, 0.98F},
+        {0.035F, 0.080F, 0.195F, 0.98F},
+        {0.030F, 0.065F, 0.135F, 0.62F});
+    const mrg::visual2d::VisualStyle statusStyle = MakeStaticStyle(
+        {0.025F, 0.145F, 0.110F, 0.92F});
+    const mrg::visual2d::VisualStyle hintStyle = MakeStaticStyle(
+        {0.020F, 0.035F, 0.090F, 0.84F});
 
-    auto& title = panel.EmplaceChild<mrg::ui::UiLabel>(
+    auto& panel = audioOptionsUi_->CreateNode(
+        mrg::visual2d::Anchor::MiddleLeft,
+        "AudioOptions.Panel");
+    panel.SetBounds(
+        {audioPanelX_, 0.0F, AudioPanelSize.width, AudioPanelSize.height});
+    audioPanelId_ = panel.Id();
+    mrg::visual2d::VisualStyle panelStyle{};
+    panelStyle.normal = {1.0F, 1.0F, 1.0F, 1.0F};
+    panelStyle.hovered = panelStyle.normal;
+    panelStyle.pressed = panelStyle.normal;
+    panelStyle.disabled = {1.0F, 1.0F, 1.0F, 0.65F};
+    panelStyle.normalImage = audioPanelBase;
+    panelStyle.hoveredImage = audioPanelBase;
+    panelStyle.pressedImage = audioPanelBase;
+    panelStyle.disabledImage = audioPanelBase;
+    panel.AddComponent<mrg::visual2d::SpriteVisualComponent>().SetStyle(
+        panelStyle);
+
+    auto& panelHighlight = mrg::visual2d::CreateSprite(
+        panel,
+        {0.0F, 0.0F, AudioPanelSize.width, AudioPanelSize.height},
+        audioPanelHighlight,
+        "AudioOptions.Highlight");
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(panelHighlight).
+        SetTint({1.0F, 1.0F, 1.0F, 0.14F});
+
+    auto& title = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 10.0F, AudioPanelContentWidth, 30.0F},
         L"AUDIO OUTPUT  [TAB: CLOSE]");
-    title.SetBounds({16.0F, 10.0F, 348.0F, 32.0F});
-    title.SetFontSize(18.0F);
-    title.SetTextColor({0.58F, 0.86F, 1.0F, 1.0F});
+    auto& titleText = RequireComponent<mrg::visual2d::TextVisualComponent>(title);
+    titleText.SetFontSize(18.0F);
+    titleText.SetTextColor({0.58F, 0.86F, 1.0F, 1.0F});
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(title).SetStyle(
+        titleStyle);
 
     // The first ComboBox selects an output API. DirectSound is not offered:
     // FMOD 2.x no longer exposes a DirectSound output backend. Its closest
     // supported baseline is the explicit FMOD automatic/default path.
-    auto& backendLabel = panel.EmplaceChild<mrg::ui::UiLabel>(L"OUTPUT API");
-    backendLabel.SetBounds({16.0F, 42.0F, 348.0F, 18.0F});
-    backendLabel.SetFontSize(12.0F);
-    backendLabel.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+    auto& backendLabel = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 48.0F, AudioPanelContentWidth, 16.0F},
+        L"OUTPUT API");
+    auto& backendLabelText =
+        RequireComponent<mrg::visual2d::TextVisualComponent>(backendLabel);
+    backendLabelText.SetFontSize(12.0F);
+    backendLabelText.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(backendLabel).
+        SetStyle(sectionLabelStyle);
 
-    auto& backendCombo = panel.EmplaceChild<mrg::ui::UiComboBox>();
     std::vector<std::wstring> backendNames;
     backendNames.reserve(AudioBackendChoices.size());
     for (const mrg::audio::AudioOutputBackend backend : AudioBackendChoices)
     {
         backendNames.push_back(AudioBackendSelectorName(backend));
     }
-    backendCombo.SetItems(std::move(backendNames));
-    selectedAudioBackend_ = services.audio.ActiveOutput();
+    auto& backendCombo = mrg::visual2d::CreateCycleSelector(
+        panel,
+        {16.0F, 68.0F, AudioPanelContentWidth, 36.0F},
+        std::move(backendNames));
+    auto& backendBehavior = RequireComponent<
+        mrg::visual2d::CycleSelectorBehaviorComponent>(backendCombo);
+    selectedAudioBackend_ = services.audio.RequestedOutput();
     const std::optional<std::size_t> activeBackendChoice =
         FindAudioBackendChoice(selectedAudioBackend_);
     if (activeBackendChoice.has_value())
     {
-        backendCombo.SetSelectedIndex(*activeBackendChoice);
+        backendBehavior.SetSelectedIndex(*activeBackendChoice);
     }
     else
     {
@@ -596,46 +768,94 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
         // UI on the default path so the player can still choose a device.
         selectedAudioBackend_ = mrg::audio::AudioOutputBackend::Automatic;
     }
-    backendCombo.SetBounds({16.0F, 60.0F, 348.0F, 38.0F});
-    backendCombo.SetFontSize(14.0F);
+    RequireComponent<mrg::visual2d::TextVisualComponent>(backendCombo).
+        SetFontSize(14.0F);
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(backendCombo).
+        SetStyle(controlStyle);
     audioBackendComboId_ = backendCombo.Id();
 
-    auto& deviceLabel = panel.EmplaceChild<mrg::ui::UiLabel>(L"DEVICE");
-    deviceLabel.SetBounds({16.0F, 106.0F, 348.0F, 18.0F});
-    deviceLabel.SetFontSize(12.0F);
-    deviceLabel.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+    auto& deviceLabel = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 112.0F, AudioPanelContentWidth, 16.0F},
+        L"DEVICE");
+    auto& deviceLabelText =
+        RequireComponent<mrg::visual2d::TextVisualComponent>(deviceLabel);
+    deviceLabelText.SetFontSize(12.0F);
+    deviceLabelText.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(deviceLabel).
+        SetStyle(sectionLabelStyle);
 
-    auto& deviceCombo = panel.EmplaceChild<mrg::ui::UiComboBox>();
-    deviceCombo.SetBounds({16.0F, 124.0F, 348.0F, 42.0F});
-    deviceCombo.SetFontSize(14.0F);
+    auto& deviceCombo = mrg::visual2d::CreateComboBox(
+        panel,
+        {16.0F, 132.0F, AudioPanelContentWidth, 38.0F},
+        {});
+    auto& deviceBehavior = RequireComponent<
+        mrg::visual2d::ComboBoxBehaviorComponent>(deviceCombo);
+    deviceBehavior.SetFontSize(14.0F);
+    deviceBehavior.SetMaxVisibleItems(4);
+    deviceBehavior.SetItemHeight(36.0F);
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(deviceCombo).
+        SetStyle(controlStyle);
+    // The popup is part of this element's subtree. Raising the element among
+    // its panel siblings makes both drawing and hit testing follow one rule.
+    deviceCombo.SetZIndex(ComboBoxPopupZIndex);
     audioDeviceComboId_ = deviceCombo.Id();
 
-    auto& status = panel.EmplaceChild<mrg::ui::UiLabel>(
-        L"ACTIVE: " + AudioBackendName(services.audio.ActiveOutput()));
-    status.SetBounds({16.0F, 176.0F, 348.0F, 34.0F});
-    status.SetFontSize(15.0F);
-    status.SetTextColor({0.62F, 1.0F, 0.72F, 1.0F});
-    audioStatusLabelId_ = status.Id();
-    if (!devicesRefreshed)
+    auto& bufferLengthLabel = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 178.0F, AudioPanelContentWidth, 16.0F},
+        L"DSP BUFFER LENGTH");
+    auto& bufferLabelText = RequireComponent<
+        mrg::visual2d::TextVisualComponent>(bufferLengthLabel);
+    bufferLabelText.SetFontSize(12.0F);
+    bufferLabelText.SetTextColor({0.72F, 0.76F, 0.88F, 1.0F});
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(bufferLengthLabel).
+        SetStyle(sectionLabelStyle);
+
+    std::vector<std::wstring> bufferLengthNames;
+    bufferLengthNames.reserve(AudioBufferLengthChoices.size());
+    for (const std::uint32_t bufferLength : AudioBufferLengthChoices)
     {
-        status.SetText(L"DEVICE REFRESH FAILED: " + Utf8ToWide(refreshError));
+        bufferLengthNames.push_back(
+            AudioBufferLengthSelectorName(bufferLength));
     }
+    auto& bufferLengthCombo = mrg::visual2d::CreateCycleSelector(
+        panel,
+        {16.0F, 198.0F, AudioPanelContentWidth, 36.0F},
+        std::move(bufferLengthNames));
+    RequireComponent<mrg::visual2d::TextVisualComponent>(bufferLengthCombo).
+        SetFontSize(14.0F);
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(bufferLengthCombo).
+        SetStyle(controlStyle);
+    audioBufferLengthComboId_ = bufferLengthCombo.Id();
 
-    auto& hint = panel.EmplaceChild<mrg::ui::UiLabel>(
-        L"TOP: OUTPUT API   /   BOTTOM: DEVICE   /   Z: PLAY pop.wav");
-    hint.SetBounds({16.0F, 220.0F, 348.0F, 38.0F});
-    hint.SetFontSize(12.0F);
-    hint.SetTextColor({0.76F, 0.78F, 0.86F, 1.0F});
+    auto& status = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 242.0F, AudioPanelContentWidth, 34.0F},
+        L"ACTIVE: " + AudioBackendName(services.audio.ActiveOutput()));
+    auto& statusText = RequireComponent<mrg::visual2d::TextVisualComponent>(status);
+    statusText.SetFontSize(15.0F);
+    statusText.SetTextColor({0.62F, 1.0F, 0.72F, 1.0F});
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(status).SetStyle(
+        statusStyle);
+    audioStatusLabelId_ = status.Id();
+    auto& hint = mrg::visual2d::CreateLabel(
+        panel,
+        {16.0F, 286.0F, AudioPanelContentWidth, 38.0F},
+        L"API: CLICK / DEVICE: DROPDOWN / DSP: CLICK / Z: PLAY pop.wav");
+    auto& hintText = RequireComponent<mrg::visual2d::TextVisualComponent>(hint);
+    hintText.SetFontSize(12.0F);
+    hintText.SetTextColor({0.76F, 0.78F, 0.86F, 1.0F});
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(hint).SetStyle(
+        hintStyle);
 
-    // Filter the lower ComboBox after all its controls exist. The active
-    // driver is selected without changing the already running audio output.
+    // Synchronize controls with the already running mixer without triggering
+    // a device or DSP-buffer change during Scene initialization.
     RefreshAudioDeviceChoices();
+    RefreshAudioBufferLengthChoice();
 
     std::string errorMessage;
-    popSound_ = services.audio.LoadSound(
-        RuntimeAssetPath(L"sounds\\pop.wav"),
-        errorMessage);
-    if (popSound_ == mrg::audio::InvalidAudioSoundHandle)
+    if (!ReloadPopSound(errorMessage))
     {
         throw std::runtime_error(
             "Failed to load assets/sounds/pop.wav: " + errorMessage);
@@ -649,6 +869,7 @@ bool ColoredCubeScene::UpdateAudioOptionsUi(
     {
         return false;
     }
+    audioOptionsUi_->Update(context.deltaSeconds);
 
     UpdateAudioPanelMotion(context);
 
@@ -657,18 +878,19 @@ bool ColoredCubeScene::UpdateAudioOptionsUi(
         TryPlayPopSound(context.audio);
     }
 
-    const std::optional<mrg::ui::UiPoint> canvasPointer =
+    const std::optional<mrg::visual2d::Point> canvasPointer =
         MapAudioPanelPointer(context.input);
 
-    mrg::ui::UiPointerInput pointer{};
+    mrg::visual2d::PointerInput pointer{};
     pointer.available = canvasPointer.has_value();
-    pointer.position = canvasPointer.value_or(mrg::ui::UiPoint{});
+    pointer.position = canvasPointer.value_or(mrg::visual2d::Point{});
     pointer.leftButtonDown = context.input.IsMouseButtonDown(
         mrg::platform::MouseButton::Left);
     pointer.leftButtonPressed = context.input.WasMouseButtonPressed(
         mrg::platform::MouseButton::Left);
     pointer.leftButtonReleased = context.input.WasMouseButtonReleased(
         mrg::platform::MouseButton::Left);
+    pointer.wheelDelta = context.input.MouseWheelDelta();
     pointer.timestampTicks = LatestPointerTimestamp(context.input);
     audioUiInput_.Process(*audioOptionsUi_, pointer);
     ApplyAudioUiActions();
@@ -693,16 +915,21 @@ void ColoredCubeScene::UpdateAudioPanelMotion(
         targetX - audioPanelX_,
         -maximumStep,
         maximumStep);
+    if (mrg::visual2d::Visual2DNode* panel =
+            audioOptionsUi_->FindNode(audioPanelId_))
+    {
+        panel->SetPosition({audioPanelX_, 0.0F});
+    }
 }
 
 void ColoredCubeScene::TryPlayPopSound(mrg::audio::AudioSystem& audio)
 {
     std::string errorMessage;
-    if (popSound_ == mrg::audio::InvalidAudioSoundHandle)
+    if (popSound_ == nullptr)
     {
         SetAudioStatus(L"pop.wav IS NOT LOADED");
     }
-    else if (!audio.PlaySound(popSound_, errorMessage))
+    else if (!popSound_->Play(errorMessage))
     {
         SetAudioStatus(L"PLAY FAILED: " + Utf8ToWide(errorMessage));
     }
@@ -713,20 +940,19 @@ void ColoredCubeScene::TryPlayPopSound(mrg::audio::AudioSystem& audio)
     }
 }
 
-std::optional<mrg::ui::UiPoint> ColoredCubeScene::MapAudioPanelPointer(
+std::optional<mrg::visual2d::Point> ColoredCubeScene::MapAudioPanelPointer(
     const mrg::platform::InputState& input) const noexcept
 {
     if (!input.IsMouseInsideWindow())
     {
         return std::nullopt;
     }
-    return mrg::ui::MapScreenPointer(
+    return mrg::visual2d::MapScreenPointer(
         {
             static_cast<float>(input.MousePositionX()),
             static_cast<float>(input.MousePositionY())},
         {static_cast<float>(width_), static_cast<float>(height_)},
-        AudioPanelSize,
-        {audioPanelX_, AudioPanelY});
+        *audioOptionsUi_);
 }
 
 void ColoredCubeScene::RefreshAudioDeviceChoices()
@@ -735,62 +961,66 @@ void ColoredCubeScene::RefreshAudioDeviceChoices()
     {
         return;
     }
-    auto* combo = dynamic_cast<mrg::ui::UiComboBox*>(
-        audioOptionsUi_->FindElement(audioDeviceComboId_));
-    if (combo == nullptr)
+    mrg::visual2d::Visual2DNode* comboNode =
+        audioOptionsUi_->FindNode(audioDeviceComboId_);
+    auto* combo = comboNode != nullptr
+        ? comboNode->GetComponent<mrg::visual2d::ComboBoxBehaviorComponent>()
+        : nullptr;
+    if (combo == nullptr || comboNode == nullptr)
     {
         return;
     }
 
-    // Rebuild the lower ComboBox from only the devices belonging to the
-    // backend currently selected in the upper ComboBox.
-    filteredAudioDeviceIndices_.clear();
+    // The engine snapshot contains only the currently selected output API, so
+    // the lower ComboBox no longer filters a process-wide multi-API list.
     std::vector<std::wstring> deviceNames;
     std::size_t activeSelection = 0;
     for (std::size_t index = 0; index < audioDevices_.size(); ++index)
     {
         const mrg::audio::AudioDeviceInfo& device = audioDevices_[index];
-        if (device.backend != selectedAudioBackend_)
-        {
-            continue;
-        }
-
         if (audioSystem_ != nullptr &&
-            device.backend == audioSystem_->ActiveOutput() &&
             device.driverIndex == audioSystem_->ActiveDriverIndex())
         {
-            activeSelection = filteredAudioDeviceIndices_.size();
+            activeSelection = index;
         }
-        filteredAudioDeviceIndices_.push_back(index);
         deviceNames.push_back(AudioDeviceSelectorName(device));
     }
 
     if (deviceNames.empty())
     {
         combo->SetItems({L"NO DEVICE FOUND FOR THIS OUTPUT API"});
-        combo->SetEnabled(false);
+        comboNode->SetEnabled(false);
         return;
     }
 
-    combo->SetEnabled(true);
+    comboNode->SetEnabled(true);
     combo->SetItems(std::move(deviceNames));
     combo->SetSelectedIndex(activeSelection);
 }
 
-bool ColoredCubeScene::RefreshAudioDeviceSnapshot(
-    std::string& errorMessage)
+void ColoredCubeScene::RefreshAudioBufferLengthChoice()
 {
-    if (audioSystem_ == nullptr)
+    if (audioOptionsUi_ == nullptr || audioSystem_ == nullptr)
     {
-        errorMessage = "The audio system is unavailable.";
-        return false;
+        return;
+    }
+    mrg::visual2d::Visual2DNode* comboNode =
+        audioOptionsUi_->FindNode(audioBufferLengthComboId_);
+    auto* combo = comboNode != nullptr
+        ? comboNode->GetComponent<
+            mrg::visual2d::CycleSelectorBehaviorComponent>()
+        : nullptr;
+    if (combo == nullptr)
+    {
+        return;
     }
 
-    const bool refreshed =
-        audioSystem_->RefreshOutputDevices(errorMessage);
-    const auto& devices = audioSystem_->OutputDevices();
-    audioDevices_.assign(devices.begin(), devices.end());
-    return refreshed;
+    const std::optional<std::size_t> selectedIndex =
+        FindAudioBufferLengthChoice(audioSystem_->DspBufferLength());
+    if (selectedIndex.has_value())
+    {
+        combo->SetSelectedIndex(*selectedIndex);
+    }
 }
 
 void ColoredCubeScene::SelectAudioBackend(const std::size_t backendIndex)
@@ -800,29 +1030,39 @@ void ColoredCubeScene::SelectAudioBackend(const std::size_t backendIndex)
         return;
     }
 
-    std::string refreshError;
-    const bool refreshed = RefreshAudioDeviceSnapshot(refreshError);
-    selectedAudioBackend_ = AudioBackendChoices[backendIndex];
-    RefreshAudioDeviceChoices();
-    if (!refreshed)
+    const mrg::audio::AudioOutputBackend requested =
+        AudioBackendChoices[backendIndex];
+    std::string errorMessage;
+    if (!audioSystem_->SetOutputBackend(requested, errorMessage))
     {
-        SetAudioStatus(
-            L"DEVICE REFRESH FAILED: " + Utf8ToWide(refreshError));
-    }
-    if (filteredAudioDeviceIndices_.empty())
-    {
-        if (refreshed)
+        SetAudioStatus(L"SWITCH FAILED: " + Utf8ToWide(errorMessage));
+        selectedAudioBackend_ = audioSystem_->RequestedOutput();
+        if (const auto activeChoice =
+                FindAudioBackendChoice(selectedAudioBackend_);
+            activeChoice.has_value())
         {
-            SetAudioStatus(L"NO DEVICE FOUND: " +
-                AudioBackendName(selectedAudioBackend_));
+            if (mrg::visual2d::Visual2DNode* comboNode =
+                    audioOptionsUi_->FindNode(audioBackendComboId_))
+            {
+                if (auto* combo = comboNode->GetComponent<
+                        mrg::visual2d::CycleSelectorBehaviorComponent>())
+                {
+                    combo->SetSelectedIndex(*activeChoice);
+                }
+            }
         }
         return;
     }
 
-    // Selecting an API immediately applies its first device. This makes an
-    // ASIO backend with only one driver selectable despite the current simple
-    // ComboBox widget using click-to-cycle instead of a popup list.
-    ApplyAudioDeviceSelection(filteredAudioDeviceIndices_.front());
+    selectedAudioBackend_ = requested;
+    const auto& drivers = audioSystem_->OutputDrivers();
+    audioDevices_.assign(drivers.begin(), drivers.end());
+    RefreshAudioDeviceChoices();
+    RefreshAudioBufferLengthChoice();
+    SetAudioStatus(
+        L"ACTIVE: " + AudioBackendName(audioSystem_->ActiveOutput()) +
+        L"  /  " + std::to_wstring(audioSystem_->DriverCount()) +
+        L" DRIVER(S)");
 }
 
 void ColoredCubeScene::ApplyAudioDeviceSelection(
@@ -836,41 +1076,93 @@ void ColoredCubeScene::ApplyAudioDeviceSelection(
     const mrg::audio::AudioDeviceInfo& selected =
         audioDevices_[audioDeviceIndex];
     std::string errorMessage;
-    if (!audioSystem_->SelectOutputDevice(selected, errorMessage))
+    if (!audioSystem_->SetOutputDriver(selected.driverIndex, errorMessage))
     {
         SetAudioStatus(L"SWITCH FAILED: " + Utf8ToWide(errorMessage));
-
-        // The engine leaves the previous backend intact on failure. Restore
-        // both ComboBoxes to that active backend/driver instead of displaying
-        // a request that did not become effective.
-        selectedAudioBackend_ = audioSystem_->ActiveOutput();
-        if (const auto activeBackend =
-                FindAudioBackendChoice(selectedAudioBackend_);
-            activeBackend.has_value())
-        {
-            if (auto* backendCombo = dynamic_cast<mrg::ui::UiComboBox*>(
-                    audioOptionsUi_->FindElement(audioBackendComboId_)))
-            {
-                backendCombo->SetSelectedIndex(*activeBackend);
-            }
-        }
-        else
-        {
-            selectedAudioBackend_ = mrg::audio::AudioOutputBackend::Automatic;
-        }
         RefreshAudioDeviceChoices();
         return;
     }
 
     SetAudioStatus(
         L"ACTIVE: " + AudioBackendName(audioSystem_->ActiveOutput()));
+    RefreshAudioBufferLengthChoice();
+}
+
+void ColoredCubeScene::ApplyAudioBufferLengthSelection(
+    const std::size_t bufferLengthIndex)
+{
+    if (audioSystem_ == nullptr ||
+        bufferLengthIndex >= AudioBufferLengthChoices.size())
+    {
+        return;
+    }
+
+    const std::uint32_t requestedLength =
+        AudioBufferLengthChoices[bufferLengthIndex];
+    if (requestedLength == audioSystem_->DspBufferLength())
+    {
+        return;
+    }
+
+    // AudioSystem deliberately rejects mixer restarts while a Client-owned
+    // clip exists. Release pop.wav before applying the new buffer length.
+    popSound_.reset();
+    std::string bufferError;
+    const bool bufferChanged = audioSystem_->SetDspBufferSize(
+        requestedLength,
+        audioSystem_->DspBufferCount(),
+        bufferError);
+
+    std::string reloadError;
+    const bool popReloaded = ReloadPopSound(reloadError);
+    RefreshAudioBufferLengthChoice();
+
+    if (!bufferChanged)
+    {
+        std::wstring status = L"BUFFER CHANGE FAILED: " +
+            Utf8ToWide(bufferError);
+        if (!popReloaded)
+        {
+            status += L" / pop.wav RELOAD FAILED: " + Utf8ToWide(reloadError);
+        }
+        SetAudioStatus(std::move(status));
+        return;
+    }
+    if (!popReloaded)
+    {
+        SetAudioStatus(
+            L"BUFFER CHANGED, pop.wav RELOAD FAILED: " +
+            Utf8ToWide(reloadError));
+        return;
+    }
+
+    SetAudioStatus(
+        L"DSP BUFFER: " +
+        std::to_wstring(audioSystem_->DspBufferLength()) +
+        L" SAMPLES  /  " +
+        std::to_wstring(audioSystem_->DspBufferCount()) + L" BLOCKS");
+}
+
+bool ColoredCubeScene::ReloadPopSound(std::string& errorMessage)
+{
+    popSound_.reset();
+    if (audioSystem_ == nullptr)
+    {
+        errorMessage = "The audio system is unavailable.";
+        return false;
+    }
+
+    popSound_ = audioSystem_->LoadSound(
+        RuntimeAssetPath(L"sounds\\pop.wav"),
+        errorMessage);
+    return popSound_ != nullptr;
 }
 
 void ColoredCubeScene::ApplyAudioUiActions()
 {
-    for (const mrg::ui::UiAction& action : audioOptionsUi_->TakeActions())
+    for (const mrg::visual2d::Action& action : audioOptionsUi_->TakeActions())
     {
-        if (action.type != mrg::ui::UiActionType::SelectionChanged)
+        if (action.type != mrg::visual2d::ActionType::SelectionChanged)
         {
             continue;
         }
@@ -880,10 +1172,14 @@ void ColoredCubeScene::ApplyAudioUiActions()
             continue;
         }
         if (action.source == audioDeviceComboId_ &&
-            action.selectedIndex < filteredAudioDeviceIndices_.size())
+            action.selectedIndex < audioDevices_.size())
         {
-            ApplyAudioDeviceSelection(
-                filteredAudioDeviceIndices_[action.selectedIndex]);
+            ApplyAudioDeviceSelection(action.selectedIndex);
+            continue;
+        }
+        if (action.source == audioBufferLengthComboId_)
+        {
+            ApplyAudioBufferLengthSelection(action.selectedIndex);
         }
     }
 }
@@ -894,10 +1190,14 @@ void ColoredCubeScene::SetAudioStatus(std::wstring text)
     {
         return;
     }
-    if (auto* status = dynamic_cast<mrg::ui::UiLabel*>(
-            audioOptionsUi_->FindElement(audioStatusLabelId_)))
+    if (mrg::visual2d::Visual2DNode* status =
+            audioOptionsUi_->FindNode(audioStatusLabelId_))
     {
-        status->SetText(std::move(text));
+        if (auto* label = status->GetComponent<
+                mrg::visual2d::TextVisualComponent>())
+        {
+            label->SetText(std::move(text));
+        }
     }
 }
 
@@ -918,7 +1218,8 @@ std::int64_t ColoredCubeScene::LatestPointerTimestamp(
 }
 
 void ColoredCubeScene::UpdateCamera(
-    const mrg::UpdateContext& context)
+    const mrg::UpdateContext& context,
+    const bool suppressMouseWheel)
 {
     constexpr float mouseSensitivity = 0.0025F;
     if (context.input.IsMouseButtonDown(
@@ -996,7 +1297,7 @@ void ColoredCubeScene::UpdateCamera(
     }
 
     const float wheel = context.input.MouseWheelDelta();
-    if (wheel != 0.0F)
+    if (!suppressMouseWheel && wheel != 0.0F)
     {
         position = XMVectorMultiplyAdd(
             forward,
