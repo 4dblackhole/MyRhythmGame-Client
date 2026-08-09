@@ -11,8 +11,7 @@ flowchart TD
     Game --> Manager["SceneManager"]
     Manager --> Logo["FingerDrumLogoScene"]
     Logo --> Lobby["LobbyScene · Music Select"]
-    Lobby --> Test["RhythmTestScene · Taiko Driver"]
-    Test --> Lobby
+    Manager --> Test["RhythmTestScene · 개발용 Taiko Driver"]
 ```
 
 ## 시작
@@ -28,14 +27,19 @@ flowchart TD
 
 - Logo에서 Game Start를 누르면 Lobby로 이동합니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
-  곡 행을 클릭하거나 방향키로 선택하고 PLAY 또는 Enter로 테스트 플레이에
-  진입합니다.
+  현재 catalog와 기록 저장소가 없으므로 모든 데이터 영역은 빈 상태이며
+  Escape로 Logo에 돌아갑니다.
 - RhythmTest는 `TaikoMode`로 세션을 만들고 한 개의 `RhythmTimer`로 입력,
-  판정, 스크롤, 오디오 DSP 예약 시각을 연결합니다. Escape는 Lobby로
-  돌아갑니다.
-- 세 Scene은 현재 `KeepAlive`입니다. Scene 전환 시 객체는 남지만 입력과
-  렌더링은 활성 Scene만 수행합니다. 실제 곡별 Play Scene은 패턴별 상태가
-  무거워지면 `DestroyOnExit`로 등록할 수 있습니다.
+  판정, 스크롤, 오디오 DSP 예약 시각을 연결하는 개발용 Scene입니다. 현재
+  빈 Lobby에서는 진입 버튼을 노출하지 않습니다.
+- Logo와 Lobby는 `KeepAlive`, gameplay route는 `DestroyOnExit`입니다.
+  gameplay 등록 시에는 factory만 보관하고 곡 선택 후 `ChangeScene`이 호출될
+  때 해당 모드의 객체를 동적으로 생성합니다.
+- gameplay에서 Escape를 누르거나 모든 노트를 처리한 뒤 3초가 지나면 Lobby
+  전환을 요청합니다. update가 끝난 다음 `EndScene → Shutdown → delete` 순서로
+  gameplay 객체가 파기되므로 다음 곡이나 모드의 상태가 남지 않습니다.
+- 결과 Scene이 설계되면 gameplay 객체 대신 점수·판정 통계만 별도의 결과
+  데이터로 이동시키고 같은 transient 수명 정책을 유지합니다.
 
 ## 프레임과 종료
 
