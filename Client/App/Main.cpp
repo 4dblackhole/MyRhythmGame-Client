@@ -6,13 +6,11 @@
 #include <crtdbg.h>
 #endif
 
-#include "ColoredCubeGame.h"
-#include "GameFlow/SceneIds.h"
+#include "App/FingerDrumGame.h"
 
 #include <Windows.h>
 
 #include <memory>
-#include <string>
 #include <string_view>
 
 namespace
@@ -29,25 +27,6 @@ namespace
 #endif
     }
 
-    [[nodiscard]] std::string SelectInitialSceneId(
-        const std::wstring_view commandLine)
-    {
-        if (commandLine.find(L"--example=mesh") != std::wstring_view::npos)
-        {
-            return std::string(game::scene_ids::MeshExample);
-        }
-        if (commandLine.find(L"--example=collision") !=
-            std::wstring_view::npos)
-        {
-            return std::string(game::scene_ids::CollisionExample);
-        }
-        if (commandLine.find(L"--example=widgets") !=
-            std::wstring_view::npos)
-        {
-            return std::string(game::scene_ids::WidgetExample);
-        }
-        return std::string(game::scene_ids::ColoredCube);
-    }
 }
 
 int WINAPI wWinMain(
@@ -63,16 +42,7 @@ int WINAPI wWinMain(
     const std::wstring_view commandLine = GetCommandLineW();
     const bool smokeTest =
         commandLine.find(L"--smoke-test") != std::wstring_view::npos;
-    const bool showPerformanceOverlay =
-        commandLine.find(L"--show-performance-overlay") !=
-        std::wstring_view::npos;
-
     // The hidden smoke-test path uses the identical initialization and frame
-    // loop, but asks the Client configuration to exit after three renders.
-    // The overlay option exists for visual regression capture; normal runs
-    // start hidden and ColoredCubeGame handles the Raw Input F1 toggle.
-    return mrg::Run(std::make_unique<ColoredCubeGame>(
-        smokeTest,
-        showPerformanceOverlay,
-        SelectInitialSceneId(commandLine)));
+    // loop, but asks FingerDrum to exit after three renders.
+    return mrg::Run(std::make_unique<FingerDrumGame>(smokeTest));
 }

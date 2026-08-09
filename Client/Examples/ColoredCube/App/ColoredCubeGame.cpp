@@ -1,11 +1,11 @@
 #include "ColoredCubeGame.h"
 
-#include "GameFlow/SceneIds.h"
-#include "GameScene/BlankScene.h"
-#include "GameScene/ColoredCubeScene.h"
-#include "GameScene/Examples/CollisionExampleScene.h"
-#include "GameScene/Examples/MeshExampleScene.h"
-#include "GameScene/Examples/WidgetExampleScene.h"
+#include "Examples/ColoredCube/GameFlow/SceneIds.h"
+#include "Examples/ColoredCube/GameScene/BlankScene.h"
+#include "Examples/ColoredCube/GameScene/ColoredCubeScene.h"
+#include "Examples/ColoredCube/GameScene/Examples/CollisionExampleScene.h"
+#include "Examples/ColoredCube/GameScene/Examples/MeshExampleScene.h"
+#include "Examples/ColoredCube/GameScene/Examples/WidgetExampleScene.h"
 
 #include <algorithm>
 #include <stdexcept>
