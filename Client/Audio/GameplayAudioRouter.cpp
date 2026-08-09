@@ -149,6 +149,29 @@ namespace finger_drum::audio
         }
     }
 
+    void GameplayAudioRouter::StopAllVoices() noexcept
+    {
+        // AudioVoice destruction stops playback while retaining loaded Clips,
+        // Buses and effects for an inexpensive chart restart.
+        voices_.clear();
+    }
+
+    bool GameplayAudioRouter::SetVoicesPaused(
+        const bool paused,
+        std::string& errorMessage)
+    {
+        for (const std::unique_ptr<mrg::audio::AudioVoice>& voice : voices_)
+        {
+            if (voice != nullptr && !voice->SetPaused(paused, errorMessage))
+            {
+                lastError_ = errorMessage;
+                return false;
+            }
+        }
+        errorMessage.clear();
+        return true;
+    }
+
     void GameplayAudioRouter::Update()
     {
         std::erase_if(

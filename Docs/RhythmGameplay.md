@@ -60,6 +60,12 @@ Lane은 노트를 시간순으로 안정 정렬하고 가장 앞의 미처리 �
 late Bad이며 다음 노트가 같은 입력을 Good 이내로 받을 수 있으면 앞 노트를
 Miss 처리한 뒤 같은 입력을 다음 노트에 전달합니다.
 
+현재 `TaikoMode`는 RPG `PlayScene`과 같은 방식으로 Don, Kat, BigDon,
+BigKat, Roll, TickRoll, Balloon을 모두 **한 Lane**에 넣습니다. long-note head를
+받은 뒤 일치하는 tail을 받을 때까지 같은 Lane의 중복 head와 일반 Down은
+무시합니다. 따라서 종류별 Lane을 따로 두지 않고 전체 노트의 시간순 focus와
+배드말림 방지 규칙을 한 곳에서 적용합니다.
+
 ## 교체 가능한 노트 규칙
 
 `RuleBasedNote`는 `INoteRule`과 `INoteSoundPolicy`를 조합합니다.
@@ -98,9 +104,15 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 
 ## 테스트 드라이버
 
-`RhythmTestScene`은 등록되어 있지만 실제 곡이 없는 Lobby에는 진입 버튼을
-노출하지 않습니다. 개발 중 초기 Scene이나 임시 route로 연결해 사용할 수
-있습니다.
+`RhythmTestScene`은 Lobby가 선택한 YMP/YME를 `TaikoMode`에 전달해 세션을
+만듭니다. `DestroyOnExit`이므로 매 플레이마다 새로 생성되고 Escape 또는 패턴
+완료 3초 뒤 Lobby로 돌아갈 때 Canvas, audio voice, session과 함께 삭제됩니다.
+
+노트는 `Client/Assets/Skins/test Skin`의 두 레이어로 그립니다. `note.png`,
+`bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient 색상을
+곱하고 `noteoverlay.png`, `bigcircleoverlay.png`는 흰색 원본으로 위에 그립니다.
+기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`입니다.
+음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
 
 - `D`, `K`: Kat
 - `F`, `J`: Don
@@ -110,4 +122,5 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 
 순수 로직 회귀 테스트는 `FingerDrum.Rhythm.Tests.exe`이며 판정 scaling,
 보간 점수, Lane focus, 큰 노트 사운드, tick 중복 방지, legacy YMP와 YME를
-검증합니다.
+검증합니다. `--catalog-root <Songs 경로>`를 붙이면 YMM 5개/YMP 8개의 연관,
+음악 파일 존재 여부와 모든 패턴의 단일-Lane 세션 생성까지 검증합니다.

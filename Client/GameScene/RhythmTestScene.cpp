@@ -13,6 +13,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -25,11 +26,13 @@ namespace
     using finger_drum::rhythm::NoteState;
 
     constexpr mrg::visual2d::Color DeepBlue{0.12F, 0.29F, 0.45F, 1.0F};
-    constexpr mrg::visual2d::Color DonRed{0.95F, 0.29F, 0.32F, 1.0F};
-    constexpr mrg::visual2d::Color KatBlue{0.23F, 0.63F, 0.92F, 1.0F};
-    constexpr mrg::visual2d::Color TrackBlue{0.82F, 0.92F, 0.98F, 0.96F};
+    constexpr mrg::visual2d::Color DonRed{0.95F, 0.25F, 0.29F, 1.0F};
+    constexpr mrg::visual2d::Color KatBlue{0.18F, 0.58F, 0.95F, 1.0F};
+    constexpr mrg::visual2d::Color RollGold{1.0F, 0.64F, 0.12F, 1.0F};
     constexpr float JudgementX = 150.0F;
+    constexpr float NoteCenterY = 330.0F;
     constexpr float TravelDistance = 920.0F;
+    constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{2'000'000};
 
     template <typename ComponentType>
     [[nodiscard]] ComponentType& RequireComponent(
@@ -38,7 +41,7 @@ namespace
         ComponentType* const component = node.GetComponent<ComponentType>();
         if (component == nullptr)
         {
-            throw std::logic_error("A rhythm-test node is missing a component.");
+            throw std::logic_error("A gameplay node is missing a component.");
         }
         return *component;
     }
@@ -54,6 +57,13 @@ namespace
         style.disabled = {color.red, color.green, color.blue, 0.25F};
         RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).
             SetStyle(style);
+    }
+
+    [[nodiscard]] std::filesystem::path SkinAssetPath(
+        const std::filesystem::path& file)
+    {
+        return mrg::platform::ResolveExecutableRelativePath(
+            std::filesystem::path(L"assets\\skins\\test Skin") / file);
     }
 
     [[nodiscard]] std::wstring GradeName(const JudgementGrade grade)
@@ -86,55 +96,60 @@ namespace
         pattern.notes.push_back(std::move(note));
     }
 
-    [[nodiscard]] std::filesystem::path PopSoundPath()
+    [[nodiscard]] bool IsBigVisual(const std::string_view visualId) noexcept
     {
-        return mrg::platform::ResolveExecutableRelativePath(
-            L"assets\\sounds\\pop.wav");
+        return visualId == "Taiko.BigDon" || visualId == "Taiko.BigKat" ||
+            visualId == "Taiko.BigRoll" || visualId == "Taiko.Balloon";
     }
+
+    [[nodiscard]] bool IsLongVisual(const std::string_view visualId) noexcept
+    {
+        return visualId == "Taiko.Roll" || visualId == "Taiko.BigRoll" ||
+            visualId == "Taiko.Balloon";
+    }
+
+    [[nodiscard]] mrg::visual2d::Color AmbientColor(
+        const std::string_view visualId) noexcept
+    {
+        if (visualId == "Taiko.Kat" || visualId == "Taiko.BigKat")
+        {
+            return KatBlue;
+        }
+        if (visualId == "Taiko.Roll" || visualId == "Taiko.BigRoll")
+        {
+            return RollGold;
+        }
+        return DonRed;
+    }
+}
+
+RhythmTestScene::RhythmTestScene(
+    std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest)
+    : launchRequest_(std::move(launchRequest))
+{
 }
 
 void RhythmTestScene::Initialize(const mrg::EngineServices& services)
 {
+    if (launchRequest_ == nullptr)
+    {
+        throw std::invalid_argument("Gameplay requires a launch request.");
+    }
+
     width_ = services.windowWidth;
     height_ = services.windowHeight;
-    session_ = CreateDemoSession();
+    session_ = CreateSession();
     canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>(
         mrg::visual2d::Size{1280.0F, 720.0F},
         mrg::visual2d::CanvasScaleMode::FixedHeight);
     canvas_->SetViewportSize({
         static_cast<float>(width_),
         static_cast<float>(height_)});
-    CreatePresentation();
-    CreateNoteVisuals();
-
-    // 예제는 하나의 wav를 여러 의미 ID에 연결한다. 실제 Client에서는
-    // 각 ID를 서로 다른 파일로 등록해도 판정/노트 코드는 바뀌지 않는다.
-    std::string audioError;
-    if (audioRouter_.Initialize(services.audio, audioError))
-    {
-        const std::array<finger_drum::rhythm::SoundId, 7> soundIds{
-            "Taiko.Don.Hit",
-            "Taiko.Kat.Hit",
-            "Taiko.BigDon.FirstHit",
-            "Taiko.BigKat.FirstHit",
-            "Taiko.LongNote.Tick",
-            "Taiko.Don.FreeInput",
-            "Taiko.Kat.FreeInput"};
-        if (!audioRouter_.RegisterSoundAliases(
-                soundIds,
-                PopSoundPath(),
-                audioError))
-        {
-            // The test remains usable without sound; the on-screen status
-            // reports the backend or asset error instead of aborting startup.
-        }
-    }
-    if (!audioError.empty() && audioStatusLabel_ != nullptr)
-    {
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*audioStatusLabel_).
-            SetText(L"AUDIO: " + std::wstring(audioError.begin(), audioError.end()));
-    }
+    CreatePresentation(services);
+    CreateNoteVisuals(services);
+    InitializeAudio(services);
     StartTimeline(services.audio.CaptureClockSnapshot());
+    ScheduleMusic();
 }
 
 void RhythmTestScene::Update(
@@ -156,6 +171,7 @@ void RhythmTestScene::Update(
         }
         return;
     }
+
     ProcessControlKeys(context.input, clock);
     if (timer_.CurrentState() == finger_drum::rhythm::RhythmTimer::State::Running)
     {
@@ -171,9 +187,8 @@ void RhythmTestScene::Update(
     }
     audioRouter_.Update();
 
-    // Completion does not retain the gameplay object as a hidden Scene.
-    // After a short result-viewing delay the deferred transition ends this
-    // update, calls Shutdown, and destroys the transient Scene instance.
+    // DestroyOnExit removes this complete mode instance after the deferred
+    // transition. Only Lobby and its selected catalog data remain alive.
     if (IsPatternComplete())
     {
         completedElapsedSeconds_ += context.deltaSeconds;
@@ -225,6 +240,39 @@ void RhythmTestScene::Shutdown() noexcept
     timelineLabel_ = nullptr;
     canvas_.reset();
     session_.reset();
+    musicRegistered_ = false;
+    if (launchRequest_ != nullptr)
+    {
+        launchRequest_->Clear();
+    }
+}
+
+std::unique_ptr<finger_drum::mode::PlaySession>
+RhythmTestScene::CreateSession()
+{
+    if (!launchRequest_->IsValid())
+    {
+        return CreateDemoSession();
+    }
+    if (!launchRequest_->mode.empty() && launchRequest_->mode != "Taiko")
+    {
+        throw std::runtime_error(
+            "The selected pattern requests an unsupported game mode: " +
+            launchRequest_->mode);
+    }
+
+    finger_drum::mode::TaikoMode mode;
+    finger_drum::mode::ModeLoadResult loaded = mode.LoadSession(
+        launchRequest_->patternPath,
+        launchRequest_->effectPath);
+    if (!loaded.Succeeded())
+    {
+        const std::string detail = loaded.diagnostics.empty()
+            ? "Unknown chart error."
+            : loaded.diagnostics.front().message;
+        throw std::runtime_error("Failed to load the selected pattern: " + detail);
+    }
+    return std::move(loaded.session);
 }
 
 std::unique_ptr<finger_drum::mode::PlaySession>
@@ -242,64 +290,64 @@ RhythmTestScene::CreateDemoSession()
     AddPatternNote(pattern, 0, 1, 4, NoteType::Kat, Action::Down);
     AddPatternNote(pattern, 0, 2, 4, NoteType::BigDon, Action::Down);
     AddPatternNote(pattern, 0, 3, 4, NoteType::BigKat, Action::Down);
-    AddPatternNote(pattern, 1, 0, 1, NoteType::Don, Action::Down);
-    AddPatternNote(pattern, 1, 1, 4, NoteType::Kat, Action::Down);
-    AddPatternNote(pattern, 1, 2, 4, NoteType::Don, Action::Down);
-    AddPatternNote(pattern, 1, 3, 4, NoteType::Kat, Action::Down);
-    AddPatternNote(pattern, 2, 0, 1, NoteType::TickRoll, Action::LongNoteStart);
+    AddPatternNote(pattern, 1, 0, 1, NoteType::Roll, Action::LongNoteStart);
+    AddPatternNote(pattern, 2, 0, 1, NoteType::Roll, Action::LongNoteEnd);
+    AddPatternNote(pattern, 2, 1, 4, NoteType::TickRoll, Action::LongNoteStart);
     AddPatternNote(pattern, 3, 0, 1, NoteType::TickRoll, Action::LongNoteEnd);
 
-    finger_drum::chart::EffectDocument effects;
-    effects.commands.push_back({
-        .position = {0, Rational{0, 1}},
-        .type = finger_drum::chart::EffectCommandType::BusVolume,
-        .target = "HitSound",
-        .beginValue = 0.65,
-        .endValue = 1.0,
-        .durationMilliseconds = 2000.0,
-        .curve = finger_drum::chart::AutomationCurve::Linear});
-    effects.commands.push_back({
-        .position = {2, Rational{0, 1}},
-        .type = finger_drum::chart::EffectCommandType::ReverbSend,
-        .target = "TickSound",
-        .beginValue = 0.0,
-        .endValue = 0.35,
-        .durationMilliseconds = 1800.0,
-        .curve = finger_drum::chart::AutomationCurve::Smoothstep});
-
     finger_drum::mode::TaikoMode mode;
-    finger_drum::mode::ModeLoadResult result =
-        mode.CreateSession(pattern, effects);
+    finger_drum::mode::ModeLoadResult result = mode.CreateSession(pattern);
     if (!result.Succeeded())
     {
-        throw std::runtime_error("Failed to create the Taiko test session.");
+        throw std::runtime_error("Failed to create the Taiko demo session.");
     }
     return std::move(result.session);
 }
 
-void RhythmTestScene::CreatePresentation()
+void RhythmTestScene::CreatePresentation(
+    const mrg::EngineServices& services)
 {
     auto& root = canvas_->CreateNode(
-        mrg::visual2d::Anchor::Center, "RhythmTest.Root");
+        mrg::visual2d::Anchor::Center,
+        "RhythmTest.Root");
     root.SetPivot({0.5F, 0.5F});
     root.SetSize({1280.0F, 720.0F});
 
     auto& background = mrg::visual2d::CreatePanel(
-        root, {0.0F, 0.0F, 1280.0F, 720.0F}, "Background");
+        root,
+        {0.0F, 0.0F, 1280.0F, 720.0F},
+        "Background");
     SetColor(background, {0.918F, 0.965F, 1.0F, 1.0F});
+
     auto& header = mrg::visual2d::CreateLabel(
-        root, {48.0F, 34.0F, 1184.0F, 52.0F},
-        L"FINGERDRUM · RHYTHM ARCHITECTURE DRIVER", "Header");
+        root,
+        {48.0F, 34.0F, 1184.0F, 52.0F},
+        L"FINGERDRUM / TAIKO SINGLE-LANE DRIVER",
+        "Header");
     auto& headerText = RequireComponent<mrg::visual2d::TextVisualComponent>(header);
     headerText.SetFontSize(24.0F);
     headerText.SetTextColor(DeepBlue);
 
-    auto& track = mrg::visual2d::CreatePanel(
-        root, {120.0F, 240.0F, 1040.0F, 180.0F}, "ScrollGear");
-    SetColor(track, TrackBlue);
-    auto& judgementLine = mrg::visual2d::CreatePanel(
-        root, {JudgementX, 226.0F, 8.0F, 208.0F}, "JudgementLine");
-    SetColor(judgementLine, {1.0F, 0.80F, 0.30F, 1.0F});
+    // Legacy lane art is stretched to the current scroll field. Its authored
+    // texture remains unmodified; tinting is reserved for note Ambient layers.
+    auto& track = mrg::visual2d::CreateSprite(
+        root,
+        {120.0F, 240.0F, 1040.0F, 180.0F},
+        services.visual2DRendering.LoadImage(SkinAssetPath(L"LaneBackground.png")),
+        "ScrollGear.Skin");
+    track.SetZIndex(1);
+    auto& laneLight = mrg::visual2d::CreateSprite(
+        root,
+        {JudgementX - 25.0F, 205.0F, 50.0F, 250.0F},
+        services.visual2DRendering.LoadImage(SkinAssetPath(L"LaneLight.png")),
+        "ScrollGear.Light");
+    laneLight.SetZIndex(2);
+    auto& judgementLine = mrg::visual2d::CreateSprite(
+        root,
+        {JudgementX - 57.0F, NoteCenterY - 57.0F, 114.0F, 114.0F},
+        services.visual2DRendering.LoadImage(SkinAssetPath(L"JudgeLine.png")),
+        "ScrollGear.JudgementLine");
+    judgementLine.SetZIndex(3);
 
     timelineLabel_ = &mrg::visual2d::CreateLabel(
         root, {48.0F, 98.0F, 500.0F, 40.0F}, L"TIME", "Timeline");
@@ -307,7 +355,7 @@ void RhythmTestScene::CreatePresentation()
         root, {48.0F, 146.0F, 820.0F, 48.0F}, L"READY", "Result");
     audioStatusLabel_ = &mrg::visual2d::CreateLabel(
         root, {48.0F, 650.0F, 1184.0F, 34.0F},
-        L"AUDIO: DSP-clock scheduled hitsounds", "AudioStatus");
+        L"AUDIO: DSP-clock scheduled music and hitsounds", "AudioStatus");
     for (mrg::visual2d::Visual2DNode* label :
         {timelineLabel_, resultLabel_, audioStatusLabel_})
     {
@@ -317,9 +365,10 @@ void RhythmTestScene::CreatePresentation()
     }
 
     auto& instructions = mrg::visual2d::CreateLabel(
-        root, {120.0F, 478.0F, 1040.0F, 116.0F},
+        root,
+        {120.0F, 478.0F, 1040.0F, 116.0F},
         L"D / K : KAT (rim)        F / J : DON (center)\n"
-        L"Big notes require two Good-or-better hits. Hold F/J for the tick roll.\n"
+        L"One Lane focuses Don, Kat, large notes and rolls in exact time order.\n"
         L"SPACE : Pause / Resume     R : Restart     ESC : Song Select",
         "Instructions");
     auto& instructionText =
@@ -329,8 +378,22 @@ void RhythmTestScene::CreatePresentation()
     instructionText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
 }
 
-void RhythmTestScene::CreateNoteVisuals()
+void RhythmTestScene::CreateNoteVisuals(
+    const mrg::EngineServices& services)
 {
+    const auto noteImage = services.visual2DRendering.LoadImage(
+        SkinAssetPath(L"note.png"));
+    const auto noteOverlay = services.visual2DRendering.LoadImage(
+        SkinAssetPath(L"noteoverlay.png"));
+    const auto bigNoteImage = services.visual2DRendering.LoadImage(
+        SkinAssetPath(L"bignote.png"));
+    const auto bigOverlay = services.visual2DRendering.LoadImage(
+        SkinAssetPath(L"bigcircleoverlay.png"));
+    const auto bodyImage = services.visual2DRendering.LoadImage(
+        SkinAssetPath(L"LNBody.png"));
+    const auto tailImage = services.visual2DRendering.LoadImage(
+        SkinAssetPath(L"LNTail.png"));
+
     auto& root = canvas_->AnchorNode(mrg::visual2d::Anchor::Center);
     for (const std::unique_ptr<finger_drum::rhythm::Lane>& lane :
         session_->Gear().Lanes())
@@ -338,14 +401,131 @@ void RhythmTestScene::CreateNoteVisuals()
         for (const std::unique_ptr<finger_drum::rhythm::INote>& note :
             lane->Notes())
         {
-            auto& visual = mrg::visual2d::CreatePanel(
-                root, {0.0F, 0.0F, 38.0F, 38.0F}, "RhythmNote");
-            visual.SetPivot({0.5F, 0.5F});
-            visual.SetZIndex(5);
-            SetColor(visual, note->Id() % 2 == 0 ? KatBlue : DonRed);
-            noteVisuals_.emplace(note->Id(), &visual);
+            const finger_drum::mode::NotePresentationInfo* presentation =
+                session_->FindNotePresentation(note->Id());
+            const std::string_view visualId = presentation == nullptr
+                ? std::string_view{"Taiko.Don"}
+                : std::string_view{presentation->visualId};
+            const bool big = IsBigVisual(visualId);
+            const bool longNote = presentation != nullptr &&
+                presentation->hasEndTime && IsLongVisual(visualId);
+            const float diameter = big ? 76.0F : 56.0F;
+            const mrg::visual2d::Color ambientColor = AmbientColor(visualId);
+
+            NoteVisualLayers layers;
+            layers.root = &root.CreateChild(std::format("RhythmNote.{}", note->Id()));
+            layers.root->SetPivot({0.5F, 0.5F});
+            layers.root->SetSize({diameter, diameter});
+            layers.root->SetZIndex(5);
+            layers.root->SetVisible(false);
+            layers.diameter = diameter;
+
+            // Body and tail are Ambient-colored and sit behind the circular
+            // head. The white head overlay is a separate untinted draw packet.
+            if (longNote)
+            {
+                layers.body = &mrg::visual2d::CreateSprite(
+                    *layers.root,
+                    {diameter * 0.5F, diameter * 0.25F, 1.0F, diameter * 0.5F},
+                    bodyImage,
+                    "AmbientBody");
+                RequireComponent<mrg::visual2d::SpriteVisualComponent>(
+                    *layers.body).SetTint(ambientColor);
+                layers.body->SetZIndex(0);
+                layers.tail = &mrg::visual2d::CreateSprite(
+                    *layers.root,
+                    {0.0F, 0.0F, diameter, diameter},
+                    tailImage,
+                    "AmbientTail");
+                RequireComponent<mrg::visual2d::SpriteVisualComponent>(
+                    *layers.tail).SetTint(ambientColor);
+                layers.tail->SetZIndex(1);
+            }
+
+            layers.ambient = &mrg::visual2d::CreateSprite(
+                *layers.root,
+                {0.0F, 0.0F, diameter, diameter},
+                big ? bigNoteImage : noteImage,
+                "AmbientHead");
+            RequireComponent<mrg::visual2d::SpriteVisualComponent>(
+                *layers.ambient).SetTint(ambientColor);
+            layers.ambient->SetZIndex(2);
+            layers.overlay = &mrg::visual2d::CreateSprite(
+                *layers.root,
+                {0.0F, 0.0F, diameter, diameter},
+                big ? bigOverlay : noteOverlay,
+                "UntintedOverlay");
+            RequireComponent<mrg::visual2d::SpriteVisualComponent>(
+                *layers.overlay).SetTint({1.0F, 1.0F, 1.0F, 1.0F});
+            layers.overlay->SetZIndex(3);
+            noteVisuals_.emplace(note->Id(), layers);
         }
     }
+}
+
+void RhythmTestScene::InitializeAudio(const mrg::EngineServices& services)
+{
+    std::string audioError;
+    if (audioRouter_.Initialize(services.audio, audioError))
+    {
+        RegisterTaikoSounds(audioError);
+        if (audioError.empty() && launchRequest_->IsValid())
+        {
+            musicRegistered_ = audioRouter_.RegisterSound(
+                "Music.Track",
+                launchRequest_->musicPath,
+                mrg::audio::AudioLoadMode::Stream,
+                audioError);
+        }
+    }
+    if (!audioError.empty() && audioStatusLabel_ != nullptr)
+    {
+        RequireComponent<mrg::visual2d::TextVisualComponent>(*audioStatusLabel_).
+            SetText(L"AUDIO: " + std::wstring(audioError.begin(), audioError.end()));
+    }
+}
+
+void RhythmTestScene::RegisterTaikoSounds(std::string& errorMessage)
+{
+    struct SoundRegistration
+    {
+        std::string_view id;
+        std::wstring_view file;
+    };
+    constexpr std::array<SoundRegistration, 7> registrations{{
+        {"Taiko.Don.Hit", L"don.wav"},
+        {"Taiko.Kat.Hit", L"kat.wav"},
+        {"Taiko.BigDon.FirstHit", L"bigdon.wav"},
+        {"Taiko.BigKat.FirstHit", L"bigkat.wav"},
+        {"Taiko.LongNote.Tick", L"don.wav"},
+        {"Taiko.Don.FreeInput", L"don.wav"},
+        {"Taiko.Kat.FreeInput", L"kat.wav"},
+    }};
+    for (const SoundRegistration& registration : registrations)
+    {
+        if (!audioRouter_.RegisterSound(
+                std::string(registration.id),
+                SkinAssetPath(registration.file),
+                mrg::audio::AudioLoadMode::Sample,
+                errorMessage))
+        {
+            return;
+        }
+    }
+}
+
+void RhythmTestScene::ScheduleMusic()
+{
+    if (!musicRegistered_)
+    {
+        return;
+    }
+    finger_drum::rhythm::AudioCueRequest cue;
+    cue.sound = "Music.Track";
+    cue.bus = "Music";
+    cue.timelineTime = finger_drum::rhythm::RhythmTime::zero();
+    const std::array cues{cue};
+    audioRouter_.Route(cues, timer_);
 }
 
 void RhythmTestScene::StartTimeline(
@@ -363,10 +543,12 @@ void RhythmTestScene::ResetTimeline(
     const mrg::audio::AudioClockSnapshot& clock)
 {
     session_->Reset();
+    audioRouter_.StopAllVoices();
     acceptedHitCount_ = 0;
     accumulatedScore_ = 0.0;
     completedElapsedSeconds_ = 0.0;
     StartTimeline(clock);
+    ScheduleMusic();
     RequireComponent<mrg::visual2d::TextVisualComponent>(*resultLabel_).
         SetText(L"RESTARTED");
 }
@@ -386,17 +568,18 @@ void RhythmTestScene::ProcessControlKeys(
         if (timer_.CurrentState() == State::Running)
         {
             timer_.Pause(clock.performanceCounterTicks);
+            std::string ignoredError;
+            static_cast<void>(audioRouter_.SetVoicesPaused(true, ignoredError));
         }
         else if (timer_.CurrentState() == State::Paused)
         {
             timer_.Resume(clock.performanceCounterTicks);
-            // QPC paused with the chart while the mixer clock continued.
-            // Re-anchoring keeps resumed hitsounds on the same absolute DSP
-            // timeline instead of delaying them by the pause duration.
             timer_.AnchorDspClock(
                 timer_.Now(clock.performanceCounterTicks),
                 clock.dspClock,
                 clock.sampleRate);
+            std::string ignoredError;
+            static_cast<void>(audioRouter_.SetVoicesPaused(false, ignoredError));
         }
     }
 }
@@ -479,16 +662,17 @@ void RhythmTestScene::UpdatePresentation(
 {
     RequireComponent<mrg::visual2d::TextVisualComponent>(*timelineLabel_).
         SetText(std::format(
-            L"TIME {:+.3f} s   ·   LEVEL 50",
+            L"TIME {:+.3f} s   /   ONE LANE",
             static_cast<double>(time.count()) / 1'000'000.0));
 
     const auto snapshot = session_->Gear().BuildSnapshot(
         time,
-        finger_drum::rhythm::RhythmDuration{2'000'000},
+        ApproachDuration,
         finger_drum::rhythm::RhythmDuration{220'000});
-    for (auto& [id, visual] : noteVisuals_)
+    for (auto& [id, layers] : noteVisuals_)
     {
-        visual->SetVisible(false);
+        static_cast<void>(id);
+        layers.root->SetVisible(false);
     }
     for (const finger_drum::rhythm::ScrollNoteSnapshot& note : snapshot.notes)
     {
@@ -497,20 +681,37 @@ void RhythmTestScene::UpdatePresentation(
         {
             continue;
         }
-        mrg::visual2d::Visual2DNode& visual = *found->second;
+        NoteVisualLayers& layers = found->second;
         const float x = JudgementX +
             std::clamp(note.normalizedTravel, -0.05F, 1.0F) * TravelDistance;
-        visual.SetPosition({x - 640.0F, 330.0F - 360.0F});
-        visual.SetVisible(
-            note.state != NoteState::Completed && note.state != NoteState::Missed);
-        if (note.state == NoteState::AwaitingAdditionalInput ||
-            note.state == NoteState::Holding)
+        layers.root->SetPosition({x - 640.0F, NoteCenterY - 360.0F});
+        layers.root->SetVisible(
+            note.state != NoteState::Completed &&
+            note.state != NoteState::Missed);
+
+        const finger_drum::mode::NotePresentationInfo* presentation =
+            session_->FindNotePresentation(note.noteId);
+        if (presentation != nullptr && presentation->hasEndTime &&
+            layers.body != nullptr && layers.tail != nullptr)
         {
-            visual.SetSize({54.0F, 54.0F});
-        }
-        else
-        {
-            visual.SetSize({38.0F, 38.0F});
+            const auto endDelta = presentation->endTime - time;
+            const float endTravel = std::clamp(
+                static_cast<float>(endDelta.count()) /
+                    static_cast<float>(ApproachDuration.count()),
+                -0.05F,
+                1.65F);
+            const float tailX = JudgementX + endTravel * TravelDistance;
+            const float length = std::max(tailX - x, 1.0F);
+            layers.body->SetBounds({
+                layers.diameter * 0.5F,
+                layers.diameter * 0.25F,
+                length,
+                layers.diameter * 0.5F});
+            layers.tail->SetBounds({
+                length,
+                0.0F,
+                layers.diameter,
+                layers.diameter});
         }
     }
 }

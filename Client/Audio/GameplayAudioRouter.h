@@ -43,6 +43,10 @@ namespace finger_drum::audio
             const rhythm::RhythmTimer& timer);
         void ApplyAutomation(
             std::span<const mode::AutomationValue> values);
+        [[nodiscard]] bool SetVoicesPaused(
+            bool paused,
+            std::string& errorMessage);
+        void StopAllVoices() noexcept;
         void Update();
 
         [[nodiscard]] std::string_view LastError() const noexcept;

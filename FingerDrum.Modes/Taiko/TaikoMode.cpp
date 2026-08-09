@@ -46,6 +46,34 @@ namespace finger_drum::mode
             }
             return ticks;
         }
+
+        [[nodiscard]] std::string_view LongNoteVisualId(
+            const TaikoNoteType type) noexcept
+        {
+            if (type == TaikoNoteType::BigRoll ||
+                type == TaikoNoteType::BigTickRoll)
+            {
+                return "Taiko.BigRoll";
+            }
+            if (type == TaikoNoteType::Balloon)
+            {
+                return "Taiko.Balloon";
+            }
+            return "Taiko.Roll";
+        }
+
+        [[nodiscard]] std::string_view TapVisualId(
+            const TaikoNoteType type) noexcept
+        {
+            switch (type)
+            {
+            case TaikoNoteType::Don: return "Taiko.Don";
+            case TaikoNoteType::Kat: return "Taiko.Kat";
+            case TaikoNoteType::BigDon: return "Taiko.BigDon";
+            case TaikoNoteType::BigKat: return "Taiko.BigKat";
+            default: return "Taiko.Unknown";
+            }
+        }
     }
 
     std::string_view TaikoMode::Id() const noexcept
@@ -156,16 +184,28 @@ namespace finger_drum::mode
                             ActionValue(TaikoAction::Kat)},
                         end);
                 }
+                const rhythm::NoteId noteId = nextId++;
                 lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(
-                    nextId++,
+                    noteId,
                     begin,
                     profile,
                     std::move(rule),
                     MakeTickSoundPolicy("Taiko.LongNote.Tick")));
+                session->SetNotePresentation(noteId, {
+                    std::string(LongNoteVisualId(type)),
+                    end,
+                    true});
                 longNoteHead.reset();
                 continue;
             }
             if (action != TaikoPatternAction::Down)
+            {
+                continue;
+            }
+            // Match the original RPG Lane transaction: while a long-note
+            // head is waiting for its tail, ordinary Down events in that same
+            // lane do not create a second focus target inside the roll.
+            if (longNoteHead.has_value())
             {
                 continue;
             }
@@ -190,14 +230,19 @@ namespace finger_drum::mode
                     ? (don ? "Taiko.BigDon.FirstHit" : "Taiko.BigKat.FirstHit")
                     : (don ? "Taiko.Don.Hit" : "Taiko.Kat.Hit");
             }
+            const rhythm::NoteId noteId = nextId++;
             lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(
-                nextId++,
+                noteId,
                 compiledNote.timing,
                 profile,
                 std::move(rule),
                 big
                     ? MakeBigSoundPolicy(std::move(soundId))
                     : MakeTapSoundPolicy(std::move(soundId))));
+            session->SetNotePresentation(noteId, {
+                std::string(TapVisualId(type)),
+                {},
+                false});
         }
 
         session->SetInputMapping({

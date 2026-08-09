@@ -1,0 +1,15 @@
+[Time Signature]
+
+#measure : n/d change measure length
+#measureLineVisible ON/OFF : show/hide measure line
+
+N/D,#bpm XX : change bpm
+N/D,#ScrollSpeed x : change scroll speed (BMS/DDR style)
+N/D,#NoteSpeed x : change note speed (Taiko style)
+N/D,#Delay xx.xx : delay xx.xx ms
+N/D,#Volume xx : change the hitsound volume
+N/D,#Area xx ON/OFF : user define area ON/OFF
+
+[Pattern]
+Note:
+N/D, <key type>, <action type>, <hitsound(option)>, <extra data(option)>

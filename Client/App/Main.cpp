@@ -7,11 +7,14 @@
 #endif
 
 #include "App/FingerDrumGame.h"
+#include "GameFlow/FingerDrumSceneIds.h"
 
 #include <Windows.h>
 
 #include <memory>
+#include <string>
 #include <string_view>
+#include <utility>
 
 namespace
 {
@@ -40,9 +43,25 @@ int WINAPI wWinMain(
     // The executable constructs only the game-specific Client.  Run owns the
     // Win32, D3D12, input, and audio lifetime around this object.
     const std::wstring_view commandLine = GetCommandLineW();
-    const bool smokeTest =
+    const bool smokeLobby =
+        commandLine.find(L"--smoke-lobby") != std::wstring_view::npos;
+    const bool smokeGameplay =
+        commandLine.find(L"--smoke-gameplay") != std::wstring_view::npos;
+    const bool smokeTest = smokeLobby || smokeGameplay ||
         commandLine.find(L"--smoke-test") != std::wstring_view::npos;
-    // The hidden smoke-test path uses the identical initialization and frame
-    // loop, but asks FingerDrum to exit after three renders.
-    return mrg::Run(std::make_unique<FingerDrumGame>(smokeTest));
+    std::string initialScene(finger_drum::scene_ids::Logo);
+    if (smokeLobby)
+    {
+        initialScene = finger_drum::scene_ids::Lobby;
+    }
+    else if (smokeGameplay)
+    {
+        initialScene = finger_drum::scene_ids::RhythmTest;
+    }
+
+    // Specialized hidden routes exercise catalog widgets and layered Taiko
+    // assets without changing the normal executable's Logo entry point.
+    return mrg::Run(std::make_unique<FingerDrumGame>(
+        smokeTest,
+        std::move(initialScene)));
 }

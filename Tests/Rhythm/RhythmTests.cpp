@@ -1,3 +1,4 @@
+#include "Catalog/SongCatalog.h"
 #include "Judgement/JudgementProfile.h"
 #include "Lane/Lane.h"
 #include "Mode/PlayGameMode.h"
@@ -11,6 +12,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <span>
@@ -225,6 +227,97 @@ namespace
             "A duplicate LNStart must not replace the first active head.");
     }
 
+    void TestTaikoUsesOneLaneForEveryNoteType()
+    {
+        chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
+        pattern.baseBpm = 120.0;
+        const auto down = static_cast<int>(mode::TaikoPatternAction::Down);
+        const auto start = static_cast<int>(
+            mode::TaikoPatternAction::LongNoteStart);
+        const auto end = static_cast<int>(
+            mode::TaikoPatternAction::LongNoteEnd);
+        const auto add = [&pattern](
+            const std::int64_t numerator,
+            const mode::TaikoNoteType type,
+            const int action)
+        {
+            pattern.notes.push_back(chart::PatternNote{
+                .position = {0, chart::Rational{numerator, 8}},
+                .keyType = static_cast<int>(type),
+                .actionType = action,
+                .sourceOrder = pattern.notes.size()});
+        };
+        add(0, mode::TaikoNoteType::Don, down);
+        add(1, mode::TaikoNoteType::Kat, down);
+        add(2, mode::TaikoNoteType::BigDon, down);
+        add(3, mode::TaikoNoteType::BigKat, down);
+        add(4, mode::TaikoNoteType::Roll, start);
+        add(5, mode::TaikoNoteType::Don, down); // Ignored inside the roll.
+        add(6, mode::TaikoNoteType::Roll, end);
+
+        mode::TaikoMode taiko;
+        mode::ModeLoadResult loaded = taiko.CreateSession(pattern);
+        Require(loaded.Succeeded(), "Taiko mode must create a mixed session.");
+        Require(
+            loaded.session->Gear().LaneCount() == 1 &&
+            loaded.session->Gear().Lanes().front()->Notes().size() == 5,
+            "Don, Kat, large notes and rolls must share one ordered Lane.");
+        Require(
+            loaded.session->FindNotePresentation(1)->visualId == "Taiko.Don" &&
+            loaded.session->FindNotePresentation(4)->visualId == "Taiko.BigKat" &&
+            loaded.session->FindNotePresentation(5)->visualId == "Taiko.Roll" &&
+            loaded.session->FindNotePresentation(5)->hasEndTime,
+            "Every logical note must expose its mode-owned visual identity.");
+    }
+
+    void TestSongCatalog(const std::filesystem::path& songsRoot)
+    {
+        const chart::SongCatalogLoadResult catalog =
+            chart::SongCatalog{}.Load(songsRoot);
+        if (!catalog.Succeeded())
+        {
+            for (const chart::Diagnostic& diagnostic : catalog.diagnostics)
+            {
+                if (diagnostic.severity == chart::DiagnosticSeverity::Error)
+                {
+                    std::cerr << diagnostic.location.file.string() << ':'
+                              << diagnostic.location.line << ": "
+                              << diagnostic.message << '\n';
+                }
+            }
+        }
+        Require(catalog.Succeeded(),
+            "The copied RPG song catalog must parse without errors.");
+        Require(
+            catalog.discoveredMusicFiles == 5 &&
+            catalog.songs.size() == 5,
+            "All five YMM music entries must appear in SONG LIST.");
+        Require(
+            catalog.discoveredPatternFiles == 8 &&
+            catalog.PatternCount() == 8,
+            "All eight YMP patterns must be associated with their songs.");
+        mode::TaikoMode taiko;
+        for (const chart::SongCatalogEntry& song : catalog.songs)
+        {
+            Require(std::filesystem::is_regular_file(song.audioPath),
+                "Every YMM entry must resolve its music file.");
+            for (const chart::SongCatalogPattern& pattern : song.patterns)
+            {
+                mode::ModeLoadResult loaded = taiko.LoadSession(
+                    pattern.patternPath,
+                    pattern.effectPath);
+                Require(
+                    loaded.Succeeded() &&
+                    loaded.session->Gear().LaneCount() == 1,
+                    "Every copied Taiko pattern must create one playable Lane.");
+            }
+        }
+        std::cout << "Catalog verified: " << catalog.songs.size()
+                  << " songs, " << catalog.PatternCount()
+                  << " patterns.\n";
+    }
+
     void TestLegacyParsingAndMicroseconds()
     {
         constexpr std::string_view Pattern = R"(
@@ -264,6 +357,13 @@ JudgeLevel: 50
                 }),
             "Legacy visual directives must remain loadable and report migration warnings.");
 
+        chart::MusicalPosition extendedPosition;
+        Require(
+            chart::TryParseMusicalPosition(
+                "18/8", 3, extendedPosition) &&
+            extendedPosition.fraction == chart::Rational{18, 8},
+            "Legacy extended measures must accept positions beyond one whole.");
+
         constexpr std::string_view Effects = R"(
 Version: 1
 [AudioAutomation]
@@ -280,7 +380,7 @@ Version: 1
     }
 }
 
-int main()
+int main(const int argumentCount, char* arguments[])
 {
     try
     {
@@ -290,7 +390,13 @@ int main()
         TestLargeNoteSoundState();
         TestHoldTicksAreExactlyOnce();
         TestLongNoteKeepsFirstHead();
+        TestTaikoUsesOneLaneForEveryNoteType();
         TestLegacyParsingAndMicroseconds();
+        if (argumentCount == 3 &&
+            std::string_view(arguments[1]) == "--catalog-root")
+        {
+            TestSongCatalog(std::filesystem::path(arguments[2]));
+        }
         std::cout << "FingerDrum rhythm tests passed.\n";
         return EXIT_SUCCESS;
     }

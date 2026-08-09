@@ -28,8 +28,10 @@ cd MyRhythmGame-Client
 & 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' `
   MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
 
-.\bin\x64\Debug\FingerDrum.Rhythm.Tests.exe
+.\bin\x64\Debug\FingerDrum.Rhythm.Tests.exe --catalog-root .\Client\Assets\Songs
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-test
+.\bin\x64\Debug\MyRhythmGame.exe --smoke-lobby
+.\bin\x64\Debug\MyRhythmGame.exe --smoke-gameplay
 ```
 
 Visual Studio 2022, MSVC v143, Windows SDK와 FMOD Studio API for Windows가

@@ -74,6 +74,7 @@
     <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h" />
     <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
+    <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
     <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
     <ClInclude Include="GameScene\LobbyScene.h" />
     <ClInclude Include="GameScene\RhythmTestScene.h" />
@@ -137,6 +138,14 @@
     <None Include="Assets\Sounds\pop.wav">
       <AssetTargetPath>sounds\pop.wav</AssetTargetPath>
     </None>
+    <None Include="Assets\Songs\**\*.*">
+      <AssetTargetDirectory>songs\%(RecursiveDir)</AssetTargetDirectory>
+      <AssetTargetPath>songs\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
+    </None>
+    <None Include="Assets\Skins\test Skin\**\*.*">
+      <AssetTargetDirectory>skins\test Skin\%(RecursiveDir)</AssetTargetDirectory>
+      <AssetTargetPath>skins\test Skin\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Dependencies\MRG-Engine\Engine\SDK\MRG.Core.vcxproj">
@@ -167,6 +176,7 @@
     <MakeDir Directories="$(OutDir)assets\images\profile" />
     <MakeDir Directories="$(OutDir)assets\fonts" />
     <MakeDir Directories="$(OutDir)assets\sounds" />
+    <MakeDir Directories="@(None->'$(OutDir)assets\%(AssetTargetDirectory)')" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">
