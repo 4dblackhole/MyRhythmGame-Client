@@ -1,6 +1,6 @@
 #include "BlankScene.h"
 
-#include "GameFlow/SceneIds.h"
+#include "Examples/ColoredCube/GameFlow/SceneIds.h"
 
 #include <Windows.h>
 

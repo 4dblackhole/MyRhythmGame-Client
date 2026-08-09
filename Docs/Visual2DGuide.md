@@ -232,5 +232,5 @@ Update에서는 `canvas.Update(deltaSeconds)`, 입력 라우팅, `TakeActions()`
 게임 상태를 갱신한다. Render에서는 Canvas를 제출하기만 하고 실제 D3D12 명령
 기록과 인스턴스 배치는 엔진이 프레임 끝에 수행한다.
 
-실제 사용 코드는 `Client/GameScene/ColoredCubeScene.cpp`와
-`Client/GameScene/Examples/WidgetExampleScene.cpp`에 있다.
+보관된 실제 사용 코드는 `Client/Examples/ColoredCube/GameScene/ColoredCubeScene.cpp`와
+`Client/Examples/ColoredCube/GameScene/Examples/WidgetExampleScene.cpp`에 있다.

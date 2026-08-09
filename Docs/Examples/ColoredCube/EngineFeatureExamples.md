@@ -15,7 +15,7 @@ Scene으로 이동한다. 세 Scene은 모두 `DestroyOnExit`이므로 진입할
 
 ## 1. Shape와 Mesh 렌더링
 
-[MeshExampleScene.cpp](../Client/GameScene/Examples/MeshExampleScene.cpp)는 다음
+[MeshExampleScene.cpp](../../../Client/Examples/ColoredCube/GameScene/Examples/MeshExampleScene.cpp)는 다음
 세 가지 CPU Shape를 만든다.
 
 - `RectangleShape`: 엔진 기본 사각형
@@ -65,7 +65,7 @@ instance.Submit(context, camera);
 
 ## 2. 렌더 Mesh와 충돌체 연결
 
-[CollisionExampleScene.cpp](../Client/GameScene/Examples/CollisionExampleScene.cpp)는
+[CollisionExampleScene.cpp](../../../Client/Examples/ColoredCube/GameScene/Examples/CollisionExampleScene.cpp)는
 자동으로 왕복하는 구 Mesh와 Y축으로 회전된 상자 Mesh를 보여준다. `Left`와
 `Right`로 구의 이동 중심을 보정하고 `R`로 보정값을 초기화할 수 있다.
 
@@ -92,7 +92,7 @@ D3D12에 의존하지 않으므로 Update에서 여러 번 호출해도 렌더 �
 
 ## 3. Visual2D 위젯 동적 추가와 삭제
 
-[WidgetExampleScene.cpp](../Client/GameScene/Examples/WidgetExampleScene.cpp)는
+[WidgetExampleScene.cpp](../../../Client/Examples/ColoredCube/GameScene/Examples/WidgetExampleScene.cpp)는
 `ADD WIDGET`/`REMOVE LAST` 버튼과 `A`/`D` 키로 Canvas의 자식을 변경한다.
 
 위젯 팩토리는 상속된 Button 객체가 아니라 여러 컴포넌트가 붙은 일반
@@ -133,7 +133,7 @@ for (const mrg::visual2d::Action& action : canvas.TakeActions())
 
 ## Scene 등록과 자동 검증
 
-세 경로는 [ColoredCubeGame.cpp](../Client/App/ColoredCubeGame.cpp)에서 같은 등록
+세 경로는 [ColoredCubeGame.cpp](../../../Client/Examples/ColoredCube/App/ColoredCubeGame.cpp)에서 같은 등록
 함수를 사용한다.
 
 ```cpp

@@ -55,11 +55,11 @@ FMOD SDK 및 DLL은 저장소에 포함하지 않는다.
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-test
 ```
 
-샘플 화면에서는 `F2`로 화면/곡면 Visual2D 표시를 전환하고, `Tab`으로 왼쪽 오디오 패널을
-열거나 닫는다. 첫 ComboBox는 AUTO/WASAPI/ASIO output을 실제로 전환하고 두 번째
-ComboBox는 현재 output에서 감지된 driver를 선택한다. 세 번째 ComboBox에서는
-FMOD DSP buffer당 sample 수를 변경하며 기본값은 256이다.
-`Z`를 누르면 현재 출력으로 `Client/Assets/Sounds/pop.wav`를 재생한다.
+기본 실행은 `FingerDrumGame`의 로고 화면이다. AliceBlue 배경 위에 왼쪽 fade,
+가운데 logo, 오른쪽 fade PNG를 하나의 반응형 strip으로 표시한다. 새 Scene과
+게임 흐름은 [Docs/ExecutionFlow.md](Docs/ExecutionFlow.md), 로고 layout의 상세는
+[Docs/FingerDrum.md](Docs/FingerDrum.md)에 정리되어 있다. 이전 큐브·오디오 패널
+기술 샘플은 `Client/Examples/ColoredCube/`로 옮겨 보관한다.
 
 ## 엔진 버전 갱신
 
@@ -77,4 +77,4 @@ submodule 포인터를 갱신한다.
 # Visual2D 문서
 
 - [Sprite·위젯 통합 구조, 앵커, 입력 및 PNG 디자인](Docs/Visual2DGuide.md)
-- [ColoredCubeScene Visual2D 예제](Docs/Visual2DExample.md)
+- [보관된 ColoredCube Visual2D 예제](Docs/Examples/ColoredCube/Visual2DExample.md)

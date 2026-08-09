@@ -64,22 +64,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="App\ColoredCubeGame.h" />
-    <ClInclude Include="GameFlow\SceneIds.h" />
-    <ClInclude Include="GameScene\BlankScene.h" />
-    <ClInclude Include="GameScene\ColoredCubeScene.h" />
-    <ClInclude Include="GameScene\Examples\CollisionExampleScene.h" />
-    <ClInclude Include="GameScene\Examples\MeshExampleScene.h" />
-    <ClInclude Include="GameScene\Examples\WidgetExampleScene.h" />
+    <ClInclude Include="App\FingerDrumGame.h" />
+    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h" />
+    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
+    <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
+    <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="App\ColoredCubeGame.cpp" />
+    <ClCompile Include="App\FingerDrumGame.cpp" />
     <ClCompile Include="App\Main.cpp" />
-    <ClCompile Include="GameScene\BlankScene.cpp" />
-    <ClCompile Include="GameScene\ColoredCubeScene.cpp" />
-    <ClCompile Include="GameScene\Examples\CollisionExampleScene.cpp" />
-    <ClCompile Include="GameScene\Examples\MeshExampleScene.cpp" />
-    <ClCompile Include="GameScene\Examples\WidgetExampleScene.cpp" />
+    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
+    <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\awhc.png">
@@ -93,6 +98,15 @@
     </None>
     <None Include="Assets\Images\Widget2.png">
       <AssetTargetPath>images\Widget2.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\Images\Logo\Center.png">
+      <AssetTargetPath>images\logo\Center.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\Images\Logo\LeftFade.png">
+      <AssetTargetPath>images\logo\LeftFade.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\Images\Logo\RightFade.png">
+      <AssetTargetPath>images\logo\RightFade.png</AssetTargetPath>
     </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <AssetTargetPath>fonts\PressStart2P-Regular.ttf</AssetTargetPath>
@@ -125,6 +139,7 @@
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
     <MakeDir Directories="$(OutDir)assets\images" />
+    <MakeDir Directories="$(OutDir)assets\images\logo" />
     <MakeDir Directories="$(OutDir)assets\fonts" />
     <MakeDir Directories="$(OutDir)assets\sounds" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />

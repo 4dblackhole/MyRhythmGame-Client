@@ -14,11 +14,10 @@
 
 | 문서 | 내용 |
 | --- | --- |
-| [ExecutionFlow.md](ExecutionFlow.md) | 진입점, 엔진 초기화, Update/Render, Scene 수명과 종료 |
-| [EngineFeatureExamples.md](EngineFeatureExamples.md) | 숫자 1/2/3으로 실행하는 Mesh·충돌·위젯 예제 |
+| [ExecutionFlow.md](ExecutionFlow.md) | FingerDrum 진입점, 엔진 초기화, Update/Render, Scene 수명과 종료 |
+| [FingerDrum.md](FingerDrum.md) | 첫 로고 화면의 asset, pivot, 반응형 layout과 코드 경계 |
 | [Visual2DGuide.md](Visual2DGuide.md) | Sprite·위젯 component, Canvas, 입력, PNG와 Z-Order |
-| [Visual2DExample.md](Visual2DExample.md) | 화면·곡면 Canvas와 오디오 설정 패널 구현 |
-| [PerformanceOverlay.md](PerformanceOverlay.md) | Client 소유 FPS/UPS 표시 |
+| [Examples/ColoredCube/README.md](Examples/ColoredCube/README.md) | 보관된 ColoredCube Mesh·충돌·위젯·Visual2D 기술 예제 |
 
 엔진 자체의 Audio, Collision, Text, Visual2D 내부 설계 문서는
 `Dependencies/MRG-Engine/Docs`에 있다. 전체 링크는 엔진의
@@ -38,12 +37,10 @@
 | 목적 | 코드 위치 |
 | --- | --- |
 | 프로그램 진입과 CRT leak 검사 | `Client/App/Main.cpp` |
-| 엔진 설정·Scene 등록·성능 표시 | `Client/App/ColoredCubeGame.*` |
-| 큐브, 화면/곡면 UI, 오디오 패널 | `Client/GameScene/ColoredCubeScene.*` |
-| 게임별 Scene route | `Client/GameFlow/SceneIds.h` |
-| Mesh 예제 | `Client/GameScene/Examples/MeshExampleScene.*` |
-| 충돌 예제 | `Client/GameScene/Examples/CollisionExampleScene.*` |
-| Visual2D 위젯 예제 | `Client/GameScene/Examples/WidgetExampleScene.*` |
+| FingerDrum Client 설정·Scene 등록 | `Client/App/FingerDrumGame.*` |
+| 첫 로고 화면 | `Client/GameScene/FingerDrumLogoScene.*` |
+| FingerDrum Scene route | `Client/GameFlow/FingerDrumSceneIds.h` |
+| 보관된 큐브·Mesh·충돌·위젯 예제 | `Client/Examples/ColoredCube/` |
 
 구현 전에는 관련 문서뿐 아니라 현재 코드를 함께 확인한다. 문서는 의도와 경계를
 설명하고, 정확한 public signature는 submodule의 생성된 `MRG_Core.h`가 기준이다.

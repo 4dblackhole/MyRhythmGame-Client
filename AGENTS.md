@@ -9,8 +9,9 @@ This file applies to the entire repository except the independently versioned
   `Dependencies/MRG-Engine/Docs/EngineOverview.md` for the engine feature and
   ownership index, and `Docs/ExecutionFlow.md` for this Client's concrete
   startup, frame, Scene, and shutdown flow.
-- Use `Docs/EngineFeatureExamples.md` for mesh/collision/widget recipes and the
-  Visual2D documents for Sprite, Canvas, input, PNG, and Z-order work.
+- Use `Docs/Examples/ColoredCube/EngineFeatureExamples.md` for archived
+  mesh/collision/widget recipes and the Visual2D documents for Sprite, Canvas,
+  input, PNG, and Z-order work.
 - Keep `README.md`, `Docs/README.md`, and affected feature documents in sync
   when a major Client flow, example, control, or engine integration changes.
 
@@ -26,7 +27,8 @@ This file applies to the entire repository except the independently versioned
 
 ## Client rules
 
-- Keep game-specific Scene IDs in `Client/GameFlow/SceneIds.h`.
+- Keep FingerDrum Scene IDs in `Client/GameFlow/FingerDrumSceneIds.h`; retain
+  archived example routes under `Client/Examples/ColoredCube/GameFlow/`.
 - Register Scene factories through `SceneManager::RegisterScene` with explicit
   `KeepAlive` or `DestroyOnExit` retention and use deferred `ChangeScene` for
   all transitions.

@@ -4,11 +4,26 @@
     <Filter Include="App">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555551}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Examples">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555559}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Examples\ColoredCube">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555560}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Examples\ColoredCube\App">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555561}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Examples\ColoredCube\GameFlow">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555562}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Examples\ColoredCube\GameScene">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555563}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Examples\ColoredCube\GameScene\Examples">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555564}</UniqueIdentifier>
+    </Filter>
     <Filter Include="GameScene">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555552}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="GameScene\Examples">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555557}</UniqueIdentifier>
     </Filter>
     <Filter Include="GameFlow">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555555}</UniqueIdentifier>
@@ -22,54 +37,72 @@
     <Filter Include="Assets\Images">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555558}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Images\Logo">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555565}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Assets\Sounds">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App\ColoredCubeGame.h">
+    <ClInclude Include="App\FingerDrumGame.h">
       <Filter>App</Filter>
     </ClInclude>
-    <ClInclude Include="GameFlow\SceneIds.h">
+    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h">
+      <Filter>Examples\ColoredCube\App</Filter>
+    </ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h">
+      <Filter>Examples\ColoredCube\GameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h">
+      <Filter>Examples\ColoredCube\GameScene</Filter>
+    </ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h">
+      <Filter>Examples\ColoredCube\GameScene</Filter>
+    </ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h">
+      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
+    </ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h">
+      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
+    </ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h">
+      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
+    </ClInclude>
+    <ClInclude Include="GameFlow\FingerDrumSceneIds.h">
       <Filter>GameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="GameScene\BlankScene.h">
+    <ClInclude Include="GameScene\FingerDrumLogoScene.h">
       <Filter>GameScene</Filter>
-    </ClInclude>
-    <ClInclude Include="GameScene\ColoredCubeScene.h">
-      <Filter>GameScene</Filter>
-    </ClInclude>
-    <ClInclude Include="GameScene\Examples\CollisionExampleScene.h">
-      <Filter>GameScene\Examples</Filter>
-    </ClInclude>
-    <ClInclude Include="GameScene\Examples\MeshExampleScene.h">
-      <Filter>GameScene\Examples</Filter>
-    </ClInclude>
-    <ClInclude Include="GameScene\Examples\WidgetExampleScene.h">
-      <Filter>GameScene\Examples</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="App\ColoredCubeGame.cpp">
+    <ClCompile Include="App\FingerDrumGame.cpp">
       <Filter>App</Filter>
     </ClCompile>
     <ClCompile Include="App\Main.cpp">
       <Filter>App</Filter>
     </ClCompile>
-    <ClCompile Include="GameScene\BlankScene.cpp">
+    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp">
+      <Filter>Examples\ColoredCube\App</Filter>
+    </ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp">
+      <Filter>Examples\ColoredCube\GameScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp">
+      <Filter>Examples\ColoredCube\GameScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp">
+      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
+    </ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp">
+      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
+    </ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp">
+      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScene\FingerDrumLogoScene.cpp">
       <Filter>GameScene</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene\ColoredCubeScene.cpp">
-      <Filter>GameScene</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene\Examples\CollisionExampleScene.cpp">
-      <Filter>GameScene\Examples</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene\Examples\MeshExampleScene.cpp">
-      <Filter>GameScene\Examples</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene\Examples\WidgetExampleScene.cpp">
-      <Filter>GameScene\Examples</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -84,6 +117,15 @@
     </None>
     <None Include="Assets\Images\Widget2.png">
       <Filter>Assets\Images</Filter>
+    </None>
+    <None Include="Assets\Images\Logo\Center.png">
+      <Filter>Assets\Images\Logo</Filter>
+    </None>
+    <None Include="Assets\Images\Logo\LeftFade.png">
+      <Filter>Assets\Images\Logo</Filter>
+    </None>
+    <None Include="Assets\Images\Logo\RightFade.png">
+      <Filter>Assets\Images\Logo</Filter>
     </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <Filter>Assets\Fonts</Filter>
