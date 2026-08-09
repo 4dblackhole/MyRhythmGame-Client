@@ -2,6 +2,7 @@
 
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "GameScene/FingerDrumLogoScene.h"
+#include "GameScene/LobbyScene.h"
 
 #include <stdexcept>
 #include <string>
@@ -38,9 +39,12 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
     // catalog instead of reviving the ColoredCube sample as a dependency.
     if (!scenes.RegisterScene<FingerDrumLogoScene>(
             std::string(finger_drum::scene_ids::Logo),
+            mrg::scene::SceneRetention::KeepAlive) ||
+        !scenes.RegisterScene<LobbyScene>(
+            std::string(finger_drum::scene_ids::Lobby),
             mrg::scene::SceneRetention::KeepAlive))
     {
-        throw std::runtime_error("Failed to register the FingerDrum logo Scene.");
+        throw std::runtime_error("Failed to register the FingerDrum Scenes.");
     }
 }
 

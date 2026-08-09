@@ -18,9 +18,10 @@ flowchart TD
 1. `wWinMain`이 CRT leak 검사를 활성화하고 `FingerDrumGame`을 생성한다.
 2. `mrg::Run`이 엔진 시스템을 초기화한 뒤 `FingerDrumGame::GetEngineConfig`의
    AliceBlue clear color와 창 설정을 적용한다.
-3. `FingerDrumGame::RegisterScenes`가 `FingerDrum.Logo` route를 등록하고,
+3. `FingerDrumGame::RegisterScenes`가 `FingerDrum.Logo`와 임시
+   `FingerDrum.Lobby` route를 등록하고,
    `SceneManager`가 `FingerDrumLogoScene`을 생성한다.
-4. 로고 Scene은 세 PNG를 읽어 `Visual2DCanvas`에 배치한다. 매 resize 때 전체
+4. 로고 Scene은 세 PNG와 타이틀 메뉴를 `Visual2DCanvas`에 배치한다. 매 resize 때 전체
    이미지 스트립의 scale을 다시 계산하므로 가장자리 이미지가 화면 밖으로 밀리지
    않는다.
 5. Render 단계에서 Scene은 Canvas를 제출한다. 실제 D3D12 명령 기록·배치·present는

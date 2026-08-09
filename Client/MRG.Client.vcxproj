@@ -74,6 +74,7 @@
     <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
+    <ClInclude Include="GameScene\LobbyScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FingerDrumGame.cpp" />
@@ -85,6 +86,7 @@
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
+    <ClCompile Include="GameScene\LobbyScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\awhc.png">
@@ -107,6 +109,9 @@
     </None>
     <None Include="Assets\Images\Logo\RightFade.png">
       <AssetTargetPath>images\logo\RightFade.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\Images\Menu\SelectionCursor.png">
+      <AssetTargetPath>images\menu\SelectionCursor.png</AssetTargetPath>
     </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <AssetTargetPath>fonts\PressStart2P-Regular.ttf</AssetTargetPath>
@@ -140,6 +145,7 @@
     <MakeDir Directories="$(OutDir)assets" />
     <MakeDir Directories="$(OutDir)assets\images" />
     <MakeDir Directories="$(OutDir)assets\images\logo" />
+    <MakeDir Directories="$(OutDir)assets\images\menu" />
     <MakeDir Directories="$(OutDir)assets\fonts" />
     <MakeDir Directories="$(OutDir)assets\sounds" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
