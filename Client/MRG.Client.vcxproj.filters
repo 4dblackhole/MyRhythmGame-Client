@@ -40,6 +40,9 @@
     <Filter Include="Assets\Images\Logo">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555565}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Images\Menu">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555566}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Assets\Sounds">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
     </Filter>
@@ -75,6 +78,9 @@
     <ClInclude Include="GameScene\FingerDrumLogoScene.h">
       <Filter>GameScene</Filter>
     </ClInclude>
+    <ClInclude Include="GameScene\LobbyScene.h">
+      <Filter>GameScene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FingerDrumGame.cpp">
@@ -104,6 +110,9 @@
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp">
       <Filter>GameScene</Filter>
     </ClCompile>
+    <ClCompile Include="GameScene\LobbyScene.cpp">
+      <Filter>GameScene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\awhc.png">
@@ -126,6 +135,9 @@
     </None>
     <None Include="Assets\Images\Logo\RightFade.png">
       <Filter>Assets\Images\Logo</Filter>
+    </None>
+    <None Include="Assets\Images\Menu\SelectionCursor.png">
+      <Filter>Assets\Images\Menu</Filter>
     </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <Filter>Assets\Fonts</Filter>
