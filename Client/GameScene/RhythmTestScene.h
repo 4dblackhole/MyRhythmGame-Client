@@ -44,6 +44,11 @@ private:
     [[nodiscard]] std::unique_ptr<finger_drum::mode::PlaySession>
         CreateDemoSession();
     void CreatePresentation(const mrg::EngineServices& services);
+    void CreateLaneVisuals(
+        const mrg::EngineServices& services,
+        mrg::visual2d::Visual2DNode& sceneRoot);
+    void CreateLaneBackgroundTiles(
+        const mrg::EngineServices& services);
     void CreateNoteVisuals(const mrg::EngineServices& services);
     void InitializeAudio(const mrg::EngineServices& services);
     void RegisterTaikoSounds(std::string& errorMessage);
@@ -72,6 +77,7 @@ private:
     finger_drum::audio::GameplayAudioRouter audioRouter_;
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers>
         noteVisuals_;
+    mrg::visual2d::Visual2DNode* laneRoot_{};
     mrg::visual2d::Visual2DNode* timelineLabel_{};
     mrg::visual2d::Visual2DNode* resultLabel_{};
     mrg::visual2d::Visual2DNode* audioStatusLabel_{};
