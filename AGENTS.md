@@ -3,6 +3,17 @@
 This file applies to the entire repository except the independently versioned
 `Dependencies/MRG-Engine` submodule.
 
+## Session onboarding
+
+- Read `Docs/README.md` at the start of a new Client session. Then read
+  `Dependencies/MRG-Engine/Docs/EngineOverview.md` for the engine feature and
+  ownership index, and `Docs/ExecutionFlow.md` for this Client's concrete
+  startup, frame, Scene, and shutdown flow.
+- Use `Docs/EngineFeatureExamples.md` for mesh/collision/widget recipes and the
+  Visual2D documents for Sprite, Canvas, input, PNG, and Z-order work.
+- Keep `README.md`, `Docs/README.md`, and affected feature documents in sync
+  when a major Client flow, example, control, or engine integration changes.
+
 ## Purpose and boundary
 
 - This private repository contains game-specific code and assets.
