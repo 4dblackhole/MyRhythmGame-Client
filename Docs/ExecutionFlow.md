@@ -11,7 +11,9 @@ flowchart TD
     Game --> Manager["SceneManager"]
     Manager --> Logo["FingerDrumLogoScene"]
     Logo --> Lobby["LobbyScene · Music Select"]
-    Manager --> Test["RhythmTestScene · 개발용 Taiko Driver"]
+    Lobby --> Request["GameplayLaunchRequest"]
+    Request --> Manager
+    Manager --> Test["RhythmTestScene · transient Taiko play"]
 ```
 
 ## 시작
@@ -27,11 +29,12 @@ flowchart TD
 
 - Logo에서 Game Start를 누르면 Lobby로 이동합니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
-  현재 catalog와 기록 저장소가 없으므로 모든 데이터 영역은 빈 상태이며
-  Escape로 Logo에 돌아갑니다.
-- RhythmTest는 `TaikoMode`로 세션을 만들고 한 개의 `RhythmTimer`로 입력,
-  판정, 스크롤, 오디오 DSP 예약 시각을 연결하는 개발용 Scene입니다. 현재
-  빈 Lobby에서는 진입 버튼을 노출하지 않습니다.
+  `SongCatalog`가 YMM 5개와 YMP 8개를 연결한 실제 목록을 표시하며, 좌측 상단
+  BACK 버튼이나 Escape로 Logo에 돌아갑니다.
+- Lobby의 PLAY/Enter는 선택 경로를 `GameplayLaunchRequest`에 기록한 뒤
+  RhythmTest 전환을 요청합니다. RhythmTest는 `TaikoMode`로 한 Lane 세션을
+  만들고 한 개의 `RhythmTimer`로 입력, 판정, 스크롤, 음악과 히트사운드의 DSP
+  예약 시각을 연결합니다.
 - Logo와 Lobby는 `KeepAlive`, gameplay route는 `DestroyOnExit`입니다.
   gameplay 등록 시에는 factory만 보관하고 곡 선택 후 `ChangeScene`이 호출될
   때 해당 모드의 객체를 동적으로 생성합니다.
@@ -48,3 +51,7 @@ flowchart TD
 D3D12 command 기록과 present는 엔진이 담당합니다. 종료 시 활성 Scene부터
 `Shutdown`하여 Canvas observer와 오디오 voice를 먼저 해제한 후 엔진 장치를
 역순으로 종료합니다.
+
+`FingerDrumGame`의 Client hook은 F7을 감지하고 게임용 Rajdhani 글꼴의 FPS와
+UPS를 Scene 렌더 뒤 우측 하단에 제출합니다. 이 표시는 Scene이나 엔진 루프의
+소유물이 아니므로 Scene 전환과 관계없이 유지됩니다.

@@ -36,6 +36,20 @@ namespace finger_drum::mode
         effects_ = std::move(effects);
     }
 
+    void PlaySession::SetNotePresentation(
+        const rhythm::NoteId noteId,
+        NotePresentationInfo presentation)
+    {
+        notePresentation_.insert_or_assign(noteId, std::move(presentation));
+    }
+
+    const NotePresentationInfo* PlaySession::FindNotePresentation(
+        const rhythm::NoteId noteId) const noexcept
+    {
+        const auto found = notePresentation_.find(noteId);
+        return found == notePresentation_.end() ? nullptr : &found->second;
+    }
+
     rhythm::NoteProcessResult PlaySession::ProcessInput(
         const rhythm::PhysicalKey physicalKey,
         const rhythm::InputEdge edge,

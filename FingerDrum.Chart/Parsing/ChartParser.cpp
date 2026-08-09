@@ -585,7 +585,7 @@ namespace finger_drum::chart
         std::int64_t denominator = 0;
         if (!ParseInteger(value.substr(0, slash), numerator) ||
             !ParseInteger(value.substr(slash + 1), denominator) ||
-            denominator <= 0 || numerator < 0 || numerator > denominator)
+            denominator <= 0 || numerator < 0)
         {
             return false;
         }

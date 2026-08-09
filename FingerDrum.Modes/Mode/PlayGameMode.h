@@ -10,11 +10,19 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
 namespace finger_drum::mode
 {
+    struct NotePresentationInfo
+    {
+        std::string visualId;
+        rhythm::RhythmTime endTime{};
+        bool hasEndTime{};
+    };
+
     struct AutomationValue
     {
         chart::EffectCommandType type{chart::EffectCommandType::Custom};
@@ -34,6 +42,11 @@ namespace finger_drum::mode
             rhythm::AudioCueRequest cue);
         void SetEffects(
             std::vector<chart::CompiledEffectCommand> effects);
+        void SetNotePresentation(
+            rhythm::NoteId noteId,
+            NotePresentationInfo presentation);
+        [[nodiscard]] const NotePresentationInfo* FindNotePresentation(
+            rhythm::NoteId noteId) const noexcept;
 
         [[nodiscard]] rhythm::NoteProcessResult ProcessInput(
             rhythm::PhysicalKey physicalKey,
@@ -54,6 +67,7 @@ namespace finger_drum::mode
         rhythm::ScrollGear gear_;
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping_;
         std::map<rhythm::NoteAction, rhythm::AudioCueRequest> freeInputCues_;
+        std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;
     };
 

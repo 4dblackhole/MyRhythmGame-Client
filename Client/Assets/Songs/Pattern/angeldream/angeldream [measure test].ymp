@@ -1,0 +1,50 @@
+[Metadata]
+Music metadata: Music/Angeldream/angel dream hand shaking.ymm
+Pattern Maker Count: 2
+Pattern Maker 1: Konpaku Sariel
+Pattern Maker 2: Youmu
+Pattern Name: measure test
+Tags: test
+
+Pattern Offset: 104
+Preview Time: 1,0/1
+Base BPM: 180
+
+[Difficulty]
+Mode: Taiko
+JudgeLevel: 50
+
+[HitSounds]
+
+[Time Signature]
+
+#measure 5/4
+--
+--
+#measure 17/16
+--
+
+#measure 6/4
+--
+#measure 4/4
+--
+--
+--
+--
+
+[Pattern]
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0

@@ -55,6 +55,15 @@
     <Filter Include="Assets\Sounds">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Songs">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555570}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Skins">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555571}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Skins\test Skin">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555572}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\FingerDrumGame.h">
@@ -85,6 +94,9 @@
       <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
     </ClInclude>
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h">
+      <Filter>GameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="GameFlow\GameplayLaunchRequest.h">
       <Filter>GameFlow</Filter>
     </ClInclude>
     <ClInclude Include="GameScene\FingerDrumLogoScene.h">
@@ -183,6 +195,12 @@
     </None>
     <None Include="Assets\Sounds\pop.wav">
       <Filter>Assets\Sounds</Filter>
+    </None>
+    <None Include="Assets\Songs\**\*.*">
+      <Filter>Assets\Songs</Filter>
+    </None>
+    <None Include="Assets\Skins\test Skin\**\*.*">
+      <Filter>Assets\Skins\test Skin</Filter>
     </None>
   </ItemGroup>
 </Project>

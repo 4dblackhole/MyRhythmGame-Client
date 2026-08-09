@@ -49,6 +49,10 @@ This file applies to the entire repository except the independently versioned
 - Keep YMP focused on playable score data and YME focused on visual/audio
   automation. New game modes implement `IPlayGameMode` and own parsing-to-note
   construction policy.
+- Build song selection from `FingerDrum.Chart/Catalog/SongCatalog`; preserve
+  the YMM/YMP relative-path relationship and keep list rows limited to title
+  and artist. Pass selected paths through `GameplayLaunchRequest` rather than
+  retaining a gameplay Scene.
 - Keep Client `.vcxproj.filters` paths synchronized with physical directories.
 - Bundle each redistributed font license beside the font asset.
 - Keep game option behavior in Client code. Compose it from engine
@@ -86,4 +90,6 @@ This file applies to the entire repository except the independently versioned
 
 After changes, initialize the submodule and rebuild
 `MyRhythmGame-Client.sln` in Debug and Release x64. Run the resulting
-`MyRhythmGame.exe --smoke-test` in both configurations.
+`FingerDrum.Rhythm.Tests.exe --catalog-root Client/Assets/Songs` and
+`MyRhythmGame.exe --smoke-test`, `--smoke-lobby`, and `--smoke-gameplay` in
+both configurations.

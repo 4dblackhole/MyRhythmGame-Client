@@ -24,12 +24,13 @@
 
 ## 타이틀 메뉴 조작
 
-- `Game Start`: 임시 `LobbyScene`으로 이동한다. 현재 Lobby는 빈 AliceBlue 화면이다.
+- `Game Start`: YMM/YMP catalog를 표시하는 `LobbyScene`으로 이동한다.
 - `Exit`: `SceneManager::Quit`을 요청해 게임을 정상 종료한다.
 - 마우스 이동: hover한 버튼으로 삼각형 선택 커서가 이동한다.
 - 마우스 왼쪽 클릭: 해당 버튼을 실행한다.
 - `↑`/`↓` 또는 `W`/`S`: 선택 커서를 이동한다.
 - `Enter` 또는 `Space`: 현재 선택한 버튼을 실행한다.
+- `F7`: 모든 FingerDrum Scene 위 우측 하단 FPS/UPS 표시를 토글한다.
 
 커서 자산은 `Client/Assets/Images/Menu/SelectionCursor.png`이며 투명 PNG다.
 마우스가 정지된 상태에서는 키보드로 옮긴 선택을 다시 빼앗지 않도록, 새 mouse
