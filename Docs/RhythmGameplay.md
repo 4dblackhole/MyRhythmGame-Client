@@ -98,7 +98,9 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 
 ## 테스트 드라이버
 
-Lobby의 PLAY를 누르면 `RhythmTestScene`에 진입합니다.
+`RhythmTestScene`은 등록되어 있지만 실제 곡이 없는 Lobby에는 진입 버튼을
+노출하지 않습니다. 개발 중 초기 Scene이나 임시 route로 연결해 사용할 수
+있습니다.
 
 - `D`, `K`: Kat
 - `F`, `J`: Don

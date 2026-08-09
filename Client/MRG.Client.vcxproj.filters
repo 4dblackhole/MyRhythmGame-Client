@@ -46,6 +46,12 @@
     <Filter Include="Assets\Images\Menu">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555566}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Presentation">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555569}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Images\Profile">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555568}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Assets\Sounds">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
     </Filter>
@@ -90,6 +96,9 @@
     <ClInclude Include="GameScene\RhythmTestScene.h">
       <Filter>GameScene</Filter>
     </ClInclude>
+    <ClInclude Include="Presentation\MarqueeTextComponent.h">
+      <Filter>Presentation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FingerDrumGame.cpp">
@@ -128,6 +137,9 @@
     <ClCompile Include="GameScene\RhythmTestScene.cpp">
       <Filter>GameScene</Filter>
     </ClCompile>
+    <ClCompile Include="Presentation\MarqueeTextComponent.cpp">
+      <Filter>Presentation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\awhc.png">
@@ -153,6 +165,9 @@
     </None>
     <None Include="Assets\Images\Menu\SelectionCursor.png">
       <Filter>Assets\Images\Menu</Filter>
+    </None>
+    <None Include="Assets\Images\Profile\TemporaryPilot.png">
+      <Filter>Assets\Images\Profile</Filter>
     </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <Filter>Assets\Fonts</Filter>

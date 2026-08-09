@@ -33,14 +33,16 @@ private:
     void ResetTimeline(const mrg::audio::AudioClockSnapshot& clock);
     void ProcessControlKeys(
         const mrg::platform::InputState& input,
-        const mrg::audio::AudioClockSnapshot& clock,
-        mrg::scene::SceneManager& scenes);
+        const mrg::audio::AudioClockSnapshot& clock);
     void ProcessRhythmInput(const mrg::platform::InputState& input);
     void UpdateSession(
         const mrg::platform::InputState& input,
         finger_drum::rhythm::RhythmTime time);
     void ConsumeResult(finger_drum::rhythm::NoteProcessResult result);
     void UpdatePresentation(finger_drum::rhythm::RhythmTime time);
+    [[nodiscard]] bool IsPatternComplete() const noexcept;
+    [[nodiscard]] bool ReturnToLobby(
+        mrg::scene::SceneManager& scenes) const;
 
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
@@ -55,4 +57,5 @@ private:
     mrg::visual2d::Visual2DNode* audioStatusLabel_{};
     std::uint64_t acceptedHitCount_{};
     double accumulatedScore_{};
+    double completedElapsedSeconds_{};
 };

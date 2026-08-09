@@ -32,6 +32,9 @@ This file applies to the entire repository except the independently versioned
 - Register Scene factories through `SceneManager::RegisterScene` with explicit
   `KeepAlive` or `DestroyOnExit` retention and use deferred `ChangeScene` for
   all transitions.
+- Register every gameplay-mode Scene as `DestroyOnExit`. Keep only its factory
+  while inactive, create the concrete mode Scene on entry, and return only
+  result data before leaving so `Shutdown` can destroy all play-session state.
 - Use Win32 Virtual-Key values with the engine input API; do not add a Client
   key enum for physical keyboard input.
 - Preserve timestamped Raw Input events for future rhythm judgement.

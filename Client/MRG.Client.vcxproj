@@ -77,6 +77,7 @@
     <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
     <ClInclude Include="GameScene\LobbyScene.h" />
     <ClInclude Include="GameScene\RhythmTestScene.h" />
+    <ClInclude Include="Presentation\MarqueeTextComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FingerDrumGame.cpp" />
@@ -91,6 +92,7 @@
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
     <ClCompile Include="GameScene\LobbyScene.cpp" />
     <ClCompile Include="GameScene\RhythmTestScene.cpp" />
+    <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\awhc.png">
@@ -116,6 +118,9 @@
     </None>
     <None Include="Assets\Images\Menu\SelectionCursor.png">
       <AssetTargetPath>images\menu\SelectionCursor.png</AssetTargetPath>
+    </None>
+    <None Include="Assets\Images\Profile\TemporaryPilot.png">
+      <AssetTargetPath>images\profile\TemporaryPilot.png</AssetTargetPath>
     </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <AssetTargetPath>fonts\PressStart2P-Regular.ttf</AssetTargetPath>
@@ -159,6 +164,7 @@
     <MakeDir Directories="$(OutDir)assets\images" />
     <MakeDir Directories="$(OutDir)assets\images\logo" />
     <MakeDir Directories="$(OutDir)assets\images\menu" />
+    <MakeDir Directories="$(OutDir)assets\images\profile" />
     <MakeDir Directories="$(OutDir)assets\fonts" />
     <MakeDir Directories="$(OutDir)assets\sounds" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />

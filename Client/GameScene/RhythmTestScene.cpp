@@ -148,7 +148,15 @@ void RhythmTestScene::Update(
 
     const mrg::audio::AudioClockSnapshot clock =
         context.audio.CaptureClockSnapshot();
-    ProcessControlKeys(context.input, clock, scenes);
+    if (context.input.WasKeyPressed(VK_ESCAPE))
+    {
+        if (!ReturnToLobby(scenes))
+        {
+            throw std::runtime_error("Failed to return to song select.");
+        }
+        return;
+    }
+    ProcessControlKeys(context.input, clock);
     if (timer_.CurrentState() == finger_drum::rhythm::RhythmTimer::State::Running)
     {
         ProcessRhythmInput(context.input);
@@ -162,6 +170,26 @@ void RhythmTestScene::Update(
         UpdatePresentation(timer_.Now(clock.performanceCounterTicks));
     }
     audioRouter_.Update();
+
+    // Completion does not retain the gameplay object as a hidden Scene.
+    // After a short result-viewing delay the deferred transition ends this
+    // update, calls Shutdown, and destroys the transient Scene instance.
+    if (IsPatternComplete())
+    {
+        completedElapsedSeconds_ += context.deltaSeconds;
+        if (completedElapsedSeconds_ >= 3.0)
+        {
+            if (!ReturnToLobby(scenes))
+            {
+                throw std::runtime_error("Failed to return to song select.");
+            }
+            return;
+        }
+        RequireComponent<mrg::visual2d::TextVisualComponent>(*resultLabel_).
+            SetText(std::format(
+                L"PATTERN COMPLETE   RETURNING IN {:.1f}",
+                std::max(3.0 - completedElapsedSeconds_, 0.0)));
+    }
     canvas_->Update(context.deltaSeconds);
 }
 
@@ -337,6 +365,7 @@ void RhythmTestScene::ResetTimeline(
     session_->Reset();
     acceptedHitCount_ = 0;
     accumulatedScore_ = 0.0;
+    completedElapsedSeconds_ = 0.0;
     StartTimeline(clock);
     RequireComponent<mrg::visual2d::TextVisualComponent>(*resultLabel_).
         SetText(L"RESTARTED");
@@ -344,17 +373,8 @@ void RhythmTestScene::ResetTimeline(
 
 void RhythmTestScene::ProcessControlKeys(
     const mrg::platform::InputState& input,
-    const mrg::audio::AudioClockSnapshot& clock,
-    mrg::scene::SceneManager& scenes)
+    const mrg::audio::AudioClockSnapshot& clock)
 {
-    if (input.WasKeyPressed(VK_ESCAPE))
-    {
-        if (!scenes.ChangeScene(finger_drum::scene_ids::Lobby))
-        {
-            throw std::runtime_error("Failed to return to song select.");
-        }
-        return;
-    }
     if (input.WasKeyPressed(static_cast<std::uint16_t>('R')))
     {
         ResetTimeline(clock);
@@ -493,4 +513,24 @@ void RhythmTestScene::UpdatePresentation(
             visual.SetSize({38.0F, 38.0F});
         }
     }
+}
+
+bool RhythmTestScene::IsPatternComplete() const noexcept
+{
+    if (session_ == nullptr || session_->Gear().Lanes().empty())
+    {
+        return false;
+    }
+    return std::ranges::all_of(
+        session_->Gear().Lanes(),
+        [](const std::unique_ptr<finger_drum::rhythm::Lane>& lane)
+        {
+            return lane != nullptr && lane->CurrentNote() == nullptr;
+        });
+}
+
+bool RhythmTestScene::ReturnToLobby(
+    mrg::scene::SceneManager& scenes) const
+{
+    return scenes.ChangeScene(finger_drum::scene_ids::Lobby);
 }

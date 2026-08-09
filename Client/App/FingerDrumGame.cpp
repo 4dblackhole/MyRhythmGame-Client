@@ -46,7 +46,10 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             mrg::scene::SceneRetention::KeepAlive) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),
-            mrg::scene::SceneRetention::KeepAlive))
+            // Gameplay routes keep only their factory while inactive. The
+            // concrete mode Scene is constructed on entry and destroyed as
+            // soon as it returns to Lobby.
+            mrg::scene::SceneRetention::DestroyOnExit))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
     }
