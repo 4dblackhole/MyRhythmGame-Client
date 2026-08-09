@@ -53,6 +53,10 @@ This file applies to the entire repository except the independently versioned
   the YMM/YMP relative-path relationship and keep list rows limited to title
   and artist. Pass selected paths through `GameplayLaunchRequest` rather than
   retaining a gameplay Scene.
+- Author scroll-lane presentation in its default local direction and rotate
+  the lane parent for a game mode. Keep lane backgrounds, effects, judgement
+  lines, note layers and long-note parts under that parent instead of computing
+  independent screen-space positions for each child.
 - Keep Client `.vcxproj.filters` paths synchronized with physical directories.
 - Bundle each redistributed font license beside the font asset.
 - Keep game option behavior in Client code. Compose it from engine

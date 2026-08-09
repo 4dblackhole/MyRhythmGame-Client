@@ -114,6 +114,14 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`입니다.
 음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
 
+Lane 표시는 RPG `PlayScene`의 Transform 계층도 유지합니다. 기본 Lane은 로컬
+`+Y` 방향으로 내려오는 `180×1040` 세로 노드이며, Taiko 화면에서는 이 부모
+노드 하나만 Z축 `-90°` 회전합니다. `LaneBackground`, `LaneLight`, `JudgeLine`,
+노트 head/overlay와 롱노트 body/tail은 모두 Lane의 자식이므로 회전을 함께
+상속합니다. 업데이트는 화면 X가 아니라 Lane 로컬 Y만 변경합니다.
+`LaneBackground.png`는 가로로 늘이지 않고 원본 비율의 타일을 로컬 Y 방향으로
+반복한 뒤 부모와 함께 회전합니다.
+
 - `D`, `K`: Kat
 - `F`, `J`: Don
 - `Space`: 일시정지/재개

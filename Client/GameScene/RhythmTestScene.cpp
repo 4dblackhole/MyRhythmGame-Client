@@ -29,9 +29,15 @@ namespace
     constexpr mrg::visual2d::Color DonRed{0.95F, 0.25F, 0.29F, 1.0F};
     constexpr mrg::visual2d::Color KatBlue{0.18F, 0.58F, 0.95F, 1.0F};
     constexpr mrg::visual2d::Color RollGold{1.0F, 0.64F, 0.12F, 1.0F};
-    constexpr float JudgementX = 150.0F;
-    constexpr float NoteCenterY = 330.0F;
+    constexpr float LaneWidth = 180.0F;
+    constexpr float LaneLength = 1040.0F;
+    constexpr float LaneCenterX = 640.0F;
+    constexpr float LaneCenterY = 330.0F;
+    constexpr float JudgementLocalY = 30.0F;
     constexpr float TravelDistance = 920.0F;
+    constexpr float LaneBackgroundSourceWidth = 200.0F;
+    constexpr float LaneBackgroundSourceHeight = 80.0F;
+    constexpr float LaneLightLength = 900.0F;
     constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{2'000'000};
 
     template <typename ComponentType>
@@ -235,6 +241,7 @@ void RhythmTestScene::Shutdown() noexcept
     timer_.Stop();
     audioRouter_.Shutdown();
     noteVisuals_.clear();
+    laneRoot_ = nullptr;
     audioStatusLabel_ = nullptr;
     resultLabel_ = nullptr;
     timelineLabel_ = nullptr;
@@ -328,26 +335,7 @@ void RhythmTestScene::CreatePresentation(
     headerText.SetFontSize(24.0F);
     headerText.SetTextColor(DeepBlue);
 
-    // Legacy lane art is stretched to the current scroll field. Its authored
-    // texture remains unmodified; tinting is reserved for note Ambient layers.
-    auto& track = mrg::visual2d::CreateSprite(
-        root,
-        {120.0F, 240.0F, 1040.0F, 180.0F},
-        services.visual2DRendering.LoadImage(SkinAssetPath(L"LaneBackground.png")),
-        "ScrollGear.Skin");
-    track.SetZIndex(1);
-    auto& laneLight = mrg::visual2d::CreateSprite(
-        root,
-        {JudgementX - 25.0F, 205.0F, 50.0F, 250.0F},
-        services.visual2DRendering.LoadImage(SkinAssetPath(L"LaneLight.png")),
-        "ScrollGear.Light");
-    laneLight.SetZIndex(2);
-    auto& judgementLine = mrg::visual2d::CreateSprite(
-        root,
-        {JudgementX - 57.0F, NoteCenterY - 57.0F, 114.0F, 114.0F},
-        services.visual2DRendering.LoadImage(SkinAssetPath(L"JudgeLine.png")),
-        "ScrollGear.JudgementLine");
-    judgementLine.SetZIndex(3);
+    CreateLaneVisuals(services, root);
 
     timelineLabel_ = &mrg::visual2d::CreateLabel(
         root, {48.0F, 98.0F, 500.0F, 40.0F}, L"TIME", "Timeline");
@@ -378,6 +366,79 @@ void RhythmTestScene::CreatePresentation(
     instructionText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
 }
 
+void RhythmTestScene::CreateLaneVisuals(
+    const mrg::EngineServices& services,
+    mrg::visual2d::Visual2DNode& sceneRoot)
+{
+    // Author the lane in its reusable default orientation: local +Y is the
+    // future-note direction and every lane-owned visual is a descendant.
+    laneRoot_ = &sceneRoot.CreateChild("ScrollGear.Lane");
+    laneRoot_->SetPivot({0.5F, 0.5F});
+    laneRoot_->SetSize({LaneWidth, LaneLength});
+    laneRoot_->SetPosition({LaneCenterX, LaneCenterY});
+    laneRoot_->SetZIndex(1);
+
+    // Taiko is a presentation of the same vertical lane rotated clockwise.
+    // Notes continue to update only local Y, so changing this one transform
+    // redirects the background, effects, judgement line and notes together.
+    laneRoot_->Transform().SetRotationRollPitchYaw(
+        0.0F,
+        0.0F,
+        -DirectX::XM_PIDIV2);
+
+    CreateLaneBackgroundTiles(services);
+
+    auto& laneLight = mrg::visual2d::CreateSprite(
+        *laneRoot_,
+        {0.0F, JudgementLocalY, LaneWidth, LaneLightLength},
+        services.visual2DRendering.LoadImage(SkinAssetPath(L"LaneLight.png")),
+        "Lane.Light");
+    laneLight.SetZIndex(1);
+
+    constexpr float judgementDiameter = 114.0F;
+    auto& judgementLine = mrg::visual2d::CreateSprite(
+        *laneRoot_,
+        {(LaneWidth - judgementDiameter) * 0.5F,
+         JudgementLocalY - judgementDiameter * 0.5F,
+         judgementDiameter,
+         judgementDiameter},
+        services.visual2DRendering.LoadImage(SkinAssetPath(L"JudgeLine.png")),
+        "Lane.JudgementLine");
+    judgementLine.SetZIndex(2);
+}
+
+void RhythmTestScene::CreateLaneBackgroundTiles(
+    const mrg::EngineServices& services)
+{
+    if (laneRoot_ == nullptr)
+    {
+        throw std::logic_error("Lane background requires a Lane root.");
+    }
+
+    const mrg::visual2d::ImageHandle image =
+        services.visual2DRendering.LoadImage(SkinAssetPath(L"LaneBackground.png"));
+    const float tileHeight = LaneWidth *
+        LaneBackgroundSourceHeight / LaneBackgroundSourceWidth;
+    std::size_t tileIndex{};
+    for (float localY = 0.0F; localY < LaneLength; localY += tileHeight)
+    {
+        const float visibleHeight = std::min(tileHeight, LaneLength - localY);
+        auto& tile = mrg::visual2d::CreateSprite(
+            *laneRoot_,
+            {0.0F, localY, LaneWidth, visibleHeight},
+            image,
+            std::format("Lane.BackgroundTile.{}", tileIndex++));
+        tile.SetZIndex(0);
+        if (visibleHeight < tileHeight)
+        {
+            RequireComponent<mrg::visual2d::SpriteVisualComponent>(tile).
+                SetUvTransform(
+                    {1.0F, visibleHeight / tileHeight},
+                    {0.0F, 0.0F});
+        }
+    }
+}
+
 void RhythmTestScene::CreateNoteVisuals(
     const mrg::EngineServices& services)
 {
@@ -394,7 +455,10 @@ void RhythmTestScene::CreateNoteVisuals(
     const auto tailImage = services.visual2DRendering.LoadImage(
         SkinAssetPath(L"LNTail.png"));
 
-    auto& root = canvas_->AnchorNode(mrg::visual2d::Anchor::Center);
+    if (laneRoot_ == nullptr)
+    {
+        throw std::logic_error("Note visuals require a Lane root.");
+    }
     for (const std::unique_ptr<finger_drum::rhythm::Lane>& lane :
         session_->Gear().Lanes())
     {
@@ -413,10 +477,12 @@ void RhythmTestScene::CreateNoteVisuals(
             const mrg::visual2d::Color ambientColor = AmbientColor(visualId);
 
             NoteVisualLayers layers;
-            layers.root = &root.CreateChild(std::format("RhythmNote.{}", note->Id()));
+            layers.root = &laneRoot_->CreateChild(
+                std::format("Lane.Note.{}", note->Id()));
             layers.root->SetPivot({0.5F, 0.5F});
             layers.root->SetSize({diameter, diameter});
-            layers.root->SetZIndex(5);
+            layers.root->SetPosition({LaneWidth * 0.5F, JudgementLocalY});
+            layers.root->SetZIndex(3);
             layers.root->SetVisible(false);
             layers.diameter = diameter;
 
@@ -426,7 +492,7 @@ void RhythmTestScene::CreateNoteVisuals(
             {
                 layers.body = &mrg::visual2d::CreateSprite(
                     *layers.root,
-                    {diameter * 0.5F, diameter * 0.25F, 1.0F, diameter * 0.5F},
+                    {diameter * 0.25F, diameter * 0.5F, diameter * 0.5F, 1.0F},
                     bodyImage,
                     "AmbientBody");
                 RequireComponent<mrg::visual2d::SpriteVisualComponent>(
@@ -682,9 +748,9 @@ void RhythmTestScene::UpdatePresentation(
             continue;
         }
         NoteVisualLayers& layers = found->second;
-        const float x = JudgementX +
+        const float localY = JudgementLocalY +
             std::clamp(note.normalizedTravel, -0.05F, 1.0F) * TravelDistance;
-        layers.root->SetPosition({x - 640.0F, NoteCenterY - 360.0F});
+        layers.root->SetPosition({LaneWidth * 0.5F, localY});
         layers.root->SetVisible(
             note.state != NoteState::Completed &&
             note.state != NoteState::Missed);
@@ -700,16 +766,17 @@ void RhythmTestScene::UpdatePresentation(
                     static_cast<float>(ApproachDuration.count()),
                 -0.05F,
                 1.65F);
-            const float tailX = JudgementX + endTravel * TravelDistance;
-            const float length = std::max(tailX - x, 1.0F);
+            const float tailLocalY =
+                JudgementLocalY + endTravel * TravelDistance;
+            const float length = std::max(tailLocalY - localY, 1.0F);
             layers.body->SetBounds({
-                layers.diameter * 0.5F,
                 layers.diameter * 0.25F,
-                length,
-                layers.diameter * 0.5F});
+                layers.diameter * 0.5F,
+                layers.diameter * 0.5F,
+                length});
             layers.tail->SetBounds({
-                length,
                 0.0F,
+                length,
                 layers.diameter,
                 layers.diameter});
         }
