@@ -35,6 +35,17 @@ This file applies to the entire repository except the independently versioned
 - Use Win32 Virtual-Key values with the engine input API; do not add a Client
   key enum for physical keyboard input.
 - Preserve timestamped Raw Input events for future rhythm judgement.
+- Keep one `RhythmTimer` per active play session. Convert timestamped QPC
+  input and DSP scheduling through that clock; rendering time is never a
+  judgement source. Re-anchor DSP time after a gameplay pause.
+- Keep note rules backend-neutral. They emit semantic `NoteEvent` and
+  `AudioCueRequest` values; only the Client audio router maps them to engine
+  clips, buses, and effects.
+- Compile beat/BPM positions to integer microseconds when a chart session is
+  loaded. Per-frame gameplay code must not repeatedly integrate tempo maps.
+- Keep YMP focused on playable score data and YME focused on visual/audio
+  automation. New game modes implement `IPlayGameMode` and own parsing-to-note
+  construction policy.
 - Keep Client `.vcxproj.filters` paths synchronized with physical directories.
 - Bundle each redistributed font license beside the font asset.
 - Keep game option behavior in Client code. Compose it from engine

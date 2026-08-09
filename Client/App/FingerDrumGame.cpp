@@ -3,6 +3,7 @@
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "GameScene/FingerDrumLogoScene.h"
 #include "GameScene/LobbyScene.h"
+#include "GameScene/RhythmTestScene.h"
 
 #include <stdexcept>
 #include <string>
@@ -42,6 +43,9 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             mrg::scene::SceneRetention::KeepAlive) ||
         !scenes.RegisterScene<LobbyScene>(
             std::string(finger_drum::scene_ids::Lobby),
+            mrg::scene::SceneRetention::KeepAlive) ||
+        !scenes.RegisterScene<RhythmTestScene>(
+            std::string(finger_drum::scene_ids::RhythmTest),
             mrg::scene::SceneRetention::KeepAlive))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");

@@ -4,6 +4,9 @@
     <Filter Include="App">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555551}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Audio">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555567}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Examples">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555559}</UniqueIdentifier>
     </Filter>
@@ -51,6 +54,9 @@
     <ClInclude Include="App\FingerDrumGame.h">
       <Filter>App</Filter>
     </ClInclude>
+    <ClInclude Include="Audio\GameplayAudioRouter.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
     <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h">
       <Filter>Examples\ColoredCube\App</Filter>
     </ClInclude>
@@ -81,6 +87,9 @@
     <ClInclude Include="GameScene\LobbyScene.h">
       <Filter>GameScene</Filter>
     </ClInclude>
+    <ClInclude Include="GameScene\RhythmTestScene.h">
+      <Filter>GameScene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FingerDrumGame.cpp">
@@ -88,6 +97,9 @@
     </ClCompile>
     <ClCompile Include="App\Main.cpp">
       <Filter>App</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\GameplayAudioRouter.cpp">
+      <Filter>Audio</Filter>
     </ClCompile>
     <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp">
       <Filter>Examples\ColoredCube\App</Filter>
@@ -111,6 +123,9 @@
       <Filter>GameScene</Filter>
     </ClCompile>
     <ClCompile Include="GameScene\LobbyScene.cpp">
+      <Filter>GameScene</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScene\RhythmTestScene.cpp">
       <Filter>GameScene</Filter>
     </ClCompile>
   </ItemGroup>
