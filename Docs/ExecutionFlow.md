@@ -1,34 +1,46 @@
 # FingerDrum 실행 흐름과 객체 수명
 
-현재 Client의 기본 실행 경로는 큐브 샘플이 아니라 FingerDrum의 로고 화면이다.
-엔진은 창, D3D12, 입력, 오디오와 프레임 루프를 소유하고, Client는 게임 설정과
-Scene만 소유한다.
+엔진은 Win32, D3D12, 입력, FMOD와 프레임 루프를 소유하고 Client는
+게임 설정과 Scene을 소유합니다.
 
 ```mermaid
 flowchart TD
     Entry["Client/App/Main.cpp\nwWinMain"] --> Game["FingerDrumGame"]
     Game --> Run["mrg::Run"]
-    Run --> Systems["Win32 · D3D12 · Input · Audio"]
+    Run --> Systems["Win32 · D3D12 · Raw Input · Audio"]
     Game --> Manager["SceneManager"]
     Manager --> Logo["FingerDrumLogoScene"]
-    Logo --> Canvas["Visual2DCanvas"]
-    Canvas --> Images["LeftFade · Center · RightFade PNG"]
+    Logo --> Lobby["LobbyScene · Music Select"]
+    Lobby --> Test["RhythmTestScene · Taiko Driver"]
+    Test --> Lobby
 ```
 
-1. `wWinMain`이 CRT leak 검사를 활성화하고 `FingerDrumGame`을 생성한다.
-2. `mrg::Run`이 엔진 시스템을 초기화한 뒤 `FingerDrumGame::GetEngineConfig`의
-   AliceBlue clear color와 창 설정을 적용한다.
-3. `FingerDrumGame::RegisterScenes`가 `FingerDrum.Logo`와 임시
-   `FingerDrum.Lobby` route를 등록하고,
-   `SceneManager`가 `FingerDrumLogoScene`을 생성한다.
-4. 로고 Scene은 세 PNG와 타이틀 메뉴를 `Visual2DCanvas`에 배치한다. 매 resize 때 전체
-   이미지 스트립의 scale을 다시 계산하므로 가장자리 이미지가 화면 밖으로 밀리지
-   않는다.
-5. Render 단계에서 Scene은 Canvas를 제출한다. 실제 D3D12 명령 기록·배치·present는
-   엔진의 렌더 단계가 수행한다.
-6. 종료 시 Scene이 Canvas와 node observer를 먼저 해제한 뒤, `mrg::Run`이 엔진
-   시스템을 역순으로 종료한다.
+## 시작
 
-이후 title menu, 곡 선택, 플레이, 결과 화면은 `Client/GameFlow/FingerDrumSceneIds.h`
-에 route를 추가하고 `FingerDrumGame`에서 등록한다. 게임별 기능은 Client에 두고,
-다른 게임에서도 재사용할 계약만 MRG-Engine으로 이동한다.
+1. `wWinMain`이 Debug CRT 누수 검사를 켜고 `FingerDrumGame`을 생성합니다.
+2. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
+   초기화합니다.
+3. `RegisterScenes`가 Logo, Lobby, RhythmTest route를 등록합니다.
+4. `SceneManager`가 최초 Logo Scene을 활성화하고 `Initialize`를 한 번
+   호출합니다.
+
+## Scene 흐름
+
+- Logo에서 Game Start를 누르면 Lobby로 이동합니다.
+- Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
+  곡 행을 클릭하거나 방향키로 선택하고 PLAY 또는 Enter로 테스트 플레이에
+  진입합니다.
+- RhythmTest는 `TaikoMode`로 세션을 만들고 한 개의 `RhythmTimer`로 입력,
+  판정, 스크롤, 오디오 DSP 예약 시각을 연결합니다. Escape는 Lobby로
+  돌아갑니다.
+- 세 Scene은 현재 `KeepAlive`입니다. Scene 전환 시 객체는 남지만 입력과
+  렌더링은 활성 Scene만 수행합니다. 실제 곡별 Play Scene은 패턴별 상태가
+  무거워지면 `DestroyOnExit`로 등록할 수 있습니다.
+
+## 프레임과 종료
+
+매 update에서 엔진은 timestamp가 보존된 Raw Input 이벤트를 Client에
+전달합니다. 각 Scene은 논리를 갱신하고 Visual2D draw packet만 제출하며,
+D3D12 command 기록과 present는 엔진이 담당합니다. 종료 시 활성 Scene부터
+`Shutdown`하여 Canvas observer와 오디오 voice를 먼저 해제한 후 엔진 장치를
+역순으로 종료합니다.

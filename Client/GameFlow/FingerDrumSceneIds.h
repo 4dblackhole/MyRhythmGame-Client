@@ -8,4 +8,5 @@ namespace finger_drum::scene_ids
 {
     inline constexpr std::string_view Logo = "FingerDrum.Logo";
     inline constexpr std::string_view Lobby = "FingerDrum.Lobby";
+    inline constexpr std::string_view RhythmTest = "FingerDrum.RhythmTest";
 }
