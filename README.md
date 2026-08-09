@@ -3,6 +3,12 @@
 비공개 상용 리듬게임의 Client 코드와 게임 asset을 보관하는 저장소다. 엔진은
 별도 private 저장소인 `MRG-Engine`을 Git submodule로 연결한다.
 
+처음 사용하는 개발자나 새 Codex 세션은 [Docs/README.md](Docs/README.md)의
+권장 순서를 따른다. 엔진 기능 전체는
+[Dependencies/MRG-Engine/Docs/EngineOverview.md](Dependencies/MRG-Engine/Docs/EngineOverview.md),
+현재 게임의 실제 시작·종료 과정은 [Docs/ExecutionFlow.md](Docs/ExecutionFlow.md)에
+정리되어 있다.
+
 ## 처음 받기
 
 ```powershell
@@ -24,7 +30,7 @@ private submodule 접근을 위해 `4dblackhole/MRG-Engine` 읽기 권한이 있
 ```text
 Client/                    게임 코드와 asset
 Dependencies/MRG-Engine/   private 엔진 submodule
-Docs/                      게임 실행 흐름 문서
+Docs/                      Client 문서 목차, 실행 흐름과 기능 예제
 MyRhythmGame-Client.sln
 ```
 
