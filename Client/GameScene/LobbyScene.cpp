@@ -14,7 +14,7 @@
 
 namespace
 {
-    constexpr float PenpotScale = 2.0F / 3.0F;
+    constexpr float DesignToCanvasScale = 2.0F / 3.0F;
     constexpr mrg::visual2d::Color CanvasBlue{0.918F, 0.965F, 1.0F, 1.0F};
     constexpr mrg::visual2d::Color PanelWhite{0.976F, 0.992F, 1.0F, 0.96F};
     constexpr mrg::visual2d::Color PureWhite{1.0F, 1.0F, 1.0F, 1.0F};
@@ -22,15 +22,144 @@ namespace
     constexpr mrg::visual2d::Color LightBlue{0.780F, 0.918F, 0.980F, 1.0F};
     constexpr mrg::visual2d::Color DeepBlue{0.133F, 0.306F, 0.459F, 1.0F};
     constexpr mrg::visual2d::Color MutedBlue{0.412F, 0.537F, 0.635F, 1.0F};
+    constexpr mrg::visual2d::Color SelectedArtistBlue{
+        0.847F, 0.933F, 1.0F, 1.0F};
+    constexpr mrg::visual2d::Color HeaderWhite{
+        0.973F, 0.988F, 1.0F, 0.96F};
+    constexpr mrg::visual2d::Color CategoryWhite{
+        1.0F, 1.0F, 1.0F, 0.90F};
+    constexpr mrg::visual2d::Color HeaderTextBlue{
+        0.243F, 0.514F, 0.757F, 1.0F};
+    constexpr mrg::visual2d::Color SelectedHoverBlue{
+        0.365F, 0.690F, 0.930F, 1.0F};
+    constexpr mrg::visual2d::Color UnselectedBlue{
+        0.900F, 0.956F, 0.992F, 0.96F};
+    constexpr mrg::visual2d::Color UnselectedHoverBlue{
+        0.820F, 0.920F, 0.988F, 1.0F};
+    constexpr mrg::visual2d::Color PressedBlue{
+        0.190F, 0.490F, 0.790F, 1.0F};
+    constexpr mrg::visual2d::Color DisabledBlue{
+        0.70F, 0.78F, 0.84F, 0.55F};
+
+    namespace layout
+    {
+        constexpr mrg::visual2d::Size CanvasSize{1280.0F, 720.0F};
+        constexpr mrg::visual2d::Rect DesignBoard{
+            0.0F, 0.0F, 1920.0F, 1080.0F};
+        constexpr mrg::visual2d::Rect Header{
+            0.0F, 0.0F, 1920.0F, 96.0F};
+        constexpr mrg::visual2d::Rect BackButton{
+            24.0F, 17.0F, 126.0F, 62.0F};
+        constexpr mrg::visual2d::Rect HeaderSeparator{
+            174.0F, 25.0F, 2.0F, 47.0F};
+        constexpr mrg::visual2d::Rect HeaderTitle{
+            198.0F, 29.0F, 340.0F, 38.0F};
+        constexpr mrg::visual2d::Rect ProfileFrame{
+            1770.0F, 8.0F, 80.0F, 80.0F};
+        constexpr mrg::visual2d::Rect ProfileImage{
+            4.0F, 4.0F, 72.0F, 72.0F};
+        constexpr mrg::visual2d::Rect CategoryBar{
+            54.0F, 112.0F, 1812.0F, 56.0F};
+        constexpr mrg::visual2d::Rect AllCategory{
+            16.0F, 9.0F, 86.0F, 38.0F};
+        constexpr mrg::visual2d::Rect SongCount{
+            1630.0F, 9.0F, 150.0F, 38.0F};
+        constexpr mrg::visual2d::Rect RecordPanel{
+            54.0F, 186.0F, 418.0F, 686.0F};
+        constexpr mrg::visual2d::Rect RecordHeading{
+            26.0F, 26.0F, 260.0F, 28.0F};
+        constexpr mrg::visual2d::Rect EmptyRecordMessage{
+            26.0F, 300.0F, 366.0F, 54.0F};
+        constexpr mrg::visual2d::Rect SongInformationPanel{
+            492.0F, 186.0F, 854.0F, 262.0F};
+        constexpr mrg::visual2d::Rect SongInformationHeading{
+            26.0F, 21.0F, 380.0F, 24.0F};
+        constexpr mrg::visual2d::Rect SelectedSong{
+            32.0F, 76.0F, 790.0F, 64.0F};
+        constexpr mrg::visual2d::Rect SelectedArtist{
+            32.0F, 152.0F, 790.0F, 42.0F};
+        constexpr mrg::visual2d::Rect PatternPanel{
+            492.0F, 468.0F, 854.0F, 404.0F};
+        constexpr mrg::visual2d::Rect PatternHeading{
+            26.0F, 22.0F, 300.0F, 30.0F};
+        constexpr mrg::visual2d::Rect SelectedPattern{
+            344.0F, 22.0F, 480.0F, 30.0F};
+        constexpr mrg::visual2d::Rect PlayButton{
+            620.0F, 322.0F, 204.0F, 56.0F};
+        constexpr mrg::visual2d::Rect SongListPanel{
+            1366.0F, 186.0F, 500.0F, 686.0F};
+        constexpr mrg::visual2d::Rect SongListHeading{
+            22.0F, 20.0F, 300.0F, 28.0F};
+        constexpr mrg::visual2d::Rect EmptySongListMessage{
+            20.0F, 300.0F, 460.0F, 58.0F};
+        constexpr mrg::visual2d::Rect SongRowTitle{
+            18.0F, 12.0F, 424.0F, 34.0F};
+        constexpr mrg::visual2d::Rect SongRowArtist{
+            18.0F, 53.0F, 424.0F, 26.0F};
+        constexpr mrg::visual2d::Rect FooterLeft{
+            54.0F, 1040.0F, 880.0F, 24.0F};
+        constexpr mrg::visual2d::Rect FooterRight{
+            986.0F, 1040.0F, 880.0F, 24.0F};
+        constexpr float SongRowTop = 72.0F;
+        constexpr float SongRowHeight = 96.0F;
+        constexpr float SongRowStep = 112.0F;
+        constexpr float SongRowWidth = 460.0F;
+        constexpr float PatternRowTop = 74.0F;
+        constexpr float PatternRowHeight = 58.0F;
+        constexpr float PatternRowStep = 72.0F;
+        constexpr float PatternRowWidth = 796.0F;
+        constexpr float HeaderButtonFontSize = 15.0F;
+        constexpr float HeaderTitleFontSize = 16.0F;
+        constexpr float PanelHeadingFontSize = 14.0F;
+        constexpr float CategoryFontSize = 13.0F;
+        constexpr float SongCountFontSize = 11.0F;
+        constexpr float InformationHeadingFontSize = 12.0F;
+        constexpr float EmptyRecordFontSize = 22.0F;
+        constexpr float EmptySongListFontSize = 21.0F;
+        constexpr float SelectedSongFontSize = 28.0F;
+        constexpr float SelectedArtistFontSize = 16.0F;
+        constexpr float SelectedPatternFontSize = 13.0F;
+        constexpr float PlayButtonFontSize = 17.0F;
+        constexpr float SongRowTitleFontSize = 17.0F;
+        constexpr float SongRowArtistFontSize = 13.0F;
+        constexpr float PatternButtonFontSize = 15.0F;
+        constexpr float FooterFontSize = 11.0F;
+        constexpr std::size_t SongMarqueeThreshold = 38;
+        constexpr std::size_t ArtistMarqueeThreshold = 52;
+        constexpr std::size_t SongRowMarqueeThreshold = 34;
+        constexpr double SongMarqueeSpeed = 0.28;
+        constexpr double ArtistMarqueeSpeed = 0.32;
+        constexpr double SongRowMarqueeSpeed = 0.24;
+
+        [[nodiscard]] constexpr mrg::visual2d::Rect SongRow(
+            const std::size_t index) noexcept
+        {
+            return {
+                20.0F,
+                SongRowTop + SongRowStep * static_cast<float>(index),
+                SongRowWidth,
+                SongRowHeight};
+        }
+
+        [[nodiscard]] constexpr mrg::visual2d::Rect PatternRow(
+            const std::size_t index) noexcept
+        {
+            return {
+                28.0F,
+                PatternRowTop + PatternRowStep * static_cast<float>(index),
+                PatternRowWidth,
+                PatternRowHeight};
+        }
+    }
 
     [[nodiscard]] mrg::visual2d::Rect Scale(
         const mrg::visual2d::Rect bounds) noexcept
     {
         return {
-            bounds.x * PenpotScale,
-            bounds.y * PenpotScale,
-            bounds.width * PenpotScale,
-            bounds.height * PenpotScale};
+            bounds.x * DesignToCanvasScale,
+            bounds.y * DesignToCanvasScale,
+            bounds.width * DesignToCanvasScale,
+            bounds.height * DesignToCanvasScale};
     }
 
     [[nodiscard]] std::filesystem::path RuntimeSongsPath()
@@ -122,13 +251,13 @@ namespace
     {
         mrg::visual2d::VisualStyle style{};
         style.normal = selected
-            ? mrg::visual2d::Color{0.310F, 0.624F, 0.878F, 1.0F}
-            : mrg::visual2d::Color{0.900F, 0.956F, 0.992F, 0.96F};
+            ? AccentBlue
+            : UnselectedBlue;
         style.hovered = selected
-            ? mrg::visual2d::Color{0.365F, 0.690F, 0.930F, 1.0F}
-            : mrg::visual2d::Color{0.820F, 0.920F, 0.988F, 1.0F};
-        style.pressed = {0.190F, 0.490F, 0.790F, 1.0F};
-        style.disabled = {0.70F, 0.78F, 0.84F, 0.55F};
+            ? SelectedHoverBlue
+            : UnselectedHoverBlue;
+        style.pressed = PressedBlue;
+        style.disabled = DisabledBlue;
         RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).
             SetStyle(style);
         RequireComponent<mrg::visual2d::TextVisualComponent>(node).
@@ -185,7 +314,7 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
     height_ = services.windowHeight;
     catalog_ = finger_drum::chart::SongCatalog{}.Load(RuntimeSongsPath());
     canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>(
-        mrg::visual2d::Size{1280.0F, 720.0F},
+        layout::CanvasSize,
         mrg::visual2d::CanvasScaleMode::FixedHeight);
     canvas_->SetViewportSize({
         static_cast<float>(width_),
@@ -198,12 +327,12 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
         mrg::visual2d::Anchor::Center,
         "FingerDrum.SongSelect.Board");
     board_->SetPivot({0.5F, 0.5F});
-    board_->SetSize({1280.0F, 720.0F});
+    board_->SetSize(layout::CanvasSize);
     board_->SetPosition({0.0F, 0.0F});
 
     AddPanel(
         *board_,
-        {0.0F, 0.0F, 1920.0F, 1080.0F},
+        layout::DesignBoard,
         CanvasBlue,
         "Background");
     CreateHeader(services);
@@ -264,8 +393,7 @@ void LobbyScene::Shutdown() noexcept
     }
     patternButtonIds_.clear();
     patternButtons_.clear();
-    songButtonIds_.clear();
-    songButtons_.clear();
+    songRows_.clear();
     patternList_ = nullptr;
     selectedPatternLabel_ = nullptr;
     selectedArtistLabel_ = nullptr;
@@ -279,32 +407,32 @@ void LobbyScene::CreateHeader(const mrg::EngineServices& services)
 {
     auto& header = AddPanel(
         *board_,
-        {0.0F, 0.0F, 1920.0F, 96.0F},
-        {0.973F, 0.988F, 1.0F, 0.96F},
+        layout::Header,
+        HeaderWhite,
         "Header");
     auto& back = mrg::visual2d::CreateButton(
-        header, Scale({24.0F, 17.0F, 126.0F, 62.0F}), L"< BACK", "Back");
+        header, Scale(layout::BackButton), L"< BACK", "Back");
     backButtonId_ = back.Id();
     ApplySelectableStyle(back, false);
     RequireComponent<mrg::visual2d::TextVisualComponent>(back).
-        SetFontSize(15.0F);
-    AddPanel(header, {174.0F, 25.0F, 2.0F, 47.0F}, LightBlue, "Separator");
+        SetFontSize(layout::HeaderButtonFontSize);
+    AddPanel(header, layout::HeaderSeparator, LightBlue, "Separator");
     AddLabel(
         header,
-        {198.0F, 29.0F, 340.0F, 38.0F},
+        layout::HeaderTitle,
         L"FINGERDRUM / MUSIC SELECT",
-        16.0F,
-        {0.243F, 0.514F, 0.757F, 1.0F},
+        layout::HeaderTitleFontSize,
+        HeaderTextBlue,
         "Title");
 
     auto& frame = AddPanel(
         header,
-        {1770.0F, 8.0F, 80.0F, 80.0F},
+        layout::ProfileFrame,
         AccentBlue,
         "TemporaryProfileFrame");
     auto& profile = mrg::visual2d::CreateSprite(
         frame,
-        Scale({4.0F, 4.0F, 72.0F, 72.0F}),
+        Scale(layout::ProfileImage),
         services.visual2DRendering.LoadImage(ProfileImagePath()),
         "TemporaryProfileImage");
     profile.SetZIndex(1);
@@ -314,123 +442,180 @@ void LobbyScene::CreateCategoryBar()
 {
     auto& bar = AddPanel(
         *board_,
-        {54.0F, 112.0F, 1812.0F, 56.0F},
-        {1.0F, 1.0F, 1.0F, 0.90F},
+        layout::CategoryBar,
+        CategoryWhite,
         "Categories");
-    AddPanel(bar, {16.0F, 9.0F, 86.0F, 38.0F}, AccentBlue, "AllCategory");
+    AddPanel(bar, layout::AllCategory, AccentBlue, "AllCategory");
     AddLabel(
         bar,
-        {16.0F, 9.0F, 86.0F, 38.0F},
+        layout::AllCategory,
         L"ALL",
-        13.0F,
+        layout::CategoryFontSize,
         PureWhite,
         "AllCategoryText",
         mrg::visual2d::TextAlignment::Center);
+    AddLabel(
+        bar,
+        layout::SongCount,
+        std::format(L"{} SONGS", catalog_.songs.size()),
+        layout::SongCountFontSize,
+        MutedBlue,
+        "SongCount",
+        mrg::visual2d::TextAlignment::Trailing);
 }
 
 void LobbyScene::CreateRecordPanel()
 {
     auto& panel = AddPanel(
         *board_,
-        {54.0F, 186.0F, 418.0F, 686.0F},
+        layout::RecordPanel,
         PanelWhite,
         "RecordPanel");
-    AddLabel(panel, {26.0F, 26.0F, 260.0F, 28.0F}, L"LOCAL RECORD",
-        14.0F, MutedBlue, "Heading");
-    AddLabel(panel, {26.0F, 300.0F, 366.0F, 54.0F}, L"NO RECORDS",
-        22.0F, DeepBlue, "NoRecords", mrg::visual2d::TextAlignment::Center);
+    AddLabel(panel, layout::RecordHeading, L"LOCAL RECORD",
+        layout::PanelHeadingFontSize, MutedBlue, "Heading");
+    AddLabel(panel, layout::EmptyRecordMessage, L"NO RECORDS",
+        layout::EmptyRecordFontSize, DeepBlue, "NoRecords",
+        mrg::visual2d::TextAlignment::Center);
 }
 
 void LobbyScene::CreateSongInformationPanel()
 {
     auto& panel = AddPanel(
         *board_,
-        {492.0F, 186.0F, 854.0F, 262.0F},
+        layout::SongInformationPanel,
         PanelWhite,
         "SongInformation");
-    AddLabel(panel, {26.0F, 21.0F, 380.0F, 24.0F}, L"NOW SELECTING",
-        12.0F, MutedBlue, "Heading");
+    AddLabel(panel, layout::SongInformationHeading, L"NOW SELECTING",
+        layout::InformationHeadingFontSize, MutedBlue, "Heading");
     selectedSongLabel_ = &AddLabel(
-        panel, {32.0F, 76.0F, 790.0F, 64.0F}, L"NO SONG SELECTED",
-        28.0F, DeepBlue, "SelectedSong", mrg::visual2d::TextAlignment::Center);
+        panel, layout::SelectedSong, L"NO SONG SELECTED",
+        layout::SelectedSongFontSize, DeepBlue, "SelectedSong",
+        mrg::visual2d::TextAlignment::Center);
     selectedSongLabel_->AddComponent<
         finger_drum::presentation::MarqueeTextComponent>(
-            L"NO SONG SELECTED", 38, 0.28);
+            L"NO SONG SELECTED",
+            layout::SongMarqueeThreshold,
+            layout::SongMarqueeSpeed);
     selectedArtistLabel_ = &AddLabel(
-        panel, {32.0F, 152.0F, 790.0F, 42.0F}, L"",
-        16.0F, MutedBlue, "SelectedArtist", mrg::visual2d::TextAlignment::Center);
+        panel, layout::SelectedArtist, L"",
+        layout::SelectedArtistFontSize, MutedBlue, "SelectedArtist",
+        mrg::visual2d::TextAlignment::Center);
     selectedArtistLabel_->AddComponent<
-        finger_drum::presentation::MarqueeTextComponent>(L"", 52, 0.32);
+        finger_drum::presentation::MarqueeTextComponent>(
+            L"",
+            layout::ArtistMarqueeThreshold,
+            layout::ArtistMarqueeSpeed);
 }
 
 void LobbyScene::CreatePatternPanel()
 {
     auto& panel = AddPanel(
         *board_,
-        {492.0F, 468.0F, 854.0F, 404.0F},
+        layout::PatternPanel,
         PanelWhite,
         "PatternPanel");
-    AddLabel(panel, {26.0F, 22.0F, 300.0F, 30.0F}, L"PATTERN SELECT",
-        14.0F, MutedBlue, "Heading");
+    AddLabel(panel, layout::PatternHeading, L"PATTERN SELECT",
+        layout::PanelHeadingFontSize, MutedBlue, "Heading");
     selectedPatternLabel_ = &AddLabel(
-        panel, {344.0F, 22.0F, 480.0F, 30.0F}, L"NO PATTERN",
-        13.0F, DeepBlue, "SelectedPattern",
+        panel, layout::SelectedPattern, L"NO PATTERN",
+        layout::SelectedPatternFontSize, DeepBlue, "SelectedPattern",
         mrg::visual2d::TextAlignment::Trailing);
     patternList_ = &panel.CreateChild("PatternList");
-    patternList_->SetSize({854.0F * PenpotScale, 404.0F * PenpotScale});
+    patternList_->SetSize({
+        layout::PatternPanel.width * DesignToCanvasScale,
+        layout::PatternPanel.height * DesignToCanvasScale});
     auto& play = mrg::visual2d::CreateButton(
-        panel, Scale({620.0F, 322.0F, 204.0F, 56.0F}), L"PLAY", "Play");
+        panel, Scale(layout::PlayButton), L"PLAY", "Play");
     playButtonId_ = play.Id();
     ApplySelectableStyle(play, true);
     RequireComponent<mrg::visual2d::TextVisualComponent>(play).
-        SetFontSize(17.0F);
+        SetFontSize(layout::PlayButtonFontSize);
 }
 
 void LobbyScene::CreateSongList()
 {
     auto& panel = AddPanel(
         *board_,
-        {1366.0F, 186.0F, 500.0F, 686.0F},
+        layout::SongListPanel,
         PanelWhite,
         "SongList");
-    AddLabel(panel, {22.0F, 20.0F, 300.0F, 28.0F}, L"SONG LIST",
-        14.0F, MutedBlue, "Heading");
+    AddLabel(panel, layout::SongListHeading, L"SONG LIST",
+        layout::PanelHeadingFontSize, MutedBlue, "Heading");
 
     if (catalog_.songs.empty())
     {
-        AddLabel(panel, {20.0F, 300.0F, 460.0F, 58.0F},
-            L"NO SONGS AVAILABLE", 21.0F, DeepBlue, "NoSongs",
+        AddLabel(panel, layout::EmptySongListMessage,
+            L"NO SONGS AVAILABLE", layout::EmptySongListFontSize,
+            DeepBlue, "NoSongs",
             mrg::visual2d::TextAlignment::Center);
         return;
     }
 
-    constexpr float rowTop = 72.0F;
-    constexpr float rowHeight = 96.0F;
-    constexpr float rowStep = 112.0F;
     for (std::size_t index = 0; index < catalog_.songs.size(); ++index)
     {
-        const finger_drum::chart::SongCatalogEntry& song = catalog_.songs[index];
-        const std::wstring text = SongTitle(song) + L"\n" + SongArtist(song);
-        auto& button = mrg::visual2d::CreateButton(
-            panel,
-            Scale({20.0F, rowTop + rowStep * static_cast<float>(index),
-                460.0F, rowHeight}),
-            text,
-            std::format("Song.{}", index));
-        RequireComponent<mrg::visual2d::TextVisualComponent>(button).
-            SetFontSize(14.0F);
-        songButtons_.push_back(&button);
-        songButtonIds_.push_back(button.Id());
+        CreateSongListRow(panel, index, catalog_.songs[index]);
     }
+}
+
+void LobbyScene::CreateSongListRow(
+    mrg::visual2d::Visual2DNode& parent,
+    const std::size_t index,
+    const finger_drum::chart::SongCatalogEntry& song)
+{
+    // Keep interaction on the row background while title and artist remain
+    // separate presentation nodes. This avoids formatting metadata as one
+    // hard-coded multiline button label and makes each text style independent.
+    auto& button = mrg::visual2d::CreateButton(
+        parent,
+        Scale(layout::SongRow(index)),
+        L"",
+        std::format("Song.{}", index));
+    const std::wstring titleText = SongTitle(song);
+    const std::wstring artistText = SongArtist(song);
+    auto& title = AddLabel(
+        button,
+        layout::SongRowTitle,
+        titleText,
+        layout::SongRowTitleFontSize,
+        DeepBlue,
+        "Title");
+    auto& artist = AddLabel(
+        button,
+        layout::SongRowArtist,
+        artistText,
+        layout::SongRowArtistFontSize,
+        MutedBlue,
+        "Artist");
+    title.AddComponent<finger_drum::presentation::MarqueeTextComponent>(
+        titleText,
+        layout::SongRowMarqueeThreshold,
+        layout::SongRowMarqueeSpeed);
+    songRows_.push_back({&button, &title, &artist});
+}
+
+void LobbyScene::ApplySongListRowStyle(
+    SongListRow& row,
+    const bool selected)
+{
+    if (row.button == nullptr || row.title == nullptr || row.artist == nullptr)
+    {
+        throw std::logic_error("A song-list row is incomplete.");
+    }
+
+    ApplySelectableStyle(*row.button, selected);
+    RequireComponent<mrg::visual2d::TextVisualComponent>(*row.title).
+        SetTextColor(selected ? PureWhite : DeepBlue);
+    RequireComponent<mrg::visual2d::TextVisualComponent>(*row.artist).
+        SetTextColor(selected ? SelectedArtistBlue : MutedBlue);
 }
 
 void LobbyScene::CreateFooter()
 {
-    AddLabel(*board_, {54.0F, 1040.0F, 880.0F, 24.0F},
+    AddLabel(*board_, layout::FooterLeft,
         L"UP / DOWN : SONG    LEFT / RIGHT : PATTERN    ENTER : PLAY",
-        11.0F, MutedBlue, "FooterLeft");
-    AddLabel(*board_, {986.0F, 1040.0F, 880.0F, 24.0F},
-        L"ESC : BACK", 11.0F, MutedBlue, "FooterRight",
+        layout::FooterFontSize, MutedBlue, "FooterLeft");
+    AddLabel(*board_, layout::FooterRight,
+        L"ESC : BACK", layout::FooterFontSize, MutedBlue, "FooterRight",
         mrg::visual2d::TextAlignment::Trailing);
 }
 
@@ -460,12 +645,11 @@ void LobbyScene::RebuildPatternButtons()
             : DecodeDisplayText(patterns[index].pattern.name);
         auto& button = mrg::visual2d::CreateButton(
             *patternList_,
-            Scale({28.0F, 74.0F + 72.0F * static_cast<float>(index),
-                796.0F, 58.0F}),
+            Scale(layout::PatternRow(index)),
             name,
             std::format("Pattern.{}", index));
         RequireComponent<mrg::visual2d::TextVisualComponent>(button).
-            SetFontSize(15.0F);
+            SetFontSize(layout::PatternButtonFontSize);
         patternButtons_.push_back(&button);
         patternButtonIds_.push_back(button.Id());
     }
@@ -497,9 +681,9 @@ void LobbyScene::RefreshSelectionPresentation()
         *selectedSongLabel_).SetText(SongTitle(song));
     RequireComponent<finger_drum::presentation::MarqueeTextComponent>(
         *selectedArtistLabel_).SetText(SongArtist(song));
-    for (std::size_t index = 0; index < songButtons_.size(); ++index)
+    for (std::size_t index = 0; index < songRows_.size(); ++index)
     {
-        ApplySelectableStyle(*songButtons_[index], index == selectedSongIndex_);
+        ApplySongListRowStyle(songRows_[index], index == selectedSongIndex_);
     }
 
     RebuildPatternButtons();
@@ -553,9 +737,10 @@ bool LobbyScene::ProcessActions(mrg::scene::SceneManager& scenes)
         {
             return StartSelectedPattern(scenes);
         }
-        for (std::size_t index = 0; index < songButtonIds_.size(); ++index)
+        for (std::size_t index = 0; index < songRows_.size(); ++index)
         {
-            if (action.source == songButtonIds_[index])
+            if (songRows_[index].button != nullptr &&
+                action.source == songRows_[index].button->Id())
             {
                 SelectSong(index);
                 return false;
@@ -713,7 +898,7 @@ mrg::visual2d::Visual2DNode& LobbyScene::AddLabel(
         std::move(name));
     auto& textComponent =
         RequireComponent<mrg::visual2d::TextVisualComponent>(label);
-    textComponent.SetFontSize(penpotFontSize * PenpotScale);
+    textComponent.SetFontSize(penpotFontSize * DesignToCanvasScale);
     textComponent.SetTextColor(color);
     textComponent.SetHorizontalAlignment(alignment);
     return label;

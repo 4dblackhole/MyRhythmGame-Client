@@ -29,12 +29,24 @@ public:
     void Shutdown() noexcept override;
 
 private:
+    struct SongListRow
+    {
+        mrg::visual2d::Visual2DNode* button{};
+        mrg::visual2d::Visual2DNode* title{};
+        mrg::visual2d::Visual2DNode* artist{};
+    };
+
     void CreateHeader(const mrg::EngineServices& services);
     void CreateCategoryBar();
     void CreateRecordPanel();
     void CreateSongInformationPanel();
     void CreatePatternPanel();
     void CreateSongList();
+    void CreateSongListRow(
+        mrg::visual2d::Visual2DNode& parent,
+        std::size_t index,
+        const finger_drum::chart::SongCatalogEntry& song);
+    void ApplySongListRowStyle(SongListRow& row, bool selected);
     void CreateFooter();
     void RebuildPatternButtons();
     void RefreshSelectionPresentation();
@@ -79,8 +91,7 @@ private:
     mrg::visual2d::Visual2DNode* patternList_{};
     mrg::visual2d::NodeId backButtonId_{};
     mrg::visual2d::NodeId playButtonId_{};
-    std::vector<mrg::visual2d::Visual2DNode*> songButtons_;
-    std::vector<mrg::visual2d::NodeId> songButtonIds_;
+    std::vector<SongListRow> songRows_;
     std::vector<mrg::visual2d::Visual2DNode*> patternButtons_;
     std::vector<mrg::visual2d::NodeId> patternButtonIds_;
 };
