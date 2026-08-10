@@ -7,11 +7,14 @@
 #endif
 
 #include "App/FingerDrumGame.h"
+#include "Examples/ColoredCube/App/ColoredCubeGame.h"
+#include "Examples/ColoredCube/GameFlow/SceneIds.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 
 #include <Windows.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -30,6 +33,26 @@ namespace
 #endif
     }
 
+    [[nodiscard]] std::optional<std::string> SelectEngineExampleScene(
+        const std::wstring_view commandLine)
+    {
+        if (commandLine.find(L"--example=mesh") !=
+            std::wstring_view::npos)
+        {
+            return std::string(game::scene_ids::MeshExample);
+        }
+        if (commandLine.find(L"--example=collision") !=
+            std::wstring_view::npos)
+        {
+            return std::string(game::scene_ids::CollisionExample);
+        }
+        if (commandLine.find(L"--example=widgets") !=
+            std::wstring_view::npos)
+        {
+            return std::string(game::scene_ids::WidgetExample);
+        }
+        return std::nullopt;
+    }
 }
 
 int WINAPI wWinMain(
@@ -40,15 +63,28 @@ int WINAPI wWinMain(
 {
     EnableCrtMemoryLeakChecks();
 
-    // The executable constructs only the game-specific Client.  Run owns the
-    // Win32, D3D12, input, and audio lifetime around this object.
+    // The executable selects the requested Client route. Run owns the Win32,
+    // D3D12, input, and audio lifetime around that object.
     const std::wstring_view commandLine = GetCommandLineW();
+    const bool basicSmokeTest =
+        commandLine.find(L"--smoke-test") != std::wstring_view::npos;
+    if (std::optional<std::string> exampleScene =
+            SelectEngineExampleScene(commandLine))
+    {
+        const bool showPerformanceOverlay =
+            commandLine.find(L"--show-performance-overlay") !=
+                std::wstring_view::npos;
+        return mrg::Run(std::make_unique<ColoredCubeGame>(
+            basicSmokeTest,
+            showPerformanceOverlay,
+            std::move(*exampleScene)));
+    }
+
     const bool smokeLobby =
         commandLine.find(L"--smoke-lobby") != std::wstring_view::npos;
     const bool smokeGameplay =
         commandLine.find(L"--smoke-gameplay") != std::wstring_view::npos;
-    const bool smokeTest = smokeLobby || smokeGameplay ||
-        commandLine.find(L"--smoke-test") != std::wstring_view::npos;
+    const bool smokeTest = smokeLobby || smokeGameplay || basicSmokeTest;
     std::string initialScene(finger_drum::scene_ids::Logo);
     if (smokeLobby)
     {

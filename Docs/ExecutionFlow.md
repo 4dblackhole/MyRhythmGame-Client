@@ -5,8 +5,11 @@
 
 ```mermaid
 flowchart TD
-    Entry["Client/App/Main.cpp\nwWinMain"] --> Game["FingerDrumGame"]
+    Entry["Client/App/Main.cpp\nwWinMain"] --> Route{"recognized --example?"}
+    Route -->|"no"| Game["FingerDrumGame"]
+    Route -->|"yes"| Example["ColoredCubeGame · engine example"]
     Game --> Run["mrg::Run"]
+    Example --> Run
     Run --> Systems["Win32 · D3D12 · Raw Input · Audio"]
     Game --> Manager["SceneManager"]
     Manager --> Logo["FingerDrumLogoScene"]
@@ -18,7 +21,9 @@ flowchart TD
 
 ## 시작
 
-1. `wWinMain`이 Debug CRT 누수 검사를 켜고 `FingerDrumGame`을 생성합니다.
+1. `wWinMain`이 Debug CRT 누수 검사를 켭니다. 일반 실행과 FingerDrum smoke는
+   `FingerDrumGame`을 생성하고, 인식된 `--example=mesh|collision|widgets` 경로는
+   재사용 엔진 검증용 `ColoredCubeGame`을 생성합니다.
 2. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다.
 3. `RegisterScenes`가 Logo, Lobby, RhythmTest route를 등록합니다.

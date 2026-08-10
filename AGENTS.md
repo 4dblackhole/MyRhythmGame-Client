@@ -121,3 +121,6 @@ After changes, initialize the submodule and rebuild
 `FingerDrum.Rhythm.Tests.exe --catalog-root Client/Assets/Songs` and
 `MyRhythmGame.exe --smoke-test`, `--smoke-lobby`, and `--smoke-gameplay` in
 both configurations.
+For reusable engine features, also run the relevant `ColoredCubeGame` route in
+`Client/Examples/ColoredCube`, such as `--smoke-test --example=mesh` for mesh,
+camera, and rendering changes.
