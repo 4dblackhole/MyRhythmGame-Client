@@ -5,7 +5,8 @@ This file applies to the entire repository except the independently versioned
 
 ## Session onboarding
 
-- Read `Docs/README.md` at the start of a new Client session. Then read
+- Read `Docs/README.md` and `Docs/SessionHandoff.md` at the start of a new
+  Client session. Then read
   `Dependencies/MRG-Engine/Docs/EngineOverview.md` for the engine feature and
   ownership index, and `Docs/ExecutionFlow.md` for this Client's concrete
   startup, frame, Scene, and shutdown flow.
@@ -14,6 +15,29 @@ This file applies to the entire repository except the independently versioned
   input, PNG, and Z-order work.
 - Keep `README.md`, `Docs/README.md`, and affected feature documents in sync
   when a major Client flow, example, control, or engine integration changes.
+
+## Scope discipline
+
+- When a request is underspecified, implement the smallest reversible change
+  that satisfies its explicit acceptance criteria. Do not interpret missing
+  detail as permission to add speculative features, generalized subsystems,
+  placeholder data, extra screens, samples, or abstractions.
+- Inspect and reuse the current architecture before creating a new class,
+  project, interface, asset, or framework layer. Add an extension point only
+  when the requested behavior uses it now or the user explicitly asks for it.
+- Keep refactoring local to the code touched by the request unless the user
+  explicitly asks for a broader refactor. Do not turn a focused fix into a
+  repository-wide cleanup.
+- If two reasonable interpretations would materially change behavior,
+  ownership, public API, file format, or design, state the ambiguity and ask
+  before implementing. Otherwise choose the narrower interpretation and note
+  the assumption briefly.
+- Suggestions and future possibilities are not implementation requirements.
+  Report them separately and stop once the requested behavior and proportional
+  verification are complete.
+- Do not invent songs, records, profile statistics, devices, or other runtime
+  data to make a screen look populated. Use real data when available and an
+  explicit empty state otherwise.
 
 ## Purpose and boundary
 

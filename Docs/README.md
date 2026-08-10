@@ -3,14 +3,16 @@
 신규 개발자와 새 Codex 세션은 다음 순서로 읽습니다.
 
 1. 저장소 루트의 `AGENTS.md`
-2. 엔진 기능 색인 `Dependencies/MRG-Engine/Docs/EngineOverview.md`
-3. [실행 흐름과 객체 수명](ExecutionFlow.md)
-4. 작업 대상 기능 문서
+2. [현재 프로젝트 인수인계 요약](SessionHandoff.md)
+3. 엔진 기능 색인 `Dependencies/MRG-Engine/Docs/EngineOverview.md`
+4. [실행 흐름과 객체 수명](ExecutionFlow.md)
+5. 작업 대상 기능 문서
 
 ## Client 문서
 
 | 문서 | 내용 |
 | --- | --- |
+| [SessionHandoff.md](SessionHandoff.md) | 새 세션용 현재 상태, 저장소 경계, 검증 및 역할 분담 요약 |
 | [ExecutionFlow.md](ExecutionFlow.md) | 프로그램 진입, Scene 전환, 게임 루프, 종료 순서 |
 | [FingerDrum.md](FingerDrum.md) | 로고 화면과 반응형 이미지 배치 |
 | [SongSelect.md](SongSelect.md) | Penpot 곡 선택 화면의 Visual2D 구현과 조작법 |
