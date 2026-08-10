@@ -9,7 +9,7 @@
 
 ```mermaid
 flowchart TD
-    Entry["Client/App/Main.cpp\nwWinMain"] --> Client["unique_ptr&lt;ColoredCubeGame&gt;"]
+    Entry["Client/App/Main.cpp\nwWinMain\n--example=..."] --> Client["unique_ptr&lt;ColoredCubeGame&gt;"]
     Client --> Run["mrg::Run"]
     Run --> Window["Win32Window + InputState"]
     Run --> Renderer["D3D12Renderer"]
@@ -39,13 +39,15 @@ flowchart TD
 
 ## 시작 순서
 
-`Client/App/Main.cpp`의 `wWinMain`이 유일한 프로그램 진입점이다.
-`--smoke-test` 명령행 인수가 있으면 동일한 경로로 초기화하되, 창을 숨기고 곡면
-Canvas render-target 경로로 세 번 렌더링한 뒤 종료하도록 Client 설정만 바뀐다.
+`Client/App/Main.cpp`의 `wWinMain`이 유일한 프로그램 진입점이다. 일반 실행은
+`FingerDrumGame`을 선택하지만 `--example=mesh`, `--example=collision`,
+`--example=widgets` 중 하나가 있으면 `ColoredCubeGame`과 해당 초기 Scene을
+선택한다. 여기에 `--smoke-test`를 함께 주면 창을 숨기고 세 번 렌더링한 뒤
+종료하도록 Client 설정만 바뀐다.
 
 ```text
-wWinMain
-└─ std::make_unique<ColoredCubeGame>(smokeTest)
+wWinMain --smoke-test --example=mesh
+└─ std::make_unique<ColoredCubeGame>(smokeTest, ..., "Example.Mesh")
    └─ mrg::Run(client)
       ├─ client->GetEngineConfig()
       ├─ ComApartment: CoInitializeEx(COINIT_APARTMENTTHREADED)

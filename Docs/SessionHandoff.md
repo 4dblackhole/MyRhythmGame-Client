@@ -131,8 +131,11 @@ bin\x64\Release\FingerDrum.Rhythm.Tests.exe --catalog-root Client\Assets\Songs
 ```
 
 두 구성의 `MyRhythmGame.exe`에 `--smoke-test`, `--smoke-lobby`,
-`--smoke-gameplay`도 각각 실행합니다. 검증 후 작업 PR을 병합하고 Client main,
-엔진 gitlink, 엔진 main이 일치하는지 확인합니다.
+`--smoke-gameplay`도 각각 실행합니다. 재사용 엔진 기능은 추가로
+`Client/Examples/ColoredCube`의 `ColoredCubeGame`과 관련 예제 route를 사용합니다.
+Mesh·Camera·렌더 변경은 `--smoke-test --example=mesh`가 기본 통합 경로입니다.
+검증 후 작업 PR을 병합하고 Client main, 엔진 gitlink, 엔진 main이 일치하는지
+확인합니다.
 
 현재 사용자 소유로 남아 있을 수 있는 다음 파일은 별도 요청 없이 stage하거나
 덮어쓰지 않습니다.
