@@ -44,7 +44,8 @@ Visual Studio 2022, MSVC v143, Windows SDK와 FMOD Studio API for Windows가
 ## 현재 실행 흐름
 
 기본 실행은 AliceBlue 배경의 FingerDrum 로고로 시작합니다. Game Start는
-Penpot 기반 곡 선택 화면으로 이동합니다. 아직 catalog와 기록 저장소가 없어
-곡 선택 화면은 빈 상태만 표시하고 실제 곡이나 점수를 꾸며내지 않습니다.
-자세한 규칙은 [리듬게임 구조](Docs/RhythmGameplay.md), 화면 구성은
-[곡 선택 화면](Docs/SongSelect.md)을 참고합니다.
+Penpot 기반 곡 선택 화면으로 이동합니다. 곡 선택 화면은 기존 catalog 자산과
+Git에서 제외한 로컬 곡·패턴을 표시하며, 기록 저장소가 없으므로 점수를 꾸며내지 않고 명시적인
+빈 기록 상태를 표시합니다. 자세한 규칙은
+[리듬게임 구조](Docs/RhythmGameplay.md), [차트 문법](Docs/ChartFormats.md),
+화면 구성은 [곡 선택 화면](Docs/SongSelect.md)을 참고합니다.

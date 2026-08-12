@@ -19,7 +19,7 @@ Penpot의 1920×1080 좌표에 `2/3`를 적용해 엔진의 1280×720 기준으�
 
 `FingerDrum.Chart/Catalog/SongCatalog`가 실행 파일의 `assets/songs`를 재귀
 탐색합니다. YMM의 음악 파일을 해석하고 YMP의 `Music metadata` 상대 경로로
-패턴을 결합합니다. 현재 RPG에서 옮긴 YMM 5개와 YMP 8개가 모두 catalog에
+패턴을 결합합니다. 기존 YMM 5개와 YMP 8개 및 Git에서 제외한 로컬 패턴이 catalog에
 포함되며, 패턴이 없는 음악도 SONG LIST에는 표시됩니다.
 
 - 카테고리는 현재 `ALL` 하나입니다.

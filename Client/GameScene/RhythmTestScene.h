@@ -18,7 +18,8 @@ class RhythmTestScene final : public mrg::scene::GameScene
 {
 public:
     explicit RhythmTestScene(
-        std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest);
+        std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
+        bool debugMode = false);
 
     void Initialize(const mrg::EngineServices& services) override;
     void Update(
@@ -43,6 +44,9 @@ private:
         CreateSession();
     [[nodiscard]] std::unique_ptr<finger_drum::mode::PlaySession>
         CreateDemoSession();
+    [[nodiscard]] std::unique_ptr<finger_drum::mode::PlaySession>
+        CreateLongNoteDebugSession();
+    void PrepareDebugLaunchRequest();
     void CreatePresentation(const mrg::EngineServices& services);
     void CreateLaneVisuals(
         const mrg::EngineServices& services,
@@ -58,12 +62,17 @@ private:
     void ProcessControlKeys(
         const mrg::platform::InputState& input,
         const mrg::audio::AudioClockSnapshot& clock);
+    void ProcessDebugTimeline(
+        const mrg::platform::InputState& input,
+        const mrg::audio::AudioClockSnapshot& clock,
+        double deltaSeconds);
     void ProcessRhythmInput(const mrg::platform::InputState& input);
     void UpdateSession(
         const mrg::platform::InputState& input,
         finger_drum::rhythm::RhythmTime time);
     void ConsumeResult(finger_drum::rhythm::NoteProcessResult result);
     void UpdatePresentation(finger_drum::rhythm::RhythmTime time);
+    void UpdateDebugText(finger_drum::rhythm::RhythmTime time);
     [[nodiscard]] bool IsPatternComplete() const noexcept;
     [[nodiscard]] bool ReturnToLobby(
         mrg::scene::SceneManager& scenes) const;
@@ -81,8 +90,11 @@ private:
     mrg::visual2d::Visual2DNode* timelineLabel_{};
     mrg::visual2d::Visual2DNode* resultLabel_{};
     mrg::visual2d::Visual2DNode* audioStatusLabel_{};
+    mrg::visual2d::Visual2DNode* debugLabel_{};
     std::uint64_t acceptedHitCount_{};
     double accumulatedScore_{};
     double completedElapsedSeconds_{};
+    double debugSpeedMillisecondsPerSecond_{1000.0};
     bool musicRegistered_{};
+    bool debugMode_{};
 };

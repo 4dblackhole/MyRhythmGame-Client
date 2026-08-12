@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <filesystem>
 #include <format>
 #include <span>
@@ -72,6 +73,13 @@ namespace
             std::filesystem::path(L"assets\\skins\\test Skin") / file);
     }
 
+    [[nodiscard]] std::filesystem::path SoundAssetPath(
+        const std::filesystem::path& file)
+    {
+        return mrg::platform::ResolveExecutableRelativePath(
+            std::filesystem::path(L"assets\\sounds") / file);
+    }
+
     [[nodiscard]] std::wstring GradeName(const JudgementGrade grade)
     {
         switch (grade)
@@ -86,18 +94,34 @@ namespace
         }
     }
 
+    [[nodiscard]] std::wstring_view StateName(const NoteState state) noexcept
+    {
+        switch (state)
+        {
+        case NoteState::Pending: return L"Pending";
+        case NoteState::Active: return L"Active";
+        case NoteState::AwaitingAdditionalInput: return L"Awaiting input";
+        case NoteState::Holding: return L"Holding";
+        case NoteState::Completed: return L"Completed";
+        case NoteState::Missed: return L"Missed";
+        default: return L"Unknown";
+        }
+    }
+
     void AddPatternNote(
         finger_drum::chart::PatternDocument& pattern,
         const std::int64_t measure,
         const std::int64_t numerator,
         const std::int64_t denominator,
         const finger_drum::mode::TaikoNoteType type,
-        const finger_drum::mode::TaikoPatternAction action)
+        const finger_drum::mode::TaikoPatternAction action,
+        std::vector<std::string> extraData = {})
     {
         PatternNote note;
         note.position = MusicalPosition{measure, Rational{numerator, denominator}};
         note.keyType = static_cast<int>(type);
         note.actionType = static_cast<int>(action);
+        note.extraData = std::move(extraData);
         note.sourceOrder = pattern.notes.size();
         pattern.notes.push_back(std::move(note));
     }
@@ -111,13 +135,17 @@ namespace
     [[nodiscard]] bool IsLongVisual(const std::string_view visualId) noexcept
     {
         return visualId == "Taiko.Roll" || visualId == "Taiko.BigRoll" ||
-            visualId == "Taiko.Balloon";
+            visualId == "Taiko.Balloon" ||
+            visualId == "Taiko.DengDeng" ||
+            visualId == "Taiko.Buzz.Don" ||
+            visualId == "Taiko.Buzz.Kat";
     }
 
     [[nodiscard]] mrg::visual2d::Color AmbientColor(
         const std::string_view visualId) noexcept
     {
-        if (visualId == "Taiko.Kat" || visualId == "Taiko.BigKat")
+        if (visualId == "Taiko.Kat" || visualId == "Taiko.BigKat" ||
+            visualId == "Taiko.Buzz.Kat")
         {
             return KatBlue;
         }
@@ -130,8 +158,10 @@ namespace
 }
 
 RhythmTestScene::RhythmTestScene(
-    std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest)
-    : launchRequest_(std::move(launchRequest))
+    std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
+    const bool debugMode)
+    : launchRequest_(std::move(launchRequest)),
+      debugMode_(debugMode)
 {
 }
 
@@ -144,6 +174,7 @@ void RhythmTestScene::Initialize(const mrg::EngineServices& services)
 
     width_ = services.windowWidth;
     height_ = services.windowHeight;
+    PrepareDebugLaunchRequest();
     session_ = CreateSession();
     canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>(
         mrg::visual2d::Size{1280.0F, 720.0F},
@@ -155,7 +186,10 @@ void RhythmTestScene::Initialize(const mrg::EngineServices& services)
     CreateNoteVisuals(services);
     InitializeAudio(services);
     StartTimeline(services.audio.CaptureClockSnapshot());
-    ScheduleMusic();
+    if (!debugMode_)
+    {
+        ScheduleMusic();
+    }
 }
 
 void RhythmTestScene::Update(
@@ -179,7 +213,13 @@ void RhythmTestScene::Update(
     }
 
     ProcessControlKeys(context.input, clock);
-    if (timer_.CurrentState() == finger_drum::rhythm::RhythmTimer::State::Running)
+    if (debugMode_)
+    {
+        ProcessDebugTimeline(context.input, clock, context.deltaSeconds);
+    }
+    if (debugMode_ ||
+        timer_.CurrentState() ==
+            finger_drum::rhythm::RhythmTimer::State::Running)
     {
         ProcessRhythmInput(context.input);
         const auto time = timer_.Now(clock.performanceCounterTicks);
@@ -193,9 +233,12 @@ void RhythmTestScene::Update(
     }
     audioRouter_.Update();
 
+    const auto currentTime = timer_.Now(clock.performanceCounterTicks);
+    UpdateDebugText(currentTime);
+
     // DestroyOnExit removes this complete mode instance after the deferred
     // transition. Only Lobby and its selected catalog data remain alive.
-    if (IsPatternComplete())
+    if (!debugMode_ && IsPatternComplete())
     {
         completedElapsedSeconds_ += context.deltaSeconds;
         if (completedElapsedSeconds_ >= 3.0)
@@ -243,6 +286,7 @@ void RhythmTestScene::Shutdown() noexcept
     noteVisuals_.clear();
     laneRoot_ = nullptr;
     audioStatusLabel_ = nullptr;
+    debugLabel_ = nullptr;
     resultLabel_ = nullptr;
     timelineLabel_ = nullptr;
     canvas_.reset();
@@ -259,7 +303,9 @@ RhythmTestScene::CreateSession()
 {
     if (!launchRequest_->IsValid())
     {
-        return CreateDemoSession();
+        return debugMode_
+            ? CreateLongNoteDebugSession()
+            : CreateDemoSession();
     }
     if (!launchRequest_->mode.empty() && launchRequest_->mode != "Taiko")
     {
@@ -280,6 +326,28 @@ RhythmTestScene::CreateSession()
         throw std::runtime_error("Failed to load the selected pattern: " + detail);
     }
     return std::move(loaded.session);
+}
+
+void RhythmTestScene::PrepareDebugLaunchRequest()
+{
+    if (!debugMode_ || launchRequest_->IsValid())
+    {
+        return;
+    }
+    const std::filesystem::path songs =
+        mrg::platform::ResolveExecutableRelativePath(L"assets\\songs");
+    const std::filesystem::path patternPath = songs /
+        L"Pattern\\angeldream\\angeldream [long notes test].ymp";
+    const std::filesystem::path musicPath = songs /
+        L"Music\\Angeldream\\angel dream hand shaking.mp3";
+    if (!std::filesystem::is_regular_file(patternPath) ||
+        !std::filesystem::is_regular_file(musicPath))
+    {
+        return;
+    }
+    launchRequest_->patternPath = patternPath;
+    launchRequest_->musicPath = musicPath;
+    launchRequest_->mode = "Taiko";
 }
 
 std::unique_ptr<finger_drum::mode::PlaySession>
@@ -307,6 +375,68 @@ RhythmTestScene::CreateDemoSession()
     if (!result.Succeeded())
     {
         throw std::runtime_error("Failed to create the Taiko demo session.");
+    }
+    return std::move(result.session);
+}
+
+std::unique_ptr<finger_drum::mode::PlaySession>
+RhythmTestScene::CreateLongNoteDebugSession()
+{
+    finger_drum::chart::PatternDocument pattern;
+    pattern.name = "Long Notes Debug";
+    pattern.mode = "Taiko";
+    pattern.baseBpm = 180.0;
+    pattern.patternOffsetMilliseconds = 104.0;
+    pattern.judgementLevel = 50;
+
+    using NoteType = finger_drum::mode::TaikoNoteType;
+    using Action = finger_drum::mode::TaikoPatternAction;
+    const auto addLong = [&pattern](
+        const std::int64_t measure,
+        const std::int64_t startNumerator,
+        const NoteType type,
+        std::vector<std::string> extraData = {})
+    {
+        AddPatternNote(
+            pattern,
+            measure,
+            startNumerator,
+            4,
+            type,
+            Action::LongNoteStart,
+            std::move(extraData));
+        AddPatternNote(
+            pattern,
+            measure,
+            startNumerator + 1,
+            4,
+            type,
+            Action::LongNoteEnd);
+    };
+
+    addLong(0, 0, NoteType::Roll);
+    addLong(0, 2, NoteType::BigRoll);
+    addLong(1, 0, NoteType::TickRoll, {"TickDivision=16"});
+    addLong(1, 2, NoteType::BigTickRoll, {"TickDivision=16"});
+    addLong(2, 0, NoteType::Balloon, {"HitCount=8"});
+    addLong(2, 2, NoteType::DengDeng, {"HitCount=8"});
+    addLong(
+        3,
+        0,
+        NoteType::Buzz,
+        {"Action=Don", "TickDivision=16"});
+    addLong(
+        3,
+        2,
+        NoteType::Buzz,
+        {"Action=Kat", "TickDivision=16"});
+
+    finger_drum::mode::TaikoMode mode;
+    finger_drum::mode::ModeLoadResult result = mode.CreateSession(pattern);
+    if (!result.Succeeded())
+    {
+        throw std::runtime_error(
+            "Failed to create the built-in long-note debug session.");
     }
     return std::move(result.session);
 }
@@ -343,7 +473,10 @@ void RhythmTestScene::CreatePresentation(
         root, {48.0F, 146.0F, 820.0F, 48.0F}, L"READY", "Result");
     audioStatusLabel_ = &mrg::visual2d::CreateLabel(
         root, {48.0F, 650.0F, 1184.0F, 34.0F},
-        L"AUDIO: DSP-clock scheduled music and hitsounds", "AudioStatus");
+        debugMode_
+            ? L"AUDIO: manual timeline hitsounds (music disabled)"
+            : L"AUDIO: DSP-clock scheduled music and hitsounds",
+        "AudioStatus");
     for (mrg::visual2d::Visual2DNode* label :
         {timelineLabel_, resultLabel_, audioStatusLabel_})
     {
@@ -352,12 +485,29 @@ void RhythmTestScene::CreatePresentation(
         text.SetFontSize(label == resultLabel_ ? 24.0F : 17.0F);
     }
 
+    if (debugMode_)
+    {
+        debugLabel_ = &mrg::visual2d::CreateLabel(
+            root,
+            {760.0F, 98.0F, 472.0F, 126.0F},
+            L"DEBUG",
+            "DebugStatus");
+        auto& debugText =
+            RequireComponent<mrg::visual2d::TextVisualComponent>(*debugLabel_);
+        debugText.SetTextColor(DeepBlue);
+        debugText.SetFontSize(17.0F);
+    }
+
     auto& instructions = mrg::visual2d::CreateLabel(
         root,
         {120.0F, 478.0F, 1040.0F, 116.0F},
-        L"D / K : KAT (rim)        F / J : DON (center)\n"
-        L"One Lane focuses Don, Kat, large notes and rolls in exact time order.\n"
-        L"SPACE : Pause / Resume     R : Restart     ESC : Song Select",
+        debugMode_
+            ? L"D / K : KAT        F / J : DON        SPACE : Run / Pause\n"
+              L"1 / 2 : Rewind / Advance continuously    3 / 4 : -1 ms / +1 ms\n"
+              L"- / + : Debug speed    R : Restart    ESC : Song Select"
+            : L"D / K : KAT (rim)        F / J : DON (center)\n"
+              L"One Lane focuses Don, Kat, large notes and rolls in exact time order.\n"
+              L"SPACE : Pause / Resume     R : Restart     ESC : Song Select",
         "Instructions");
     auto& instructionText =
         RequireComponent<mrg::visual2d::TextVisualComponent>(instructions);
@@ -578,6 +728,11 @@ void RhythmTestScene::RegisterTaikoSounds(std::string& errorMessage)
             return;
         }
     }
+    static_cast<void>(audioRouter_.RegisterSound(
+        "Taiko.Balloon.Pop",
+        SoundAssetPath(L"pop.wav"),
+        mrg::audio::AudioLoadMode::Sample,
+        errorMessage));
 }
 
 void RhythmTestScene::ScheduleMusic()
@@ -603,6 +758,10 @@ void RhythmTestScene::StartTimeline(
         clock.performanceCounterFrequency,
         LeadIn);
     timer_.AnchorDspClock(LeadIn, clock.dspClock, clock.sampleRate);
+    if (debugMode_)
+    {
+        timer_.Pause(clock.performanceCounterTicks);
+    }
 }
 
 void RhythmTestScene::ResetTimeline(
@@ -614,7 +773,10 @@ void RhythmTestScene::ResetTimeline(
     accumulatedScore_ = 0.0;
     completedElapsedSeconds_ = 0.0;
     StartTimeline(clock);
-    ScheduleMusic();
+    if (!debugMode_)
+    {
+        ScheduleMusic();
+    }
     RequireComponent<mrg::visual2d::TextVisualComponent>(*resultLabel_).
         SetText(L"RESTARTED");
 }
@@ -648,6 +810,76 @@ void RhythmTestScene::ProcessControlKeys(
             static_cast<void>(audioRouter_.SetVoicesPaused(false, ignoredError));
         }
     }
+}
+
+void RhythmTestScene::ProcessDebugTimeline(
+    const mrg::platform::InputState& input,
+    const mrg::audio::AudioClockSnapshot& clock,
+    const double deltaSeconds)
+{
+    if (!debugMode_)
+    {
+        return;
+    }
+
+    if (input.WasKeyPressed(VK_OEM_MINUS))
+    {
+        debugSpeedMillisecondsPerSecond_ = std::max(
+            debugSpeedMillisecondsPerSecond_ - 200.0,
+            200.0);
+    }
+    if (input.WasKeyPressed(VK_OEM_PLUS))
+    {
+        debugSpeedMillisecondsPerSecond_ = std::min(
+            debugSpeedMillisecondsPerSecond_ + 200.0,
+            4000.0);
+    }
+
+    std::int64_t deltaMicroseconds{};
+    if (input.IsKeyDown(static_cast<std::uint16_t>('1')))
+    {
+        deltaMicroseconds -= static_cast<std::int64_t>(std::llround(
+            debugSpeedMillisecondsPerSecond_ * deltaSeconds * 1000.0));
+    }
+    if (input.IsKeyDown(static_cast<std::uint16_t>('2')))
+    {
+        deltaMicroseconds += static_cast<std::int64_t>(std::llround(
+            debugSpeedMillisecondsPerSecond_ * deltaSeconds * 1000.0));
+    }
+    if (input.WasKeyPressed(static_cast<std::uint16_t>('3')))
+    {
+        deltaMicroseconds -= 1000;
+    }
+    if (input.WasKeyPressed(static_cast<std::uint16_t>('4')))
+    {
+        deltaMicroseconds += 1000;
+    }
+    if (deltaMicroseconds == 0)
+    {
+        return;
+    }
+
+    using TimerState = finger_drum::rhythm::RhythmTimer::State;
+    const auto before = timer_.Now(clock.performanceCounterTicks);
+    if (timer_.CurrentState() == TimerState::Running)
+    {
+        timer_.Pause(clock.performanceCounterTicks);
+        std::string ignoredError;
+        static_cast<void>(audioRouter_.SetVoicesPaused(true, ignoredError));
+    }
+    const auto after = before +
+        finger_drum::rhythm::RhythmDuration{deltaMicroseconds};
+    if (after < before)
+    {
+        session_->Reset();
+        audioRouter_.StopAllVoices();
+        acceptedHitCount_ = 0;
+        accumulatedScore_ = 0.0;
+        RequireComponent<mrg::visual2d::TextVisualComponent>(*resultLabel_).
+            SetText(L"DEBUG REWIND / NOTE STATE RESET");
+    }
+    timer_.Seek(after, clock.performanceCounterTicks);
+    timer_.AnchorDspClock(after, clock.dspClock, clock.sampleRate);
 }
 
 void RhythmTestScene::ProcessRhythmInput(
@@ -781,6 +1013,46 @@ void RhythmTestScene::UpdatePresentation(
                 layers.diameter});
         }
     }
+}
+
+void RhythmTestScene::UpdateDebugText(
+    const finger_drum::rhythm::RhythmTime time)
+{
+    if (!debugMode_ || debugLabel_ == nullptr || session_ == nullptr ||
+        session_->Gear().Lanes().empty())
+    {
+        return;
+    }
+
+    const finger_drum::rhythm::INote* const note =
+        session_->Gear().Lanes().front()->CurrentNote();
+    std::wstring text = std::format(
+        L"DEBUG TIMER: {:+.3f} ms\nSPEED: {:.0f} ms/s    HITS: {}",
+        static_cast<double>(time.count()) / 1000.0,
+        debugSpeedMillisecondsPerSecond_,
+        acceptedHitCount_);
+    if (note == nullptr)
+    {
+        text += L"\nTARGET: none";
+    }
+    else
+    {
+        const finger_drum::mode::NotePresentationInfo* presentation =
+            session_->FindNotePresentation(note->Id());
+        const std::string_view visual = presentation == nullptr
+            ? std::string_view{"Unknown"}
+            : std::string_view{presentation->visualId};
+        const std::wstring visualText(visual.begin(), visual.end());
+        const auto difference = time - note->Timing();
+        text += std::format(
+            L"\nTARGET: #{} {} / {} / DIFF {:+.3f} ms",
+            note->Id(),
+            visualText,
+            StateName(note->State()),
+            static_cast<double>(difference.count()) / 1000.0);
+    }
+    RequireComponent<mrg::visual2d::TextVisualComponent>(*debugLabel_).
+        SetText(std::move(text));
 }
 
 bool RhythmTestScene::IsPatternComplete() const noexcept

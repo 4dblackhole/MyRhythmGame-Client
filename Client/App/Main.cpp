@@ -84,6 +84,8 @@ int WINAPI wWinMain(
         commandLine.find(L"--smoke-lobby") != std::wstring_view::npos;
     const bool smokeGameplay =
         commandLine.find(L"--smoke-gameplay") != std::wstring_view::npos;
+    const bool rhythmDebugMode =
+        commandLine.find(L"--rhythm-debug") != std::wstring_view::npos;
     const bool smokeTest = smokeLobby || smokeGameplay || basicSmokeTest;
     std::string initialScene(finger_drum::scene_ids::Logo);
     if (smokeLobby)
@@ -94,10 +96,15 @@ int WINAPI wWinMain(
     {
         initialScene = finger_drum::scene_ids::RhythmTest;
     }
+    else if (rhythmDebugMode)
+    {
+        initialScene = finger_drum::scene_ids::RhythmTest;
+    }
 
     // Specialized hidden routes exercise catalog widgets and layered Taiko
     // assets without changing the normal executable's Logo entry point.
     return mrg::Run(std::make_unique<FingerDrumGame>(
         smokeTest,
-        std::move(initialScene)));
+        std::move(initialScene),
+        rhythmDebugMode));
 }

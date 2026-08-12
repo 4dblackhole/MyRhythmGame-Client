@@ -14,7 +14,10 @@
 class FingerDrumGame final : public mrg::scene::SceneGameClient
 {
 public:
-    FingerDrumGame(bool smokeTest, std::string initialSceneId) noexcept;
+    FingerDrumGame(
+        bool smokeTest,
+        std::string initialSceneId,
+        bool rhythmDebugMode = false) noexcept;
 
     [[nodiscard]] mrg::EngineConfig GetEngineConfig() const override;
 
@@ -39,6 +42,7 @@ private:
 
     bool smokeTest_{};
     bool showPerformanceOverlay_{};
+    bool rhythmDebugMode_{};
     std::string initialSceneId_;
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest_;
     mrg::graphics::FontHandle performanceFont_;

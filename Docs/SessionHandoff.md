@@ -79,7 +79,7 @@ wWinMain
 - `Lane`은 노트를 시간순으로 소유하고 맨 앞 미처리 노트의 focus 및
   early/late Bad 말림 방지 규칙을 담당합니다.
 - 노트 처리 조건은 교체 가능한 rule로 표현합니다. 일반, 동시 입력, 순차 입력,
-  큰 노트, 롱노트 tick, roll 등의 상태에 따라 semantic `NoteEvent`와
+  큰 노트, Roll/TickRoll, Balloon, DengDeng, Buzz 등의 상태에 따라 semantic `NoteEvent`와
   `AudioCueRequest`를 발생시킵니다.
 - 게임 규칙은 FMOD를 직접 호출하지 않습니다. `GameplayAudioRouter`가 cue를
   clip, bus, volume, effect에 연결합니다.
@@ -90,7 +90,9 @@ wWinMain
 
 ## 현재 태고 테스트 표시
 
-- Don, Kat, BigDon, BigKat, Roll 계열을 한 Lane에서 관리합니다.
+- Don, Kat, BigDon, BigKat과 모든 태고 롱노트를 한 Lane에서 관리합니다.
+- `--rhythm-debug`는 엔젤드림 롱노트 테스트 YMP를 열고 1ms 수동 타이머와
+  현재 대상 노트 디버그 텍스트를 제공합니다.
 - RPG의 `Files/Skins/test Skin`에서 옮긴 Ambient/Overlay 및 hit sound를
   사용합니다.
 - Lane은 기본 로컬 `+Y` 방향의 세로 계층으로 작성하고 Taiko에서는 부모만

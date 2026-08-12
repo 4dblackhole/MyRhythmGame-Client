@@ -14,9 +14,11 @@
 
 FingerDrumGame::FingerDrumGame(
     const bool smokeTest,
-    std::string initialSceneId) noexcept
+    std::string initialSceneId,
+    const bool rhythmDebugMode) noexcept
     : smokeTest_(smokeTest),
       showPerformanceOverlay_(smokeTest),
+      rhythmDebugMode_(rhythmDebugMode),
       initialSceneId_(std::move(initialSceneId)),
       launchRequest_(
           std::make_shared<finger_drum::GameplayLaunchRequest>())
@@ -61,7 +63,8 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             // concrete mode Scene is constructed on entry and destroyed as
             // soon as it returns to Lobby.
             mrg::scene::SceneRetention::DestroyOnExit,
-            launchRequest_))
+            launchRequest_,
+            rhythmDebugMode_))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
     }

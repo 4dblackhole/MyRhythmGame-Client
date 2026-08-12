@@ -17,6 +17,7 @@
 | [FingerDrum.md](FingerDrum.md) | 로고 화면과 반응형 이미지 배치 |
 | [SongSelect.md](SongSelect.md) | Penpot 곡 선택 화면의 Visual2D 구현과 조작법 |
 | [RhythmGameplay.md](RhythmGameplay.md) | 타이머, 판정, Lane, Note 규칙, 차트, 모드, 사운드 계층 |
+| [ChartFormats.md](ChartFormats.md) | YMM·YMP 문법, 태고 롱노트 옵션과 YME 마디선 표기 |
 | [Visual2DGuide.md](Visual2DGuide.md) | Sprite·위젯 공통 노드, Canvas, 입력, PNG와 Z-Order |
 | [Examples/ColoredCube/README.md](Examples/ColoredCube/README.md) | 보관된 Mesh·충돌·Visual2D 예제 |
 
