@@ -34,7 +34,7 @@ flowchart TD
 
 - Logo에서 Game Start를 누르면 Lobby로 이동합니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
-  `SongCatalog`가 YMM 5개와 YMP 8개를 연결한 실제 목록을 표시하며, 좌측 상단
+  `SongCatalog`가 기존 YMM 5개와 YMP 8개 및 선택적 로컬 패턴을 연결해 표시하며, 좌측 상단
   BACK 버튼이나 Escape로 Logo에 돌아갑니다.
 - Lobby의 PLAY/Enter는 선택 경로를 `GameplayLaunchRequest`에 기록한 뒤
   RhythmTest 전환을 요청합니다. RhythmTest는 `TaikoMode`로 한 Lane 세션을

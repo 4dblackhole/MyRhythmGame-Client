@@ -61,7 +61,7 @@ late Bad이며 다음 노트가 같은 입력을 Good 이내로 받을 수 있�
 Miss 처리한 뒤 같은 입력을 다음 노트에 전달합니다.
 
 현재 `TaikoMode`는 RPG `PlayScene`과 같은 방식으로 Don, Kat, BigDon,
-BigKat, Roll, TickRoll, Balloon을 모두 **한 Lane**에 넣습니다. long-note head를
+BigKat, Roll, TickRoll, Balloon, DengDeng, Buzz를 모두 **한 Lane**에 넣습니다. long-note head를
 받은 뒤 일치하는 tail을 받을 때까지 같은 Lane의 중복 head와 일반 Down은
 무시합니다. 따라서 종류별 Lane을 따로 두지 않고 전체 노트의 시간순 focus와
 배드말림 방지 규칙을 한 곳에서 적용합니다.
@@ -75,6 +75,9 @@ BigKat, Roll, TickRoll, Balloon을 모두 **한 Lane**에 넣습니다. long-not
 - `SequenceInputRule`: 제한 시간 안에 순서가 필요한 노트
 - `HoldInputRule`: 시작 판정, held 상태와 tick을 갖는 롱노트
 - `DrumRollInputRule`: 구간 안의 반복 입력을 받는 드럼롤
+- `TickRollInputRule`: 각 틱을 Good 범위에서 한 번만 받는 속도 제한 드럼롤
+- `TimedSequenceInputRule`: Balloon의 반복 Don과 DengDeng의 Don/Kat 교대를
+  제한 시간 및 필요 횟수로 처리하는 규칙
 
 새 노트는 `INote` 전체를 다시 만들거나, 대부분의 경우 기존
 `RuleBasedNote`에 새 `INoteRule`만 주입해 추가합니다.
@@ -128,7 +131,13 @@ Lane 표시는 RPG `PlayScene`의 Transform 계층도 유지합니다. 기본 La
 - `R`: 처음부터 다시 시작
 - `Escape`: 곡 선택으로 복귀
 
+`MyRhythmGame.exe --rhythm-debug`는 엔젤드림 롱노트 테스트 패턴을 바로 열고
+타이머를 일시정지합니다. `1`/`2`는 연속 뒤/앞 이동, `3`/`4`는 정확히
+-1ms/+1ms 이동이며 화면에 현재 대상 노트와 시간 차이를 표시합니다. 상세 YMM,
+YMP와 롱노트 옵션은 [ChartFormats.md](ChartFormats.md)를 참고합니다.
+
 순수 로직 회귀 테스트는 `FingerDrum.Rhythm.Tests.exe`이며 판정 scaling,
 보간 점수, Lane focus, 큰 노트 사운드, tick 중복 방지, legacy YMP와 YME를
-검증합니다. `--catalog-root <Songs 경로>`를 붙이면 YMM 5개/YMP 8개의 연관,
+검증합니다. `--catalog-root <Songs 경로>`를 붙이면 기존 YMM 5개/YMP 8개와
+선택적 로컬 패턴의 연관,
 음악 파일 존재 여부와 모든 패턴의 단일-Lane 세션 생성까지 검증합니다.

@@ -11,3 +11,12 @@ ThirdParty/
 *.dll
 *.lib
 
+# Song charts and music are local content. Existing tracked legacy fixtures
+# remain available, but newly added catalog content must not be committed.
+Client/Assets/Songs/**/*.ymm
+Client/Assets/Songs/**/*.ymp
+Client/Assets/Songs/**/*.yme
+Client/Assets/Songs/**/*.mp3
+Client/Assets/Songs/**/*.ogg
+Client/Assets/Songs/**/*.flac
+Client/Assets/Songs/**/*.m4a

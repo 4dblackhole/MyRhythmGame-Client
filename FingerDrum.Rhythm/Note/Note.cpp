@@ -856,4 +856,314 @@ namespace finger_drum::rhythm
     {
         return endTime_;
     }
+
+    TimedSequenceInputRule::TimedSequenceInputRule(
+        std::vector<NoteAction> repeatingSequence,
+        const std::size_t requiredHitCount,
+        const RhythmTime endTime)
+        : repeatingSequence_(std::move(repeatingSequence)),
+          requiredHitCount_(std::max<std::size_t>(requiredHitCount, 1)),
+          endTime_(endTime)
+    {
+        if (repeatingSequence_.empty())
+        {
+            throw std::invalid_argument(
+                "A timed sequence requires at least one input action.");
+        }
+    }
+
+    void TimedSequenceInputRule::Reset() noexcept
+    {
+        state_ = NoteState::Active;
+        acceptedHitCount_ = 0;
+    }
+
+    NoteState TimedSequenceInputRule::State() const noexcept
+    {
+        return state_;
+    }
+
+    bool TimedSequenceInputRule::CanAccept(
+        const NoteRuleContext& context,
+        const RhythmInputEvent& input,
+        const JudgementResult&) const noexcept
+    {
+        return !IsTerminal(state_) &&
+            input.edge == InputEdge::Pressed &&
+            input.time >= context.noteTime &&
+            input.time <= endTime_ &&
+            input.action == repeatingSequence_[
+                acceptedHitCount_ % repeatingSequence_.size()];
+    }
+
+    void TimedSequenceInputRule::ProcessInput(
+        const NoteRuleContext& context,
+        const RhythmInputEvent& input,
+        const JudgementResult& judgement,
+        NoteProcessResult& output)
+    {
+        if (!CanAccept(context, input, judgement))
+        {
+            output.events.push_back(MakeEvent(
+                context,
+                NoteEventType::InputRejected,
+                state_,
+                state_,
+                judgement,
+                input.time,
+                acceptedHitCount_));
+            return;
+        }
+
+        const NoteState before = state_;
+        const std::size_t acceptedIndex = acceptedHitCount_++;
+        state_ = acceptedHitCount_ >= requiredHitCount_
+            ? NoteState::Completed
+            : NoteState::AwaitingAdditionalInput;
+        const JudgementResult accepted{
+            JudgementGrade::Unjudged,
+            {},
+            1.0};
+        output.events.push_back(MakeEvent(
+            context,
+            NoteEventType::HitAccepted,
+            before,
+            state_,
+            accepted,
+            input.time,
+            acceptedIndex));
+        output.events.push_back(MakeEvent(
+            context,
+            state_ == NoteState::Completed
+                ? NoteEventType::Completed
+                : NoteEventType::StageAdvanced,
+            before,
+            state_,
+            accepted,
+            input.time,
+            acceptedIndex));
+    }
+
+    void TimedSequenceInputRule::Update(
+        const NoteRuleContext& context,
+        const NoteUpdateContext& update,
+        NoteProcessResult& output)
+    {
+        if (IsTerminal(state_) || update.time < endTime_)
+        {
+            return;
+        }
+        MarkMissed(context, endTime_, output);
+    }
+
+    void TimedSequenceInputRule::MarkMissed(
+        const NoteRuleContext& context,
+        const RhythmTime time,
+        NoteProcessResult& output)
+    {
+        if (IsTerminal(state_))
+        {
+            return;
+        }
+        const NoteState before = state_;
+        state_ = NoteState::Missed;
+        output.events.push_back(MakeEvent(
+            context,
+            NoteEventType::Missed,
+            before,
+            state_,
+            MissJudgement(context, time),
+            time,
+            acceptedHitCount_));
+    }
+
+    RhythmTime TimedSequenceInputRule::ExpireTime(
+        const NoteRuleContext&) const noexcept
+    {
+        return endTime_;
+    }
+
+    TickRollInputRule::TickRollInputRule(
+        std::vector<NoteAction> acceptedActions,
+        const RhythmTime endTime,
+        std::vector<RhythmTime> tickTimes,
+        const JudgementGrade maximumGrade)
+        : acceptedActions_(std::move(acceptedActions)),
+          endTime_(endTime),
+          tickTimes_(std::move(tickTimes)),
+          maximumGrade_(maximumGrade)
+    {
+        if (acceptedActions_.empty())
+        {
+            throw std::invalid_argument(
+                "A tick roll requires at least one input action.");
+        }
+        std::ranges::sort(tickTimes_);
+    }
+
+    void TickRollInputRule::Reset() noexcept
+    {
+        state_ = NoteState::Active;
+        nextTickIndex_ = 0;
+    }
+
+    NoteState TickRollInputRule::State() const noexcept
+    {
+        return state_;
+    }
+
+    bool TickRollInputRule::CanAccept(
+        const NoteRuleContext& context,
+        const RhythmInputEvent& input,
+        const JudgementResult&) const noexcept
+    {
+        if (IsTerminal(state_) || input.edge != InputEdge::Pressed ||
+            input.time > endTime_ ||
+            std::ranges::find(acceptedActions_, input.action) ==
+                acceptedActions_.end())
+        {
+            return false;
+        }
+
+        const RhythmDuration halfWindow =
+            context.judgementProfile.HalfWindow(maximumGrade_);
+        std::size_t candidate = nextTickIndex_;
+        while (candidate < tickTimes_.size() &&
+            input.time > tickTimes_[candidate] + halfWindow)
+        {
+            ++candidate;
+        }
+        return candidate < tickTimes_.size() &&
+            context.judgementProfile.IsWithin(
+                maximumGrade_,
+                tickTimes_[candidate],
+                input.time);
+    }
+
+    void TickRollInputRule::ProcessInput(
+        const NoteRuleContext& context,
+        const RhythmInputEvent& input,
+        const JudgementResult& judgement,
+        NoteProcessResult& output)
+    {
+        AppendExpiredTicks(context, input.time, output);
+        if (!CanAccept(context, input, judgement))
+        {
+            output.events.push_back(MakeEvent(
+                context,
+                NoteEventType::InputRejected,
+                state_,
+                state_,
+                judgement,
+                input.time,
+                0,
+                nextTickIndex_));
+            return;
+        }
+
+        const std::size_t acceptedIndex = nextTickIndex_++;
+        output.events.push_back(MakeEvent(
+            context,
+            NoteEventType::TickAccepted,
+            state_,
+            state_,
+            context.judgementProfile.Evaluate(
+                tickTimes_[acceptedIndex],
+                input.time),
+            input.time,
+            0,
+            acceptedIndex));
+    }
+
+    void TickRollInputRule::Update(
+        const NoteRuleContext& context,
+        const NoteUpdateContext& update,
+        NoteProcessResult& output)
+    {
+        if (IsTerminal(state_))
+        {
+            return;
+        }
+        AppendExpiredTicks(context, update.time, output);
+        if (update.time < endTime_)
+        {
+            return;
+        }
+
+        while (nextTickIndex_ < tickTimes_.size())
+        {
+            const std::size_t missedIndex = nextTickIndex_++;
+            output.events.push_back(MakeEvent(
+                context,
+                NoteEventType::TickMissed,
+                state_,
+                state_,
+                MissJudgement(context, tickTimes_[missedIndex]),
+                tickTimes_[missedIndex],
+                0,
+                missedIndex));
+        }
+        const NoteState before = state_;
+        state_ = NoteState::Completed;
+        output.events.push_back(MakeEvent(
+            context,
+            NoteEventType::Completed,
+            before,
+            state_,
+            {JudgementGrade::Unjudged, {}, 1.0},
+            endTime_,
+            0,
+            nextTickIndex_));
+    }
+
+    void TickRollInputRule::MarkMissed(
+        const NoteRuleContext& context,
+        const RhythmTime time,
+        NoteProcessResult& output)
+    {
+        if (IsTerminal(state_))
+        {
+            return;
+        }
+        const NoteState before = state_;
+        state_ = NoteState::Missed;
+        output.events.push_back(MakeEvent(
+            context,
+            NoteEventType::Missed,
+            before,
+            state_,
+            MissJudgement(context, time),
+            time,
+            0,
+            nextTickIndex_));
+    }
+
+    RhythmTime TickRollInputRule::ExpireTime(
+        const NoteRuleContext&) const noexcept
+    {
+        return endTime_;
+    }
+
+    void TickRollInputRule::AppendExpiredTicks(
+        const NoteRuleContext& context,
+        const RhythmTime time,
+        NoteProcessResult& output)
+    {
+        const RhythmDuration halfWindow =
+            context.judgementProfile.HalfWindow(maximumGrade_);
+        while (nextTickIndex_ < tickTimes_.size() &&
+            time > tickTimes_[nextTickIndex_] + halfWindow)
+        {
+            const std::size_t missedIndex = nextTickIndex_++;
+            output.events.push_back(MakeEvent(
+                context,
+                NoteEventType::TickMissed,
+                state_,
+                state_,
+                MissJudgement(context, tickTimes_[missedIndex]),
+                tickTimes_[missedIndex],
+                0,
+                missedIndex));
+        }
+    }
 }

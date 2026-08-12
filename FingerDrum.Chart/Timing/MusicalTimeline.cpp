@@ -117,6 +117,30 @@ namespace finger_drum::chart
         return result;
     }
 
+    std::vector<rhythm::RhythmTime> MusicalTimeline::CompileSubdivisions(
+        const MusicalPosition begin,
+        const MusicalPosition end,
+        const std::size_t divisionsPerWholeNote) const
+    {
+        std::vector<rhythm::RhythmTime> result;
+        if (divisionsPerWholeNote == 0)
+        {
+            return result;
+        }
+
+        const long double beginBeat = PositionToBeat(begin);
+        const long double endBeat = PositionToBeat(end);
+        const long double beatStep = 4.0L /
+            static_cast<long double>(divisionsPerWholeNote);
+        for (long double beat = beginBeat;
+             beat < endBeat - 1e-12L;
+             beat += beatStep)
+        {
+            result.push_back(CompileBeat(beat));
+        }
+        return result;
+    }
+
     long double MusicalTimeline::PositionToBeat(
         const MusicalPosition position) const noexcept
     {
@@ -173,6 +197,16 @@ namespace finger_drum::chart
         return seconds;
     }
 
+    rhythm::RhythmTime MusicalTimeline::CompileBeat(
+        const long double beat) const noexcept
+    {
+        const long double milliseconds = SecondsAtBeat(beat) * 1000.0L +
+            DelayMillisecondsAtBeat(beat) +
+            static_cast<long double>(offsetMilliseconds_);
+        return rhythm::RhythmTime{static_cast<rhythm::RhythmTime::rep>(
+            std::llround(milliseconds * 1000.0L))};
+    }
+
     long double MusicalTimeline::DelayMillisecondsAt(
         const MusicalPosition position) const noexcept
     {
@@ -181,6 +215,21 @@ namespace finger_drum::chart
         {
             if (directive.type == TimingDirectiveType::DelayMilliseconds &&
                 directive.position <= position)
+            {
+                result += static_cast<long double>(directive.value);
+            }
+        }
+        return result;
+    }
+
+    long double MusicalTimeline::DelayMillisecondsAtBeat(
+        const long double beat) const noexcept
+    {
+        long double result = 0.0L;
+        for (const TimingDirective& directive : directives_)
+        {
+            if (directive.type == TimingDirectiveType::DelayMilliseconds &&
+                PositionToBeat(directive.position) <= beat)
             {
                 result += static_cast<long double>(directive.value);
             }
