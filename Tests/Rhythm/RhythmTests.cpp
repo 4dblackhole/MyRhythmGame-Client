@@ -194,6 +194,30 @@ namespace
             "Each hold tick must emit one sound even across repeated updates.");
     }
 
+    void TestLongNoteRemainsInScrollSnapshotUntilItsTail()
+    {
+        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        rhythm::ScrollGear gear;
+        rhythm::Lane& lane = gear.CreateLane();
+        lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(
+            1,
+            rhythm::RhythmTime::zero(),
+            profile,
+            std::make_unique<rhythm::DrumRollInputRule>(
+                std::vector<rhythm::NoteAction>{1, 2},
+                rhythm::RhythmTime{1'000'000})));
+        gear.Finalize();
+
+        const rhythm::ScrollGearSnapshot active = gear.BuildSnapshot(
+            rhythm::RhythmTime{500'000},
+            rhythm::RhythmDuration{2'000'000},
+            rhythm::RhythmDuration{220'000});
+        Require(
+            active.notes.size() == 1,
+            "A long note head must remain visible after the ordinary past "
+            "window until its tail expires.");
+    }
+
     [[nodiscard]] chart::PatternDocument MakeLongPattern(
         const mode::TaikoNoteType type,
         std::vector<std::string> extraData = {})
@@ -237,6 +261,9 @@ namespace
             mode::TaikoNoteType::TickRoll,
             {"TickDivision=16"}));
         Require(tickRoll.Succeeded(), "TickRoll must create a playable session.");
+        Require(
+            tickRoll.session->FindNotePresentation(1)->tickTimes.size() == 8,
+            "TickRoll presentation must expose every authored tick to the scene.");
         const rhythm::NoteProcessResult first = tickRoll.session->ProcessInput(
             'F', rhythm::InputEdge::Pressed, rhythm::RhythmTime::zero());
         const rhythm::NoteProcessResult duplicate =
@@ -273,10 +300,36 @@ namespace
     void TestBalloonDengDengAndBuzzRules()
     {
         mode::TaikoMode taiko;
+        constexpr std::string_view BareBalloonPattern = R"(
+[Metadata]
+Base BPM: 120
+[Difficulty]
+Mode: Taiko
+[Time Signature]
+[Pattern]
+0/1,15,1,,    8
+1/4,15,2
+)";
+        const auto parsedBareBalloon = chart::ChartParser{}.ParsePattern(
+            BareBalloonPattern,
+            "bare-balloon.ymp");
+        mode::ModeLoadResult parsedBalloon = taiko.CreateSession(
+            parsedBareBalloon.document);
+        Require(
+            parsedBareBalloon.Succeeded() && parsedBalloon.Succeeded() &&
+            parsedBalloon.session->Gear().Lanes().front()->Notes().front()->
+                Progress() == rhythm::NoteProgress{0, 8},
+            "The YMP parser and Taiko mode must preserve a bare Balloon "
+            "ExtraData count.");
+
         mode::ModeLoadResult balloon = taiko.CreateSession(MakeLongPattern(
             mode::TaikoNoteType::Balloon,
-            {"HitCount=3"}));
-        Require(balloon.Succeeded(), "Balloon must create a playable session.");
+            {"3"}));
+        Require(
+            balloon.Succeeded() &&
+            balloon.session->Gear().Lanes().front()->Notes().front()->
+                Progress() == rhythm::NoteProgress{0, 3},
+            "Balloon must accept a bare ExtraData hit count.");
         const rhythm::NoteProcessResult wrongBalloon =
             balloon.session->ProcessInput(
                 'D', rhythm::InputEdge::Pressed, rhythm::RhythmTime{10'000});
@@ -296,6 +349,29 @@ namespace
                     return cue.sound == "Taiko.Balloon.Pop";
                 }),
             "Balloon must count only Don and play its pop cue on completion.");
+
+        chart::PatternDocument defaultBalloonPattern = MakeLongPattern(
+            mode::TaikoNoteType::Balloon);
+        defaultBalloonPattern.notes.back().position.fraction =
+            chart::Rational{1, 4};
+        mode::ModeLoadResult defaultBalloon = taiko.CreateSession(
+            defaultBalloonPattern);
+        Require(
+            defaultBalloon.Succeeded() &&
+            defaultBalloon.session->Gear().Lanes().front()->Notes().front()->
+                Progress() == rhythm::NoteProgress{0, 3},
+            "An unspecified quarter-note Balloon must default to "
+            "ceil(1/4 * 12) = 3 hits.");
+        static_cast<void>(defaultBalloon.session->ProcessInput(
+            'F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{10'000}));
+        static_cast<void>(defaultBalloon.session->ProcessInput(
+            'J', rhythm::InputEdge::Pressed, rhythm::RhythmTime{20'000}));
+        const rhythm::NoteProcessResult defaultPopped =
+            defaultBalloon.session->ProcessInput(
+                'F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{30'000});
+        Require(
+            HasEvent(defaultPopped, rhythm::NoteEventType::Completed),
+            "The computed Balloon hit count must drive completion.");
 
         mode::ModeLoadResult dengDeng = taiko.CreateSession(MakeLongPattern(
             mode::TaikoNoteType::DengDeng,
@@ -372,6 +448,12 @@ namespace
                 rhythm::RhythmTime{0},
                 rhythm::RhythmTime{500'000}},
             "Musical subdivision ticks must follow BPM changes.");
+        Require(
+            timeline.CountSubdivisions(
+                {0, chart::Rational{0, 1}},
+                {0, chart::Rational{1, 8}},
+                12) == 2,
+            "Subdivision counts must use exact rational ceil(length * divisions).");
     }
 
     void TestLongNoteKeepsFirstHead()
@@ -625,22 +707,6 @@ Base BPM: 120
                 mode::ModeLoadResult loaded = taiko.LoadSession(
                     pattern.patternPath,
                     pattern.effectPath);
-                const bool isLegacyInvalidRollTest =
-                    pattern.patternPath.filename().string() ==
-                        "Rapbit - Saika roll test.ymp";
-                if (isLegacyInvalidRollTest)
-                {
-                    Require(
-                        !loaded.Succeeded() && std::ranges::any_of(
-                            loaded.diagnostics,
-                            [](const chart::Diagnostic& diagnostic)
-                            {
-                                return diagnostic.message ==
-                                    "HitCount is required for this long note.";
-                            }),
-                        "The legacy roll test must remain explicitly invalid until its Balloon receives HitCount.");
-                    continue;
-                }
                 Require(
                     loaded.Succeeded() &&
                     loaded.session->Gear().LaneCount() == 1,
@@ -726,6 +792,7 @@ int main(const int argumentCount, char* arguments[])
         TestLaneFocusRules();
         TestLargeNoteSoundState();
         TestHoldTicksAreExactlyOnce();
+        TestLongNoteRemainsInScrollSnapshotUntilItsTail();
         TestTaikoRollAndTickRollRules();
         TestBalloonDengDengAndBuzzRules();
         TestMusicalSubdivisionTicksFollowTempo();

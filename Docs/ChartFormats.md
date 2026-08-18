@@ -137,7 +137,7 @@ N/D,KeyType,ActionType,HitSound,ExtraData...
 
 - `HitSound`와 `ExtraData`는 선택 사항입니다.
 - `HitSound`는 비워 두고 옵션만 쓰려면 쉼표를 하나 더 둡니다.
-  예: `0/4,12,1,,TickDivision=16`
+  예: `0/4,12,1,,TickDivision=16`, `0/4,15,1,,8`
 - `ActionType`은 `0`이 일반 입력, `1`이 롱노트 시작, `2`가 롱노트 끝입니다.
 - 롱노트 시작과 끝은 같은 `KeyType`이어야 합니다. 시작 뒤 같은 Lane에서 끝을
   만나기 전까지 나타난 일반 입력 줄은 현재 Taiko 단일-Lane 규칙상 무시됩니다.
@@ -152,7 +152,7 @@ N/D,KeyType,ActionType,HitSound,ExtraData...
 | 12 | TickRoll | 작성된 각 틱마다 동·캇 입력을 최대 1회 처리 |
 | 13 | BigRoll | Roll과 같은 규칙, 큰 노트 두께로 표시 |
 | 14 | BigTickRoll | TickRoll과 같은 규칙, 큰 노트 두께로 표시 |
-| 15 | Balloon | 구간 안에서 동을 `HitCount`회 입력하면 완료하고 풍선 파열음을 재생 |
+| 15 | Balloon | 구간 안에서 동을 지정 횟수만큼 입력하면 완료하고 풍선 파열음을 재생 |
 | 16 | DengDeng | 구간 안에서 동부터 시작해 동·캇을 번갈아 `HitCount`회 입력하면 완료 |
 | 17 | Buzz | 지정한 동 또는 캇을 누르는 동안 각 틱의 히트사운드를 재생 |
 
@@ -162,7 +162,7 @@ N/D,KeyType,ActionType,HitSound,ExtraData...
 | 노트 | 시작 줄의 옵션 | 설명 |
 | --- | --- | --- |
 | TickRoll, BigTickRoll | `TickDivision=16` | 온음표를 몇 등분할지 지정합니다. 16은 16분음표 간격입니다. 생략 시 16입니다. 각 틱은 현재 `JudgeLevel`의 Good 범위 안에서 한 번만 받을 수 있습니다. |
-| Balloon | `HitCount=8` | 필요한 동 입력 횟수이며 필수입니다. |
+| Balloon | `8` | 필요한 동 입력 횟수입니다. bare 양의 정수가 표준 표기이며 `HitCount=8`도 호환됩니다. 생략하면 롱노트의 정확한 유리수 길이를 `L`이라 할 때 `ceil(L × 12)`회입니다. 예를 들어 길이 `1/4`는 3회입니다. |
 | DengDeng | `HitCount=8` | 필요한 교대 입력 총횟수이며 필수입니다. 첫 입력은 동입니다. |
 | Buzz | `Action=Don,TickDivision=16` | 유지할 입력은 `Don` 또는 `Kat`이며 필수입니다. 틱 분할은 생략 시 16입니다. |
 
@@ -175,7 +175,7 @@ N/D,KeyType,ActionType,HitSound,ExtraData...
 2/4,12,1,,TickDivision=16
 3/4,12,2
 --
-0/4,15,1,,HitCount=8
+0/4,15,1,,8
 1/4,15,2
 2/4,17,1,,Action=Kat,TickDivision=16
 3/4,17,2
@@ -215,6 +215,7 @@ MyRhythmGame.exe --rhythm-debug
 - `R`: -2초로 초기화
 - `D`, `K`: Kat, `F`, `J`: Don
 
-화면의 DEBUG 텍스트는 현재 타이머, 이동 속도, 누적 accepted hit 수, 대상 노트
-ID·표시 종류·상태·시간 차이를 표시합니다. 뒤로 이동하면 이미 소비한 판정 상태와
-점수를 초기화한 뒤 해당 시각까지 다시 갱신합니다.
+Debug 빌드의 `RhythmTestScene.cpp`에 있는 `ReferenceTimeDebug`를 켜면 위 조작을
+사용합니다. 화면 좌측 상단 DEBUG 텍스트는 노트 객체가 반환하는 ID·상태·시작·
+종료·진행도와 현재 타이머, 이동 속도, 시간 차이를 표시합니다. 뒤로 이동하면 이미
+소비한 판정 상태와 점수를 초기화한 뒤 해당 시각까지 다시 갱신합니다.

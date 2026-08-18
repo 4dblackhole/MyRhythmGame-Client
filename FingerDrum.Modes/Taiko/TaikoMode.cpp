@@ -129,6 +129,40 @@ namespace finger_drum::mode
             return parsed;
         }
 
+        [[nodiscard]] std::optional<std::size_t> ReadBalloonHitCount(
+            const chart::PatternNote& note,
+            const std::size_t fallback,
+            std::vector<chart::Diagnostic>& diagnostics)
+        {
+            std::optional<std::string_view> value;
+            for (const std::string& field : note.extraData)
+            {
+                const std::string_view trimmed = Trim(field);
+                if (!trimmed.empty() &&
+                    trimmed.find('=') == std::string_view::npos)
+                {
+                    value = trimmed;
+                    break;
+                }
+            }
+            if (!value.has_value())
+            {
+                value = FindOption(note, "HitCount");
+            }
+
+            std::size_t parsed = fallback;
+            if ((value.has_value() && !ParsePositiveSize(*value, parsed)) ||
+                parsed == 0 || parsed > 1024)
+            {
+                diagnostics.push_back({
+                    chart::DiagnosticSeverity::Error,
+                    note.source,
+                    "Balloon hit count must be an integer from 1 through 1024."});
+                return std::nullopt;
+            }
+            return parsed;
+        }
+
         [[nodiscard]] std::optional<TaikoAction> ReadBuzzAction(
             const chart::PatternNote& note,
             std::vector<chart::Diagnostic>& diagnostics)
@@ -351,6 +385,7 @@ namespace finger_drum::mode
             ActionValue(TaikoAction::Kat),
             Cue("Taiko.Kat.FreeInput", "UserInputFeedback"));
         session->SetEffects(timeline.CompileEffects(effects));
+        session->SetMeasureLines(timeline.CompileMeasureStarts());
         session->Gear().Finalize();
         result.session = std::move(session);
         return result;
@@ -385,6 +420,7 @@ namespace finger_drum::mode
         std::unique_ptr<rhythm::INoteRule> rule;
         std::shared_ptr<const rhythm::INoteSoundPolicy> soundPolicy;
         std::optional<TaikoAction> buzzAction;
+        std::vector<rhythm::RhythmTime> tickTimes;
         switch (type)
         {
         case TaikoNoteType::Roll:
@@ -407,15 +443,16 @@ namespace finger_drum::mode
                     16,
                     diagnostics))
             {
+                tickTimes = timeline.CompileSubdivisions(
+                    head.position,
+                    tail.position,
+                    *division);
                 rule = std::make_unique<rhythm::TickRollInputRule>(
                     std::vector<rhythm::NoteAction>{
                         ActionValue(TaikoAction::Don),
                         ActionValue(TaikoAction::Kat)},
                     end,
-                    timeline.CompileSubdivisions(
-                        head.position,
-                        tail.position,
-                        *division));
+                    tickTimes);
                 soundPolicy = MakeTickSoundPolicy(
                     head.hitSound.empty()
                         ? "Taiko.LongNote.Tick"
@@ -423,10 +460,12 @@ namespace finger_drum::mode
             }
             break;
         case TaikoNoteType::Balloon:
-            if (const auto hitCount = ReadPositiveOption(
+            if (const auto hitCount = ReadBalloonHitCount(
                     head,
-                    "HitCount",
-                    std::nullopt,
+                    timeline.CountSubdivisions(
+                        head.position,
+                        tail.position,
+                        12),
                     diagnostics))
             {
                 rule = std::make_unique<rhythm::TimedSequenceInputRule>(
@@ -462,13 +501,14 @@ namespace finger_drum::mode
                     diagnostics);
                 buzzAction.has_value() && division.has_value())
             {
+                tickTimes = timeline.CompileSubdivisions(
+                    head.position,
+                    tail.position,
+                    *division);
                 rule = std::make_unique<rhythm::HoldInputRule>(
                     ActionValue(*buzzAction),
                     end,
-                    timeline.CompileSubdivisions(
-                        head.position,
-                        tail.position,
-                        *division));
+                    tickTimes);
                 soundPolicy = MakeTickSoundPolicy(
                     head.hitSound.empty()
                         ? (*buzzAction == TaikoAction::Don
@@ -501,7 +541,8 @@ namespace finger_drum::mode
         session.SetNotePresentation(noteId, {
             std::string(LongNoteVisualId(type, buzzAction)),
             end,
-            true});
+            true,
+            std::move(tickTimes)});
     }
 
     std::shared_ptr<const rhythm::INoteSoundPolicy>

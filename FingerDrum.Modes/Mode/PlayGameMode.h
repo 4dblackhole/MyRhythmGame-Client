@@ -21,6 +21,7 @@ namespace finger_drum::mode
         std::string visualId;
         rhythm::RhythmTime endTime{};
         bool hasEndTime{};
+        std::vector<rhythm::RhythmTime> tickTimes;
     };
 
     struct AutomationValue
@@ -42,6 +43,10 @@ namespace finger_drum::mode
             rhythm::AudioCueRequest cue);
         void SetEffects(
             std::vector<chart::CompiledEffectCommand> effects);
+        void SetMeasureLines(
+            std::vector<rhythm::RhythmTime> measureLines);
+        [[nodiscard]] const std::vector<rhythm::RhythmTime>&
+            MeasureLines() const noexcept;
         void SetNotePresentation(
             rhythm::NoteId noteId,
             NotePresentationInfo presentation);
@@ -69,6 +74,7 @@ namespace finger_drum::mode
         std::map<rhythm::NoteAction, rhythm::AudioCueRequest> freeInputCues_;
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;
+        std::vector<rhythm::RhythmTime> measureLines_;
     };
 
     struct ModeLoadResult

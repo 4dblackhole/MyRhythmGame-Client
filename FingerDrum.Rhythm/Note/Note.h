@@ -135,6 +135,15 @@ namespace finger_drum::rhythm
         [[nodiscard]] bool IsHeld(NoteAction action) const noexcept;
     };
 
+    struct NoteProgress
+    {
+        std::size_t accepted{};
+        std::size_t required{};
+
+        [[nodiscard]] bool operator==(
+            const NoteProgress&) const noexcept = default;
+    };
+
     class INoteRule
     {
     public:
@@ -160,6 +169,11 @@ namespace finger_drum::rhythm
             NoteProcessResult& output) = 0;
         [[nodiscard]] virtual RhythmTime ExpireTime(
             const NoteRuleContext& context) const noexcept = 0;
+        [[nodiscard]] virtual std::optional<NoteProgress>
+            Progress() const noexcept
+        {
+            return std::nullopt;
+        }
     };
 
     class INote
@@ -170,6 +184,11 @@ namespace finger_drum::rhythm
         [[nodiscard]] virtual RhythmTime Timing() const noexcept = 0;
         [[nodiscard]] virtual RhythmTime ExpireTime() const noexcept = 0;
         [[nodiscard]] virtual NoteState State() const noexcept = 0;
+        [[nodiscard]] virtual std::optional<NoteProgress>
+            Progress() const noexcept = 0;
+#if defined(_DEBUG)
+        [[nodiscard]] virtual std::wstring DebugText() const = 0;
+#endif
         [[nodiscard]] virtual const JudgementProfile& Profile() const noexcept = 0;
         [[nodiscard]] virtual JudgementResult Preview(
             const RhythmInputEvent& input) const noexcept = 0;
@@ -199,6 +218,11 @@ namespace finger_drum::rhythm
         [[nodiscard]] RhythmTime Timing() const noexcept override;
         [[nodiscard]] RhythmTime ExpireTime() const noexcept override;
         [[nodiscard]] NoteState State() const noexcept override;
+        [[nodiscard]] std::optional<NoteProgress>
+            Progress() const noexcept override;
+#if defined(_DEBUG)
+        [[nodiscard]] std::wstring DebugText() const override;
+#endif
         [[nodiscard]] const JudgementProfile& Profile() const noexcept override;
         [[nodiscard]] JudgementResult Preview(
             const RhythmInputEvent& input) const noexcept override;
@@ -449,6 +473,8 @@ namespace finger_drum::rhythm
             NoteProcessResult& output) override;
         [[nodiscard]] RhythmTime ExpireTime(
             const NoteRuleContext& context) const noexcept override;
+        [[nodiscard]] std::optional<NoteProgress>
+            Progress() const noexcept override;
 
     private:
         std::vector<NoteAction> repeatingSequence_;
