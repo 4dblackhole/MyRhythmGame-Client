@@ -36,6 +36,18 @@ namespace finger_drum::mode
         effects_ = std::move(effects);
     }
 
+    void PlaySession::SetMeasureLines(
+        std::vector<rhythm::RhythmTime> measureLines)
+    {
+        measureLines_ = std::move(measureLines);
+    }
+
+    const std::vector<rhythm::RhythmTime>&
+    PlaySession::MeasureLines() const noexcept
+    {
+        return measureLines_;
+    }
+
     void PlaySession::SetNotePresentation(
         const rhythm::NoteId noteId,
         NotePresentationInfo presentation)

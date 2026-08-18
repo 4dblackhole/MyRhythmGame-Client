@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <stdexcept>
@@ -97,15 +98,13 @@ namespace finger_drum::chart
         const std::size_t divisionsPerWholeNote) const
     {
         std::vector<rhythm::RhythmTime> result;
+        result.reserve(CountSubdivisions(
+            begin,
+            end,
+            divisionsPerWholeNote));
         if (divisionsPerWholeNote == 0)
         {
             return result;
-        }
-        if (divisionsPerWholeNote > static_cast<std::size_t>(
-                std::numeric_limits<Rational::Representation>::max()))
-        {
-            throw std::overflow_error(
-                "The musical subdivision denominator is too large.");
         }
 
         Rational position = PositionToWholeNotes(begin);
@@ -117,6 +116,58 @@ namespace finger_drum::chart
         {
             result.push_back(CompileAbsolute(position));
             position += step;
+        }
+        return result;
+    }
+
+    std::size_t MusicalTimeline::CountSubdivisions(
+        const MusicalPosition begin,
+        const MusicalPosition end,
+        const std::size_t divisionsPerWholeNote) const
+    {
+        if (divisionsPerWholeNote == 0)
+        {
+            return 0;
+        }
+        if (divisionsPerWholeNote > static_cast<std::size_t>(
+                std::numeric_limits<Rational::Representation>::max()))
+        {
+            throw std::overflow_error(
+                "The musical subdivision denominator is too large.");
+        }
+
+        const Rational beginPosition = PositionToWholeNotes(begin);
+        const Rational endPosition = PositionToWholeNotes(end);
+        if (endPosition <= beginPosition)
+        {
+            return 0;
+        }
+
+        const Rational scaledLength =
+            (endPosition - beginPosition) *
+            static_cast<Rational::Representation>(divisionsPerWholeNote);
+        const Rational::Representation quotient =
+            scaledLength.Numerator() / scaledLength.Denominator();
+        const Rational::Representation remainder =
+            scaledLength.Numerator() % scaledLength.Denominator();
+        const auto count = quotient + (remainder == 0 ? 0 : 1);
+        if (static_cast<std::uint64_t>(count) >
+            std::numeric_limits<std::size_t>::max())
+        {
+            throw std::overflow_error(
+                "The musical subdivision count is too large.");
+        }
+        return static_cast<std::size_t>(count);
+    }
+
+    std::vector<rhythm::RhythmTime>
+    MusicalTimeline::CompileMeasureStarts() const
+    {
+        std::vector<rhythm::RhythmTime> result;
+        result.reserve(measureLengths_.size());
+        for (std::size_t index = 0; index < measureLengths_.size(); ++index)
+        {
+            result.push_back(CompileAbsolute(measurePrefixSums_[index]));
         }
         return result;
     }

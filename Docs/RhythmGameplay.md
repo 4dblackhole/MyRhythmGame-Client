@@ -113,6 +113,12 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 만듭니다. `DestroyOnExit`이므로 매 플레이마다 새로 생성되고 Escape 또는 패턴
 완료 3초 뒤 Lobby로 돌아갈 때 Canvas, audio voice, session과 함께 삭제됩니다.
 
+플레이 화면의 기준 시안과 런타임 PNG 자산 원본은 Penpot의
+[Gameplay · Sky](https://design.penpot.app/#/workspace?team-id=3be9e5e1-190f-8090-8008-7464803e8b40&file-id=3be9e5e1-190f-8090-8008-7468d9cc1bc8&page-id=618d0170-ff55-8025-8008-80646ceaa9d9)에 있습니다.
+기존 곡 선택 화면의 Sky 색상과 타이포그래피를 유지하면서 짙은 회색 Lane,
+ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 Balloon/DengDeng 남은
+횟수 표시를 한 화면 계층으로 구성합니다.
+
 노트는 `Client/Assets/Skins/test Skin`의 두 레이어로 그립니다. `note.png`,
 `bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient 색상을
 곱하고 `noteoverlay.png`, `bigcircleoverlay.png`는 흰색 원본으로 위에 그립니다.
@@ -121,11 +127,16 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 
 Lane 표시는 RPG `PlayScene`의 Transform 계층도 유지합니다. 기본 Lane은 로컬
 `+Y` 방향으로 내려오는 `180×1040` 세로 노드이며, Taiko 화면에서는 이 부모
-노드 하나만 Z축 `-90°` 회전합니다. `LaneBackground`, `LaneLight`, `JudgeLine`,
-노트 head/overlay와 롱노트 body/tail은 모두 Lane의 자식이므로 회전을 함께
-상속합니다. 업데이트는 화면 X가 아니라 Lane 로컬 Y만 변경합니다.
-`LaneBackground.png`는 가로로 늘이지 않고 원본 비율의 타일을 로컬 Y 방향으로
-반복한 뒤 부모와 함께 회전합니다.
+노드 하나만 Z축 `-90°` 회전합니다. 어두운 단색 Lane, 마디선, key beam,
+`JudgeLine`, 노트 head/overlay와 롱노트 body/tail/tick은 모두 Lane의 자식이므로
+회전을 함께 상속합니다. 업데이트는 화면 X가 아니라 Lane 로컬 Y만 변경합니다.
+
+현재 플레이 화면은 마디선, key beam, 노트 head,
+롱노트 body/tail/tick을 모두 회전된 Lane 부모 아래 둡니다. Balloon과 DengDeng은
+전용 PNG를 사용하고, 규칙이 노출하는 `accepted/required` 진행도는 별도의 숫자
+이미지 badge로 표시합니다. key beam은 RPG와 같은 MAX~Bad 색 보간을 사용하고
+초당 alpha 8로 사라지며, 현재 노트가 요구하는 Don/Kat과 다른 색을 누르면
+판정색보다 우선해 적색으로 표시합니다.
 
 - `D`, `K`: Kat
 - `F`, `J`: Don

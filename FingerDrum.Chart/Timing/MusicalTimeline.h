@@ -22,6 +22,12 @@ namespace finger_drum::chart
             MusicalPosition begin,
             MusicalPosition end,
             std::size_t divisionsPerWholeNote) const;
+        [[nodiscard]] std::size_t CountSubdivisions(
+            MusicalPosition begin,
+            MusicalPosition end,
+            std::size_t divisionsPerWholeNote) const;
+        [[nodiscard]] std::vector<rhythm::RhythmTime>
+            CompileMeasureStarts() const;
 
     private:
         struct TempoPoint

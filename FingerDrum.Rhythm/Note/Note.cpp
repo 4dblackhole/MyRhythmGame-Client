@@ -1,6 +1,7 @@
 #include "Note/Note.h"
 
 #include <algorithm>
+#include <format>
 #include <iterator>
 #include <stdexcept>
 #include <utility>
@@ -45,6 +46,23 @@ namespace finger_drum::rhythm
             return state == NoteState::Completed ||
                 state == NoteState::Missed;
         }
+
+#if defined(_DEBUG)
+        [[nodiscard]] std::wstring_view StateName(
+            const NoteState state) noexcept
+        {
+            switch (state)
+            {
+            case NoteState::Pending: return L"Pending";
+            case NoteState::Active: return L"Active";
+            case NoteState::AwaitingAdditionalInput: return L"Awaiting input";
+            case NoteState::Holding: return L"Holding";
+            case NoteState::Completed: return L"Completed";
+            case NoteState::Missed: return L"Missed";
+            default: return L"Unknown";
+            }
+        }
+#endif
     }
 
     void NoteProcessResult::Append(NoteProcessResult other)
@@ -153,6 +171,31 @@ namespace finger_drum::rhythm
     {
         return rule_->State();
     }
+
+    std::optional<NoteProgress> RuleBasedNote::Progress() const noexcept
+    {
+        return rule_->Progress();
+    }
+
+#if defined(_DEBUG)
+    std::wstring RuleBasedNote::DebugText() const
+    {
+        std::wstring result = std::format(
+            L"Note #{}  {}  timing={} us  expire={} us",
+            id_,
+            StateName(State()),
+            timing_.count(),
+            ExpireTime().count());
+        if (const std::optional<NoteProgress> progress = Progress())
+        {
+            result += std::format(
+                L"  progress={}/{}",
+                progress->accepted,
+                progress->required);
+        }
+        return result;
+    }
+#endif
 
     const JudgementProfile& RuleBasedNote::Profile() const noexcept
     {
@@ -981,6 +1024,12 @@ namespace finger_drum::rhythm
         const NoteRuleContext&) const noexcept
     {
         return endTime_;
+    }
+
+    std::optional<NoteProgress>
+    TimedSequenceInputRule::Progress() const noexcept
+    {
+        return NoteProgress{acceptedHitCount_, requiredHitCount_};
     }
 
     TickRollInputRule::TickRollInputRule(

@@ -88,7 +88,8 @@ namespace finger_drum::rhythm
             for (const std::unique_ptr<INote>& note : lanes_[laneIndex]->Notes())
             {
                 const RhythmDuration delta = note->Timing() - time;
-                if (delta > approachDuration || delta < -pastDuration)
+                if (delta > approachDuration ||
+                    (delta < -pastDuration && time > note->ExpireTime()))
                 {
                     continue;
                 }

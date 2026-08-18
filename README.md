@@ -47,5 +47,7 @@ Visual Studio 2022, MSVC v143, Windows SDK와 FMOD Studio API for Windows가
 Penpot 기반 곡 선택 화면으로 이동합니다. 곡 선택 화면은 기존 catalog 자산과
 Git에서 제외한 로컬 곡·패턴을 표시하며, 기록 저장소가 없으므로 점수를 꾸며내지 않고 명시적인
 빈 기록 상태를 표시합니다. 자세한 규칙은
-[리듬게임 구조](Docs/RhythmGameplay.md), [차트 문법](Docs/ChartFormats.md),
-화면 구성은 [곡 선택 화면](Docs/SongSelect.md)을 참고합니다.
+[리듬게임 구조와 플레이 화면](Docs/RhythmGameplay.md),
+[차트 문법](Docs/ChartFormats.md), 화면 구성은
+[곡 선택 화면](Docs/SongSelect.md)을 참고합니다. 플레이 화면은 마디선·롱노트
+tick·남은 횟수 이미지와 판정색/오입력 적색 key beam을 표시합니다.
