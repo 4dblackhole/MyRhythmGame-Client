@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common/RhythmTypes.h"
+#include "Utility/RationalNumber.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -12,18 +13,6 @@
 
 namespace finger_drum::chart
 {
-    struct Rational
-    {
-        std::int64_t numerator{};
-        std::int64_t denominator{1};
-
-        Rational() = default;
-        Rational(std::int64_t numeratorValue, std::int64_t denominatorValue);
-
-        [[nodiscard]] long double Value() const noexcept;
-        auto operator<=>(const Rational&) const = default;
-    };
-
     struct MusicalPosition
     {
         std::int64_t measure{};

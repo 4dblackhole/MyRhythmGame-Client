@@ -451,6 +451,124 @@ namespace
             "Every logical note must expose its mode-owned visual identity.");
     }
 
+    void TestRationalNumberUsesExactOrderingAndArithmetic()
+    {
+        Require(
+            chart::RationalNumber{3, 8} < chart::RationalNumber{1, 2} &&
+            chart::RationalNumber{4, 8} == chart::RationalNumber{1, 2} &&
+            chart::RationalNumber{1, 6} + chart::RationalNumber{1, 3} ==
+                chart::RationalNumber{1, 2} &&
+            chart::RationalNumber{-1, 2} < chart::RationalNumber{-3, 8},
+            "RationalNumber must compare and add reduced fractions exactly.");
+
+        bool rejectedZeroDenominator = false;
+        try
+        {
+            static_cast<void>(chart::RationalNumber{1, 0});
+        }
+        catch (const std::invalid_argument&)
+        {
+            rejectedZeroDenominator = true;
+        }
+        Require(
+            rejectedZeroDenominator,
+            "RationalNumber must reject a zero denominator.");
+    }
+
+    [[nodiscard]] chart::ParseResult<chart::PatternDocument>
+    ParseTimingBody(const std::string_view timingBody)
+    {
+        const std::string pattern =
+            "[Metadata]\nBase BPM: 120\n"
+            "[Time Signature]\n" + std::string(timingBody) +
+            "\n[Pattern]\n0/1,1,0\n";
+        return chart::ChartParser{}.ParsePattern(pattern, "memory.ymp");
+    }
+
+    void TestTimingCommandWhitespaceGrammar()
+    {
+        Require(
+            ParseTimingBody("1/2, #bpm 150").Succeeded() &&
+            ParseTimingBody("1/2,        #bpm   150").Succeeded() &&
+            ParseTimingBody("#measure 4/4").Succeeded() &&
+            ParseTimingBody("#measure C").Succeeded(),
+            "Timing grammar must allow whitespace after commas and between a command and its value.");
+
+        Require(
+            !ParseTimingBody("1/ 2, #bpm 150").Succeeded() &&
+            !ParseTimingBody("1/2, #bpm150").Succeeded() &&
+            !ParseTimingBody("#measure4/4").Succeeded() &&
+            !ParseTimingBody("# measure 4/4").Succeeded() &&
+            !ParseTimingBody("#measure 4/  4").Succeeded(),
+            "Timing grammar must reject whitespace inside fractions and commands without a separating space.");
+    }
+
+    void TestAbsoluteMeasurePositionsAndTempoAnchors()
+    {
+        constexpr std::string_view Pattern = R"(
+[Metadata]
+Base BPM: 140
+[Time Signature]
+#measure 3/4
+1/2,        #bpm   150
+--
+#measure 4/4
+0/1, #bpm 160
+[Pattern]
+1/2,1,0
+--
+0/1,2,0
+1/4,1,0
+)";
+        const auto parsed = chart::ChartParser{}.ParsePattern(
+            Pattern,
+            "tempo-example.ymp");
+        Require(
+            parsed.Succeeded() && parsed.document.notes.size() == 3,
+            "The 3/4 to 4/4 tempo example must parse without errors.");
+
+        const chart::MusicalTimeline timeline(parsed.document);
+        const auto compiled = timeline.CompileNotes(parsed.document);
+        Require(
+            compiled[0].timing == rhythm::RhythmTime{857'143} &&
+            compiled[1].timing == rhythm::RhythmTime{1'257'143} &&
+            compiled[2].timing == rhythm::RhythmTime{1'632'143},
+            "N/D must be an absolute whole-note position inside its measure and BPM anchors must accumulate from the previous anchor.");
+    }
+
+    void TestOutOfMeasureEntriesAreIgnored()
+    {
+        constexpr std::string_view Pattern = R"(
+[Metadata]
+Base BPM: 120
+[Time Signature]
+#measure 2/4
+3/4, #bpm 180
+[Pattern]
+1/4,1,0
+3/4,2,0
+)";
+        const auto parsed = chart::ChartParser{}.ParsePattern(
+            Pattern,
+            "out-of-measure.ymp");
+        Require(
+            parsed.Succeeded() && parsed.document.notes.size() == 1 &&
+            std::ranges::none_of(
+                parsed.document.timing,
+                [](const chart::TimingDirective& directive)
+                {
+                    return directive.type == chart::TimingDirectiveType::Bpm;
+                }) &&
+            std::ranges::count_if(
+                parsed.diagnostics,
+                [](const chart::Diagnostic& diagnostic)
+                {
+                    return diagnostic.severity ==
+                        chart::DiagnosticSeverity::Warning;
+                }) == 2,
+            "Notes and timing directives at or beyond the current measure length must be ignored with warnings.");
+    }
+
     void TestSongCatalog(const std::filesystem::path& songsRoot)
     {
         const chart::SongCatalogLoadResult catalog =
@@ -478,21 +596,60 @@ namespace
             catalog.PatternCount() == catalog.discoveredPatternFiles,
             "All bundled and optional local YMP patterns must be associated with their songs.");
         mode::TaikoMode taiko;
+        bool checkedSaikaTempoSequence = false;
         for (const chart::SongCatalogEntry& song : catalog.songs)
         {
             Require(std::filesystem::is_regular_file(song.audioPath),
                 "Every YMM entry must resolve its music file.");
             for (const chart::SongCatalogPattern& pattern : song.patterns)
             {
+                if (pattern.patternPath.filename().string() ==
+                    "Rapbit - Saika [test].ymp")
+                {
+                    const chart::MusicalTimeline timeline(pattern.pattern);
+                    const rhythm::RhythmTime firstChange = timeline.Compile(
+                        {1, chart::Rational{1, 8}});
+                    const rhythm::RhythmTime secondChange = timeline.Compile(
+                        {1, chart::Rational{2, 8}});
+                    const rhythm::RhythmTime finalChange = timeline.Compile(
+                        {1, chart::Rational{18, 8}});
+                    const rhythm::RhythmTime nextBarline = timeline.Compile(
+                        {2, chart::Rational{0, 1}});
+                    Require(
+                        secondChange - firstChange ==
+                            rhythm::RhythmDuration{166'667} &&
+                        finalChange < nextBarline,
+                        "Saika's 20/8 measure must keep every BPM anchor at its absolute N/D position.");
+                    checkedSaikaTempoSequence = true;
+                }
                 mode::ModeLoadResult loaded = taiko.LoadSession(
                     pattern.patternPath,
                     pattern.effectPath);
+                const bool isLegacyInvalidRollTest =
+                    pattern.patternPath.filename().string() ==
+                        "Rapbit - Saika roll test.ymp";
+                if (isLegacyInvalidRollTest)
+                {
+                    Require(
+                        !loaded.Succeeded() && std::ranges::any_of(
+                            loaded.diagnostics,
+                            [](const chart::Diagnostic& diagnostic)
+                            {
+                                return diagnostic.message ==
+                                    "HitCount is required for this long note.";
+                            }),
+                        "The legacy roll test must remain explicitly invalid until its Balloon receives HitCount.");
+                    continue;
+                }
                 Require(
                     loaded.Succeeded() &&
                     loaded.session->Gear().LaneCount() == 1,
                     "Every copied Taiko pattern must create one playable Lane.");
             }
         }
+        Require(
+            checkedSaikaTempoSequence,
+            "The catalog test must exercise the Saika multi-BPM pattern.");
         std::cout << "Catalog verified: " << catalog.songs.size()
                   << " songs, " << catalog.PatternCount()
                   << " patterns.\n";
@@ -524,9 +681,9 @@ JudgeLevel: 50
         chart::MusicalTimeline timeline(parsed.document);
         const auto compiled = timeline.CompileNotes(parsed.document);
         Require(
-            compiled[0].timing == rhythm::RhythmTime{250'000} &&
+            compiled[0].timing == rhythm::RhythmTime{500'000} &&
             compiled[1].timing == rhythm::RhythmTime{1'000'000},
-            "Legacy #measure must scale positions to exact microsecond timestamps.");
+            "Legacy #measure must preserve absolute in-measure positions and exact microsecond timestamps.");
         Require(
             std::ranges::any_of(
                 parsed.diagnostics,
@@ -574,6 +731,10 @@ int main(const int argumentCount, char* arguments[])
         TestMusicalSubdivisionTicksFollowTempo();
         TestLongNoteKeepsFirstHead();
         TestTaikoUsesOneLaneForEveryNoteType();
+        TestRationalNumberUsesExactOrderingAndArithmetic();
+        TestTimingCommandWhitespaceGrammar();
+        TestAbsoluteMeasurePositionsAndTempoAnchors();
+        TestOutOfMeasureEntriesAreIgnored();
         TestLegacyParsingAndMicroseconds();
         if (argumentCount == 3 &&
             std::string_view(arguments[1]) == "--catalog-root")

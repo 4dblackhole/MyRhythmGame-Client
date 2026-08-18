@@ -21,7 +21,9 @@ flowchart LR
 - `FingerDrum.Rhythm`: 외부 라이브러리에 의존하지 않는 시간, 판정, 노트,
   Lane과 ScrollGear 논리입니다.
 - `FingerDrum.Chart`: YMM/YMP/YME 파싱과 박자+BPM을 마이크로초로 한 번
-  컴파일하는 계층입니다.
+  컴파일하는 계층입니다. 마디 길이와 마디 안의 `N/D` 위치는 64비트 유리수로
+  누적하고 BPM 구간별 시간으로 변환한 뒤 최종 결과만 정수 microseconds로
+  반올림합니다.
 - `FingerDrum.Modes`: `IPlayGameMode`와 실제 노트 규칙을 생성하는 모드
   구현입니다. 현재 `TaikoMode`가 테스트 드라이버 역할을 합니다.
 - `Client/Audio/GameplayAudioRouter`: 의미 기반 SoundId와 BusId를 엔진

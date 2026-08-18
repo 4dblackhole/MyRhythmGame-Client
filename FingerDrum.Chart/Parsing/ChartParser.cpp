@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <charconv>
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
@@ -204,6 +206,280 @@ namespace finger_drum::chart
             if (normalized == "syncopationzone" || normalized == "area") return EffectCommandType::SyncopationZone;
             return EffectCommandType::Custom;
         }
+
+        struct ParsedCommand
+        {
+            std::string name;
+            std::string_view argument;
+        };
+
+        [[nodiscard]] bool TryParseCommand(
+            std::string_view value,
+            ParsedCommand& output)
+        {
+            value = Trim(value);
+            const std::size_t separator = value.find_first_of(" \t");
+            if (separator == std::string_view::npos)
+            {
+                return false;
+            }
+
+            const std::string_view token = value.substr(0, separator);
+            const std::string_view argument = Trim(value.substr(separator));
+            if (token.size() <= 1 || token.front() != '#' || argument.empty())
+            {
+                return false;
+            }
+
+            output.name = NormalizeCommand(token);
+            output.argument = argument;
+            return !output.name.empty();
+        }
+
+        [[nodiscard]] bool IsFinite(const double value) noexcept
+        {
+            return std::isfinite(value);
+        }
+
+        void ParseStandaloneTimingCommand(
+            const std::string_view line,
+            const std::int64_t measure,
+            const std::size_t lineNumber,
+            const std::filesystem::path& source,
+            ParseResult<PatternDocument>& result)
+        {
+            ParsedCommand command;
+            if (!TryParseCommand(line, command))
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "A timing command requires '#command value' with whitespace before the value.");
+                return;
+            }
+
+            if (command.name != "measure")
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "Legacy effect directive should be moved to a YME file: " +
+                        std::string(line.substr(0, line.find_first_of(" \t"))),
+                    DiagnosticSeverity::Warning);
+                return;
+            }
+
+            TimingDirective directive;
+            directive.position = {measure, Rational{0, 1}};
+            directive.type = TimingDirectiveType::MeasureLength;
+            directive.source = {source, lineNumber, 1};
+            if (NormalizeCommand(command.argument) == "c")
+            {
+                directive.ratio = Rational{1, 1};
+            }
+            else
+            {
+                MusicalPosition ratioPosition;
+                if (!TryParseMusicalPosition(
+                        command.argument,
+                        0,
+                        ratioPosition) ||
+                    ratioPosition.fraction <= Rational{0, 1})
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "#measure requires a positive N/D ratio or C without whitespace inside the ratio.");
+                    return;
+                }
+                directive.ratio = ratioPosition.fraction;
+            }
+            result.document.timing.push_back(std::move(directive));
+        }
+
+        void ParsePositionedTimingCommand(
+            const std::string_view line,
+            const std::int64_t measure,
+            const std::size_t lineNumber,
+            const std::filesystem::path& source,
+            ParseResult<PatternDocument>& result)
+        {
+            const std::vector<std::string_view> fields = Split(line, ',');
+            if (fields.size() != 2)
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "A timing directive requires exactly 'N/D, #command value'.");
+                return;
+            }
+
+            MusicalPosition position;
+            if (!TryParseMusicalPosition(fields[0], measure, position))
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "The timing directive requires N/D without whitespace inside the ratio.");
+                return;
+            }
+
+            ParsedCommand command;
+            if (!TryParseCommand(fields[1], command))
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "A positioned timing command requires '#command value' with whitespace before the value.");
+                return;
+            }
+
+            TimingDirective directive;
+            directive.position = position;
+            directive.source = {source, lineNumber, 1};
+            if (command.name == "bpm")
+            {
+                directive.type = TimingDirectiveType::Bpm;
+                if (!ParseDouble(command.argument, directive.value) ||
+                    !IsFinite(directive.value) || directive.value <= 0.0)
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "#bpm requires a finite value greater than zero.");
+                    return;
+                }
+            }
+            else if (command.name == "delay")
+            {
+                directive.type = TimingDirectiveType::DelayMilliseconds;
+                if (!ParseDouble(command.argument, directive.value) ||
+                    !IsFinite(directive.value))
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "#delay requires a finite millisecond value.");
+                    return;
+                }
+            }
+            else if (command.name == "measure")
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "#measure must be a standalone command for the current measure.");
+                return;
+            }
+            else
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "Legacy effect directive should be moved to a YME file: #" +
+                        command.name,
+                    DiagnosticSeverity::Warning);
+                return;
+            }
+            result.document.timing.push_back(std::move(directive));
+        }
+
+        [[nodiscard]] std::vector<Rational> BuildMeasureLengths(
+            const PatternDocument& document)
+        {
+            std::int64_t maximumMeasure = 0;
+            std::map<std::int64_t, Rational> changes;
+            for (const TimingDirective& directive : document.timing)
+            {
+                maximumMeasure = std::max(
+                    maximumMeasure,
+                    directive.position.measure);
+                if (directive.type == TimingDirectiveType::MeasureLength)
+                {
+                    changes[directive.position.measure] = directive.ratio;
+                }
+            }
+            for (const PatternNote& note : document.notes)
+            {
+                maximumMeasure = std::max(maximumMeasure, note.position.measure);
+            }
+
+            std::vector<Rational> lengths(
+                static_cast<std::size_t>(maximumMeasure + 1),
+                Rational{1, 1});
+            Rational currentLength{1, 1};
+            for (std::int64_t measure = 0;
+                 measure <= maximumMeasure;
+                 ++measure)
+            {
+                if (const auto change = changes.find(measure);
+                    change != changes.end())
+                {
+                    currentLength = change->second;
+                }
+                lengths[static_cast<std::size_t>(measure)] = currentLength;
+            }
+            return lengths;
+        }
+
+        void RemoveOutOfMeasureEntries(ParseResult<PatternDocument>& result)
+        {
+            const std::vector<Rational> measureLengths =
+                BuildMeasureLengths(result.document);
+            const auto isOutsideMeasure = [&measureLengths](
+                const MusicalPosition& position)
+            {
+                return position.measure < 0 ||
+                    position.fraction < Rational{0, 1} ||
+                    position.fraction >= measureLengths.at(
+                        static_cast<std::size_t>(position.measure));
+            };
+
+            std::erase_if(
+                result.document.notes,
+                [&result, &isOutsideMeasure](const PatternNote& note)
+                {
+                    if (!isOutsideMeasure(note.position))
+                    {
+                        return false;
+                    }
+                    AddDiagnostic(
+                        result.diagnostics,
+                        note.source.file,
+                        note.source.line,
+                        "The note lies outside the current measure and was ignored.",
+                        DiagnosticSeverity::Warning);
+                    return true;
+                });
+
+            std::erase_if(
+                result.document.timing,
+                [&result, &isOutsideMeasure](const TimingDirective& directive)
+                {
+                    if (directive.type == TimingDirectiveType::MeasureLength ||
+                        !isOutsideMeasure(directive.position))
+                    {
+                        return false;
+                    }
+                    AddDiagnostic(
+                        result.diagnostics,
+                        directive.source.file,
+                        directive.source.line,
+                        "The timing directive lies outside the current measure and was ignored.",
+                        DiagnosticSeverity::Warning);
+                    return true;
+                });
+        }
     }
 
     ParseResult<MusicDocument> ChartParser::ParseMusicFile(
@@ -338,125 +614,22 @@ namespace finger_drum::chart
 
             if (section == "Time Signature")
             {
-                // The original RPG YMP grammar permits measure directives
-                // without an N/D prefix. They affect the current implicit
-                // measure and persist until the next #measure declaration.
                 if (line.front() == '#')
                 {
-                    const std::vector<std::string_view> commandParts =
-                        Split(line, ' ');
-                    const std::string command = NormalizeCommand(
-                        commandParts.front());
-                    if (command == "measure")
-                    {
-                        if (commandParts.size() < 2)
-                        {
-                            AddDiagnostic(result.diagnostics, source, lineNumber,
-                                "#measure requires N/D or C.");
-                            continue;
-                        }
-                        TimingDirective directive;
-                        directive.position = {
-                            timingMeasure,
-                            Rational{0, 1}};
-                        directive.type = TimingDirectiveType::MeasureLength;
-                        directive.source = {source, lineNumber, 1};
-                        if (NormalizeCommand(commandParts[1]) == "c")
-                        {
-                            directive.ratio = Rational{1, 1};
-                        }
-                        else
-                        {
-                            MusicalPosition ratioPosition;
-                            if (!TryParseMusicalPosition(
-                                    commandParts[1],
-                                    0,
-                                    ratioPosition))
-                            {
-                                AddDiagnostic(result.diagnostics, source, lineNumber,
-                                    "#measure requires a valid N/D ratio or C.");
-                                continue;
-                            }
-                            directive.ratio = ratioPosition.fraction;
-                        }
-                        result.document.timing.push_back(std::move(directive));
-                    }
-                    else
-                    {
-                        AddDiagnostic(result.diagnostics, source, lineNumber,
-                            "Legacy effect directive should be moved to a YME file: " +
-                                std::string(commandParts.front()),
-                            DiagnosticSeverity::Warning);
-                    }
+                    ParseStandaloneTimingCommand(
+                        line,
+                        timingMeasure,
+                        lineNumber,
+                        source,
+                        result);
                     continue;
                 }
-
-                const std::vector<std::string_view> fields = Split(line, ',');
-                if (fields.size() < 2)
-                {
-                    continue;
-                }
-                MusicalPosition position;
-                if (!TryParseMusicalPosition(
-                        fields[0], timingMeasure, position))
-                {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
-                        "The timing directive has an invalid musical position.");
-                    continue;
-                }
-                std::vector<std::string_view> commandParts = Split(fields[1], ' ');
-                if (commandParts.empty()) continue;
-                const std::string command = NormalizeCommand(commandParts[0]);
-                TimingDirective directive;
-                directive.position = position;
-                directive.source = {source, lineNumber, 1};
-                if (command == "bpm")
-                {
-                    directive.type = TimingDirectiveType::Bpm;
-                    if (commandParts.size() < 2 ||
-                        !ParseDouble(commandParts[1], directive.value))
-                    {
-                        AddDiagnostic(result.diagnostics, source, lineNumber,
-                            "#bpm requires a numeric value.");
-                        continue;
-                    }
-                }
-                else if (command == "delay")
-                {
-                    directive.type = TimingDirectiveType::DelayMilliseconds;
-                    if (commandParts.size() < 2 ||
-                        !ParseDouble(commandParts[1], directive.value))
-                    {
-                        AddDiagnostic(result.diagnostics, source, lineNumber,
-                            "#Delay requires milliseconds.");
-                        continue;
-                    }
-                }
-                else if (command == "measure")
-                {
-                    directive.type = TimingDirectiveType::MeasureLength;
-                    MusicalPosition ratioPosition;
-                    if (commandParts.size() < 2 ||
-                        !TryParseMusicalPosition(
-                            commandParts[1], 0, ratioPosition))
-                    {
-                        AddDiagnostic(result.diagnostics, source, lineNumber,
-                            "#measure requires an N/D ratio.");
-                        continue;
-                    }
-                    directive.ratio = ratioPosition.fraction;
-                }
-                else
-                {
-                    // Legacy visual/audio commands are accepted but belong in
-                    // YME. Keep a warning so conversion tools can migrate them.
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
-                        "Legacy effect directive should be moved to a YME file: " +
-                            std::string(commandParts[0]),
-                        DiagnosticSeverity::Warning);
-                    continue;
-                }
-                result.document.timing.push_back(std::move(directive));
+                ParsePositionedTimingCommand(
+                    line,
+                    timingMeasure,
+                    lineNumber,
+                    source,
+                    result);
                 continue;
             }
 
@@ -466,8 +639,32 @@ namespace finger_drum::chart
             else if (StartsWithInsensitive(key, "Pattern Maker") && !StartsWithInsensitive(key, "Pattern Maker Count")) result.document.makers.emplace_back(value);
             else if (key == "Pattern Name") result.document.name = std::string(value);
             else if (key == "Mode") result.document.mode = std::string(value);
-            else if (key == "Pattern Offset") static_cast<void>(ParseDouble(value, result.document.patternOffsetMilliseconds));
-            else if (key == "Base BPM") static_cast<void>(ParseDouble(value, result.document.baseBpm));
+            else if (key == "Pattern Offset")
+            {
+                if (!ParseDouble(
+                        value,
+                        result.document.patternOffsetMilliseconds) ||
+                    !IsFinite(result.document.patternOffsetMilliseconds))
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "Pattern Offset requires a finite millisecond value.");
+                }
+            }
+            else if (key == "Base BPM")
+            {
+                if (!ParseDouble(value, result.document.baseBpm) ||
+                    !IsFinite(result.document.baseBpm))
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "Base BPM requires a finite numeric value.");
+                }
+            }
             else if (key == "JudgeLevel") static_cast<void>(ParseInteger(value, result.document.judgementLevel));
             else if (key == "Tags")
             {
@@ -486,6 +683,7 @@ namespace finger_drum::chart
             AddDiagnostic(result.diagnostics, source, 1,
                 "Base BPM must be greater than zero.");
         }
+        RemoveOutOfMeasureEntries(result);
         std::ranges::stable_sort(
             result.document.notes,
             [](const PatternNote& left, const PatternNote& right)
@@ -565,6 +763,16 @@ namespace finger_drum::chart
         MusicalPosition& output) noexcept
     {
         value = Trim(value);
+        if (value.empty() || std::ranges::any_of(
+                value,
+                [](const char character)
+                {
+                    return std::isspace(
+                        static_cast<unsigned char>(character)) != 0;
+                }))
+        {
+            return false;
+        }
         std::int64_t measure = implicitMeasure;
         const std::size_t measureSeparator = value.find(',');
         if (measureSeparator != std::string_view::npos)
@@ -577,7 +785,8 @@ namespace finger_drum::chart
         }
 
         const std::size_t slash = value.find('/');
-        if (slash == std::string_view::npos)
+        if (slash == std::string_view::npos ||
+            value.find('/', slash + 1) != std::string_view::npos)
         {
             return false;
         }
@@ -585,7 +794,7 @@ namespace finger_drum::chart
         std::int64_t denominator = 0;
         if (!ParseInteger(value.substr(0, slash), numerator) ||
             !ParseInteger(value.substr(slash + 1), denominator) ||
-            denominator <= 0 || numerator < 0)
+            denominator <= 0 || numerator < 0 || measure < 0)
         {
             return false;
         }

@@ -2,72 +2,46 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <map>
 #include <stdexcept>
 
 namespace finger_drum::chart
 {
+    namespace
+    {
+        constexpr long double SecondsPerWholeNoteAtBpmOne = 240.0L;
+    }
+
     MusicalTimeline::MusicalTimeline(const PatternDocument& pattern)
         : baseBpm_(pattern.baseBpm),
           offsetMilliseconds_(pattern.patternOffsetMilliseconds),
           directives_(pattern.timing)
     {
-        if (baseBpm_ <= 0.0)
+        if (!std::isfinite(baseBpm_) || baseBpm_ <= 0.0)
         {
-            throw std::invalid_argument("Base BPM must be greater than zero.");
+            throw std::invalid_argument(
+                "Base BPM must be finite and greater than zero.");
         }
+        if (!std::isfinite(offsetMilliseconds_))
+        {
+            throw std::invalid_argument("Pattern offset must be finite.");
+        }
+
+        BuildMeasurePrefixSums(pattern);
         std::ranges::stable_sort(
             directives_,
             [](const TimingDirective& left, const TimingDirective& right)
             {
                 return left.position < right.position;
             });
-
-        tempoPoints_.push_back({0.0L, baseBpm_});
-        for (const TimingDirective& directive : directives_)
-        {
-            if (directive.type != TimingDirectiveType::Bpm ||
-                directive.value <= 0.0)
-            {
-                continue;
-            }
-            tempoPoints_.push_back({
-                PositionToBeat(directive.position),
-                directive.value});
-        }
-        std::ranges::stable_sort(
-            tempoPoints_,
-            [](const TempoPoint& left, const TempoPoint& right)
-            {
-                return left.beat < right.beat;
-            });
-
-        // The final declaration at an identical beat wins without creating a
-        // zero-length tempo segment.
-        std::vector<TempoPoint> deduplicated;
-        for (const TempoPoint point : tempoPoints_)
-        {
-            if (!deduplicated.empty() &&
-                std::abs(deduplicated.back().beat - point.beat) < 1e-12L)
-            {
-                deduplicated.back().bpm = point.bpm;
-            }
-            else
-            {
-                deduplicated.push_back(point);
-            }
-        }
-        tempoPoints_ = std::move(deduplicated);
+        BuildTempoPoints();
     }
 
     rhythm::RhythmTime MusicalTimeline::Compile(
-        const MusicalPosition position) const noexcept
+        const MusicalPosition position) const
     {
-        const long double milliseconds =
-            SecondsAtBeat(PositionToBeat(position)) * 1000.0L +
-            DelayMillisecondsAt(position) +
-            static_cast<long double>(offsetMilliseconds_);
-        return rhythm::RhythmTime{static_cast<rhythm::RhythmTime::rep>(
-            std::llround(milliseconds * 1000.0L))};
+        return CompileAbsolute(PositionToWholeNotes(position));
     }
 
     std::vector<CompiledPatternNote> MusicalTimeline::CompileNotes(
@@ -127,109 +101,202 @@ namespace finger_drum::chart
         {
             return result;
         }
-
-        const long double beginBeat = PositionToBeat(begin);
-        const long double endBeat = PositionToBeat(end);
-        const long double beatStep = 4.0L /
-            static_cast<long double>(divisionsPerWholeNote);
-        for (long double beat = beginBeat;
-             beat < endBeat - 1e-12L;
-             beat += beatStep)
+        if (divisionsPerWholeNote > static_cast<std::size_t>(
+                std::numeric_limits<Rational::Representation>::max()))
         {
-            result.push_back(CompileBeat(beat));
+            throw std::overflow_error(
+                "The musical subdivision denominator is too large.");
+        }
+
+        Rational position = PositionToWholeNotes(begin);
+        const Rational endPosition = PositionToWholeNotes(end);
+        const Rational step{
+            1,
+            static_cast<Rational::Representation>(divisionsPerWholeNote)};
+        while (position < endPosition)
+        {
+            result.push_back(CompileAbsolute(position));
+            position += step;
         }
         return result;
     }
 
-    long double MusicalTimeline::PositionToBeat(
-        const MusicalPosition position) const noexcept
+    void MusicalTimeline::BuildMeasurePrefixSums(
+        const PatternDocument& pattern)
     {
-        long double beat = 0.0L;
-        for (std::int64_t measure = 0; measure < position.measure; ++measure)
-        {
-            beat += 4.0L * MeasureRatioAt(measure);
-        }
-        beat += 4.0L * MeasureRatioAt(position.measure) *
-            position.fraction.Value();
-        return beat;
-    }
-
-    long double MusicalTimeline::MeasureRatioAt(
-        const std::int64_t measure) const noexcept
-    {
-        long double ratio = 1.0L;
+        std::int64_t maximumMeasure = 0;
+        std::map<std::int64_t, Rational> measureChanges;
         for (const TimingDirective& directive : directives_)
         {
-            if (directive.type != TimingDirectiveType::MeasureLength ||
-                directive.position.measure > measure)
+            if (directive.position.measure < 0)
             {
-                continue;
+                throw std::invalid_argument(
+                    "A timing directive cannot use a negative measure.");
             }
-            ratio = directive.ratio.Value();
+            maximumMeasure = std::max(
+                maximumMeasure,
+                directive.position.measure);
+            if (directive.type == TimingDirectiveType::MeasureLength)
+            {
+                if (directive.ratio <= Rational{0, 1})
+                {
+                    throw std::invalid_argument(
+                        "A measure length must be greater than zero.");
+                }
+                measureChanges[directive.position.measure] = directive.ratio;
+            }
         }
-        return ratio;
-    }
-
-    long double MusicalTimeline::SecondsAtBeat(
-        const long double beat) const noexcept
-    {
-        long double seconds = 0.0L;
-        long double segmentBegin = 0.0L;
-        double bpm = baseBpm_;
-        for (const TempoPoint& point : tempoPoints_)
+        for (const PatternNote& note : pattern.notes)
         {
-            if (point.beat <= segmentBegin)
+            if (note.position.measure < 0)
             {
-                bpm = point.bpm;
-                continue;
+                throw std::invalid_argument(
+                    "A note cannot use a negative measure.");
             }
-            if (point.beat >= beat)
-            {
-                break;
-            }
-            seconds += (point.beat - segmentBegin) * 60.0L /
-                static_cast<long double>(bpm);
-            segmentBegin = point.beat;
-            bpm = point.bpm;
+            maximumMeasure = std::max(maximumMeasure, note.position.measure);
         }
-        seconds += (beat - segmentBegin) * 60.0L /
-            static_cast<long double>(bpm);
-        return seconds;
+
+        measureLengths_.reserve(
+            static_cast<std::size_t>(maximumMeasure + 1));
+        measurePrefixSums_.reserve(
+            static_cast<std::size_t>(maximumMeasure + 2));
+        measurePrefixSums_.push_back(Rational{0, 1});
+
+        Rational currentLength{1, 1};
+        for (std::int64_t measure = 0;
+             measure <= maximumMeasure;
+             ++measure)
+        {
+            if (const auto change = measureChanges.find(measure);
+                change != measureChanges.end())
+            {
+                currentLength = change->second;
+            }
+            measureLengths_.push_back(currentLength);
+            measurePrefixSums_.push_back(
+                measurePrefixSums_.back() + currentLength);
+        }
     }
 
-    rhythm::RhythmTime MusicalTimeline::CompileBeat(
-        const long double beat) const noexcept
+    void MusicalTimeline::BuildTempoPoints()
     {
-        const long double milliseconds = SecondsAtBeat(beat) * 1000.0L +
-            DelayMillisecondsAtBeat(beat) +
-            static_cast<long double>(offsetMilliseconds_);
+        struct TempoDefinition
+        {
+            Rational position;
+            double bpm{};
+        };
+
+        std::vector<TempoDefinition> definitions;
+        definitions.push_back({Rational{0, 1}, baseBpm_});
+        for (const TimingDirective& directive : directives_)
+        {
+            if (directive.type != TimingDirectiveType::Bpm)
+            {
+                continue;
+            }
+            if (!std::isfinite(directive.value) || directive.value <= 0.0)
+            {
+                throw std::invalid_argument(
+                    "A BPM directive must be finite and greater than zero.");
+            }
+            definitions.push_back({
+                PositionToWholeNotes(directive.position),
+                directive.value});
+        }
+        std::ranges::stable_sort(
+            definitions,
+            [](const TempoDefinition& left, const TempoDefinition& right)
+            {
+                return left.position < right.position;
+            });
+
+        std::vector<TempoDefinition> deduplicated;
+        for (const TempoDefinition& definition : definitions)
+        {
+            if (!deduplicated.empty() &&
+                deduplicated.back().position == definition.position)
+            {
+                deduplicated.back().bpm = definition.bpm;
+            }
+            else
+            {
+                deduplicated.push_back(definition);
+            }
+        }
+
+        Rational previousPosition{0, 1};
+        long double elapsedSeconds = 0.0L;
+        double previousBpm = baseBpm_;
+        for (const TempoDefinition& definition : deduplicated)
+        {
+            elapsedSeconds += (definition.position - previousPosition).Value() *
+                SecondsPerWholeNoteAtBpmOne /
+                static_cast<long double>(previousBpm);
+            tempoPoints_.push_back({
+                definition.position,
+                elapsedSeconds,
+                definition.bpm});
+            previousPosition = definition.position;
+            previousBpm = definition.bpm;
+        }
+    }
+
+    Rational MusicalTimeline::PositionToWholeNotes(
+        const MusicalPosition position) const
+    {
+        if (position.measure < 0)
+        {
+            throw std::invalid_argument(
+                "A musical position cannot use a negative measure.");
+        }
+
+        const std::size_t measure = static_cast<std::size_t>(position.measure);
+        if (measure < measureLengths_.size())
+        {
+            return measurePrefixSums_[measure] + position.fraction;
+        }
+
+        const auto additionalMeasures = static_cast<Rational::Representation>(
+            measure - measureLengths_.size());
+        return measurePrefixSums_.back() +
+            measureLengths_.back() * additionalMeasures +
+            position.fraction;
+    }
+
+    long double MusicalTimeline::SecondsAt(
+        const Rational& position) const
+    {
+        const auto next = std::ranges::upper_bound(
+            tempoPoints_,
+            position,
+            {},
+            &TempoPoint::position);
+        const TempoPoint& point = next == tempoPoints_.begin() ?
+            tempoPoints_.front() : *std::prev(next);
+        return point.seconds + (position - point.position).Value() *
+            SecondsPerWholeNoteAtBpmOne /
+            static_cast<long double>(point.bpm);
+    }
+
+    rhythm::RhythmTime MusicalTimeline::CompileAbsolute(
+        const Rational& position) const
+    {
+        const long double microseconds =
+            SecondsAt(position) * 1'000'000.0L +
+            DelayMillisecondsAt(position) * 1'000.0L +
+            static_cast<long double>(offsetMilliseconds_) * 1'000.0L;
         return rhythm::RhythmTime{static_cast<rhythm::RhythmTime::rep>(
-            std::llround(milliseconds * 1000.0L))};
+            std::llround(microseconds))};
     }
 
     long double MusicalTimeline::DelayMillisecondsAt(
-        const MusicalPosition position) const noexcept
+        const Rational& position) const
     {
         long double result = 0.0L;
         for (const TimingDirective& directive : directives_)
         {
             if (directive.type == TimingDirectiveType::DelayMilliseconds &&
-                directive.position <= position)
-            {
-                result += static_cast<long double>(directive.value);
-            }
-        }
-        return result;
-    }
-
-    long double MusicalTimeline::DelayMillisecondsAtBeat(
-        const long double beat) const noexcept
-    {
-        long double result = 0.0L;
-        for (const TimingDirective& directive : directives_)
-        {
-            if (directive.type == TimingDirectiveType::DelayMilliseconds &&
-                PositionToBeat(directive.position) <= beat)
+                PositionToWholeNotes(directive.position) <= position)
             {
                 result += static_cast<long double>(directive.value);
             }
