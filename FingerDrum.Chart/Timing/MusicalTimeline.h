@@ -13,7 +13,7 @@ namespace finger_drum::chart
         explicit MusicalTimeline(const PatternDocument& pattern);
 
         [[nodiscard]] rhythm::RhythmTime Compile(
-            MusicalPosition position) const noexcept;
+            MusicalPosition position) const;
         [[nodiscard]] std::vector<CompiledPatternNote> CompileNotes(
             const PatternDocument& pattern) const;
         [[nodiscard]] std::vector<CompiledEffectCommand> CompileEffects(
@@ -26,25 +26,27 @@ namespace finger_drum::chart
     private:
         struct TempoPoint
         {
-            long double beat{};
+            Rational position{};
+            long double seconds{};
             double bpm{120.0};
         };
 
-        [[nodiscard]] long double PositionToBeat(
-            MusicalPosition position) const noexcept;
-        [[nodiscard]] long double MeasureRatioAt(
-            std::int64_t measure) const noexcept;
-        [[nodiscard]] long double SecondsAtBeat(long double beat) const noexcept;
-        [[nodiscard]] rhythm::RhythmTime CompileBeat(
-            long double beat) const noexcept;
+        void BuildMeasurePrefixSums(const PatternDocument& pattern);
+        void BuildTempoPoints();
+        [[nodiscard]] Rational PositionToWholeNotes(
+            MusicalPosition position) const;
+        [[nodiscard]] long double SecondsAt(
+            const Rational& position) const;
+        [[nodiscard]] rhythm::RhythmTime CompileAbsolute(
+            const Rational& position) const;
         [[nodiscard]] long double DelayMillisecondsAt(
-            MusicalPosition position) const noexcept;
-        [[nodiscard]] long double DelayMillisecondsAtBeat(
-            long double beat) const noexcept;
+            const Rational& position) const;
 
         double baseBpm_{120.0};
         double offsetMilliseconds_{};
         std::vector<TimingDirective> directives_;
+        std::vector<Rational> measureLengths_;
+        std::vector<Rational> measurePrefixSums_;
         std::vector<TempoPoint> tempoPoints_;
     };
 }

@@ -84,7 +84,9 @@ wWinMain
 - 게임 규칙은 FMOD를 직접 호출하지 않습니다. `GameplayAudioRouter`가 cue를
   clip, bus, volume, effect에 연결합니다.
 - YMM은 음악 metadata, YMP는 playable score, YME는 시각·오디오 automation을
-  담당합니다. beat/BPM 위치는 로드 시 정수 microseconds로 컴파일합니다.
+  담당합니다. YMP의 `N/D`는 현재 마디 시작부터의 절대 온음표 위치이며 마디
+  길이와 BPM 변경 위치는 유리수로 누적한 뒤 로드 시 정수 microseconds로
+  컴파일합니다.
 - 새 게임 모드는 `IPlayGameMode`를 구현하고 차트를 실제 note로 만드는 정책을
   소유합니다. 현재 `TaikoMode`와 `RhythmTestScene`은 테스트 드라이버입니다.
 
