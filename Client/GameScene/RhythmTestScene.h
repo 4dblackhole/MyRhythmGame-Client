@@ -47,6 +47,7 @@ private:
         mrg::visual2d::Visual2DNode* tail{};
         std::vector<TimedVisual> ticks;
         float diameter{};
+        float tailHeightRatio{};
     };
 
     [[nodiscard]] std::unique_ptr<finger_drum::mode::PlaySession>
