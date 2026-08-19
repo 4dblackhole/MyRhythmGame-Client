@@ -131,6 +131,12 @@ Lane 표시는 RPG `PlayScene`의 Transform 계층도 유지합니다. 기본 La
 `JudgeLine`, 노트 head/overlay와 롱노트 body/tail/tick은 모두 Lane의 자식이므로
 회전을 함께 상속합니다. 업데이트는 화면 X가 아니라 Lane 로컬 Y만 변경합니다.
 
+현재 플레이 화면은 1280×720 기준 일반 원 90px, 큰 원 144px을 사용합니다.
+기본 180 BPM에서 16분음표의 중심 간격은 약 85px이므로 일반 노트의 흰 테두리만
+살짝 겹칩니다. Canvas는 `FixedHeight`이므로 창 높이에 비례해 이미지와 글자도
+함께 확대·축소되고, 넓은 창에서는 배경과 ScrollGear가 늘어나며 헤더·시간 표시는
+각각 좌·우 기준으로 배치됩니다.
+
 현재 플레이 화면은 마디선, key beam, 노트 head,
 롱노트 body/tail/tick을 모두 회전된 Lane 부모 아래 둡니다. Balloon과 DengDeng은
 전용 PNG를 사용하고, 규칙이 노출하는 `accepted/required` 진행도는 별도의 숫자
