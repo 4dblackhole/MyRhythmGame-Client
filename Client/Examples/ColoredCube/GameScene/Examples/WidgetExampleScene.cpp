@@ -14,6 +14,7 @@ namespace
 {
     constexpr mrg::visual2d::Size CanvasSize{520.0F, 360.0F};
     constexpr std::size_t MaximumDynamicWidgets = 6;
+    constexpr mrg::visual2d::Size WidgetImageSize{1672.0F, 941.0F};
 
     template <typename ComponentType>
     [[nodiscard]] ComponentType& RequireComponent(
@@ -35,6 +36,18 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
     canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
     canvas_->SetViewportSize(
         {static_cast<float>(width_), static_cast<float>(height_)});
+    const mrg::visual2d::ImageHandle widgetImage =
+        services.visual2DRendering.LoadImage(
+            mrg::platform::ResolveExecutableRelativePath(
+                L"assets\\images\\Widget1.png"));
+    const mrg::visual2d::Size nativeSize =
+        services.visual2DRendering.GetImageSize(widgetImage);
+    if (nativeSize.width != WidgetImageSize.width ||
+        nativeSize.height != WidgetImageSize.height)
+    {
+        throw std::runtime_error(
+            "Visual2D image metadata did not match Widget1.png.");
+    }
     BuildCanvas();
 
     // Begin with one runtime-created widget so the mutable child region is

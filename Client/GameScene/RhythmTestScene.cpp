@@ -64,6 +64,17 @@ namespace
     constexpr float TickDiameter = CircleDiameter * 3.0F / 7.0F;
     constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{900'000};
 
+    [[nodiscard]] float ImageHeightRatio(
+        const mrg::visual2d::Size imageSize)
+    {
+        if (imageSize.width <= 0.0F || imageSize.height <= 0.0F)
+        {
+            throw std::logic_error(
+                "A long-note image must have a non-zero native size.");
+        }
+        return imageSize.height / imageSize.width;
+    }
+
     template <typename ComponentType>
     [[nodiscard]] ComponentType& RequireComponent(
         mrg::visual2d::Visual2DNode& node)
@@ -801,6 +812,8 @@ void RhythmTestScene::CreateNoteVisuals(
         SkinAssetPath(L"LNBody.png"));
     const auto tailImage = services.visual2DRendering.LoadImage(
         SkinAssetPath(L"LNTail.png"));
+    const float tailHeightRatio = ImageHeightRatio(
+        services.visual2DRendering.GetImageSize(tailImage));
     const auto tickImage = services.visual2DRendering.LoadImage(
         SkinAssetPath(L"TickMarker.png"));
     const auto balloonImage = services.visual2DRendering.LoadImage(
@@ -846,9 +859,10 @@ void RhythmTestScene::CreateNoteVisuals(
             // head. The white head overlay is a separate untinted draw packet.
             if (longNote)
             {
+                layers.tailHeightRatio = tailHeightRatio;
                 layers.body = &mrg::visual2d::CreateSprite(
                     *layers.root,
-                    {diameter * 0.25F, diameter * 0.5F, diameter * 0.5F, 1.0F},
+                    {0.0F, diameter * 0.5F, diameter, 1.0F},
                     bodyImage,
                     "AmbientBody");
                 RequireComponent<mrg::visual2d::SpriteVisualComponent>(
@@ -856,7 +870,10 @@ void RhythmTestScene::CreateNoteVisuals(
                 layers.body->SetZIndex(0);
                 layers.tail = &mrg::visual2d::CreateSprite(
                     *layers.root,
-                    {0.0F, 0.0F, diameter, diameter},
+                    {0.0F,
+                     0.0F,
+                     diameter,
+                     diameter * layers.tailHeightRatio},
                     tailImage,
                     "AmbientTail");
                 RequireComponent<mrg::visual2d::SpriteVisualComponent>(
@@ -1504,15 +1521,15 @@ void RhythmTestScene::UpdatePresentation(
                 JudgementLocalY + endTravel * TravelDistance;
             const float length = std::max(tailLocalY - localY, 1.0F);
             layers.body->SetBounds({
-                layers.diameter * 0.25F,
+                0.0F,
                 layers.diameter * 0.5F,
-                layers.diameter * 0.5F,
+                layers.diameter,
                 length});
             layers.tail->SetBounds({
                 0.0F,
                 length,
                 layers.diameter,
-                layers.diameter});
+                layers.diameter * layers.tailHeightRatio});
         }
     }
     UpdateRemainingCount();
