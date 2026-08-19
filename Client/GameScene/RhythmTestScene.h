@@ -70,6 +70,7 @@ private:
         const mrg::EngineServices& services,
         mrg::visual2d::Visual2DNode& sceneRoot);
     void CreateNoteVisuals(const mrg::EngineServices& services);
+    void UpdatePresentationLayout();
     void InitializeAudio(const mrg::EngineServices& services);
     void RegisterTaikoSounds(std::string& errorMessage);
     void ScheduleMusic();
@@ -115,6 +116,12 @@ private:
     std::array<mrg::visual2d::Visual2DNode*, 4> keyIndicators_{};
     std::array<mrg::visual2d::ImageHandle, 10> numberImages_{};
     std::array<mrg::visual2d::Visual2DNode*, 4> countDigits_{};
+    mrg::visual2d::Visual2DNode* background_{};
+    mrg::visual2d::Visual2DNode* headerSurface_{};
+    mrg::visual2d::Visual2DNode* scrollGearBorder_{};
+    mrg::visual2d::Visual2DNode* scrollGearSurface_{};
+    mrg::visual2d::Visual2DNode* scrollGearTopAccent_{};
+    mrg::visual2d::Visual2DNode* inputPresentationRoot_{};
     mrg::visual2d::Visual2DNode* laneRoot_{};
     mrg::visual2d::Visual2DNode* laneLight_{};
     mrg::visual2d::Visual2DNode* countBadge_{};
@@ -122,6 +129,7 @@ private:
     mrg::visual2d::Visual2DNode* resultLabel_{};
     mrg::visual2d::Visual2DNode* audioStatusLabel_{};
     mrg::visual2d::Visual2DNode* debugLabel_{};
+    mrg::visual2d::Visual2DNode* instructionsLabel_{};
     std::uint64_t acceptedHitCount_{};
     double accumulatedScore_{};
     double completedElapsedSeconds_{};

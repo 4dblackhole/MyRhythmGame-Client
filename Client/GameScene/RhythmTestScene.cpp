@@ -46,6 +46,8 @@ namespace
 #else
     constexpr bool ReferenceTimeDebug = false;
 #endif
+    constexpr float CanvasReferenceWidth = 1280.0F;
+    constexpr float CanvasReferenceHeight = 720.0F;
     constexpr float LaneWidth = 180.0F;
     constexpr float LaneLength = 1040.0F;
     constexpr float LaneCenterX = 640.0F;
@@ -54,7 +56,13 @@ namespace
     constexpr float TravelDistance = 920.0F;
     constexpr float LaneLightLength = 900.0F;
     constexpr float LaneLightFadeSpeed = 8.0F;
-    constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{2'000'000};
+    // The legacy Taiko presentation uses 90/144 logical-pixel circles at
+    // 1280x720. With this approach time, 180 BPM sixteenth notes are 85 px
+    // apart, leaving only their white outlines slightly overlapped.
+    constexpr float CircleDiameter = 90.0F;
+    constexpr float LargeCircleDiameter = 144.0F;
+    constexpr float TickDiameter = CircleDiameter * 3.0F / 7.0F;
+    constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{900'000};
 
     template <typename ComponentType>
     [[nodiscard]] ComponentType& RequireComponent(
@@ -331,6 +339,7 @@ void RhythmTestScene::OnResize(
         canvas_->SetViewportSize({
             static_cast<float>(width_),
             static_cast<float>(height_)});
+        UpdatePresentationLayout();
     }
 }
 
@@ -342,6 +351,12 @@ void RhythmTestScene::Shutdown() noexcept
     measureLineVisuals_.clear();
     keyIndicators_.fill(nullptr);
     countDigits_.fill(nullptr);
+    background_ = nullptr;
+    headerSurface_ = nullptr;
+    scrollGearBorder_ = nullptr;
+    scrollGearSurface_ = nullptr;
+    scrollGearTopAccent_ = nullptr;
+    inputPresentationRoot_ = nullptr;
     laneRoot_ = nullptr;
     laneLight_ = nullptr;
     countBadge_ = nullptr;
@@ -349,6 +364,7 @@ void RhythmTestScene::Shutdown() noexcept
     debugLabel_ = nullptr;
     resultLabel_ = nullptr;
     timelineLabel_ = nullptr;
+    instructionsLabel_ = nullptr;
     canvas_.reset();
     session_.reset();
     musicRegistered_ = false;
@@ -504,39 +520,35 @@ RhythmTestScene::CreateLongNoteDebugSession()
 void RhythmTestScene::CreatePresentation(
     const mrg::EngineServices& services)
 {
-    auto& root = canvas_->CreateNode(
-        mrg::visual2d::Anchor::Center,
-        "RhythmTest.Root");
-    root.SetPivot({0.5F, 0.5F});
-    root.SetSize({1280.0F, 720.0F});
+    auto& root = canvas_->Root();
 
-    auto& background = mrg::visual2d::CreatePanel(
+    background_ = &mrg::visual2d::CreatePanel(
         root,
-        {0.0F, 0.0F, 1280.0F, 720.0F},
+        {0.0F, 0.0F, CanvasReferenceWidth, CanvasReferenceHeight},
         "Background");
-    SetColor(background, {0.918F, 0.965F, 1.0F, 1.0F});
+    SetColor(*background_, {0.918F, 0.965F, 1.0F, 1.0F});
 
-    auto& headerSurface = mrg::visual2d::CreatePanel(
+    headerSurface_ = &mrg::visual2d::CreatePanel(
         root,
-        {0.0F, 0.0F, 1280.0F, 76.0F},
+        {0.0F, 0.0F, CanvasReferenceWidth, 76.0F},
         "Header.Surface");
-    SetColor(headerSurface, {0.976F, 0.992F, 1.0F, 0.97F});
+    SetColor(*headerSurface_, {0.976F, 0.992F, 1.0F, 0.97F});
 
-    auto& gearBorder = mrg::visual2d::CreatePanel(
+    scrollGearBorder_ = &mrg::visual2d::CreatePanel(
         root,
         {56.0F, 188.0F, 1168.0F, 322.0F},
         "ScrollGear.Border");
-    SetColor(gearBorder, {0.55F, 0.75F, 0.88F, 0.78F});
-    auto& gearSurface = mrg::visual2d::CreatePanel(
+    SetColor(*scrollGearBorder_, {0.55F, 0.75F, 0.88F, 0.78F});
+    scrollGearSurface_ = &mrg::visual2d::CreatePanel(
         root,
         {60.0F, 192.0F, 1160.0F, 314.0F},
         "ScrollGear.Surface");
-    SetColor(gearSurface, {0.976F, 0.992F, 1.0F, 0.97F});
-    auto& gearTopAccent = mrg::visual2d::CreatePanel(
+    SetColor(*scrollGearSurface_, {0.976F, 0.992F, 1.0F, 0.97F});
+    scrollGearTopAccent_ = &mrg::visual2d::CreatePanel(
         root,
         {82.0F, 206.0F, 1116.0F, 5.0F},
         "ScrollGear.TopAccent");
-    SetColor(gearTopAccent, {0.39F, 0.70F, 0.90F, 0.88F});
+    SetColor(*scrollGearTopAccent_, {0.39F, 0.70F, 0.90F, 0.88F});
 
     auto& header = mrg::visual2d::CreateLabel(
         root,
@@ -548,8 +560,9 @@ void RhythmTestScene::CreatePresentation(
     headerText.SetTextColor(DeepBlue);
 
     CreateLaneVisuals(services, root);
-    CreateKeyIndicators(root);
-    CreateRemainingCountVisuals(services, root);
+    inputPresentationRoot_ = &root.CreateChild("InputPresentation");
+    CreateKeyIndicators(*inputPresentationRoot_);
+    CreateRemainingCountVisuals(services, *inputPresentationRoot_);
 
     timelineLabel_ = &mrg::visual2d::CreateLabel(
         root, {820.0F, 16.0F, 412.0F, 42.0F}, L"TIME", "Timeline");
@@ -594,7 +607,7 @@ void RhythmTestScene::CreatePresentation(
     }
 #endif
 
-    auto& instructions = mrg::visual2d::CreateLabel(
+    instructionsLabel_ = &mrg::visual2d::CreateLabel(
         root,
         {120.0F, 600.0F, 1040.0F, 64.0F},
         debugMode_ && ReferenceTimeDebug
@@ -604,10 +617,12 @@ void RhythmTestScene::CreatePresentation(
               L"SPACE : Pause / Resume     R : Restart     ESC : Song Select",
         "Instructions");
     auto& instructionText =
-        RequireComponent<mrg::visual2d::TextVisualComponent>(instructions);
+        RequireComponent<mrg::visual2d::TextVisualComponent>(*instructionsLabel_);
     instructionText.SetFontSize(16.0F);
     instructionText.SetTextColor(DeepBlue);
     instructionText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
+
+    UpdatePresentationLayout();
 }
 
 void RhythmTestScene::CreateLaneVisuals(
@@ -642,13 +657,12 @@ void RhythmTestScene::CreateLaneVisuals(
         SetTint({1.0F, 1.0F, 1.0F, 0.0F});
     laneLight_->SetZIndex(2);
 
-    constexpr float judgementDiameter = 114.0F;
     auto& judgementLine = mrg::visual2d::CreateSprite(
         *laneRoot_,
-        {(LaneWidth - judgementDiameter) * 0.5F,
-         JudgementLocalY - judgementDiameter * 0.5F,
-         judgementDiameter,
-         judgementDiameter},
+        {(LaneWidth - LargeCircleDiameter) * 0.5F,
+         JudgementLocalY - LargeCircleDiameter * 0.5F,
+         LargeCircleDiameter,
+         LargeCircleDiameter},
         services.visual2DRendering.LoadImage(SkinAssetPath(L"JudgeLine.png")),
         "Lane.JudgementLine");
     judgementLine.SetZIndex(4);
@@ -815,7 +829,7 @@ void RhythmTestScene::CreateNoteVisuals(
             const bool balloon = visualId == "Taiko.Balloon";
             const bool dengDeng = visualId == "Taiko.DengDeng";
             const bool customHead = balloon || dengDeng;
-            const float diameter = big ? 76.0F : 56.0F;
+            const float diameter = big ? LargeCircleDiameter : CircleDiameter;
             const mrg::visual2d::Color ambientColor = AmbientColor(visualId);
 
             NoteVisualLayers layers;
@@ -851,7 +865,6 @@ void RhythmTestScene::CreateNoteVisuals(
 
                 if (presentation != nullptr)
                 {
-                    constexpr float TickDiameter = 24.0F;
                     for (const auto tickTime : presentation->tickTimes)
                     {
                         if (tickTime <= note->Timing())
@@ -904,6 +917,102 @@ void RhythmTestScene::CreateNoteVisuals(
             }
             noteVisuals_.emplace(note->Id(), layers);
         }
+    }
+}
+
+void RhythmTestScene::UpdatePresentationLayout()
+{
+    if (canvas_ == nullptr)
+    {
+        return;
+    }
+
+    const float logicalWidth = canvas_->LogicalSize().width;
+    const auto widthBetween =
+        [logicalWidth](const float horizontalMargin) noexcept
+        {
+            return std::max(logicalWidth - horizontalMargin * 2.0F, 1.0F);
+        };
+
+    if (background_ != nullptr)
+    {
+        background_->SetBounds({
+            0.0F,
+            0.0F,
+            logicalWidth,
+            CanvasReferenceHeight});
+    }
+    if (headerSurface_ != nullptr)
+    {
+        headerSurface_->SetBounds({0.0F, 0.0F, logicalWidth, 76.0F});
+    }
+    if (scrollGearBorder_ != nullptr)
+    {
+        scrollGearBorder_->SetBounds({
+            56.0F,
+            188.0F,
+            widthBetween(56.0F),
+            322.0F});
+    }
+    if (scrollGearSurface_ != nullptr)
+    {
+        scrollGearSurface_->SetBounds({
+            60.0F,
+            192.0F,
+            widthBetween(60.0F),
+            314.0F});
+    }
+    if (scrollGearTopAccent_ != nullptr)
+    {
+        scrollGearTopAccent_->SetBounds({
+            82.0F,
+            206.0F,
+            widthBetween(82.0F),
+            5.0F});
+    }
+    if (laneRoot_ != nullptr)
+    {
+        laneRoot_->SetPosition({
+            logicalWidth * 0.5F,
+            LaneCenterY + 8.0F});
+    }
+    if (inputPresentationRoot_ != nullptr)
+    {
+        inputPresentationRoot_->SetPosition({
+            logicalWidth * 0.5F - CanvasReferenceWidth * 0.5F,
+            0.0F});
+    }
+    if (timelineLabel_ != nullptr)
+    {
+        timelineLabel_->SetBounds({
+            std::max(logicalWidth - 460.0F, 0.0F),
+            16.0F,
+            412.0F,
+            42.0F});
+    }
+    if (resultLabel_ != nullptr)
+    {
+        resultLabel_->SetBounds({
+            72.0F,
+            542.0F,
+            widthBetween(72.0F),
+            54.0F});
+    }
+    if (audioStatusLabel_ != nullptr)
+    {
+        audioStatusLabel_->SetBounds({
+            48.0F,
+            674.0F,
+            widthBetween(48.0F),
+            28.0F});
+    }
+    if (instructionsLabel_ != nullptr)
+    {
+        instructionsLabel_->SetBounds({
+            120.0F,
+            600.0F,
+            widthBetween(120.0F),
+            64.0F});
     }
 }
 
