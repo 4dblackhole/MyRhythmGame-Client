@@ -2,6 +2,7 @@
 
 #include "Mode/PlayGameMode.h"
 
+#include <array>
 #include <cstddef>
 
 namespace finger_drum::mode
@@ -11,6 +12,46 @@ namespace finger_drum::mode
         Don = 1,
         Kat = 2,
     };
+
+    // The first physical key is the primary (strong-light) binding for the
+    // matching playfield input. The remaining keys produce the same action
+    // while using the secondary (weak-light) presentation.
+    struct TaikoInputBinding
+    {
+        TaikoAction action{};
+        rhythm::PhysicalKey primaryKey{};
+        std::array<rhythm::PhysicalKey, 2> secondaryKeys{};
+
+        [[nodiscard]] bool Contains(
+            const rhythm::PhysicalKey physicalKey) const noexcept
+        {
+            if (physicalKey == primaryKey)
+            {
+                return true;
+            }
+            for (const rhythm::PhysicalKey secondaryKey : secondaryKeys)
+            {
+                if (physicalKey == secondaryKey)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        [[nodiscard]] bool IsPrimary(
+            const rhythm::PhysicalKey physicalKey) const noexcept
+        {
+            return physicalKey == primaryKey;
+        }
+    };
+
+    inline constexpr std::array<TaikoInputBinding, 4> TaikoInputBindings{{
+        {TaikoAction::Kat, 'E', {'D', 'C'}},
+        {TaikoAction::Don, 'R', {'F', 'V'}},
+        {TaikoAction::Don, 'U', {'J', 'M'}},
+        {TaikoAction::Kat, 'I', {'K', 0xBC}},
+    }};
 
     enum class TaikoNoteType : int
     {

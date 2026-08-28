@@ -372,12 +372,17 @@ namespace finger_drum::mode
                 false});
         }
 
-        session->SetInputMapping({
-            {static_cast<rhythm::PhysicalKey>('F'), ActionValue(TaikoAction::Don)},
-            {static_cast<rhythm::PhysicalKey>('J'), ActionValue(TaikoAction::Don)},
-            {static_cast<rhythm::PhysicalKey>('D'), ActionValue(TaikoAction::Kat)},
-            {static_cast<rhythm::PhysicalKey>('K'), ActionValue(TaikoAction::Kat)},
-        });
+        std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping;
+        for (const TaikoInputBinding& binding : TaikoInputBindings)
+        {
+            const rhythm::NoteAction action = ActionValue(binding.action);
+            inputMapping.emplace(binding.primaryKey, action);
+            for (const rhythm::PhysicalKey secondaryKey : binding.secondaryKeys)
+            {
+                inputMapping.emplace(secondaryKey, action);
+            }
+        }
+        session->SetInputMapping(std::move(inputMapping));
         session->SetFreeInputCue(
             ActionValue(TaikoAction::Don),
             Cue("Taiko.Don.FreeInput", "UserInputFeedback"));

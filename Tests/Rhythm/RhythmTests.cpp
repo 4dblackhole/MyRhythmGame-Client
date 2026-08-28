@@ -533,6 +533,64 @@ Mode: Taiko
             "Every logical note must expose its mode-owned visual identity.");
     }
 
+    void TestTaikoInputBindings()
+    {
+        constexpr std::array<std::array<rhythm::PhysicalKey, 3>, 4>
+            ExpectedBindings{{
+                {{'E', 'D', 'C'}},
+                {{'R', 'F', 'V'}},
+                {{'U', 'J', 'M'}},
+                {{'I', 'K', 0xBC}},
+            }};
+        Require(
+            mode::TaikoInputBindings.size() == ExpectedBindings.size(),
+            "Taiko must expose one input binding for every playfield key.");
+
+        mode::TaikoMode taiko;
+        for (std::size_t index = 0;
+             index < mode::TaikoInputBindings.size();
+             ++index)
+        {
+            const mode::TaikoInputBinding& binding =
+                mode::TaikoInputBindings[index];
+            const std::array physicalKeys{
+                binding.primaryKey,
+                binding.secondaryKeys[0],
+                binding.secondaryKeys[1]};
+            Require(
+                physicalKeys == ExpectedBindings[index],
+                "Taiko input bindings must retain the primary and secondary keys.");
+
+            chart::PatternDocument pattern;
+            pattern.mode = "Taiko";
+            pattern.baseBpm = 120.0;
+            pattern.notes.push_back(chart::PatternNote{
+                .position = {0, chart::Rational{0, 1}},
+                .keyType = static_cast<int>(
+                    binding.action == mode::TaikoAction::Don
+                        ? mode::TaikoNoteType::Don
+                        : mode::TaikoNoteType::Kat),
+                .actionType = static_cast<int>(
+                    mode::TaikoPatternAction::Down)});
+            mode::ModeLoadResult loaded = taiko.CreateSession(pattern);
+            Require(
+                loaded.Succeeded(),
+                "Taiko input bindings require a playable session.");
+            for (const rhythm::PhysicalKey physicalKey : physicalKeys)
+            {
+                loaded.session->Reset();
+                Require(
+                    HasEvent(
+                        loaded.session->ProcessInput(
+                            physicalKey,
+                            rhythm::InputEdge::Pressed,
+                            rhythm::RhythmTime::zero()),
+                        rhythm::NoteEventType::HitAccepted),
+                    "Every Taiko primary and secondary key must trigger its mapped action.");
+            }
+        }
+    }
+
     void TestRationalNumberUsesExactOrderingAndArithmetic()
     {
         Require(
@@ -798,6 +856,7 @@ int main(const int argumentCount, char* arguments[])
         TestMusicalSubdivisionTicksFollowTempo();
         TestLongNoteKeepsFirstHead();
         TestTaikoUsesOneLaneForEveryNoteType();
+        TestTaikoInputBindings();
         TestRationalNumberUsesExactOrderingAndArithmetic();
         TestTimingCommandWhitespaceGrammar();
         TestAbsoluteMeasurePositionsAndTempoAnchors();
