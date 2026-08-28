@@ -67,9 +67,6 @@ private:
         const mrg::EngineServices& services);
     void CreateKeyIndicators(
         mrg::visual2d::Visual2DNode& sceneRoot);
-    void CreateRemainingCountVisuals(
-        const mrg::EngineServices& services,
-        mrg::visual2d::Visual2DNode& sceneRoot);
     void CreateNoteVisuals(const mrg::EngineServices& services);
     void UpdatePresentationLayout();
     void InitializeAudio(const mrg::EngineServices& services);
@@ -85,21 +82,12 @@ private:
         const mrg::audio::AudioClockSnapshot& clock,
         double deltaSeconds);
     void ProcessRhythmInput(const mrg::platform::InputState& input);
-    void UpdateInputPresentation(
-        const mrg::platform::InputState& input,
-        double deltaSeconds);
+    void UpdateInputPresentation(const mrg::platform::InputState& input);
     void UpdateSession(
         const mrg::platform::InputState& input,
         finger_drum::rhythm::RhythmTime time);
     void ConsumeResult(finger_drum::rhythm::NoteProcessResult result);
     void UpdatePresentation(finger_drum::rhythm::RhythmTime time);
-    void UpdateRemainingCount();
-    void UpdateDebugText(finger_drum::rhythm::RhythmTime time);
-    void FlashKeyBeam(mrg::visual2d::Color color);
-    [[nodiscard]] bool IsWrongActionForCurrentNote(
-        finger_drum::rhythm::PhysicalKey physicalKey) const noexcept;
-    [[nodiscard]] const finger_drum::rhythm::INote* FindNote(
-        finger_drum::rhythm::NoteId noteId) const noexcept;
     [[nodiscard]] bool IsPatternComplete() const noexcept;
     [[nodiscard]] bool ReturnToLobby(
         mrg::scene::SceneManager& scenes) const;
@@ -115,28 +103,16 @@ private:
         noteVisuals_;
     std::vector<TimedVisual> measureLineVisuals_;
     std::array<mrg::visual2d::Visual2DNode*, 4> keyIndicators_{};
-    std::array<mrg::visual2d::ImageHandle, 10> numberImages_{};
-    std::array<mrg::visual2d::Visual2DNode*, 4> countDigits_{};
+    std::array<mrg::visual2d::Visual2DNode*, 4> keyGlows_{};
     mrg::visual2d::Visual2DNode* background_{};
-    mrg::visual2d::Visual2DNode* headerSurface_{};
     mrg::visual2d::Visual2DNode* scrollGearBorder_{};
     mrg::visual2d::Visual2DNode* scrollGearSurface_{};
-    mrg::visual2d::Visual2DNode* scrollGearTopAccent_{};
     mrg::visual2d::Visual2DNode* inputPresentationRoot_{};
     mrg::visual2d::Visual2DNode* laneRoot_{};
-    mrg::visual2d::Visual2DNode* laneLight_{};
-    mrg::visual2d::Visual2DNode* countBadge_{};
-    mrg::visual2d::Visual2DNode* timelineLabel_{};
-    mrg::visual2d::Visual2DNode* resultLabel_{};
-    mrg::visual2d::Visual2DNode* audioStatusLabel_{};
-    mrg::visual2d::Visual2DNode* debugLabel_{};
-    mrg::visual2d::Visual2DNode* instructionsLabel_{};
-    std::uint64_t acceptedHitCount_{};
-    double accumulatedScore_{};
+    mrg::visual2d::Visual2DNode* laneSurface_{};
+    mrg::visual2d::Visual2DNode* laneCenterGuide_{};
     double completedElapsedSeconds_{};
     double debugSpeedMillisecondsPerSecond_{1000.0};
-    mrg::visual2d::Color keyBeamColor_{1.0F, 1.0F, 1.0F, 1.0F};
-    float keyBeamAlpha_{};
     bool musicRegistered_{};
     bool debugMode_{};
 };
