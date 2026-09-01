@@ -100,7 +100,9 @@ wWinMain
 - Lane은 기본 로컬 `+Y` 방향의 세로 계층으로 작성하고 Taiko에서는 부모만
   Z축 `-90°` 회전합니다. 배경, light, judge, note, long-note part가 그 회전을
   상속하고 note 이동은 로컬 Y만 갱신합니다.
-- `LaneBackground.png`는 늘이지 않고 원본 비율로 반복 배치합니다.
+- 플레이 화면은 `Assets/Skins/test Skin/InGame` 자산을 사용합니다. `Lane.png`는
+  늘이지 않고 원본 비율로 반복 배치하며 노트와 롱노트 파츠는 PNG 메타데이터로
+  표시 크기를 정합니다.
 
 ## Penpot 디자인 상태
 

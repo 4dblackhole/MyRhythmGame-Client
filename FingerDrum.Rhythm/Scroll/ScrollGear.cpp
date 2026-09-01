@@ -100,10 +100,11 @@ namespace finger_drum::rhythm
                     delta,
                     std::clamp(
                         static_cast<float>(delta.count()) /
-                            static_cast<float>(approachDuration.count()),
+                        static_cast<float>(approachDuration.count()),
                         -1.0F,
                         1.0F),
-                    note->State()});
+                    note->State(),
+                    note->Progress()});
             }
         }
         return snapshot;

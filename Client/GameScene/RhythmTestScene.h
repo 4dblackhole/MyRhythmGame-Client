@@ -44,10 +44,16 @@ private:
         mrg::visual2d::Visual2DNode* ambient{};
         mrg::visual2d::Visual2DNode* overlay{};
         mrg::visual2d::Visual2DNode* body{};
+        mrg::visual2d::Visual2DNode* bodyOverlay{};
         mrg::visual2d::Visual2DNode* tail{};
+        mrg::visual2d::Visual2DNode* tailOverlay{};
+        mrg::visual2d::Visual2DNode* counter{};
+        mrg::visual2d::Visual2DNode* counterText{};
         std::vector<TimedVisual> ticks;
         float diameter{};
-        float tailHeightRatio{};
+        float bodyWidth{};
+        float tailWidth{};
+        float tailHeight{};
     };
 
     [[nodiscard]] std::unique_ptr<finger_drum::mode::PlaySession>
@@ -63,10 +69,12 @@ private:
         mrg::visual2d::Visual2DNode& sceneRoot);
     void CreateLaneSurface(
         const mrg::EngineServices& services);
+    void UpdateLaneSurfaceLayout(float laneLength);
     void CreateMeasureLineVisuals(
         const mrg::EngineServices& services);
     void CreateKeyIndicators(
-        mrg::visual2d::Visual2DNode& sceneRoot);
+        const mrg::EngineServices& services,
+        mrg::visual2d::Visual2DNode& inputPanel);
     void CreateNoteVisuals(const mrg::EngineServices& services);
     void UpdatePresentationLayout();
     void InitializeAudio(const mrg::EngineServices& services);
@@ -108,9 +116,18 @@ private:
     mrg::visual2d::Visual2DNode* scrollGearBorder_{};
     mrg::visual2d::Visual2DNode* scrollGearSurface_{};
     mrg::visual2d::Visual2DNode* inputPresentationRoot_{};
+    mrg::visual2d::Visual2DNode* inputPanel_{};
     mrg::visual2d::Visual2DNode* laneRoot_{};
-    mrg::visual2d::Visual2DNode* laneSurface_{};
-    mrg::visual2d::Visual2DNode* laneCenterGuide_{};
+    std::vector<mrg::visual2d::Visual2DNode*> laneTiles_;
+    mrg::visual2d::ImageHandle laneImage_{};
+    mrg::visual2d::ImageHandle strongKeyLightImage_{};
+    mrg::visual2d::ImageHandle weakKeyLightImage_{};
+    mrg::visual2d::Visual2DNode* gameProgressBar_{};
+    mrg::visual2d::Visual2DNode* accuracyIndicator_{};
+    mrg::visual2d::Visual2DNode* judgementIndicator_{};
+    float laneWidth_{152.0F};
+    float laneTileLength_{42.0F};
+    mrg::visual2d::Size inputPanelSize_{152.0F, 152.0F};
     double completedElapsedSeconds_{};
     double debugSpeedMillisecondsPerSecond_{1000.0};
     bool musicRegistered_{};

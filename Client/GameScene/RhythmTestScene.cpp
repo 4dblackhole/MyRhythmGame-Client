@@ -56,36 +56,28 @@ namespace
 #endif
     constexpr float CanvasReferenceWidth = 1280.0F;
     constexpr float CanvasReferenceHeight = 720.0F;
-    constexpr float LaneWidth = 180.0F;
-    constexpr float LaneScreenLeft = 394.0F;
-    constexpr float LaneScreenRightMargin = 40.0F;
+    constexpr float InGameAssetScale = 2.0F / 3.0F;
+    constexpr float GearMargin = 20.0F;
+    constexpr float GearPadding = 4.0F;
+    constexpr float GearRightMargin = 20.0F;
     constexpr float LaneCenterY = 360.0F;
-    constexpr float JudgementLocalY = 30.0F;
+    constexpr float JudgementLocalY = 32.0F;
     constexpr float TravelDistance = 920.0F;
-    // The legacy Taiko presentation uses 90/144 logical-pixel circles at
-    // 1280x720. With this approach time, 180 BPM sixteenth notes are 85 px
-    // apart, leaving only their white outlines slightly overlapped.
-    constexpr float CircleDiameter = 90.0F;
-    constexpr float LargeCircleDiameter = 144.0F;
-    constexpr float TickDiameter = CircleDiameter * 3.0F / 7.0F;
     constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{900'000};
 
-    [[nodiscard]] float LaneLengthForWidth(const float logicalWidth) noexcept
+    [[nodiscard]] mrg::visual2d::Size ScaledImageSize(
+        const mrg::graphics::Visual2DRenderSystem& rendering,
+        const mrg::visual2d::ImageHandle image)
     {
-        return std::max(
-            logicalWidth - LaneScreenLeft - LaneScreenRightMargin,
-            1.0F);
-    }
-
-    [[nodiscard]] float ImageHeightRatio(
-        const mrg::visual2d::Size imageSize)
-    {
+        const mrg::visual2d::Size imageSize = rendering.GetImageSize(image);
         if (imageSize.width <= 0.0F || imageSize.height <= 0.0F)
         {
             throw std::logic_error(
-                "A long-note image must have a non-zero native size.");
+                "An in-game skin image must have a non-zero native size.");
         }
-        return imageSize.height / imageSize.width;
+        return {
+            imageSize.width * InGameAssetScale,
+            imageSize.height * InGameAssetScale};
     }
 
     template <typename ComponentType>
@@ -118,6 +110,12 @@ namespace
     {
         return mrg::platform::ResolveExecutableRelativePath(
             std::filesystem::path(L"assets\\skins\\test Skin") / file);
+    }
+
+    [[nodiscard]] std::filesystem::path InGameSkinAssetPath(
+        const std::filesystem::path& file)
+    {
+        return SkinAssetPath(std::filesystem::path(L"InGame") / file);
     }
 
     [[nodiscard]] std::filesystem::path SoundAssetPath(
@@ -307,9 +305,15 @@ void RhythmTestScene::Shutdown() noexcept
     scrollGearBorder_ = nullptr;
     scrollGearSurface_ = nullptr;
     inputPresentationRoot_ = nullptr;
+    inputPanel_ = nullptr;
     laneRoot_ = nullptr;
-    laneSurface_ = nullptr;
-    laneCenterGuide_ = nullptr;
+    laneTiles_.clear();
+    laneImage_ = {};
+    strongKeyLightImage_ = {};
+    weakKeyLightImage_ = {};
+    gameProgressBar_ = nullptr;
+    accuracyIndicator_ = nullptr;
+    judgementIndicator_ = nullptr;
     canvas_.reset();
     session_.reset();
     musicRegistered_ = false;
@@ -473,33 +477,77 @@ void RhythmTestScene::CreatePresentation(
         "Background");
     SetColor(*background_, {0.941F, 0.973F, 1.0F, 1.0F});
 
+    const auto progressImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"GameProgressBar.png"));
+    const auto progressSize = ScaledImageSize(
+        services.visual2DRendering, progressImage);
+    gameProgressBar_ = &mrg::visual2d::CreateSprite(
+        root,
+        {GearMargin, 16.0F, progressSize.width, progressSize.height},
+        progressImage,
+        "Hud.GameProgress");
+    gameProgressBar_->SetZIndex(5);
+
+    const auto accuracyImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"AccuracyIndicator.png"));
+    const auto accuracySize = ScaledImageSize(
+        services.visual2DRendering, accuracyImage);
+    accuracyIndicator_ = &mrg::visual2d::CreateSprite(
+        root,
+        {CanvasReferenceWidth - GearMargin - accuracySize.width,
+         50.0F,
+         accuracySize.width,
+         accuracySize.height},
+        accuracyImage,
+        "Hud.Accuracy.Unavailable");
+    accuracyIndicator_->SetZIndex(5);
+
+    const auto judgementImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"JudgementIndicator.png"));
+    const auto judgementSize = ScaledImageSize(
+        services.visual2DRendering, judgementImage);
+    judgementIndicator_ = &mrg::visual2d::CreateSprite(
+        root,
+        {(CanvasReferenceWidth - judgementSize.width) * 0.5F,
+         CanvasReferenceHeight - judgementSize.height - 18.0F,
+         judgementSize.width,
+         judgementSize.height},
+        judgementImage,
+        "Hud.JudgementGuide");
+    judgementIndicator_->SetZIndex(5);
+
     scrollGearBorder_ = &mrg::visual2d::CreatePanel(
         root,
-        {40.0F, 230.0F, 1200.0F, 260.0F},
+        {GearMargin - GearPadding,
+         LaneCenterY - laneWidth_ * 0.5F - GearPadding,
+         CanvasReferenceWidth - GearMargin - GearRightMargin +
+             GearPadding * 2.0F,
+         laneWidth_ + GearPadding * 2.0F},
         "ScrollGear.Border");
-    SetColor(*scrollGearBorder_, {0.49F, 0.66F, 1.0F, 1.0F});
+    SetColor(*scrollGearBorder_, {0.16F, 0.31F, 0.58F, 1.0F});
     scrollGearSurface_ = &mrg::visual2d::CreatePanel(
         root,
-        {46.0F, 236.0F, 1188.0F, 248.0F},
+        {GearMargin,
+         LaneCenterY - laneWidth_ * 0.5F,
+         CanvasReferenceWidth - GearMargin - GearRightMargin,
+         laneWidth_},
         "ScrollGear.Surface");
-    SetColor(*scrollGearSurface_, {0.66F, 0.78F, 1.0F, 1.0F});
+    SetColor(*scrollGearSurface_, {0.73F, 0.82F, 0.93F, 1.0F});
 
     CreateLaneVisuals(services, root);
     inputPresentationRoot_ = &root.CreateChild("InputPresentation");
     inputPresentationRoot_->SetZIndex(2);
-    auto& inputFrame = mrg::visual2d::CreatePanel(
+    const auto inputPanelImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"InputPanel.png"));
+    inputPanelSize_ = ScaledImageSize(
+        services.visual2DRendering, inputPanelImage);
+    inputPanel_ = &mrg::visual2d::CreateSprite(
         *inputPresentationRoot_,
-        {62.0F, 246.0F, 332.0F, 220.0F},
-        "Input.Layout.Frame");
-    SetColor(inputFrame, {0.01F, 0.02F, 0.04F, 1.0F});
-    inputFrame.SetZIndex(0);
-    auto& inputSurface = mrg::visual2d::CreatePanel(
-        *inputPresentationRoot_,
-        {66.0F, 250.0F, 324.0F, 212.0F},
-        "Input.Layout.Surface");
-    SetColor(inputSurface, {0.985F, 0.99F, 1.0F, 1.0F});
-    inputSurface.SetZIndex(1);
-    CreateKeyIndicators(*inputPresentationRoot_);
+        {0.0F, 0.0F, inputPanelSize_.width, inputPanelSize_.height},
+        inputPanelImage,
+        "Input.Panel");
+    inputPanel_->SetZIndex(0);
+    CreateKeyIndicators(services, *inputPanel_);
 
     UpdatePresentationLayout();
 }
@@ -510,12 +558,15 @@ void RhythmTestScene::CreateLaneVisuals(
 {
     // Author the lane in its reusable default orientation: local +Y is the
     // future-note direction and every lane-owned visual is a descendant.
-    const float laneLength = LaneLengthForWidth(canvas_->LogicalSize().width);
+    const float laneScreenLeft = GearMargin + inputPanelSize_.width;
+    const float laneLength = std::max(
+        canvas_->LogicalSize().width - laneScreenLeft - GearRightMargin,
+        1.0F);
     laneRoot_ = &sceneRoot.CreateChild("ScrollGear.Lane");
     laneRoot_->SetPivot({0.5F, 0.5F});
-    laneRoot_->SetSize({LaneWidth, laneLength});
+    laneRoot_->SetSize({laneWidth_, laneLength});
     laneRoot_->SetPosition({
-        LaneScreenLeft + laneLength * 0.5F,
+        laneScreenLeft + laneLength * 0.5F,
         LaneCenterY});
     laneRoot_->SetZIndex(1);
 
@@ -530,56 +581,87 @@ void RhythmTestScene::CreateLaneVisuals(
     CreateLaneSurface(services);
     CreateMeasureLineVisuals(services);
 
+    const auto judgementImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"JudgementCircle.png"));
+    const auto judgementSize = ScaledImageSize(
+        services.visual2DRendering, judgementImage);
     auto& judgementLine = mrg::visual2d::CreateSprite(
         *laneRoot_,
-        {(LaneWidth - LargeCircleDiameter) * 0.5F,
-         JudgementLocalY - LargeCircleDiameter * 0.5F,
-         LargeCircleDiameter,
-         LargeCircleDiameter},
-        services.visual2DRendering.LoadImage(SkinAssetPath(L"JudgeLine.png")),
-        "Lane.JudgementLine");
+        {(laneWidth_ - judgementSize.width) * 0.5F,
+         JudgementLocalY - judgementSize.height * 0.5F,
+         judgementSize.width,
+         judgementSize.height},
+        judgementImage,
+        "Lane.JudgementCircle");
     judgementLine.SetZIndex(4);
 }
 
 void RhythmTestScene::CreateLaneSurface(
-    const mrg::EngineServices&)
+    const mrg::EngineServices& services)
 {
     if (laneRoot_ == nullptr)
     {
         throw std::logic_error("Lane background requires a Lane root.");
     }
 
-    const float laneLength = LaneLengthForWidth(canvas_->LogicalSize().width);
-    laneSurface_ = &mrg::visual2d::CreatePanel(
-        *laneRoot_,
-        {0.0F, 0.0F, LaneWidth, laneLength},
-        "Lane.DarkSurface");
-    SetColor(*laneSurface_, {0.067F, 0.098F, 0.298F, 1.0F});
-    laneSurface_->SetZIndex(0);
+    laneImage_ = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"Lane.png"));
+    const auto tileSize = ScaledImageSize(
+        services.visual2DRendering, laneImage_);
+    laneWidth_ = tileSize.width;
+    laneTileLength_ = tileSize.height;
+    const float laneScreenLeft = GearMargin + inputPanelSize_.width;
+    UpdateLaneSurfaceLayout(std::max(
+        canvas_->LogicalSize().width - laneScreenLeft - GearRightMargin,
+        1.0F));
+}
 
-    laneCenterGuide_ = &mrg::visual2d::CreatePanel(
-        *laneRoot_,
-        {LaneWidth * 0.5F - 1.0F, 0.0F, 2.0F, laneLength},
-        "Lane.CenterGuide");
-    SetColor(*laneCenterGuide_, {0.78F, 0.84F, 1.0F, 0.16F});
-    laneCenterGuide_->SetZIndex(1);
+void RhythmTestScene::UpdateLaneSurfaceLayout(const float laneLength)
+{
+    if (laneRoot_ == nullptr || !laneImage_ || laneTileLength_ <= 0.0F)
+    {
+        return;
+    }
+
+    const std::size_t requiredTiles = static_cast<std::size_t>(
+        std::ceil(laneLength / laneTileLength_));
+    while (laneTiles_.size() < requiredTiles)
+    {
+        auto& tile = mrg::visual2d::CreateSprite(
+            *laneRoot_, {}, laneImage_, "Lane.SurfaceTile");
+        tile.SetZIndex(0);
+        laneTiles_.push_back(&tile);
+    }
+    for (std::size_t index = 0; index < laneTiles_.size(); ++index)
+    {
+        mrg::visual2d::Visual2DNode& tile = *laneTiles_[index];
+        const float start = static_cast<float>(index) * laneTileLength_;
+        const float visibleLength = std::clamp(
+            laneLength - start, 0.0F, laneTileLength_);
+        tile.SetVisible(visibleLength > 0.0F);
+        if (visibleLength <= 0.0F)
+        {
+            continue;
+        }
+        tile.SetBounds({0.0F, start, laneWidth_, visibleLength});
+        RequireComponent<mrg::visual2d::SpriteVisualComponent>(tile).
+            SetUvTransform(
+                {1.0F, visibleLength / laneTileLength_},
+                {0.0F, 0.0F});
+    }
 }
 
 void RhythmTestScene::CreateMeasureLineVisuals(
-    const mrg::EngineServices& services)
+    const mrg::EngineServices&)
 {
-    const auto image = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"MeasureLine.png"));
     for (const finger_drum::rhythm::RhythmTime timing :
         session_->MeasureLines())
     {
-        auto& line = mrg::visual2d::CreateSprite(
+        auto& line = mrg::visual2d::CreatePanel(
             *laneRoot_,
-            {0.0F, 0.0F, LaneWidth, 8.0F},
-            image,
+            {0.0F, 0.0F, laneWidth_, 4.0F},
             "Lane.MeasureLine");
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(line).
-            SetTint({0.78F, 0.85F, 0.90F, 0.72F});
+        SetColor(line, {0.78F, 0.85F, 0.90F, 0.72F});
         line.SetZIndex(1);
         line.SetVisible(false);
         measureLineVisuals_.push_back({timing, &line});
@@ -587,48 +669,63 @@ void RhythmTestScene::CreateMeasureLineVisuals(
 }
 
 void RhythmTestScene::CreateKeyIndicators(
-    mrg::visual2d::Visual2DNode& sceneRoot)
+    const mrg::EngineServices& services,
+    mrg::visual2d::Visual2DNode& inputPanel)
 {
     struct KeySpec
     {
         mrg::visual2d::Rect bounds;
         mrg::visual2d::Color baseColor;
+        std::wstring_view image;
     };
     constexpr std::array<KeySpec, 4> keys{{
-        {{90.0F, 278.0F, 56.0F, 96.0F}, InputKeyBaseColors[0]},
-        {{165.0F, 342.0F, 62.0F, 96.0F}, InputKeyBaseColors[1]},
-        {{241.0F, 342.0F, 62.0F, 96.0F}, InputKeyBaseColors[2]},
-        {{320.0F, 272.0F, 56.0F, 96.0F}, InputKeyBaseColors[3]},
+        {{32.0F, 64.0F, 39.0F, 70.0F},
+         InputKeyBaseColors[0], L"KeyButtonLeftKat.png"},
+        {{77.0F, 110.0F, 39.0F, 70.0F},
+         InputKeyBaseColors[1], L"KeyButtonLeftDon.png"},
+        {{112.0F, 110.0F, 39.0F, 70.0F},
+         InputKeyBaseColors[2], L"KeyButtonRightDon.png"},
+        {{157.0F, 64.0F, 39.0F, 70.0F},
+         InputKeyBaseColors[3], L"KeyButtonRightKat.png"},
     }};
+
+    strongKeyLightImage_ = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"KeyLightStrong.png"));
+    weakKeyLightImage_ = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"KeyLightWeak.png"));
+    const auto lightSize = ScaledImageSize(
+        services.visual2DRendering, strongKeyLightImage_);
     for (std::size_t index = 0; index < keys.size(); ++index)
     {
-        const mrg::visual2d::Rect& bounds = keys[index].bounds;
-        auto& glow = mrg::visual2d::CreatePanel(
-            sceneRoot,
-            {bounds.x - 9.0F,
-             bounds.y - 9.0F,
-             bounds.width + 18.0F,
-             bounds.height + 18.0F},
+        const mrg::visual2d::Rect bounds{
+            keys[index].bounds.x * InGameAssetScale,
+            keys[index].bounds.y * InGameAssetScale,
+            keys[index].bounds.width * InGameAssetScale,
+            keys[index].bounds.height * InGameAssetScale};
+        auto& glow = mrg::visual2d::CreateSprite(
+            inputPanel,
+            {bounds.x - (lightSize.width - bounds.width) * 0.5F,
+             bounds.y - (lightSize.height - bounds.height) * 0.5F,
+             lightSize.width,
+             lightSize.height},
+            strongKeyLightImage_,
             "Input.Key.Glow");
-        SetColor(glow, {keys[index].baseColor.red,
-                        keys[index].baseColor.green,
-                        keys[index].baseColor.blue,
-                        0.0F});
-        glow.SetZIndex(2);
+        RequireComponent<mrg::visual2d::SpriteVisualComponent>(glow).
+            SetTint(keys[index].baseColor);
+        glow.SetVisible(false);
+        glow.SetZIndex(1);
         keyGlows_[index] = &glow;
 
-        auto& frame = mrg::visual2d::CreatePanel(
-            sceneRoot,
+        const auto keyImage = services.visual2DRendering.LoadImage(
+            InGameSkinAssetPath(keys[index].image));
+        auto& face = mrg::visual2d::CreateSprite(
+            inputPanel,
             bounds,
-            "Input.Key.Frame");
-        SetColor(frame, {0.015F, 0.026F, 0.045F, 1.0F});
-        frame.SetZIndex(3);
-
-        auto& face = mrg::visual2d::CreatePanel(
-            frame,
-            {4.0F, 4.0F, bounds.width - 8.0F, bounds.height - 8.0F},
+            keyImage,
             "Input.Key.Face");
-        SetColor(face, keys[index].baseColor);
+        RequireComponent<mrg::visual2d::SpriteVisualComponent>(face).
+            SetTint(keys[index].baseColor);
+        face.SetZIndex(2);
         keyIndicators_[index] = &face;
     }
 }
@@ -637,25 +734,62 @@ void RhythmTestScene::CreateNoteVisuals(
     const mrg::EngineServices& services)
 {
     const auto noteImage = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"note.png"));
+        InGameSkinAssetPath(L"note.png"));
     const auto noteOverlay = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"noteoverlay.png"));
+        InGameSkinAssetPath(L"noteoverlay.png"));
     const auto bigNoteImage = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"bignote.png"));
+        InGameSkinAssetPath(L"bignote.png"));
     const auto bigOverlay = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"bigcircleoverlay.png"));
+        InGameSkinAssetPath(L"bigcircleoverlay.png"));
     const auto bodyImage = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"LNBody.png"));
+        InGameSkinAssetPath(L"LNBody.png"));
+    const auto bodyOverlayImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"LNBodyOverlay.png"));
     const auto tailImage = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"LNTail.png"));
-    const float tailHeightRatio = ImageHeightRatio(
-        services.visual2DRendering.GetImageSize(tailImage));
+        InGameSkinAssetPath(L"LNTail.png"));
+    const auto tailOverlayImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"LNTailOverlay.png"));
+    const auto bigBodyImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"BigLNBody.png"));
+    const auto bigBodyOverlayImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"BigLNBodyOverlay.png"));
+    const auto bigTailImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"BigLNTail.png"));
+    const auto bigTailOverlayImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"BigLNTailOverlay.png"));
     const auto tickImage = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"TickMarker.png"));
+        InGameSkinAssetPath(L"TickMarker.png"));
+    const auto buzzTickImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"BuzzTickDiamond.png"));
     const auto balloonImage = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"Balloon.png"));
+        InGameSkinAssetPath(L"Balloon.png"));
     const auto dengDengImage = services.visual2DRendering.LoadImage(
-        SkinAssetPath(L"DengDeng.png"));
+        InGameSkinAssetPath(L"DengDeng.png"));
+    const auto counterImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"HitCounterCloud.png"));
+
+    const auto noteSize = ScaledImageSize(
+        services.visual2DRendering, noteImage);
+    const auto bigNoteSize = ScaledImageSize(
+        services.visual2DRendering, bigNoteImage);
+    const auto bodySize = ScaledImageSize(
+        services.visual2DRendering, bodyImage);
+    const auto tailSize = ScaledImageSize(
+        services.visual2DRendering, tailImage);
+    const auto bigBodySize = ScaledImageSize(
+        services.visual2DRendering, bigBodyImage);
+    const auto bigTailSize = ScaledImageSize(
+        services.visual2DRendering, bigTailImage);
+    const auto tickSize = ScaledImageSize(
+        services.visual2DRendering, tickImage);
+    const auto buzzTickSize = ScaledImageSize(
+        services.visual2DRendering, buzzTickImage);
+    const auto balloonSize = ScaledImageSize(
+        services.visual2DRendering, balloonImage);
+    const auto dengDengSize = ScaledImageSize(
+        services.visual2DRendering, dengDengImage);
+    const auto counterSize = ScaledImageSize(
+        services.visual2DRendering, counterImage);
 
     if (laneRoot_ == nullptr)
     {
@@ -678,7 +812,20 @@ void RhythmTestScene::CreateNoteVisuals(
             const bool balloon = visualId == "Taiko.Balloon";
             const bool dengDeng = visualId == "Taiko.DengDeng";
             const bool customHead = balloon || dengDeng;
-            const float diameter = big ? LargeCircleDiameter : CircleDiameter;
+            const bool bigLongParts = visualId == "Taiko.BigRoll";
+            const bool buzz = visualId == "Taiko.Buzz.Don" ||
+                visualId == "Taiko.Buzz.Kat";
+            const auto headImage = balloon
+                ? balloonImage
+                : (dengDeng
+                    ? dengDengImage
+                    : (big ? bigNoteImage : noteImage));
+            const auto headSize = balloon
+                ? balloonSize
+                : (dengDeng
+                    ? dengDengSize
+                    : (big ? bigNoteSize : noteSize));
+            const float diameter = headSize.width;
             const mrg::visual2d::Color ambientColor = AmbientColor(visualId);
 
             NoteVisualLayers layers;
@@ -686,7 +833,7 @@ void RhythmTestScene::CreateNoteVisuals(
                 std::format("Lane.Note.{}", note->Id()));
             layers.root->SetPivot({0.5F, 0.5F});
             layers.root->SetSize({diameter, diameter});
-            layers.root->SetPosition({LaneWidth * 0.5F, JudgementLocalY});
+            layers.root->SetPosition({laneWidth_ * 0.5F, JudgementLocalY});
             layers.root->SetZIndex(3);
             layers.root->SetVisible(false);
             layers.diameter = diameter;
@@ -695,29 +842,68 @@ void RhythmTestScene::CreateNoteVisuals(
             // head. The white head overlay is a separate untinted draw packet.
             if (longNote)
             {
-                layers.tailHeightRatio = tailHeightRatio;
+                const auto selectedBodyImage = bigLongParts
+                    ? bigBodyImage
+                    : bodyImage;
+                const auto selectedBodyOverlayImage = bigLongParts
+                    ? bigBodyOverlayImage
+                    : bodyOverlayImage;
+                const auto selectedTailImage = bigLongParts
+                    ? bigTailImage
+                    : tailImage;
+                const auto selectedTailOverlayImage = bigLongParts
+                    ? bigTailOverlayImage
+                    : tailOverlayImage;
+                const auto selectedBodySize = bigLongParts
+                    ? bigBodySize
+                    : bodySize;
+                const auto selectedTailSize = bigLongParts
+                    ? bigTailSize
+                    : tailSize;
+                layers.bodyWidth = selectedBodySize.width;
+                layers.tailWidth = selectedTailSize.width;
+                layers.tailHeight = selectedTailSize.height;
+                const float bodyX =
+                    (diameter - layers.bodyWidth) * 0.5F;
+                const float tailX =
+                    (diameter - layers.tailWidth) * 0.5F;
                 layers.body = &mrg::visual2d::CreateSprite(
                     *layers.root,
-                    {0.0F, diameter * 0.5F, diameter, 1.0F},
-                    bodyImage,
+                    {bodyX, diameter * 0.5F, layers.bodyWidth, 1.0F},
+                    selectedBodyImage,
                     "AmbientBody");
                 RequireComponent<mrg::visual2d::SpriteVisualComponent>(
                     *layers.body).SetTint(ambientColor);
                 layers.body->SetZIndex(0);
+                layers.bodyOverlay = &mrg::visual2d::CreateSprite(
+                    *layers.root,
+                    {bodyX, diameter * 0.5F, layers.bodyWidth, 1.0F},
+                    selectedBodyOverlayImage,
+                    "BodyOverlay");
+                layers.bodyOverlay->SetZIndex(1);
                 layers.tail = &mrg::visual2d::CreateSprite(
                     *layers.root,
-                    {0.0F,
-                     0.0F,
-                     diameter,
-                     diameter * layers.tailHeightRatio},
-                    tailImage,
+                    {tailX, 0.0F, layers.tailWidth, layers.tailHeight},
+                    selectedTailImage,
                     "AmbientTail");
                 RequireComponent<mrg::visual2d::SpriteVisualComponent>(
                     *layers.tail).SetTint(ambientColor);
-                layers.tail->SetZIndex(1);
+                layers.tail->SetZIndex(2);
+                layers.tailOverlay = &mrg::visual2d::CreateSprite(
+                    *layers.root,
+                    {tailX, 0.0F, layers.tailWidth, layers.tailHeight},
+                    selectedTailOverlayImage,
+                    "TailOverlay");
+                layers.tailOverlay->SetZIndex(3);
 
                 if (presentation != nullptr)
                 {
+                    const auto selectedTickImage = buzz
+                        ? buzzTickImage
+                        : tickImage;
+                    const auto selectedTickSize = buzz
+                        ? buzzTickSize
+                        : tickSize;
                     for (const auto tickTime : presentation->tickTimes)
                     {
                         if (tickTime <= note->Timing())
@@ -730,26 +916,22 @@ void RhythmTestScene::CreateNoteVisuals(
                             TravelDistance;
                         auto& tick = mrg::visual2d::CreateSprite(
                             *layers.root,
-                            {(diameter - TickDiameter) * 0.5F,
-                             diameter * 0.5F + offset - TickDiameter * 0.5F,
-                             TickDiameter,
-                             TickDiameter},
-                            tickImage,
+                            {(diameter - selectedTickSize.width) * 0.5F,
+                             diameter * 0.5F + offset -
+                                 selectedTickSize.height * 0.5F,
+                             selectedTickSize.width,
+                             selectedTickSize.height},
+                            selectedTickImage,
                             "LongNote.Tick");
-                        tick.SetZIndex(2);
+                        tick.SetZIndex(4);
                         layers.ticks.push_back({tickTime, &tick});
                     }
                 }
             }
 
-            const auto headImage = balloon
-                ? balloonImage
-                : (dengDeng
-                    ? dengDengImage
-                    : (big ? bigNoteImage : noteImage));
             layers.ambient = &mrg::visual2d::CreateSprite(
                 *layers.root,
-                {0.0F, 0.0F, diameter, diameter},
+                {0.0F, 0.0F, headSize.width, headSize.height},
                 headImage,
                 "AmbientHead");
             RequireComponent<mrg::visual2d::SpriteVisualComponent>(
@@ -761,12 +943,36 @@ void RhythmTestScene::CreateNoteVisuals(
             {
                 layers.overlay = &mrg::visual2d::CreateSprite(
                     *layers.root,
-                    {0.0F, 0.0F, diameter, diameter},
+                    {0.0F, 0.0F, headSize.width, headSize.height},
                     big ? bigOverlay : noteOverlay,
                     "UntintedOverlay");
                 RequireComponent<mrg::visual2d::SpriteVisualComponent>(
                     *layers.overlay).SetTint({1.0F, 1.0F, 1.0F, 1.0F});
                 layers.overlay->SetZIndex(4);
+            }
+            if (customHead)
+            {
+                layers.counter = &mrg::visual2d::CreateSprite(
+                    canvas_->Root(),
+                    {0.0F, 0.0F, counterSize.width, counterSize.height},
+                    counterImage,
+                    std::format("Hud.NoteCounter.{}", note->Id()));
+                layers.counter->SetZIndex(6);
+                layers.counter->SetVisible(false);
+                layers.counterText = &mrg::visual2d::CreateLabel(
+                    *layers.counter,
+                    {0.0F,
+                     counterSize.height * 0.20F,
+                     counterSize.width,
+                     counterSize.height * 0.58F},
+                    L"",
+                    "RemainingHits");
+                auto& text = RequireComponent<
+                    mrg::visual2d::TextVisualComponent>(*layers.counterText);
+                text.SetFontSize(22.0F);
+                text.SetTextColor({1.0F, 1.0F, 1.0F, 1.0F});
+                text.SetHorizontalAlignment(
+                    mrg::visual2d::TextAlignment::Center);
             }
             noteVisuals_.emplace(note->Id(), layers);
         }
@@ -781,11 +987,11 @@ void RhythmTestScene::UpdatePresentationLayout()
     }
 
     const float logicalWidth = canvas_->LogicalSize().width;
-    const auto widthBetween =
-        [logicalWidth](const float horizontalMargin) noexcept
-        {
-            return std::max(logicalWidth - horizontalMargin * 2.0F, 1.0F);
-        };
+    const float laneScreenLeft = GearMargin + inputPanelSize_.width;
+    const float laneLength = std::max(
+        logicalWidth - laneScreenLeft - GearRightMargin,
+        1.0F);
+    const float gearHeight = std::max(laneWidth_, inputPanelSize_.height);
 
     if (background_ != nullptr)
     {
@@ -795,45 +1001,66 @@ void RhythmTestScene::UpdatePresentationLayout()
             logicalWidth,
             CanvasReferenceHeight});
     }
+    if (gameProgressBar_ != nullptr)
+    {
+        gameProgressBar_->SetBounds({
+            GearMargin,
+            16.0F,
+            std::max(logicalWidth - GearMargin * 2.0F, 1.0F),
+            gameProgressBar_->Bounds().height});
+    }
+    if (accuracyIndicator_ != nullptr)
+    {
+        const auto bounds = accuracyIndicator_->Bounds();
+        accuracyIndicator_->SetBounds({
+            logicalWidth - GearMargin - bounds.width,
+            bounds.y,
+            bounds.width,
+            bounds.height});
+    }
+    if (judgementIndicator_ != nullptr)
+    {
+        const auto bounds = judgementIndicator_->Bounds();
+        judgementIndicator_->SetBounds({
+            (logicalWidth - bounds.width) * 0.5F,
+            bounds.y,
+            bounds.width,
+            bounds.height});
+    }
     if (scrollGearBorder_ != nullptr)
     {
         scrollGearBorder_->SetBounds({
-            40.0F,
-            230.0F,
-            widthBetween(40.0F),
-            260.0F});
+            GearMargin - GearPadding,
+            LaneCenterY - gearHeight * 0.5F - GearPadding,
+            std::max(
+                logicalWidth - GearMargin - GearRightMargin +
+                    GearPadding * 2.0F,
+                1.0F),
+            gearHeight + GearPadding * 2.0F});
     }
     if (scrollGearSurface_ != nullptr)
     {
         scrollGearSurface_->SetBounds({
-            46.0F,
-            236.0F,
-            widthBetween(46.0F),
-            248.0F});
+            GearMargin,
+            LaneCenterY - gearHeight * 0.5F,
+            std::max(
+                logicalWidth - GearMargin - GearRightMargin,
+                1.0F),
+            gearHeight});
     }
     if (laneRoot_ != nullptr)
     {
-        const float laneLength = LaneLengthForWidth(logicalWidth);
-        laneRoot_->SetSize({LaneWidth, laneLength});
+        laneRoot_->SetSize({laneWidth_, laneLength});
         laneRoot_->SetPosition({
-            LaneScreenLeft + laneLength * 0.5F,
+            laneScreenLeft + laneLength * 0.5F,
             LaneCenterY});
-        if (laneSurface_ != nullptr)
-        {
-            laneSurface_->SetBounds({0.0F, 0.0F, LaneWidth, laneLength});
-        }
-        if (laneCenterGuide_ != nullptr)
-        {
-            laneCenterGuide_->SetBounds({
-                LaneWidth * 0.5F - 1.0F,
-                0.0F,
-                2.0F,
-                laneLength});
-        }
+        UpdateLaneSurfaceLayout(laneLength);
     }
     if (inputPresentationRoot_ != nullptr)
     {
-        inputPresentationRoot_->SetPosition({0.0F, 0.0F});
+        inputPresentationRoot_->SetPosition({
+            GearMargin,
+            LaneCenterY - inputPanelSize_.height * 0.5F});
     }
 }
 
@@ -1076,20 +1303,22 @@ void RhythmTestScene::UpdateInputPresentation(
             : (secondaryPressed
                 ? InputKeyWeakColors[index]
                 : InputKeyBaseColors[index]);
-        const float glowOpacity = primaryPressed
-            ? 0.82F
-            : (secondaryPressed ? 0.38F : 0.0F);
         if (keyIndicators_[index] != nullptr)
         {
-            SetColor(*keyIndicators_[index], faceColor);
+            RequireComponent<mrg::visual2d::SpriteVisualComponent>(
+                *keyIndicators_[index]).SetTint(faceColor);
         }
         if (keyGlows_[index] != nullptr)
         {
-            SetColor(*keyGlows_[index], {
-                faceColor.red,
-                faceColor.green,
-                faceColor.blue,
-                glowOpacity});
+            auto& glow = RequireComponent<
+                mrg::visual2d::SpriteVisualComponent>(*keyGlows_[index]);
+            glow.SetImage(primaryPressed
+                ? strongKeyLightImage_
+                : weakKeyLightImage_);
+            glow.SetTint({
+                faceColor.red, faceColor.green, faceColor.blue, 1.0F});
+            keyGlows_[index]->SetVisible(
+                primaryPressed || secondaryPressed);
         }
     }
 }
@@ -1140,6 +1369,10 @@ void RhythmTestScene::UpdatePresentation(
     {
         static_cast<void>(id);
         layers.root->SetVisible(false);
+        if (layers.counter != nullptr)
+        {
+            layers.counter->SetVisible(false);
+        }
     }
     for (TimedVisual& measureLine : measureLineVisuals_)
     {
@@ -1153,7 +1386,7 @@ void RhythmTestScene::UpdatePresentation(
                 static_cast<float>(delta.count()) /
                     static_cast<float>(ApproachDuration.count()) *
                     TravelDistance;
-            measureLine.node->SetBounds({0.0F, localY, LaneWidth, 8.0F});
+            measureLine.node->SetBounds({0.0F, localY, laneWidth_, 4.0F});
         }
     }
     for (const finger_drum::rhythm::ScrollNoteSnapshot& note : snapshot.notes)
@@ -1174,10 +1407,32 @@ void RhythmTestScene::UpdatePresentation(
             : std::clamp(note.normalizedTravel, -0.05F, 1.0F);
         const float localY = JudgementLocalY +
             normalizedTravel * TravelDistance;
-        layers.root->SetPosition({LaneWidth * 0.5F, localY});
-        layers.root->SetVisible(
-            note.state != NoteState::Completed &&
-            note.state != NoteState::Missed);
+        layers.root->SetPosition({laneWidth_ * 0.5F, localY});
+        const bool visible = note.state != NoteState::Completed &&
+            note.state != NoteState::Missed;
+        layers.root->SetVisible(visible);
+
+        if (visible && layers.counter != nullptr &&
+            layers.counterText != nullptr && note.progress.has_value() &&
+            time >= note.timing)
+        {
+            const auto counterBounds = layers.counter->Bounds();
+            const float laneScreenLeft = GearMargin + inputPanelSize_.width;
+            layers.counter->SetBounds({
+                laneScreenLeft + std::max(localY, JudgementLocalY) -
+                    counterBounds.width * 0.5F,
+                LaneCenterY - laneWidth_ * 0.5F -
+                    counterBounds.height - 8.0F,
+                counterBounds.width,
+                counterBounds.height});
+            layers.counter->SetVisible(true);
+            const std::size_t remaining =
+                note.progress->required > note.progress->accepted
+                ? note.progress->required - note.progress->accepted
+                : 0;
+            RequireComponent<mrg::visual2d::TextVisualComponent>(
+                *layers.counterText).SetText(std::to_wstring(remaining));
+        }
 
         if (presentation != nullptr && presentation->hasEndTime &&
             layers.body != nullptr && layers.tail != nullptr)
@@ -1191,16 +1446,36 @@ void RhythmTestScene::UpdatePresentation(
             const float tailLocalY =
                 JudgementLocalY + endTravel * TravelDistance;
             const float length = std::max(tailLocalY - localY, 1.0F);
+            const float bodyX =
+                (layers.diameter - layers.bodyWidth) * 0.5F;
             layers.body->SetBounds({
-                0.0F,
+                bodyX,
                 layers.diameter * 0.5F,
-                layers.diameter,
+                layers.bodyWidth,
                 length});
+            if (layers.bodyOverlay != nullptr)
+            {
+                layers.bodyOverlay->SetBounds({
+                    bodyX,
+                    layers.diameter * 0.5F,
+                    layers.bodyWidth,
+                    length});
+            }
+            const float tailX =
+                (layers.diameter - layers.tailWidth) * 0.5F;
             layers.tail->SetBounds({
-                0.0F,
+                tailX,
                 length,
-                layers.diameter,
-                layers.diameter * layers.tailHeightRatio});
+                layers.tailWidth,
+                layers.tailHeight});
+            if (layers.tailOverlay != nullptr)
+            {
+                layers.tailOverlay->SetBounds({
+                    tailX,
+                    length,
+                    layers.tailWidth,
+                    layers.tailHeight});
+            }
         }
     }
 }

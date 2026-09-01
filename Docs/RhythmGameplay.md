@@ -119,30 +119,35 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 Balloon/DengDeng 남은
 횟수 표시를 한 화면 계층으로 구성합니다.
 
-노트는 `Client/Assets/Skins/test Skin`의 두 레이어로 그립니다. `note.png`,
-`bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient 색상을
-곱하고 `noteoverlay.png`, `bigcircleoverlay.png`는 흰색 원본으로 위에 그립니다.
+노트와 플레이 HUD는 `Client/Assets/Skins/test Skin/InGame`의 PNG로 그립니다.
+`note.png`, `bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient
+색상을 곱하고 대응하는 `*Overlay.png`는 흰색 원본으로 위에 그립니다. 일반/큰
+롱노트는 서로 다른 body와 tail을 사용하고 Buzz tick은 마름모 자산을 사용합니다.
 기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`입니다.
 음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
 
 Lane 표시는 RPG `PlayScene`의 Transform 계층도 유지합니다. 기본 Lane은 로컬
-`+Y` 방향으로 내려오는 `180×1040` 세로 노드이며, Taiko 화면에서는 이 부모
+`+Y` 방향으로 내려오는 세로 노드이며, Taiko 화면에서는 이 부모
 노드 하나만 Z축 `-90°` 회전합니다. 어두운 단색 Lane, 마디선, key beam,
 `JudgeLine`, 노트 head/overlay와 롱노트 body/tail/tick은 모두 Lane의 자식이므로
 회전을 함께 상속합니다. 업데이트는 화면 X가 아니라 Lane 로컬 Y만 변경합니다.
 
-현재 플레이 화면은 1280×720 기준 일반 원 90px, 큰 원 144px을 사용합니다.
-기본 180 BPM에서 16분음표의 중심 간격은 약 85px이므로 일반 노트의 흰 테두리만
-살짝 겹칩니다. Canvas는 `FixedHeight`이므로 창 높이에 비례해 이미지와 글자도
+`InGame` PNG는 1920×1080 제작 크기이므로 1280×720 논리 Canvas에서는 2/3
+배율로 표시합니다. `Lane.png`는 원본 비율을 유지한 채 로컬 Y 방향으로 반복하고
+마지막 조각만 UV로 잘라 창 폭을 채웁니다. Canvas의 `FixedHeight` 규칙에 따라
+실제 1080p 출력에서는 PNG 원본 픽셀 크기로 표시됩니다.
+
+현재 플레이 화면의 노트와 롱노트 파츠 크기는 PNG 메타데이터에서 계산합니다.
+Canvas는 `FixedHeight`이므로 창 높이에 비례해 이미지와 글자도
 함께 확대·축소되고, 넓은 창에서는 배경과 ScrollGear가 늘어나며 헤더·시간 표시는
 각각 좌·우 기준으로 배치됩니다.
 
 현재 플레이 화면은 마디선, key beam, 노트 head,
 롱노트 body/tail/tick을 모두 회전된 Lane 부모 아래 둡니다. Balloon과 DengDeng은
-전용 PNG를 사용하고, 규칙이 노출하는 `accepted/required` 진행도는 별도의 숫자
-이미지 badge로 표시합니다. key beam은 RPG와 같은 MAX~Bad 색 보간을 사용하고
-초당 alpha 8로 사라지며, 현재 노트가 요구하는 Don/Kat과 다른 색을 누르면
-판정색보다 우선해 적색으로 표시합니다.
+전용 PNG를 사용하고, 규칙이 노출하는 `accepted/required` 진행도는 판정 구간에서
+`HitCounterCloud.png` 위에 남은 횟수로 표시합니다. 입력 패널은 각 키의 첫 번째
+할당 키에 `KeyLightStrong`, 나머지 할당 키에 `KeyLightWeak`를 표시합니다. 아직
+점수 집계가 없으므로 정확도 자산은 `--.--%`의 명시적인 미집계 상태를 유지합니다.
 
 - `D`, `K`: Kat
 - `F`, `J`: Don
