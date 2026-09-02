@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace finger_drum::rhythm
@@ -13,9 +14,11 @@ namespace finger_drum::rhythm
         NoteId noteId{};
         std::size_t laneIndex{};
         RhythmTime timing{};
+        RhythmTime expireTime{};
         RhythmDuration timeFromJudgement{};
         float normalizedTravel{};
         NoteState state{NoteState::Pending};
+        std::optional<NoteProgress> progress;
     };
 
     struct ScrollGearSnapshot

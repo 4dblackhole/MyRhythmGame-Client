@@ -203,8 +203,9 @@ namespace
             1,
             rhythm::RhythmTime::zero(),
             profile,
-            std::make_unique<rhythm::DrumRollInputRule>(
-                std::vector<rhythm::NoteAction>{1, 2},
+            std::make_unique<rhythm::TimedSequenceInputRule>(
+                std::vector<rhythm::NoteAction>{1},
+                3,
                 rhythm::RhythmTime{1'000'000})));
         gear.Finalize();
 
@@ -213,9 +214,26 @@ namespace
             rhythm::RhythmDuration{2'000'000},
             rhythm::RhythmDuration{220'000});
         Require(
-            active.notes.size() == 1,
+            active.notes.size() == 1 &&
+            active.notes.front().expireTime == rhythm::RhythmTime{1'000'000},
             "A long note head must remain visible after the ordinary past "
             "window until its tail expires.");
+
+        static_cast<void>(gear.Update(rhythm::RhythmTime{1'000'000}));
+        const rhythm::ScrollGearSnapshot missedTrail = gear.BuildSnapshot(
+            rhythm::RhythmTime{1'100'000},
+            rhythm::RhythmDuration{2'000'000},
+            rhythm::RhythmDuration{220'000});
+        const rhythm::ScrollGearSnapshot expiredTrail = gear.BuildSnapshot(
+            rhythm::RhythmTime{1'220'001},
+            rhythm::RhythmDuration{2'000'000},
+            rhythm::RhythmDuration{220'000});
+        Require(
+            missedTrail.notes.size() == 1 &&
+            missedTrail.notes.front().state == rhythm::NoteState::Missed &&
+            expiredTrail.notes.empty(),
+            "A missed timed note must remain in the snapshot for its explicit "
+            "post-expiry travel window only.");
     }
 
     [[nodiscard]] chart::PatternDocument MakeLongPattern(
@@ -330,6 +348,15 @@ Mode: Taiko
             balloon.session->Gear().Lanes().front()->Notes().front()->
                 Progress() == rhythm::NoteProgress{0, 3},
             "Balloon must accept a bare ExtraData hit count.");
+        const rhythm::ScrollGearSnapshot initialBalloonSnapshot =
+            balloon.session->Gear().BuildSnapshot(
+                rhythm::RhythmTime::zero(),
+                rhythm::RhythmDuration{2'000'000});
+        Require(
+            initialBalloonSnapshot.notes.size() == 1 &&
+            initialBalloonSnapshot.notes.front().progress ==
+                rhythm::NoteProgress{0, 3},
+            "The scroll snapshot must expose Balloon progress to presentation.");
         const rhythm::NoteProcessResult wrongBalloon =
             balloon.session->ProcessInput(
                 'D', rhythm::InputEdge::Pressed, rhythm::RhythmTime{10'000});
@@ -337,6 +364,15 @@ Mode: Taiko
             'F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{20'000}));
         static_cast<void>(balloon.session->ProcessInput(
             'J', rhythm::InputEdge::Pressed, rhythm::RhythmTime{30'000}));
+        const rhythm::ScrollGearSnapshot activeBalloonSnapshot =
+            balloon.session->Gear().BuildSnapshot(
+                rhythm::RhythmTime{30'000},
+                rhythm::RhythmDuration{2'000'000});
+        Require(
+            activeBalloonSnapshot.notes.size() == 1 &&
+            activeBalloonSnapshot.notes.front().progress ==
+                rhythm::NoteProgress{2, 3},
+            "The scroll snapshot must update Balloon progress after hits.");
         const rhythm::NoteProcessResult popped = balloon.session->ProcessInput(
             'F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{40'000});
         Require(

@@ -88,8 +88,9 @@ namespace finger_drum::rhythm
             for (const std::unique_ptr<INote>& note : lanes_[laneIndex]->Notes())
             {
                 const RhythmDuration delta = note->Timing() - time;
+                const RhythmTime expireTime = note->ExpireTime();
                 if (delta > approachDuration ||
-                    (delta < -pastDuration && time > note->ExpireTime()))
+                    time > expireTime + pastDuration)
                 {
                     continue;
                 }
@@ -97,13 +98,15 @@ namespace finger_drum::rhythm
                     note->Id(),
                     laneIndex,
                     note->Timing(),
+                    expireTime,
                     delta,
                     std::clamp(
                         static_cast<float>(delta.count()) /
-                            static_cast<float>(approachDuration.count()),
+                        static_cast<float>(approachDuration.count()),
                         -1.0F,
                         1.0F),
-                    note->State()});
+                    note->State(),
+                    note->Progress()});
             }
         }
         return snapshot;
