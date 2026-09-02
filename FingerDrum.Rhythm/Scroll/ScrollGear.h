@@ -14,6 +14,7 @@ namespace finger_drum::rhythm
         NoteId noteId{};
         std::size_t laneIndex{};
         RhythmTime timing{};
+        RhythmTime expireTime{};
         RhythmDuration timeFromJudgement{};
         float normalizedTravel{};
         NoteState state{NoteState::Pending};

@@ -32,6 +32,13 @@ public:
     void Shutdown() noexcept override;
 
 private:
+    enum class FocusNoteType : std::uint8_t
+    {
+        None,
+        Balloon,
+        DengDeng,
+    };
+
     struct TimedVisual
     {
         finger_drum::rhythm::RhythmTime timing{};
@@ -47,9 +54,14 @@ private:
         mrg::visual2d::Visual2DNode* bodyOverlay{};
         mrg::visual2d::Visual2DNode* tail{};
         mrg::visual2d::Visual2DNode* tailOverlay{};
+        mrg::visual2d::Visual2DNode* processing{};
+        mrg::visual2d::Visual2DNode* success{};
         mrg::visual2d::Visual2DNode* counter{};
         mrg::visual2d::Visual2DNode* counterText{};
         std::vector<TimedVisual> ticks;
+        FocusNoteType focusType{FocusNoteType::None};
+        mrg::visual2d::Size processingSize{};
+        mrg::visual2d::Size successSize{};
         float diameter{};
         float bodyWidth{};
         float tailWidth{};
@@ -96,6 +108,16 @@ private:
         finger_drum::rhythm::RhythmTime time);
     void ConsumeResult(finger_drum::rhythm::NoteProcessResult result);
     void UpdatePresentation(finger_drum::rhythm::RhythmTime time);
+    void HideTransientNoteVisuals();
+    void PresentFocusNoteProcessing(
+        NoteVisualLayers& layers,
+        const finger_drum::rhythm::NoteProgress& progress,
+        finger_drum::rhythm::RhythmTime time);
+    void PresentFocusCounter(
+        NoteVisualLayers& layers,
+        const finger_drum::rhythm::NoteProgress& progress,
+        float visualHeight);
+    void PresentCompletionEffect(finger_drum::rhythm::RhythmTime time);
     [[nodiscard]] bool IsPatternComplete() const noexcept;
     [[nodiscard]] bool ReturnToLobby(
         mrg::scene::SceneManager& scenes) const;
@@ -109,6 +131,8 @@ private:
     finger_drum::audio::GameplayAudioRouter audioRouter_;
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers>
         noteVisuals_;
+    std::unordered_map<finger_drum::rhythm::NoteId,
+        finger_drum::rhythm::RhythmTime> completionEffects_;
     std::vector<TimedVisual> measureLineVisuals_;
     std::array<mrg::visual2d::Visual2DNode*, 4> keyIndicators_{};
     std::array<mrg::visual2d::Visual2DNode*, 4> keyGlows_{};
@@ -127,6 +151,7 @@ private:
     mrg::visual2d::Visual2DNode* judgementIndicator_{};
     float laneWidth_{152.0F};
     float laneTileLength_{42.0F};
+    float judgementLocalY_{76.0F};
     mrg::visual2d::Size inputPanelSize_{152.0F, 152.0F};
     double completedElapsedSeconds_{};
     double debugSpeedMillisecondsPerSecond_{1000.0};

@@ -59,11 +59,15 @@ namespace
     constexpr float InGameAssetScale = 2.0F / 3.0F;
     constexpr float GearMargin = 20.0F;
     constexpr float GearPadding = 4.0F;
-    constexpr float GearRightMargin = 20.0F;
+    constexpr float GearRightMargin = 0.0F;
     constexpr float LaneCenterY = 360.0F;
-    constexpr float JudgementLocalY = 32.0F;
     constexpr float TravelDistance = 920.0F;
     constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{900'000};
+    constexpr finger_drum::rhythm::RhythmDuration MissedTravelDuration{
+        220'000};
+    constexpr finger_drum::rhythm::RhythmDuration FocusSuccessDuration{
+        200'000};
+    constexpr float TwoPi = 6.28318530717958647692F;
 
     [[nodiscard]] mrg::visual2d::Size ScaledImageSize(
         const mrg::graphics::Visual2DRenderSystem& rendering,
@@ -298,6 +302,7 @@ void RhythmTestScene::Shutdown() noexcept
     timer_.Stop();
     audioRouter_.Shutdown();
     noteVisuals_.clear();
+    completionEffects_.clear();
     measureLineVisuals_.clear();
     keyIndicators_.fill(nullptr);
     keyGlows_.fill(nullptr);
@@ -588,7 +593,7 @@ void RhythmTestScene::CreateLaneVisuals(
     auto& judgementLine = mrg::visual2d::CreateSprite(
         *laneRoot_,
         {(laneWidth_ - judgementSize.width) * 0.5F,
-         JudgementLocalY - judgementSize.height * 0.5F,
+         judgementLocalY_ - judgementSize.height * 0.5F,
          judgementSize.width,
          judgementSize.height},
         judgementImage,
@@ -610,6 +615,7 @@ void RhythmTestScene::CreateLaneSurface(
         services.visual2DRendering, laneImage_);
     laneWidth_ = tileSize.width;
     laneTileLength_ = tileSize.height;
+    judgementLocalY_ = laneWidth_ * 0.5F;
     const float laneScreenLeft = GearMargin + inputPanelSize_.width;
     UpdateLaneSurfaceLayout(std::max(
         canvas_->LogicalSize().width - laneScreenLeft - GearRightMargin,
@@ -679,13 +685,13 @@ void RhythmTestScene::CreateKeyIndicators(
         std::wstring_view image;
     };
     constexpr std::array<KeySpec, 4> keys{{
-        {{32.0F, 64.0F, 39.0F, 70.0F},
+        {{16.0F, 68.0F, 39.0F, 70.0F},
          InputKeyBaseColors[0], L"KeyButtonLeftKat.png"},
-        {{77.0F, 110.0F, 39.0F, 70.0F},
+        {{68.0F, 92.0F, 39.0F, 70.0F},
          InputKeyBaseColors[1], L"KeyButtonLeftDon.png"},
-        {{112.0F, 110.0F, 39.0F, 70.0F},
+        {{120.0F, 92.0F, 39.0F, 70.0F},
          InputKeyBaseColors[2], L"KeyButtonRightDon.png"},
-        {{157.0F, 64.0F, 39.0F, 70.0F},
+        {{172.0F, 68.0F, 39.0F, 70.0F},
          InputKeyBaseColors[3], L"KeyButtonRightKat.png"},
     }};
 
@@ -765,6 +771,12 @@ void RhythmTestScene::CreateNoteVisuals(
         InGameSkinAssetPath(L"Balloon.png"));
     const auto dengDengImage = services.visual2DRendering.LoadImage(
         InGameSkinAssetPath(L"DengDeng.png"));
+    const auto balloonProcessingImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"BalloonProcessing.png"));
+    const auto balloonBurstImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"BalloonBurst.png"));
+    const auto dengDengProcessingImage = services.visual2DRendering.LoadImage(
+        InGameSkinAssetPath(L"DengDengProcessing.png"));
     const auto counterImage = services.visual2DRendering.LoadImage(
         InGameSkinAssetPath(L"HitCounterCloud.png"));
 
@@ -788,6 +800,12 @@ void RhythmTestScene::CreateNoteVisuals(
         services.visual2DRendering, balloonImage);
     const auto dengDengSize = ScaledImageSize(
         services.visual2DRendering, dengDengImage);
+    const auto balloonProcessingSize = ScaledImageSize(
+        services.visual2DRendering, balloonProcessingImage);
+    const auto balloonBurstSize = ScaledImageSize(
+        services.visual2DRendering, balloonBurstImage);
+    const auto dengDengProcessingSize = ScaledImageSize(
+        services.visual2DRendering, dengDengProcessingImage);
     const auto counterSize = ScaledImageSize(
         services.visual2DRendering, counterImage);
 
@@ -807,11 +825,12 @@ void RhythmTestScene::CreateNoteVisuals(
                 ? std::string_view{"Taiko.Don"}
                 : std::string_view{presentation->visualId};
             const bool big = IsBigVisual(visualId);
-            const bool longNote = presentation != nullptr &&
-                presentation->hasEndTime && IsLongVisual(visualId);
             const bool balloon = visualId == "Taiko.Balloon";
             const bool dengDeng = visualId == "Taiko.DengDeng";
             const bool customHead = balloon || dengDeng;
+            const bool longNote = presentation != nullptr &&
+                presentation->hasEndTime && IsLongVisual(visualId) &&
+                !customHead;
             const bool bigLongParts = visualId == "Taiko.BigRoll";
             const bool buzz = visualId == "Taiko.Buzz.Don" ||
                 visualId == "Taiko.Buzz.Kat";
@@ -829,11 +848,16 @@ void RhythmTestScene::CreateNoteVisuals(
             const mrg::visual2d::Color ambientColor = AmbientColor(visualId);
 
             NoteVisualLayers layers;
+            layers.focusType = balloon
+                ? FocusNoteType::Balloon
+                : (dengDeng
+                    ? FocusNoteType::DengDeng
+                    : FocusNoteType::None);
             layers.root = &laneRoot_->CreateChild(
                 std::format("Lane.Note.{}", note->Id()));
             layers.root->SetPivot({0.5F, 0.5F});
             layers.root->SetSize({diameter, diameter});
-            layers.root->SetPosition({laneWidth_ * 0.5F, JudgementLocalY});
+            layers.root->SetPosition({laneWidth_ * 0.5F, judgementLocalY_});
             layers.root->SetZIndex(3);
             layers.root->SetVisible(false);
             layers.diameter = diameter;
@@ -889,12 +913,28 @@ void RhythmTestScene::CreateNoteVisuals(
                 RequireComponent<mrg::visual2d::SpriteVisualComponent>(
                     *layers.tail).SetTint(ambientColor);
                 layers.tail->SetZIndex(2);
+                layers.tail->SetPivot({0.5F, 0.5F});
+                layers.tail->SetPosition({
+                    tailX + layers.tailWidth * 0.5F,
+                    layers.tailHeight * 0.5F});
+                layers.tail->Transform().SetRotationRollPitchYaw(
+                    0.0F,
+                    0.0F,
+                    DirectX::XM_PI);
                 layers.tailOverlay = &mrg::visual2d::CreateSprite(
                     *layers.root,
                     {tailX, 0.0F, layers.tailWidth, layers.tailHeight},
                     selectedTailOverlayImage,
                     "TailOverlay");
                 layers.tailOverlay->SetZIndex(3);
+                layers.tailOverlay->SetPivot({0.5F, 0.5F});
+                layers.tailOverlay->SetPosition({
+                    tailX + layers.tailWidth * 0.5F,
+                    layers.tailHeight * 0.5F});
+                layers.tailOverlay->Transform().SetRotationRollPitchYaw(
+                    0.0F,
+                    0.0F,
+                    DirectX::XM_PI);
 
                 if (presentation != nullptr)
                 {
@@ -952,12 +992,44 @@ void RhythmTestScene::CreateNoteVisuals(
             }
             if (customHead)
             {
+                const auto processingImage = balloon
+                    ? balloonProcessingImage
+                    : dengDengProcessingImage;
+                layers.processingSize = balloon
+                    ? balloonProcessingSize
+                    : dengDengProcessingSize;
+                layers.processing = &mrg::visual2d::CreateSprite(
+                    canvas_->Root(),
+                    {0.0F,
+                     0.0F,
+                     layers.processingSize.width,
+                     layers.processingSize.height},
+                    processingImage,
+                    std::format("Hud.NoteProcessing.{}", note->Id()));
+                layers.processing->SetPivot({0.5F, 0.5F});
+                layers.processing->SetZIndex(7);
+                layers.processing->SetVisible(false);
+                if (balloon)
+                {
+                    layers.successSize = balloonBurstSize;
+                    layers.success = &mrg::visual2d::CreateSprite(
+                        canvas_->Root(),
+                        {0.0F,
+                         0.0F,
+                         balloonBurstSize.width,
+                         balloonBurstSize.height},
+                        balloonBurstImage,
+                        std::format("Hud.NoteSuccess.{}", note->Id()));
+                    layers.success->SetPivot({0.5F, 0.5F});
+                    layers.success->SetZIndex(9);
+                    layers.success->SetVisible(false);
+                }
                 layers.counter = &mrg::visual2d::CreateSprite(
                     canvas_->Root(),
                     {0.0F, 0.0F, counterSize.width, counterSize.height},
                     counterImage,
                     std::format("Hud.NoteCounter.{}", note->Id()));
-                layers.counter->SetZIndex(6);
+                layers.counter->SetZIndex(8);
                 layers.counter->SetVisible(false);
                 layers.counterText = &mrg::visual2d::CreateLabel(
                     *layers.counter,
@@ -1148,6 +1220,7 @@ void RhythmTestScene::ResetTimeline(
     const mrg::audio::AudioClockSnapshot& clock)
 {
     session_->Reset();
+    completionEffects_.clear();
     audioRouter_.StopAllVoices();
     completedElapsedSeconds_ = 0.0;
     StartTimeline(clock);
@@ -1248,6 +1321,7 @@ void RhythmTestScene::ProcessDebugTimeline(
     if (after < before)
     {
         session_->Reset();
+        completionEffects_.clear();
         audioRouter_.StopAllVoices();
     }
     timer_.Seek(after, clock.performanceCounterTicks);
@@ -1355,7 +1429,181 @@ void RhythmTestScene::UpdateSession(
 void RhythmTestScene::ConsumeResult(
     finger_drum::rhythm::NoteProcessResult result)
 {
+    for (const finger_drum::rhythm::NoteEvent& event : result.events)
+    {
+        if (event.type != finger_drum::rhythm::NoteEventType::Completed)
+        {
+            continue;
+        }
+        const auto visual = noteVisuals_.find(event.noteId);
+        if (visual != noteVisuals_.end() &&
+            visual->second.focusType != FocusNoteType::None)
+        {
+            completionEffects_[event.noteId] = event.eventTime;
+        }
+    }
     audioRouter_.Route(result.audioCues, timer_);
+}
+
+void RhythmTestScene::HideTransientNoteVisuals()
+{
+    for (auto& [id, layers] : noteVisuals_)
+    {
+        static_cast<void>(id);
+        layers.root->SetVisible(false);
+        if (layers.processing != nullptr)
+        {
+            layers.processing->SetVisible(false);
+        }
+        if (layers.success != nullptr)
+        {
+            layers.success->SetVisible(false);
+        }
+        if (layers.counter != nullptr)
+        {
+            layers.counter->SetVisible(false);
+        }
+    }
+}
+
+void RhythmTestScene::PresentFocusCounter(
+    NoteVisualLayers& layers,
+    const finger_drum::rhythm::NoteProgress& progress,
+    const float visualHeight)
+{
+    if (canvas_ == nullptr || layers.counter == nullptr ||
+        layers.counterText == nullptr)
+    {
+        return;
+    }
+
+    const auto bounds = layers.counter->Bounds();
+    const float centerX = canvas_->LogicalSize().width * 0.5F;
+    layers.counter->SetBounds({
+        centerX - bounds.width * 0.5F,
+        CanvasReferenceHeight * 0.5F - visualHeight * 0.5F -
+            bounds.height * 0.72F,
+        bounds.width,
+        bounds.height});
+    layers.counter->SetVisible(true);
+    const std::size_t remaining = progress.required > progress.accepted
+        ? progress.required - progress.accepted
+        : 0;
+    RequireComponent<mrg::visual2d::TextVisualComponent>(
+        *layers.counterText).SetText(std::to_wstring(remaining));
+}
+
+void RhythmTestScene::PresentFocusNoteProcessing(
+    NoteVisualLayers& layers,
+    const finger_drum::rhythm::NoteProgress& progress,
+    const finger_drum::rhythm::RhythmTime time)
+{
+    if (canvas_ == nullptr || layers.processing == nullptr ||
+        progress.required == 0)
+    {
+        return;
+    }
+
+    const float completion = std::clamp(
+        static_cast<float>(progress.accepted) /
+            static_cast<float>(progress.required),
+        0.0F,
+        1.0F);
+    const float scale = layers.focusType == FocusNoteType::Balloon
+        ? 0.72F + completion * 0.38F
+        : 1.0F;
+    const mrg::visual2d::Size size{
+        layers.processingSize.width * scale,
+        layers.processingSize.height * scale};
+    layers.processing->SetSize(size);
+    layers.processing->SetPosition({
+        canvas_->LogicalSize().width * 0.5F,
+        CanvasReferenceHeight * 0.5F});
+    if (layers.focusType == FocusNoteType::DengDeng)
+    {
+        const float turns = static_cast<float>(time.count()) / 600'000.0F;
+        layers.processing->Transform().SetRotationRollPitchYaw(
+            0.0F,
+            0.0F,
+            std::fmod(turns * TwoPi, TwoPi));
+    }
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(
+        *layers.processing).SetTint({1.0F, 1.0F, 1.0F, 1.0F});
+    layers.processing->SetVisible(true);
+    PresentFocusCounter(layers, progress, size.height);
+}
+
+void RhythmTestScene::PresentCompletionEffect(
+    const finger_drum::rhythm::RhythmTime time)
+{
+    auto selected = completionEffects_.end();
+    for (auto effect = completionEffects_.begin();
+         effect != completionEffects_.end();)
+    {
+        const auto elapsed = time - effect->second;
+        if (elapsed >= FocusSuccessDuration)
+        {
+            effect = completionEffects_.erase(effect);
+            continue;
+        }
+        if (elapsed >= finger_drum::rhythm::RhythmDuration::zero() &&
+            (selected == completionEffects_.end() ||
+             effect->second > selected->second))
+        {
+            selected = effect;
+        }
+        ++effect;
+    }
+    if (selected == completionEffects_.end() || canvas_ == nullptr)
+    {
+        return;
+    }
+
+    const auto visual = noteVisuals_.find(selected->first);
+    if (visual == noteVisuals_.end())
+    {
+        return;
+    }
+    NoteVisualLayers& layers = visual->second;
+    const float progress = std::clamp(
+        static_cast<float>((time - selected->second).count()) /
+            static_cast<float>(FocusSuccessDuration.count()),
+        0.0F,
+        1.0F);
+    mrg::visual2d::Visual2DNode* node = layers.processing;
+    mrg::visual2d::Size size = layers.processingSize;
+    if (layers.focusType == FocusNoteType::Balloon &&
+        layers.success != nullptr)
+    {
+        node = layers.success;
+        const float burstScale = 0.82F + progress * 0.28F;
+        size = {
+            layers.successSize.width * burstScale,
+            layers.successSize.height * burstScale};
+    }
+    if (node == nullptr)
+    {
+        return;
+    }
+
+    node->SetSize(size);
+    node->SetPosition({
+        canvas_->LogicalSize().width * 0.5F,
+        CanvasReferenceHeight * 0.5F});
+    if (layers.focusType == FocusNoteType::DengDeng)
+    {
+        const float turns = static_cast<float>(time.count()) / 600'000.0F;
+        node->Transform().SetRotationRollPitchYaw(
+            0.0F,
+            0.0F,
+            std::fmod(turns * TwoPi, TwoPi));
+    }
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*node).SetTint({
+        1.0F,
+        1.0F,
+        1.0F,
+        1.0F - progress});
+    node->SetVisible(true);
 }
 
 void RhythmTestScene::UpdatePresentation(
@@ -1364,31 +1612,24 @@ void RhythmTestScene::UpdatePresentation(
     const auto snapshot = session_->Gear().BuildSnapshot(
         time,
         ApproachDuration,
-        finger_drum::rhythm::RhythmDuration{220'000});
-    for (auto& [id, layers] : noteVisuals_)
-    {
-        static_cast<void>(id);
-        layers.root->SetVisible(false);
-        if (layers.counter != nullptr)
-        {
-            layers.counter->SetVisible(false);
-        }
-    }
+        MissedTravelDuration);
+    HideTransientNoteVisuals();
     for (TimedVisual& measureLine : measureLineVisuals_)
     {
         const auto delta = measureLine.timing - time;
         const bool visible = delta <= ApproachDuration &&
-            delta >= finger_drum::rhythm::RhythmDuration{-220'000};
+            delta >= -MissedTravelDuration;
         measureLine.node->SetVisible(visible);
         if (visible)
         {
-            const float localY = JudgementLocalY +
+            const float localY = judgementLocalY_ +
                 static_cast<float>(delta.count()) /
                     static_cast<float>(ApproachDuration.count()) *
                     TravelDistance;
             measureLine.node->SetBounds({0.0F, localY, laneWidth_, 4.0F});
         }
     }
+    bool focusClaimed{};
     for (const finger_drum::rhythm::ScrollNoteSnapshot& note : snapshot.notes)
     {
         const auto found = noteVisuals_.find(note.noteId);
@@ -1399,39 +1640,40 @@ void RhythmTestScene::UpdatePresentation(
         NoteVisualLayers& layers = found->second;
         const finger_drum::mode::NotePresentationInfo* presentation =
             session_->FindNotePresentation(note.noteId);
-        const bool longNote = presentation != nullptr &&
+        const bool focusNote = layers.focusType != FocusNoteType::None;
+        const bool longNote = !focusNote && presentation != nullptr &&
             presentation->hasEndTime;
-        const float normalizedTravel = longNote
+        float normalizedTravel = longNote
             ? static_cast<float>(note.timeFromJudgement.count()) /
                 static_cast<float>(ApproachDuration.count())
             : std::clamp(note.normalizedTravel, -0.05F, 1.0F);
-        const float localY = JudgementLocalY +
+        const bool missed = note.state == NoteState::Missed;
+        const bool completed = note.state == NoteState::Completed;
+        const bool processing = focusNote && !missed && !completed &&
+            time >= note.timing && note.progress.has_value() &&
+            note.progress->accepted > 0;
+        if (focusNote && time >= note.timing && !missed)
+        {
+            normalizedTravel = 0.0F;
+        }
+        else if (focusNote && missed)
+        {
+            normalizedTravel = static_cast<float>(
+                (note.expireTime - time).count()) /
+                static_cast<float>(ApproachDuration.count());
+        }
+        const float localY = judgementLocalY_ +
             normalizedTravel * TravelDistance;
         layers.root->SetPosition({laneWidth_ * 0.5F, localY});
-        const bool visible = note.state != NoteState::Completed &&
-            note.state != NoteState::Missed;
-        layers.root->SetVisible(visible);
+        const bool showLaneHead = focusNote
+            ? !completed && (!processing || missed)
+            : !completed && !missed;
+        layers.root->SetVisible(showLaneHead);
 
-        if (visible && layers.counter != nullptr &&
-            layers.counterText != nullptr && note.progress.has_value() &&
-            time >= note.timing)
+        if (processing && !focusClaimed)
         {
-            const auto counterBounds = layers.counter->Bounds();
-            const float laneScreenLeft = GearMargin + inputPanelSize_.width;
-            layers.counter->SetBounds({
-                laneScreenLeft + std::max(localY, JudgementLocalY) -
-                    counterBounds.width * 0.5F,
-                LaneCenterY - laneWidth_ * 0.5F -
-                    counterBounds.height - 8.0F,
-                counterBounds.width,
-                counterBounds.height});
-            layers.counter->SetVisible(true);
-            const std::size_t remaining =
-                note.progress->required > note.progress->accepted
-                ? note.progress->required - note.progress->accepted
-                : 0;
-            RequireComponent<mrg::visual2d::TextVisualComponent>(
-                *layers.counterText).SetText(std::to_wstring(remaining));
+            PresentFocusNoteProcessing(layers, *note.progress, time);
+            focusClaimed = true;
         }
 
         if (presentation != nullptr && presentation->hasEndTime &&
@@ -1444,7 +1686,7 @@ void RhythmTestScene::UpdatePresentation(
                 -0.05F,
                 1.65F);
             const float tailLocalY =
-                JudgementLocalY + endTravel * TravelDistance;
+                judgementLocalY_ + endTravel * TravelDistance;
             const float length = std::max(tailLocalY - localY, 1.0F);
             const float bodyX =
                 (layers.diameter - layers.bodyWidth) * 0.5F;
@@ -1463,21 +1705,22 @@ void RhythmTestScene::UpdatePresentation(
             }
             const float tailX =
                 (layers.diameter - layers.tailWidth) * 0.5F;
-            layers.tail->SetBounds({
-                tailX,
-                length,
-                layers.tailWidth,
-                layers.tailHeight});
+            layers.tail->SetSize({layers.tailWidth, layers.tailHeight});
+            layers.tail->SetPosition({
+                tailX + layers.tailWidth * 0.5F,
+                length + layers.tailHeight * 0.5F});
             if (layers.tailOverlay != nullptr)
             {
-                layers.tailOverlay->SetBounds({
-                    tailX,
-                    length,
+                layers.tailOverlay->SetSize({
                     layers.tailWidth,
                     layers.tailHeight});
+                layers.tailOverlay->SetPosition({
+                    tailX + layers.tailWidth * 0.5F,
+                    length + layers.tailHeight * 0.5F});
             }
         }
     }
+    PresentCompletionEffect(time);
 }
 
 bool RhythmTestScene::IsPatternComplete() const noexcept

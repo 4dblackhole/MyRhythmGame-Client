@@ -103,12 +103,24 @@ wWinMain
 - 플레이 화면은 `Assets/Skins/test Skin/InGame` 자산을 사용합니다. `Lane.png`는
   늘이지 않고 원본 비율로 반복 배치하며 노트와 롱노트 파츠는 PNG 메타데이터로
   표시 크기를 정합니다.
+- 입력 패널 키와 판정원 간격은 Penpot `Gameplay · Sky` 좌표를 사용하고 Lane은
+  오른쪽 화면 끝까지 이어집니다. 롱노트 tail/overlay는 로컬 진행 방향에 맞춰
+  180° 교정합니다.
+- Balloon/DengDeng은 body/tail을 그리지 않습니다. 판정원 정지 후 첫 입력부터
+  중앙 Focus UI로 전환하며 Balloon은 진행률에 따라 커진 뒤 200ms 파열 이미지를,
+  DengDeng은 회전한 뒤 200ms 페이드아웃을 표시합니다. 시간 초과 노트는 판정원을
+  지나가며, Scroll snapshot은 `expireTime`과 그 뒤의 짧은 표시 구간을 제공합니다.
 
 ## Penpot 디자인 상태
 
 - 파일 ID: `3be9e5e1-190f-8090-8008-7468d9cc1bc8`
 - 페이지 ID: `3be9e5e1-190f-8090-8008-7468d9cc1bc9`
 - 페이지: `Music Select · Sky`
+- 플레이 화면 페이지 ID: `618d0170-ff55-8025-8008-80646ceaa9d9`
+- 플레이 화면 페이지: `Gameplay · Sky`
+- `Special Note Focus · PNG Sources · Export Ready` 보드에는
+  `BalloonProcessing.png`, `BalloonBurst.png`, `DengDengProcessing.png`의
+  투명 PNG 원본과 200ms 상태 흐름이 정리되어 있습니다.
 - 기본 화면과 게임 모드/Modifier 팝업 상태의 배경은 동일한 실제 5곡 목록,
   `ALL`, `NO RECORDS`, 임시 프로필을 사용합니다.
 - 최근 저장 버전은 `Song list title and artist refresh`입니다.

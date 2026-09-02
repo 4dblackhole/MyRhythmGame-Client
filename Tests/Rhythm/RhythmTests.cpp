@@ -203,8 +203,9 @@ namespace
             1,
             rhythm::RhythmTime::zero(),
             profile,
-            std::make_unique<rhythm::DrumRollInputRule>(
-                std::vector<rhythm::NoteAction>{1, 2},
+            std::make_unique<rhythm::TimedSequenceInputRule>(
+                std::vector<rhythm::NoteAction>{1},
+                3,
                 rhythm::RhythmTime{1'000'000})));
         gear.Finalize();
 
@@ -213,9 +214,26 @@ namespace
             rhythm::RhythmDuration{2'000'000},
             rhythm::RhythmDuration{220'000});
         Require(
-            active.notes.size() == 1,
+            active.notes.size() == 1 &&
+            active.notes.front().expireTime == rhythm::RhythmTime{1'000'000},
             "A long note head must remain visible after the ordinary past "
             "window until its tail expires.");
+
+        static_cast<void>(gear.Update(rhythm::RhythmTime{1'000'000}));
+        const rhythm::ScrollGearSnapshot missedTrail = gear.BuildSnapshot(
+            rhythm::RhythmTime{1'100'000},
+            rhythm::RhythmDuration{2'000'000},
+            rhythm::RhythmDuration{220'000});
+        const rhythm::ScrollGearSnapshot expiredTrail = gear.BuildSnapshot(
+            rhythm::RhythmTime{1'220'001},
+            rhythm::RhythmDuration{2'000'000},
+            rhythm::RhythmDuration{220'000});
+        Require(
+            missedTrail.notes.size() == 1 &&
+            missedTrail.notes.front().state == rhythm::NoteState::Missed &&
+            expiredTrail.notes.empty(),
+            "A missed timed note must remain in the snapshot for its explicit "
+            "post-expiry travel window only.");
     }
 
     [[nodiscard]] chart::PatternDocument MakeLongPattern(

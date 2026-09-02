@@ -115,14 +115,21 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 
 플레이 화면의 기준 시안과 런타임 PNG 자산 원본은 Penpot의
 [Gameplay · Sky](https://design.penpot.app/#/workspace?team-id=3be9e5e1-190f-8090-8008-7464803e8b40&file-id=3be9e5e1-190f-8090-8008-7468d9cc1bc8&page-id=618d0170-ff55-8025-8008-80646ceaa9d9)에 있습니다.
-기존 곡 선택 화면의 Sky 색상과 타이포그래피를 유지하면서 짙은 회색 Lane,
+기존 곡 선택 화면의 Sky 색상과 타이포그래피를 유지하면서 짙은 밤하늘색 Lane,
 ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 Balloon/DengDeng 남은
 횟수 표시를 한 화면 계층으로 구성합니다.
+
+입력 패널의 네 키는 Penpot 원본 좌표를 2/3로 축소해 배치합니다. 판정원 중심은
+입력 패널 오른쪽에서 Lane 높이의 절반만큼 떨어져 있어, 중심에서 입력 패널과
+Lane 위·아래까지의 거리가 같습니다. Lane과 ScrollGear 표면은 오른쪽 논리 화면
+끝까지 이어지고 마지막 `Lane.png` 타일만 UV로 잘립니다.
 
 노트와 플레이 HUD는 `Client/Assets/Skins/test Skin/InGame`의 PNG로 그립니다.
 `note.png`, `bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient
 색상을 곱하고 대응하는 `*Overlay.png`는 흰색 원본으로 위에 그립니다. 일반/큰
 롱노트는 서로 다른 body와 tail을 사용하고 Buzz tick은 마름모 자산을 사용합니다.
+tail과 tail overlay는 기본 로컬 `+Y` 진행 방향에서 둥근 면이 끝을 향하도록
+180° 회전합니다.
 기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`입니다.
 음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
 
@@ -144,8 +151,13 @@ Canvas는 `FixedHeight`이므로 창 높이에 비례해 이미지와 글자도
 
 현재 플레이 화면은 마디선, key beam, 노트 head,
 롱노트 body/tail/tick을 모두 회전된 Lane 부모 아래 둡니다. Balloon과 DengDeng은
-전용 PNG를 사용하고, 규칙이 노출하는 `accepted/required` 진행도는 판정 구간에서
-`HitCounterCloud.png` 위에 남은 횟수로 표시합니다. 입력 패널은 각 키의 첫 번째
+일반 롱노트 body/tail 없이 전용 PNG만 사용합니다. 시작 시각부터 종료 시각까지
+입력이 없으면 판정원에 멈추고, 첫 유효 입력부터 Penpot의 중앙 Focus UI로
+전환합니다. Balloon은 `accepted/required` 진행률만큼 점차 커지고 완료하면
+`BalloonBurst.png`를 200ms 표시합니다. DengDeng은 중앙의 소고를 회전시키고
+완료하면 같은 처리 이미지를 200ms 동안 페이드아웃합니다. 제한 시간 안에
+완료하지 못한 노트는 종료 시각부터 원래 Lane 속도로 판정원을 지나갑니다.
+남은 횟수는 처리 중 `HitCounterCloud.png` 위에 표시합니다. 입력 패널은 각 키의 첫 번째
 할당 키에 `KeyLightStrong`, 나머지 할당 키에 `KeyLightWeak`를 표시합니다. 아직
 점수 집계가 없으므로 정확도 자산은 `--.--%`의 명시적인 미집계 상태를 유지합니다.
 
