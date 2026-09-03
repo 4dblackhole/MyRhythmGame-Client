@@ -917,10 +917,6 @@ void RhythmTestScene::CreateNoteVisuals(
                 layers.tail->SetPosition({
                     tailX + layers.tailWidth * 0.5F,
                     layers.tailHeight * 0.5F});
-                layers.tail->Transform().SetRotationRollPitchYaw(
-                    0.0F,
-                    0.0F,
-                    DirectX::XM_PI);
                 layers.tailOverlay = &mrg::visual2d::CreateSprite(
                     *layers.root,
                     {tailX, 0.0F, layers.tailWidth, layers.tailHeight},
@@ -931,10 +927,6 @@ void RhythmTestScene::CreateNoteVisuals(
                 layers.tailOverlay->SetPosition({
                     tailX + layers.tailWidth * 0.5F,
                     layers.tailHeight * 0.5F});
-                layers.tailOverlay->Transform().SetRotationRollPitchYaw(
-                    0.0F,
-                    0.0F,
-                    DirectX::XM_PI);
 
                 if (presentation != nullptr)
                 {

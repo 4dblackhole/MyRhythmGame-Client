@@ -128,8 +128,8 @@ Lane 위·아래까지의 거리가 같습니다. Lane과 ScrollGear 표면은 �
 `note.png`, `bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient
 색상을 곱하고 대응하는 `*Overlay.png`는 흰색 원본으로 위에 그립니다. 일반/큰
 롱노트는 서로 다른 body와 tail을 사용하고 Buzz tick은 마름모 자산을 사용합니다.
-tail과 tail overlay는 기본 로컬 `+Y` 진행 방향에서 둥근 면이 끝을 향하도록
-180° 회전합니다.
+tail과 tail overlay는 별도로 회전하지 않고, 둥근 면이 위를 향하는 원본 방향
+그대로 Lane 부모의 회전만 상속합니다.
 기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`입니다.
 음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
 
