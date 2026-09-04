@@ -152,14 +152,16 @@ namespace
         }
     }
 
-    [[nodiscard]] mrg::visual2d::Rect Scale(
-        const mrg::visual2d::Rect bounds) noexcept
+    [[nodiscard]] mrg::visual2d::Rect ScaleTopLeftBounds(
+        const mrg::visual2d::Rect bounds,
+        const float parentHeight) noexcept
     {
+        const float scaledHeight = bounds.height * DesignToCanvasScale;
         return {
             bounds.x * DesignToCanvasScale,
-            bounds.y * DesignToCanvasScale,
+            parentHeight - bounds.y * DesignToCanvasScale - scaledHeight,
             bounds.width * DesignToCanvasScale,
-            bounds.height * DesignToCanvasScale};
+            scaledHeight};
     }
 
     [[nodiscard]] std::filesystem::path RuntimeSongsPath()
@@ -411,7 +413,10 @@ void LobbyScene::CreateHeader(const mrg::EngineServices& services)
         HeaderWhite,
         "Header");
     auto& back = mrg::visual2d::CreateButton(
-        header, Scale(layout::BackButton), L"< BACK", "Back");
+        header,
+        ScaleTopLeftBounds(layout::BackButton, header.NodeSize().height),
+        L"< BACK",
+        "Back");
     backButtonId_ = back.Id();
     ApplySelectableStyle(back, false);
     RequireComponent<mrg::visual2d::TextVisualComponent>(back).
@@ -432,7 +437,7 @@ void LobbyScene::CreateHeader(const mrg::EngineServices& services)
         "TemporaryProfileFrame");
     auto& profile = mrg::visual2d::CreateSprite(
         frame,
-        Scale(layout::ProfileImage),
+        ScaleTopLeftBounds(layout::ProfileImage, frame.NodeSize().height),
         services.visual2DRendering.LoadImage(ProfileImagePath()),
         "TemporaryProfileImage");
     profile.SetZIndex(1);
@@ -525,7 +530,10 @@ void LobbyScene::CreatePatternPanel()
         layout::PatternPanel.width * DesignToCanvasScale,
         layout::PatternPanel.height * DesignToCanvasScale});
     auto& play = mrg::visual2d::CreateButton(
-        panel, Scale(layout::PlayButton), L"PLAY", "Play");
+        panel,
+        ScaleTopLeftBounds(layout::PlayButton, panel.NodeSize().height),
+        L"PLAY",
+        "Play");
     playButtonId_ = play.Id();
     ApplySelectableStyle(play, true);
     RequireComponent<mrg::visual2d::TextVisualComponent>(play).
@@ -567,7 +575,8 @@ void LobbyScene::CreateSongListRow(
     // hard-coded multiline button label and makes each text style independent.
     auto& button = mrg::visual2d::CreateButton(
         parent,
-        Scale(layout::SongRow(index)),
+        ScaleTopLeftBounds(
+            layout::SongRow(index), parent.NodeSize().height),
         L"",
         std::format("Song.{}", index));
     const std::wstring titleText = SongTitle(song);
@@ -645,7 +654,8 @@ void LobbyScene::RebuildPatternButtons()
             : DecodeDisplayText(patterns[index].pattern.name);
         auto& button = mrg::visual2d::CreateButton(
             *patternList_,
-            Scale(layout::PatternRow(index)),
+            ScaleTopLeftBounds(
+                layout::PatternRow(index), patternList_->NodeSize().height),
             name,
             std::format("Pattern.{}", index));
         RequireComponent<mrg::visual2d::TextVisualComponent>(button).
@@ -876,7 +886,7 @@ mrg::visual2d::Visual2DNode& LobbyScene::AddPanel(
 {
     auto& panel = mrg::visual2d::CreatePanel(
         parent,
-        Scale(penpotBounds),
+        ScaleTopLeftBounds(penpotBounds, parent.NodeSize().height),
         std::move(name));
     ApplyFlatStyle(panel, color);
     return panel;
@@ -893,7 +903,7 @@ mrg::visual2d::Visual2DNode& LobbyScene::AddLabel(
 {
     auto& label = mrg::visual2d::CreateLabel(
         parent,
-        Scale(penpotBounds),
+        ScaleTopLeftBounds(penpotBounds, parent.NodeSize().height),
         std::move(text),
         std::move(name));
     auto& textComponent =

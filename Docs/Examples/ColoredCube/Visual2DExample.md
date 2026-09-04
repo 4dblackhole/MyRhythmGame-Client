@@ -25,12 +25,14 @@
 월드 입력은 카메라 view-projection으로 pointer ray를 만든 뒤
 `MeshUvVisual2DSurface`와 충돌시킨다. 반환된 UV가 Canvas 좌표가 되므로 mesh
 곡률과 Y축 회전이 표시뿐 아니라 클릭에도 반영된다.
+화면·평면·곡면 Canvas는 모두 정중앙 원점과 Y-up 논리 좌표를 사용한다.
 
 ## 오디오 Canvas
 
 오디오 Canvas는 패널에 필요한 `480x340` 영역만 차지하는 `Fixed` Canvas다.
-내부 패널은 항상 Canvas의 `(0,0)`에 두고, 화면 왼쪽 중앙에서 계산한 Canvas 원점의
-X 좌표를 `deltaSeconds`로 보간한다. 렌더링과 입력 매핑에 같은 원점을 전달하므로
+내부 패널은 `TopLeft` 앵커의 `(0,0)` offset으로 Canvas 전체를 채우고, 화면 왼쪽
+중앙에서 계산한 패널 좌상단 픽셀의 X 좌표를 `deltaSeconds`로 보간한다.
+렌더링과 입력 매핑에 같은 화면 원점을 전달하므로
 화면비가 바뀌어도 표시·히트박스·슬라이드 위치가 일치한다.
 
 각 컨트롤은 파생 위젯 클래스가 아니라 다음 컴포넌트 조합이다.

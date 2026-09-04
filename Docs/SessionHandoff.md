@@ -39,6 +39,8 @@
   behavior를 component로 조합합니다.
 - 엔진이 D3D12 Visual2D renderer 하나를 소유합니다. Canvas는 필요한 영역만
   가질 수 있고 Canvas Z-order 후 내부 트리 Z-order를 비교합니다.
+- Visual2D Canvas 논리 원점은 정중앙이고 `+Y`는 위쪽입니다. Win32 화면 픽셀과
+  `SubmitScreen`의 패널 원점만 좌상단 기준이며 엔진 경계에서 변환합니다.
 - 평면·곡면 UI는 surface mapping으로 Canvas 좌표를 얻습니다. 곡면 pointer
   질의는 mesh UV와 가속 구조를 사용합니다.
 - 엔진을 수정할 때 Client의 서브모듈 checkout에서 임의 커밋하지 말고 엔진

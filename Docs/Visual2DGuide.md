@@ -11,6 +11,11 @@
 화면의 논리 크기는 `1280x720`, 배율은 2이고, 2560x1080 화면의 논리 크기는
 약 `1706.67x720`, 배율은 1.5다.
 
+Canvas 논리 원점은 화면 정중앙이며 `+X`는 오른쪽, `+Y`는 위쪽이다. 따라서
+1280×720 Canvas의 범위는 X `[-640,640]`, Y `[-360,360]`이다. Win32 마우스와
+`SubmitScreen`의 `screenOrigin`만 좌상단 원점 픽셀을 사용하고 엔진 경계에서
+Canvas 좌표로 변환한다.
+
 ```cpp
 canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
 canvas_->SetViewportSize({
@@ -34,7 +39,7 @@ BottomLeft    BottomCenter    BottomRight
 auto& badge = canvas_->CreateNode(
     mrg::visual2d::Anchor::TopRight,
     "Badge");
-badge.SetBounds({-20.0F, 20.0F, 100.0F, 50.0F});
+badge.SetBounds({-20.0F, -20.0F, 100.0F, 50.0F});
 badge.AddComponent<mrg::visual2d::SpriteVisualComponent>();
 ```
 
@@ -65,7 +70,7 @@ const auto localPointer = mrg::visual2d::MapScreenPointer(
 ```cpp
 auto& sprite = mrg::visual2d::CreateSprite(
     canvas_->AnchorNode(mrg::visual2d::Anchor::Center),
-    {0.0F, 0.0F, 180.0F, 180.0F},
+    {-90.0F, -90.0F, 180.0F, 180.0F},
     imageHandle,
     "Character");
 
@@ -116,17 +121,17 @@ Button이나 ComboBox도 별도 Node 파생형이 아니다. 팩토리는 자주
 ```cpp
 auto& panel = mrg::visual2d::CreatePanel(
     canvas_->AnchorNode(mrg::visual2d::Anchor::MiddleLeft),
-    {0.0F, 0.0F, 480.0F, 340.0F});
+    {0.0F, -170.0F, 480.0F, 340.0F});
 
 auto& apply = mrg::visual2d::CreateButton(
     panel,
-    {16.0F, 64.0F, 200.0F, 40.0F},
+    {16.0F, 236.0F, 200.0F, 40.0F},
     L"APPLY");
 const mrg::visual2d::NodeId applyId = apply.Id();
 
 auto& device = mrg::visual2d::CreateComboBox(
     panel,
-    {16.0F, 132.0F, 448.0F, 38.0F},
+    {16.0F, 170.0F, 448.0F, 38.0F},
     {L"Driver 0", L"Driver 1"});
 auto* combo = device.GetComponent<
     mrg::visual2d::ComboBoxBehaviorComponent>();
@@ -140,7 +145,8 @@ combo->SetMaxVisibleItems(4);
 
 ## 화면 입력과 히트박스
 
-화면 픽셀 좌표를 Canvas 논리 좌표로 바꾼 후 입력 라우터에 전달한다.
+좌상단 원점 화면 픽셀을 중앙 원점 Y-up Canvas 논리 좌표로 바꾼 후 입력
+라우터에 전달한다.
 
 ```cpp
 const auto point = mrg::visual2d::MapScreenPointer(

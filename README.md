@@ -37,6 +37,7 @@ cd MyRhythmGame-Client
 
 재사용 엔진 기능은 `Client/Examples/ColoredCube`의 `ColoredCubeGame` route로
 검증한다. `--example=mesh`, `--example=collision`, `--example=widgets`를 지원한다.
+Visual2D Canvas 논리 좌표는 화면 정중앙이 원점이고 `+Y`가 위쪽이다.
 
 Visual Studio 2022, MSVC v143, Windows SDK와 FMOD Studio API for Windows가
 필요합니다. FMOD SDK와 DLL은 저장소에 커밋하지 않습니다.

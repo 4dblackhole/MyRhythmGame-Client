@@ -60,7 +60,7 @@ namespace
     constexpr float GearMargin = 20.0F;
     constexpr float GearPadding = 4.0F;
     constexpr float GearRightMargin = 0.0F;
-    constexpr float LaneCenterY = 360.0F;
+    constexpr float LaneCenterY = 0.0F;
     constexpr float TravelDistance = 920.0F;
     constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{900'000};
     constexpr finger_drum::rhythm::RhythmDuration MissedTravelDuration{
@@ -478,7 +478,10 @@ void RhythmTestScene::CreatePresentation(
 
     background_ = &mrg::visual2d::CreatePanel(
         root,
-        {0.0F, 0.0F, CanvasReferenceWidth, CanvasReferenceHeight},
+        {-CanvasReferenceWidth * 0.5F,
+         -CanvasReferenceHeight * 0.5F,
+         CanvasReferenceWidth,
+         CanvasReferenceHeight},
         "Background");
     SetColor(*background_, {0.941F, 0.973F, 1.0F, 1.0F});
 
@@ -488,7 +491,10 @@ void RhythmTestScene::CreatePresentation(
         services.visual2DRendering, progressImage);
     gameProgressBar_ = &mrg::visual2d::CreateSprite(
         root,
-        {GearMargin, 16.0F, progressSize.width, progressSize.height},
+        {-CanvasReferenceWidth * 0.5F + GearMargin,
+         CanvasReferenceHeight * 0.5F - 16.0F - progressSize.height,
+         progressSize.width,
+         progressSize.height},
         progressImage,
         "Hud.GameProgress");
     gameProgressBar_->SetZIndex(5);
@@ -499,8 +505,8 @@ void RhythmTestScene::CreatePresentation(
         services.visual2DRendering, accuracyImage);
     accuracyIndicator_ = &mrg::visual2d::CreateSprite(
         root,
-        {CanvasReferenceWidth - GearMargin - accuracySize.width,
-         50.0F,
+        {CanvasReferenceWidth * 0.5F - GearMargin - accuracySize.width,
+         CanvasReferenceHeight * 0.5F - 50.0F - accuracySize.height,
          accuracySize.width,
          accuracySize.height},
         accuracyImage,
@@ -513,8 +519,8 @@ void RhythmTestScene::CreatePresentation(
         services.visual2DRendering, judgementImage);
     judgementIndicator_ = &mrg::visual2d::CreateSprite(
         root,
-        {(CanvasReferenceWidth - judgementSize.width) * 0.5F,
-         CanvasReferenceHeight - judgementSize.height - 18.0F,
+        {-judgementSize.width * 0.5F,
+         -CanvasReferenceHeight * 0.5F + 18.0F,
          judgementSize.width,
          judgementSize.height},
         judgementImage,
@@ -523,7 +529,7 @@ void RhythmTestScene::CreatePresentation(
 
     scrollGearBorder_ = &mrg::visual2d::CreatePanel(
         root,
-        {GearMargin - GearPadding,
+        {-CanvasReferenceWidth * 0.5F + GearMargin - GearPadding,
          LaneCenterY - laneWidth_ * 0.5F - GearPadding,
          CanvasReferenceWidth - GearMargin - GearRightMargin +
              GearPadding * 2.0F,
@@ -532,7 +538,7 @@ void RhythmTestScene::CreatePresentation(
     SetColor(*scrollGearBorder_, {0.16F, 0.31F, 0.58F, 1.0F});
     scrollGearSurface_ = &mrg::visual2d::CreatePanel(
         root,
-        {GearMargin,
+        {-CanvasReferenceWidth * 0.5F + GearMargin,
          LaneCenterY - laneWidth_ * 0.5F,
          CanvasReferenceWidth - GearMargin - GearRightMargin,
          laneWidth_},
@@ -571,7 +577,8 @@ void RhythmTestScene::CreateLaneVisuals(
     laneRoot_->SetPivot({0.5F, 0.5F});
     laneRoot_->SetSize({laneWidth_, laneLength});
     laneRoot_->SetPosition({
-        laneScreenLeft + laneLength * 0.5F,
+        -canvas_->LogicalSize().width * 0.5F +
+            laneScreenLeft + laneLength * 0.5F,
         LaneCenterY});
     laneRoot_->SetZIndex(1);
 
@@ -705,7 +712,9 @@ void RhythmTestScene::CreateKeyIndicators(
     {
         const mrg::visual2d::Rect bounds{
             keys[index].bounds.x * InGameAssetScale,
-            keys[index].bounds.y * InGameAssetScale,
+            inputPanelSize_.height -
+                (keys[index].bounds.y + keys[index].bounds.height) *
+                    InGameAssetScale,
             keys[index].bounds.width * InGameAssetScale,
             keys[index].bounds.height * InGameAssetScale};
         auto& glow = mrg::visual2d::CreateSprite(
@@ -1026,7 +1035,7 @@ void RhythmTestScene::CreateNoteVisuals(
                 layers.counterText = &mrg::visual2d::CreateLabel(
                     *layers.counter,
                     {0.0F,
-                     counterSize.height * 0.20F,
+                     counterSize.height * 0.22F,
                      counterSize.width,
                      counterSize.height * 0.58F},
                     L"",
@@ -1060,16 +1069,17 @@ void RhythmTestScene::UpdatePresentationLayout()
     if (background_ != nullptr)
     {
         background_->SetBounds({
-            0.0F,
-            0.0F,
+            -logicalWidth * 0.5F,
+            -CanvasReferenceHeight * 0.5F,
             logicalWidth,
             CanvasReferenceHeight});
     }
     if (gameProgressBar_ != nullptr)
     {
         gameProgressBar_->SetBounds({
-            GearMargin,
-            16.0F,
+            -logicalWidth * 0.5F + GearMargin,
+            CanvasReferenceHeight * 0.5F - 16.0F -
+                gameProgressBar_->Bounds().height,
             std::max(logicalWidth - GearMargin * 2.0F, 1.0F),
             gameProgressBar_->Bounds().height});
     }
@@ -1077,7 +1087,7 @@ void RhythmTestScene::UpdatePresentationLayout()
     {
         const auto bounds = accuracyIndicator_->Bounds();
         accuracyIndicator_->SetBounds({
-            logicalWidth - GearMargin - bounds.width,
+            logicalWidth * 0.5F - GearMargin - bounds.width,
             bounds.y,
             bounds.width,
             bounds.height});
@@ -1086,7 +1096,7 @@ void RhythmTestScene::UpdatePresentationLayout()
     {
         const auto bounds = judgementIndicator_->Bounds();
         judgementIndicator_->SetBounds({
-            (logicalWidth - bounds.width) * 0.5F,
+            -bounds.width * 0.5F,
             bounds.y,
             bounds.width,
             bounds.height});
@@ -1094,7 +1104,7 @@ void RhythmTestScene::UpdatePresentationLayout()
     if (scrollGearBorder_ != nullptr)
     {
         scrollGearBorder_->SetBounds({
-            GearMargin - GearPadding,
+            -logicalWidth * 0.5F + GearMargin - GearPadding,
             LaneCenterY - gearHeight * 0.5F - GearPadding,
             std::max(
                 logicalWidth - GearMargin - GearRightMargin +
@@ -1105,7 +1115,7 @@ void RhythmTestScene::UpdatePresentationLayout()
     if (scrollGearSurface_ != nullptr)
     {
         scrollGearSurface_->SetBounds({
-            GearMargin,
+            -logicalWidth * 0.5F + GearMargin,
             LaneCenterY - gearHeight * 0.5F,
             std::max(
                 logicalWidth - GearMargin - GearRightMargin,
@@ -1116,14 +1126,14 @@ void RhythmTestScene::UpdatePresentationLayout()
     {
         laneRoot_->SetSize({laneWidth_, laneLength});
         laneRoot_->SetPosition({
-            laneScreenLeft + laneLength * 0.5F,
+            -logicalWidth * 0.5F + laneScreenLeft + laneLength * 0.5F,
             LaneCenterY});
         UpdateLaneSurfaceLayout(laneLength);
     }
     if (inputPresentationRoot_ != nullptr)
     {
         inputPresentationRoot_->SetPosition({
-            GearMargin,
+            -logicalWidth * 0.5F + GearMargin,
             LaneCenterY - inputPanelSize_.height * 0.5F});
     }
 }
@@ -1470,11 +1480,9 @@ void RhythmTestScene::PresentFocusCounter(
     }
 
     const auto bounds = layers.counter->Bounds();
-    const float centerX = canvas_->LogicalSize().width * 0.5F;
     layers.counter->SetBounds({
-        centerX - bounds.width * 0.5F,
-        CanvasReferenceHeight * 0.5F - visualHeight * 0.5F -
-            bounds.height * 0.72F,
+        -bounds.width * 0.5F,
+        visualHeight * 0.5F - bounds.height * 0.28F,
         bounds.width,
         bounds.height});
     layers.counter->SetVisible(true);
@@ -1508,9 +1516,7 @@ void RhythmTestScene::PresentFocusNoteProcessing(
         layers.processingSize.width * scale,
         layers.processingSize.height * scale};
     layers.processing->SetSize(size);
-    layers.processing->SetPosition({
-        canvas_->LogicalSize().width * 0.5F,
-        CanvasReferenceHeight * 0.5F});
+    layers.processing->SetPosition({0.0F, 0.0F});
     if (layers.focusType == FocusNoteType::DengDeng)
     {
         const float turns = static_cast<float>(time.count()) / 600'000.0F;
@@ -1579,9 +1585,7 @@ void RhythmTestScene::PresentCompletionEffect(
     }
 
     node->SetSize(size);
-    node->SetPosition({
-        canvas_->LogicalSize().width * 0.5F,
-        CanvasReferenceHeight * 0.5F});
+    node->SetPosition({0.0F, 0.0F});
     if (layers.focusType == FocusNoteType::DengDeng)
     {
         const float turns = static_cast<float>(time.count()) / 600'000.0F;
