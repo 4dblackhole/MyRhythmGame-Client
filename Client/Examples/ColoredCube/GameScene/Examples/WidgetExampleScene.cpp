@@ -16,6 +16,17 @@ namespace
     constexpr std::size_t MaximumDynamicWidgets = 6;
     constexpr mrg::visual2d::Size WidgetImageSize{1672.0F, 941.0F};
 
+    [[nodiscard]] constexpr mrg::visual2d::Rect TopLeftBounds(
+        const mrg::visual2d::Rect bounds,
+        const float parentHeight) noexcept
+    {
+        return {
+            bounds.x,
+            parentHeight - bounds.y - bounds.height,
+            bounds.width,
+            bounds.height};
+    }
+
     template <typename ComponentType>
     [[nodiscard]] ComponentType& RequireComponent(
         mrg::visual2d::Visual2DNode& node)
@@ -69,7 +80,7 @@ void WidgetExampleScene::BuildCanvas()
 
     auto& title = mrg::visual2d::CreateLabel(
         panel,
-        {20.0F, 12.0F, 480.0F, 36.0F},
+        TopLeftBounds({20.0F, 12.0F, 480.0F, 36.0F}, CanvasSize.height),
         L"3  RUNTIME COMPONENT WIDGETS");
     auto& titleText = RequireComponent<mrg::visual2d::TextVisualComponent>(title);
     titleText.SetFontSize(23.0F);
@@ -77,7 +88,7 @@ void WidgetExampleScene::BuildCanvas()
 
     auto& addButton = mrg::visual2d::CreateButton(
         panel,
-        {20.0F, 56.0F, 232.0F, 46.0F},
+        TopLeftBounds({20.0F, 56.0F, 232.0F, 46.0F}, CanvasSize.height),
         L"ADD WIDGET  [A]");
     RequireComponent<mrg::visual2d::TextVisualComponent>(addButton).
         SetFontSize(17.0F);
@@ -85,7 +96,7 @@ void WidgetExampleScene::BuildCanvas()
 
     auto& removeButton = mrg::visual2d::CreateButton(
         panel,
-        {268.0F, 56.0F, 232.0F, 46.0F},
+        TopLeftBounds({268.0F, 56.0F, 232.0F, 46.0F}, CanvasSize.height),
         L"REMOVE LAST  [D]");
     RequireComponent<mrg::visual2d::TextVisualComponent>(removeButton).
         SetFontSize(17.0F);
@@ -93,7 +104,7 @@ void WidgetExampleScene::BuildCanvas()
 
     auto& dynamicContainer = mrg::visual2d::CreatePanel(
         panel,
-        {20.0F, 118.0F, 480.0F, 150.0F},
+        TopLeftBounds({20.0F, 118.0F, 480.0F, 150.0F}, CanvasSize.height),
         "DynamicWidgetContainer");
     RequireComponent<mrg::visual2d::SpriteVisualComponent>(dynamicContainer).
         SetStyle({
@@ -105,7 +116,7 @@ void WidgetExampleScene::BuildCanvas()
 
     auto& status = mrg::visual2d::CreateLabel(
         panel,
-        {20.0F, 280.0F, 480.0F, 32.0F},
+        TopLeftBounds({20.0F, 280.0F, 480.0F, 32.0F}, CanvasSize.height),
         L"Canvas owns nodes; behavior is attached as components.");
     auto& statusText = RequireComponent<mrg::visual2d::TextVisualComponent>(status);
     statusText.SetFontSize(16.0F);
@@ -114,7 +125,7 @@ void WidgetExampleScene::BuildCanvas()
 
     auto& hint = mrg::visual2d::CreateLabel(
         panel,
-        {20.0F, 318.0F, 480.0F, 28.0F},
+        TopLeftBounds({20.0F, 318.0F, 480.0F, 28.0F}, CanvasSize.height),
         L"CLICK A DYNAMIC WIDGET   |   SPACE: BACK");
     auto& hintText = RequireComponent<mrg::visual2d::TextVisualComponent>(hint);
     hintText.SetFontSize(15.0F);
@@ -233,7 +244,7 @@ void WidgetExampleScene::AddDynamicWidget()
     const float y = static_cast<float>(slot / 2) * 48.0F + 6.0F;
     auto& widget = mrg::visual2d::CreateButton(
         *container,
-        {x, y, 228.0F, 40.0F},
+        TopLeftBounds({x, y, 228.0F, 40.0F}, 150.0F),
         L"DYNAMIC WIDGET #" + std::to_wstring(nextWidgetNumber_++));
     RequireComponent<mrg::visual2d::TextVisualComponent>(widget).
         SetFontSize(15.0F);

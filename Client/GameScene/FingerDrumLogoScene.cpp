@@ -18,7 +18,7 @@ namespace
     constexpr float StripSourceHeight = 1280.0F;
     constexpr float StripSideMargin = 24.0F;
     constexpr mrg::visual2d::Size MenuSize{360.0F, 128.0F};
-    constexpr float MenuCenterOffsetY = 190.0F;
+    constexpr float MenuCenterOffsetY = -190.0F;
     constexpr float ButtonLeft = 60.0F;
     constexpr float ButtonWidth = 300.0F;
     constexpr float ButtonHeight = 52.0F;
@@ -219,12 +219,18 @@ void FingerDrumLogoScene::CreateMenu(const mrg::EngineServices& services)
     menu.SetZIndex(10);
     auto& gameStart = mrg::visual2d::CreateButton(
         menu,
-        {ButtonLeft, 0.0F, ButtonWidth, ButtonHeight},
+        {ButtonLeft,
+         MenuSize.height - ButtonHeight,
+         ButtonWidth,
+         ButtonHeight},
         L"Game Start",
         "FingerDrum.GameStart");
     auto& exit = mrg::visual2d::CreateButton(
         menu,
-        {ButtonLeft, ButtonVerticalStep, ButtonWidth, ButtonHeight},
+        {ButtonLeft,
+         MenuSize.height - ButtonVerticalStep - ButtonHeight,
+         ButtonWidth,
+         ButtonHeight},
         L"Exit",
         "FingerDrum.Exit");
     menuButtons_ = {&gameStart, &exit};
@@ -426,7 +432,7 @@ void FingerDrumLogoScene::SetSelectedMenuItem(const std::size_t index)
     selectionCursor_->SetSize(CursorSize);
     selectionCursor_->SetPosition({
         CursorCenterX,
-        ButtonHeight * 0.5F +
+        MenuSize.height - ButtonHeight * 0.5F -
             ButtonVerticalStep * static_cast<float>(selectedMenuIndex_)});
 }
 

@@ -204,6 +204,17 @@ namespace
     constexpr std::uint32_t OptionsCanvasZOrder = 0;
     constexpr std::uint32_t AudioCanvasZOrder = 1;
     constexpr std::int32_t ComboBoxPopupZIndex = 100;
+
+    [[nodiscard]] constexpr mrg::visual2d::Rect TopLeftBounds(
+        const mrg::visual2d::Rect bounds,
+        const float parentHeight) noexcept
+    {
+        return {
+            bounds.x,
+            parentHeight - bounds.y - bounds.height,
+            bounds.width,
+            bounds.height};
+    }
 }
 
 ColoredCubeScene::ColoredCubeScene(
@@ -513,7 +524,7 @@ void ColoredCubeScene::InitializeOptionsUi(
 
     auto& title = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 8.0F, 288.0F, 28.0F},
+        TopLeftBounds({16.0F, 8.0F, 288.0F, 28.0F}, 210.0F),
         L"OPTIONS  [F2: SPACE]");
     auto& titleText = RequireComponent<mrg::visual2d::TextVisualComponent>(title);
     titleText.SetFontSize(19.0F);
@@ -521,7 +532,7 @@ void ColoredCubeScene::InitializeOptionsUi(
 
     auto& rotation = mrg::visual2d::CreateToggle(
         panel,
-        {16.0F, 44.0F, 288.0F, 36.0F},
+        TopLeftBounds({16.0F, 44.0F, 288.0F, 36.0F}, 210.0F),
         L"CUBE ROTATION",
         true);
     RequireComponent<mrg::visual2d::SpriteVisualComponent>(rotation).SetStyle(
@@ -534,14 +545,14 @@ void ColoredCubeScene::InitializeOptionsUi(
 
     auto& speedLabel = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 90.0F, 124.0F, 28.0F},
+        TopLeftBounds({16.0F, 90.0F, 124.0F, 28.0F}, 210.0F),
         L"ROTATION SPEED");
     RequireComponent<mrg::visual2d::TextVisualComponent>(speedLabel).
         SetFontSize(14.0F);
 
     auto& speed = mrg::visual2d::CreateSlider(
         panel,
-        {148.0F, 90.0F, 156.0F, 28.0F},
+        TopLeftBounds({148.0F, 90.0F, 156.0F, 28.0F}, 210.0F),
         0.2727F);
     RequireComponent<mrg::visual2d::SpriteVisualComponent>(speed).SetStyle(
         MakeWidgetStyle(
@@ -553,7 +564,7 @@ void ColoredCubeScene::InitializeOptionsUi(
 
     auto& presentation = mrg::visual2d::CreateCycleSelector(
         panel,
-        {16.0F, 128.0F, 288.0F, 40.0F},
+        TopLeftBounds({16.0F, 128.0F, 288.0F, 40.0F}, 210.0F),
         {L"SCREEN SPACE", L"WORLD CURVED"});
     RequireComponent<mrg::visual2d::CycleSelectorBehaviorComponent>(
         presentation).SetSelectedIndex(worldSpaceUi_ ? 1 : 0);
@@ -567,7 +578,7 @@ void ColoredCubeScene::InitializeOptionsUi(
 
     auto& examples = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 184.0F, 288.0F, 18.0F},
+        TopLeftBounds({16.0F, 184.0F, 288.0F, 18.0F}, 210.0F),
         L"1:MESH   2:COLLISION   3:WIDGETS");
     auto& examplesText =
         RequireComponent<mrg::visual2d::TextVisualComponent>(examples);
@@ -727,7 +738,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
 
     auto& panelHighlight = mrg::visual2d::CreateSprite(
         panel,
-        {0.0F, 0.0F, AudioPanelSize.width, AudioPanelSize.height},
+        TopLeftBounds(
+            {0.0F, 0.0F, AudioPanelSize.width, AudioPanelSize.height},
+            AudioPanelSize.height),
         audioPanelHighlight,
         "AudioOptions.Highlight");
     RequireComponent<mrg::visual2d::SpriteVisualComponent>(panelHighlight).
@@ -735,7 +748,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
 
     auto& title = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 10.0F, AudioPanelContentWidth, 30.0F},
+        TopLeftBounds(
+            {16.0F, 10.0F, AudioPanelContentWidth, 30.0F},
+            AudioPanelSize.height),
         L"AUDIO OUTPUT  [TAB: CLOSE]");
     auto& titleText = RequireComponent<mrg::visual2d::TextVisualComponent>(title);
     titleText.SetFontSize(18.0F);
@@ -748,7 +763,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     // supported baseline is the explicit FMOD automatic/default path.
     auto& backendLabel = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 48.0F, AudioPanelContentWidth, 16.0F},
+        TopLeftBounds(
+            {16.0F, 48.0F, AudioPanelContentWidth, 16.0F},
+            AudioPanelSize.height),
         L"OUTPUT API");
     auto& backendLabelText =
         RequireComponent<mrg::visual2d::TextVisualComponent>(backendLabel);
@@ -765,7 +782,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     }
     auto& backendCombo = mrg::visual2d::CreateCycleSelector(
         panel,
-        {16.0F, 68.0F, AudioPanelContentWidth, 36.0F},
+        TopLeftBounds(
+            {16.0F, 68.0F, AudioPanelContentWidth, 36.0F},
+            AudioPanelSize.height),
         std::move(backendNames));
     auto& backendBehavior = RequireComponent<
         mrg::visual2d::CycleSelectorBehaviorComponent>(backendCombo);
@@ -790,7 +809,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
 
     auto& deviceLabel = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 112.0F, AudioPanelContentWidth, 16.0F},
+        TopLeftBounds(
+            {16.0F, 112.0F, AudioPanelContentWidth, 16.0F},
+            AudioPanelSize.height),
         L"DEVICE");
     auto& deviceLabelText =
         RequireComponent<mrg::visual2d::TextVisualComponent>(deviceLabel);
@@ -801,7 +822,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
 
     auto& deviceCombo = mrg::visual2d::CreateComboBox(
         panel,
-        {16.0F, 132.0F, AudioPanelContentWidth, 38.0F},
+        TopLeftBounds(
+            {16.0F, 132.0F, AudioPanelContentWidth, 38.0F},
+            AudioPanelSize.height),
         {});
     auto& deviceBehavior = RequireComponent<
         mrg::visual2d::ComboBoxBehaviorComponent>(deviceCombo);
@@ -817,7 +840,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
 
     auto& bufferLengthLabel = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 178.0F, AudioPanelContentWidth, 16.0F},
+        TopLeftBounds(
+            {16.0F, 178.0F, AudioPanelContentWidth, 16.0F},
+            AudioPanelSize.height),
         L"DSP BUFFER LENGTH");
     auto& bufferLabelText = RequireComponent<
         mrg::visual2d::TextVisualComponent>(bufferLengthLabel);
@@ -835,7 +860,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     }
     auto& bufferLengthCombo = mrg::visual2d::CreateCycleSelector(
         panel,
-        {16.0F, 198.0F, AudioPanelContentWidth, 36.0F},
+        TopLeftBounds(
+            {16.0F, 198.0F, AudioPanelContentWidth, 36.0F},
+            AudioPanelSize.height),
         std::move(bufferLengthNames));
     RequireComponent<mrg::visual2d::TextVisualComponent>(bufferLengthCombo).
         SetFontSize(14.0F);
@@ -845,7 +872,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
 
     auto& status = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 242.0F, AudioPanelContentWidth, 34.0F},
+        TopLeftBounds(
+            {16.0F, 242.0F, AudioPanelContentWidth, 34.0F},
+            AudioPanelSize.height),
         L"ACTIVE: " + AudioBackendName(services.audio.ActiveOutput()));
     auto& statusText = RequireComponent<mrg::visual2d::TextVisualComponent>(status);
     statusText.SetFontSize(15.0F);
@@ -855,7 +884,9 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     audioStatusLabelId_ = status.Id();
     auto& hint = mrg::visual2d::CreateLabel(
         panel,
-        {16.0F, 286.0F, AudioPanelContentWidth, 38.0F},
+        TopLeftBounds(
+            {16.0F, 286.0F, AudioPanelContentWidth, 38.0F},
+            AudioPanelSize.height),
         L"API: CLICK / DEVICE: DROPDOWN / DSP: CLICK / Z: PLAY pop.wav");
     auto& hintText = RequireComponent<mrg::visual2d::TextVisualComponent>(hint);
     hintText.SetFontSize(12.0F);
@@ -987,9 +1018,10 @@ std::optional<mrg::visual2d::Point> ColoredCubeScene::MapAudioPanelPointer(
 
     // Preserve out-of-panel positions only while a control owns pointer
     // capture; otherwise this minimal Canvas must not intercept the scene.
-    if (canvasPointer->x < 0.0F || canvasPointer->y < 0.0F ||
-        canvasPointer->x > AudioPanelSize.width ||
-        canvasPointer->y > AudioPanelSize.height)
+    if (canvasPointer->x < -AudioPanelSize.width * 0.5F ||
+        canvasPointer->y < -AudioPanelSize.height * 0.5F ||
+        canvasPointer->x > AudioPanelSize.width * 0.5F ||
+        canvasPointer->y > AudioPanelSize.height * 0.5F)
     {
         return std::nullopt;
     }
