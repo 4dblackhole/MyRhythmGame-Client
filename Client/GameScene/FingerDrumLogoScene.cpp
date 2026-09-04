@@ -4,7 +4,6 @@
 
 #include <Windows.h>
 
-#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <optional>
@@ -16,7 +15,6 @@ namespace
     constexpr mrg::visual2d::Size CenterLogoSourceSize{2400.0F, 1280.0F};
     constexpr mrg::visual2d::Size RightFadeSourceSize{1680.0F, 1280.0F};
     constexpr float StripSourceHeight = 1280.0F;
-    constexpr float StripSideMargin = 24.0F;
     constexpr mrg::visual2d::Size MenuSize{360.0F, 128.0F};
     constexpr float MenuCenterOffsetY = -190.0F;
     constexpr float ButtonLeft = 60.0F;
@@ -265,22 +263,13 @@ void FingerDrumLogoScene::UpdateLogoStripLayout()
         return;
     }
 
-    // Fit the complete source strip rather than each image independently.
-    // This guarantees the outer edges remain in the viewport on narrow and
-    // wide aspect ratios alike, while preserving all image proportions.
+    // The authored panels share one source height, so scale the complete strip
+    // from that height. FixedHeight Canvas scaling then keeps the art exactly
+    // flush with the physical viewport vertically at every window size.
+    // Extra horizontal art remains outside the viewport instead of distorting
+    // the source aspect ratio.
     const mrg::visual2d::Size logicalSize = canvas_->LogicalSize();
-    const float stripSourceWidth =
-        LeftFadeSourceSize.width + CenterLogoSourceSize.width +
-        RightFadeSourceSize.width;
-    const float availableWidth = std::max(
-        logicalSize.width - StripSideMargin * 2.0F,
-        1.0F);
-    const float availableHeight = std::max(
-        logicalSize.height - StripSideMargin * 2.0F,
-        1.0F);
-    const float scale = std::min(
-        availableWidth / stripSourceWidth,
-        availableHeight / StripSourceHeight);
+    const float scale = logicalSize.height / StripSourceHeight;
 
     const mrg::visual2d::Size leftSize{
         LeftFadeSourceSize.width * scale,
