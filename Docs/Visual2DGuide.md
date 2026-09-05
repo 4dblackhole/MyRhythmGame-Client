@@ -200,6 +200,26 @@ apply.GetComponent<mrg::visual2d::SpriteVisualComponent>()->SetStyle(style);
 `RectangleCollider2DComponent(Rect)`로 별도 local bounds를 지정하거나
 `CustomCollider2DComponent`를 사용한다.
 
+둥근 사각형은 Sprite component에 로컬 Canvas 단위 반지름을 지정한다. 단색 panel과
+이미지 Sprite가 같은 API를 사용하며 Transform, Z-order와 인스턴싱은 유지된다.
+
+```cpp
+auto& visual = *panel.GetComponent<
+    mrg::visual2d::SpriteVisualComponent>();
+visual.SetCornerRadius(12.0F);
+```
+
+스크롤 목록처럼 자식이 부모 밖으로 나가면 부모 node에 로컬 clip rect를 둔다.
+그리기 packet과 hit-test가 같은 중첩 clip을 상속하므로 화면 밖 항목은 보이지도,
+클릭되지도 않는다.
+
+```cpp
+viewport.SetClipRect({
+    0.0F, 0.0F,
+    viewport.NodeSize().width,
+    viewport.NodeSize().height});
+```
+
 ## 트리 기반 Z-Order
 
 각 부모가 stacking context다. 부모의 시각 요소를 먼저 그리고, 자식을
