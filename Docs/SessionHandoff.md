@@ -41,6 +41,8 @@
   가질 수 있고 Canvas Z-order 후 내부 트리 Z-order를 비교합니다.
 - Visual2D Canvas 논리 원점은 정중앙이고 `+Y`는 위쪽입니다. Win32 화면 픽셀과
   `SubmitScreen`의 패널 원점만 좌상단 기준이며 엔진 경계에서 변환합니다.
+- Visual2D node-local clip rect는 자식 draw packet과 hit-test에 상속되며,
+  Sprite는 Transform과 batching을 유지하는 로컬 단위 corner radius를 지원합니다.
 - 평면·곡면 UI는 surface mapping으로 Canvas 좌표를 얻습니다. 곡면 pointer
   질의는 mesh UV와 가속 구조를 사용합니다.
 - 엔진을 수정할 때 Client의 서브모듈 checkout에서 임의 커밋하지 말고 엔진
@@ -59,11 +61,12 @@ wWinMain
 
 - Logo는 AliceBlue 배경과 세 로고 이미지를 표시합니다. `Game Start`는 Lobby,
   `Exit`는 정상 종료입니다.
-- Lobby는 YMM/YMP catalog를 읽는 곡 선택 화면입니다. 현재 카테고리는 `ALL`,
-  로컬 기록은 `NO RECORDS`, 프로필은 임시 이미지입니다.
-- 곡 목록 행에는 번호나 BPM 없이 실제 곡명과 아티스트만 표시합니다. 행 배경이
-  입력을 받고 곡명/아티스트는 별도 Text 자식입니다. 긴 곡명은 marquee로
-  표시합니다.
+- Lobby는 YMM/YMP catalog를 읽는 3열 곡 선택 화면입니다. 현재 카테고리는
+  `ALL`, 로컬 기록은 `NO RECORDS`이며 존재하지 않는 기록이나 LEVEL을 만들지
+  않습니다.
+- 곡 목록에는 실제 곡명과 아티스트만 표시하며 포커스된 곡 카드 하나만 난이도를
+  펼칩니다. 좌우키는 곡을, 상하키는 난이도를 이동하고 마지막 난이도에서 아래키를
+  누르면 다음 곡의 첫 난이도로 이동합니다. 긴 곡명은 marquee로 표시합니다.
 - Lobby가 `GameplayLaunchRequest`에 music/pattern/optional YME/mode를 기록한
   뒤 gameplay Scene 전환을 요청합니다.
 - Gameplay Scene은 진입 시 동적 생성되고 ESC 또는 패턴 종료 3초 뒤 Lobby로

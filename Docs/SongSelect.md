@@ -1,83 +1,52 @@
 # Penpot 곡 선택 화면
 
-`LobbyScene`은 Penpot 파일의 `Music Select · Sky` 페이지에 있는
-`곡 선택 화면 · Logo Sky Theme · 1920×1080` 보드를 기준으로 구현했습니다.
-기본 화면, 게임 모드 팝업, Modifier 팝업의 세 상태는 동일한 곡 선택 배경을
-공유하며 현재 카탈로그 정책에 맞춰 함께 갱신합니다.
+`LobbyScene`은 Penpot `Music Select · Sky` 페이지의
+`곡 선택 화면 · Song List Focus · 1920×1080` 보드를 기준으로 구성한다.
+1920×1080 좌표에 `2/3`을 적용한 1280×720 `FixedHeight` Canvas를 사용한다.
 
-원본 링크:
-<https://design.penpot.app/#/workspace?team-id=3be9e5e1-190f-8090-8008-7464803e8b40&file-id=3be9e5e1-190f-8090-8008-7468d9cc1bc8&page-id=3be9e5e1-190f-8090-8008-7468d9cc1bc9>
+## 배치
 
-## 좌표와 화면비
+- 화면은 기록·곡 정보·곡 목록의 3열이며 폭 비율은 약 2:3:2다.
+- 별도 헤더는 없다. `ALL` 카테고리 바가 왼쪽과 가운데 열 위를 덮는다.
+- 왼쪽은 `PERSONAL RECORD` 선택기와 실제 기록이 없을 때의
+  `NO RECORDS`만 표시한다.
+- 가운데는 정사각형 배경 미리보기 자리, 곡명·아티스트와 선택한 패턴의
+  이름·제작자·BPM·노트 수·모드를 표시한다. 현재 YMP에 LEVEL과 배경 이미지
+  필드가 없으므로 각각 `—`, `NO IMAGE`로 표시하며 값을 추측하지 않는다.
+- 오른쪽 검색창과 정렬 선택기는 곡 목록 viewport와 같은 폭이고 패널에서
+  14px 안쪽에 놓인다. 목록은 부모 clip rect로 실제 표시 영역 밖의 카드와
+  글자를 자르고 scrollbar로 현재 위치를 표시한다.
+- 하단에는 `BACK`, `OPTION SELECT`, `GO`를 둔다. `BACK`과 `GO`는 Penpot처럼
+  화면 좌우 및 아래쪽 경계에 일부가 걸친다.
 
-Penpot의 1920×1080 좌표에 `2/3`를 적용해 엔진의 1280×720 기준으로
-변환합니다. 전체 보드는 `Anchor::Center`에 있고 `FixedHeight` Canvas를
-사용합니다. 따라서 창이 넓어지면 좌우 여백이 늘어나며, 보드의 양 끝이
-임의로 잘리지 않습니다.
-Penpot의 좌상단 원점 Y-down 사각형은 생성 시 보드의 중앙 원점 Y-up 좌표로
-한 번 변환하며, 이후 Visual2D Transform과 입력은 엔진 좌표계를 그대로 씁니다.
+## 곡과 난이도 포커스
 
-## 실제 곡 catalog와 빈 기록
+곡과 패턴을 별도 패널로 나누지 않는다. 포커스된 곡 카드 하나만 높이가
+늘어나고 그 안에 해당 YMP 패턴 목록이 펼쳐진다. 다른 곡 카드는 실제 곡명과
+아티스트만 표시한다.
 
-`FingerDrum.Chart/Catalog/SongCatalog`가 실행 파일의 `assets/songs`를 재귀
-탐색합니다. YMM의 음악 파일을 해석하고 YMP의 `Music metadata` 상대 경로로
-패턴을 결합합니다. 기존 YMM 5개와 YMP 8개 및 Git에서 제외한 로컬 패턴이 catalog에
-포함되며, 패턴이 없는 음악도 SONG LIST에는 표시됩니다.
+- `←` / `→`: 이전·다음 곡으로 이동하고 그 곡의 첫 난이도에 포커스를 둔다.
+- `↑` / `↓`: 펼쳐진 카드의 난이도 포커스를 이동한다.
+- 마지막 난이도에서 `↓`: 다음 곡을 펼치고 첫 난이도에 포커스를 둔다.
+- 첫 난이도에서 `↑`: 현재 첫 난이도를 유지한다.
+- `Enter` / `Space` 또는 `GO`: 곡과 난이도가 모두 유효할 때만 gameplay로 간다.
+- `Escape` 또는 `BACK`: Logo Scene으로 돌아간다.
 
-- 카테고리는 현재 `ALL` 하나입니다.
-- LOCAL RECORD는 기록 저장소가 생기기 전까지 `NO RECORDS`만 표시합니다.
-- SONG LIST 행에는 번호·BPM·난이도 없이 곡명과 아티스트만 표시합니다.
-  행 배경이 클릭을 담당하고 곡명과 아티스트는 서로 다른 자식 Text 노드이므로
-  폰트 크기와 선택 색상을 독립적으로 변경할 수 있습니다.
-- 중앙에는 선택한 곡명과 아티스트, 아래에는 그 곡의 패턴 목록을 표시합니다.
-- 우측 상단은 이름·레이팅 없이 임시 파일럿 이미지만 표시합니다.
-- catalog가 비어 있으면 기존 `NO SONGS AVAILABLE`, `NO SONG SELECTED`,
-  `NO PATTERNS AVAILABLE` empty state로 자동 복귀합니다.
+카드가 펼쳐지거나 접힌 뒤에는 scroll offset을 자동 보정해 포커스된 카드 전체가
+viewport에 들어오게 한다. 패턴이 없는 음악도 실제 catalog 항목으로 표시하지만
+`NO DIFFICULTIES` 상태에서는 `GO`가 동작하지 않는다.
 
-## 트리와 Z-Order
+## 검색과 정렬
 
-```text
-Visual2DCanvas
-└─ SongSelect.Board
-   ├─ Background
-   ├─ Header
-   ├─ Categories
-   ├─ RecordPanel
-   ├─ SongInformation
-   ├─ PatternPanel
-   ├─ SongList
-   └─ Footer
-```
+검색창을 클릭하거나 `Ctrl+F`를 누르면 영문·숫자 검색을 입력할 수 있다.
+곡명과 아티스트를 대소문자 구분 없이 필터링하며 Backspace로 지운다.
 
-각 패널의 자식은 그 패널 안에서만 Z-Order를 비교합니다. 곡 행의 배경,
-패턴, PLAY와 BACK은 collider와 button behavior를 가지므로 클릭 영역과
-시각 영역이 일치합니다. 곡명과 아티스트 자식은 입력을 가로채지 않습니다.
+정렬 선택기는 `난이도순`, `곡 이름순`, `아티스트 이름순`을 제공한다. 현재
+YMM/YMP에는 chart LEVEL이 없으므로 `난이도순`은 catalog 순서를 보존한다.
+노트 수나 판정 범위를 난이도로 오인해 가짜 순위를 만들지 않는다.
 
-## 조작
+## 실행 데이터
 
-- `↑` / `↓`: 곡 선택
-- `←` / `→`: 선택한 곡의 패턴 선택
-- `Enter` / `Space` 또는 `PLAY` 클릭: gameplay 진입
-- `Escape` 또는 좌측 상단 `< BACK` 클릭: 로고 화면으로 돌아가기
-
-곡 목록 행의 번호, BPM, 난이도와 플레이 기록은 별도 영역의 책임입니다.
-곡 목록의 긴 곡명과 선택된 곡명·아티스트가 상자보다 길면
-`MarqueeTextComponent`가 고정 길이 문자 창을 천천히 이동시켜 모든 글자를
-순서대로 보여줍니다. 짧은 텍스트는 움직이지 않습니다.
-
-Lobby가 `GameplayLaunchRequest`에 선택한 pattern, optional YME, music path와
-mode를 기록한 다음 `ChangeScene`을 요청합니다. SceneManager에 미리 등록된
-`DestroyOnExit` factory가 이 요청을 읽는 새 gameplay 객체를 생성합니다.
-
-## 디자인 확장
-
-현재 엔진은 사각 패널과 텍스트를 사용하므로 Penpot의 둥근 모서리와 복합
-gradient는 가까운 단색으로 표현했습니다. 향후 PNG 스킨을 적용할 때는
-`SpriteVisualComponent::SetImage`로 패널 이미지를 교체합니다. 실제 곡 항목을
-추가할 때 같은 노드에 collider와 button behavior를 함께 구성하면 디자인과
-클릭 영역이 분리되지 않습니다.
-
-1920×1080 디자인 좌표, 행 간격, 폰트 크기, marquee 임계값과 색상은
-`LobbyScene.cpp`의 `layout` namespace 및 명명된 `constexpr` 색상으로 모읍니다.
-새 배치를 추가할 때 생성 함수 안에 숫자를 직접 반복하지 말고 이 상수 영역을
-먼저 확장합니다.
+행에는 `SongCatalog`가 읽은 실제 제목과 아티스트만 사용한다. `GO`는 선택한
+`SongCatalogPattern`의 YMP/YME 경로, YMM이 가리키는 음악 경로와 mode를 기존
+`GameplayLaunchRequest`에 복사한 뒤 `DestroyOnExit` gameplay Scene으로 전환한다.
