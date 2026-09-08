@@ -8,6 +8,7 @@
 #include "Examples/ColoredCube/GameScene/Examples/WidgetExampleScene.h"
 
 #include <algorithm>
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -63,7 +64,8 @@ void ColoredCubeGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             SceneRetention::DestroyOnExit) ||
         !scenes.RegisterScene<WidgetExampleScene>(
             std::string(game::scene_ids::WidgetExample),
-            SceneRetention::DestroyOnExit))
+            SceneRetention::DestroyOnExit,
+            std::ref(ScreenVisuals())))
     {
         throw std::runtime_error("Failed to register the Client Scene routes.");
     }

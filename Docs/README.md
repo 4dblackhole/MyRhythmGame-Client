@@ -18,7 +18,7 @@
 | [SongSelect.md](SongSelect.md) | Penpot 곡 선택 화면의 Visual2D 구현과 조작법 |
 | [RhythmGameplay.md](RhythmGameplay.md) | 타이머, 판정, Lane, Note 규칙, 차트, 모드, 전역 재생과 세션별 사운드 제어 |
 | [ChartFormats.md](ChartFormats.md) | YMM·YMP 문법, 태고 롱노트 옵션과 YME 마디선 표기 |
-| [Visual2DGuide.md](Visual2DGuide.md) | Sprite·위젯 공통 노드, Canvas, 입력, PNG와 Z-Order |
+| [Visual2DGuide.md](Visual2DGuide.md) | 공통 화면 관리자, Sprite·위젯 노드, Canvas, 입력, PNG와 Z-Order |
 | [Examples/ColoredCube/README.md](Examples/ColoredCube/README.md) | 보관된 Mesh·충돌·Visual2D 예제 |
 
 재사용 가능한 Audio, Collision, Graphics, Text, Visual2D 계약은 엔진

@@ -19,9 +19,12 @@ class LobbyScene final : public mrg::scene::GameScene
 {
 public:
     explicit LobbyScene(
+        mrg::visual2d::ScreenVisual2DManager& screenVisuals,
         std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest);
 
     void Initialize(const mrg::EngineServices& services) override;
+    void BeginScene() override;
+    void EndScene() noexcept override;
     void Update(
         const mrg::UpdateContext& context,
         mrg::scene::SceneManager& scenes) override;
@@ -120,7 +123,9 @@ private:
     std::uint32_t height_{720};
     bool searchFocused_{};
 
-    std::unique_ptr<mrg::visual2d::Visual2DCanvas> canvas_;
+    mrg::visual2d::ScreenVisual2DManager& screenVisuals_;
+    mrg::visual2d::ScreenCanvasId canvasId_{};
+    mrg::visual2d::Visual2DCanvas* canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;
     mrg::visual2d::Visual2DNode* board_{};
     mrg::visual2d::Visual2DNode* songViewport_{};

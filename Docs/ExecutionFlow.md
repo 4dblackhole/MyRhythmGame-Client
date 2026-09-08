@@ -30,7 +30,8 @@ flowchart TD
 4. `SceneManager`가 최초 Logo Scene을 활성화하고 `Initialize`를 한 번
    호출합니다.
 
-`SceneGameClient`는 SceneManager와 공통 AudioPlaybackManager를 함께 소유합니다.
+`SceneGameClient`는 SceneManager, 공통 AudioPlaybackManager와 화면
+ScreenVisual2DManager를 함께 소유합니다.
 `FingerDrumGame`은 gameplay factory에 `AudioPlayback()` 참조를 전달하고,
 GameplayAudioRouter는 이를 통해 재생하며 세션에 속한 ID만 관리합니다.
 Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신 후 끝난 재생을
@@ -59,7 +60,8 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 ## 프레임과 종료
 
 매 update에서 엔진은 timestamp가 보존된 Raw Input 이벤트를 Client에
-전달합니다. 각 Scene은 논리를 갱신하고 Visual2D draw packet만 제출하며,
+전달합니다. 각 Scene은 논리와 관리자가 소유한 Visual2D tree만 갱신하며,
+화면 Canvas의 Update·resize·제출은 `ScreenVisual2DManager`가 수행합니다.
 D3D12 command 기록과 present는 엔진이 담당합니다. 종료 시 활성 Scene부터
 `Shutdown`하여 Canvas observer와 오디오 voice를 먼저 해제한 후 엔진 장치를
 역순으로 종료합니다.

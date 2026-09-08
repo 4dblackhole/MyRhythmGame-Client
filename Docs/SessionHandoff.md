@@ -91,6 +91,9 @@ wWinMain
 - 실제 Voice는 `SceneGameClient::AudioPlayback()`의 전역 관리자가 소유합니다.
   라우터는 세션의 ID만 보관하고 해당 ID로 pause/stop합니다. 재생 관리자는
   Clip/Bus를 재생 종료까지 보관하며 Scene 종료와 Client 종료를 구분합니다.
+- 화면 Canvas와 이미지 등록은 `SceneGameClient::ScreenVisuals()`가 소유합니다.
+  Logo/Lobby/Gameplay Scene은 Canvas ID와 빌린 node 포인터만 갖고 화면 제출은
+  관리자가 수행합니다. 월드·곡면 Canvas는 Scene의 명시적 pass로 남습니다.
 - YMM은 음악 metadata, YMP는 playable score, YME는 시각·오디오 automation을
   담당합니다. YMP의 `N/D`는 현재 마디 시작부터의 절대 온음표 위치이며 마디
   길이와 BPM 변경 위치는 유리수로 누적한 뒤 로드 시 정수 microseconds로

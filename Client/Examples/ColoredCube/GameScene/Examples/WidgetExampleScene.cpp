@@ -40,19 +40,28 @@ namespace
     }
 }
 
+WidgetExampleScene::WidgetExampleScene(
+    mrg::visual2d::ScreenVisual2DManager& screenVisuals) noexcept
+    : screenVisuals_(screenVisuals)
+{
+}
+
 void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
 {
     width_ = services.windowWidth;
     height_ = services.windowHeight;
-    canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
-    canvas_->SetViewportSize(
-        {static_cast<float>(width_), static_cast<float>(height_)});
+    canvasId_ = screenVisuals_.CreateCanvas();
+    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    if (canvas_ == nullptr)
+    {
+        throw std::runtime_error("Failed to create the widget screen Canvas.");
+    }
     const mrg::visual2d::ImageHandle widgetImage =
-        services.visual2DRendering.LoadImage(
+        screenVisuals_.RegisterImage(
             mrg::platform::ResolveExecutableRelativePath(
                 L"assets\\images\\Widget1.png"));
     const mrg::visual2d::Size nativeSize =
-        services.visual2DRendering.GetImageSize(widgetImage);
+        screenVisuals_.GetImageSize(widgetImage);
     if (nativeSize.width != WidgetImageSize.width ||
         nativeSize.height != WidgetImageSize.height)
     {
@@ -64,6 +73,16 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
     // Begin with one runtime-created widget so the mutable child region is
     // visible immediately. Further additions follow the exact same path.
     AddDynamicWidget();
+}
+
+void WidgetExampleScene::BeginScene()
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+}
+
+void WidgetExampleScene::EndScene() noexcept
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
 }
 
 void WidgetExampleScene::BuildCanvas()
@@ -151,7 +170,6 @@ void WidgetExampleScene::Update(
         return;
     }
 
-    canvas_->Update(context.deltaSeconds);
     ProcessPointer(context.input);
     if (context.input.WasKeyPressed(static_cast<std::uint16_t>('A')))
     {
@@ -315,12 +333,8 @@ void WidgetExampleScene::SetStatus(std::wstring text)
 }
 
 void WidgetExampleScene::Render(
-    const mrg::graphics::RenderContext& context)
+    const mrg::graphics::RenderContext&)
 {
-    if (canvas_ != nullptr)
-    {
-        context.visual2DRendering->SubmitScreen(*canvas_, context);
-    }
 }
 
 void WidgetExampleScene::OnResize(
@@ -329,11 +343,6 @@ void WidgetExampleScene::OnResize(
 {
     width_ = width;
     height_ = height;
-    if (canvas_ != nullptr && width_ > 0 && height_ > 0)
-    {
-        canvas_->SetViewportSize(
-            {static_cast<float>(width_), static_cast<float>(height_)});
-    }
 }
 
 void WidgetExampleScene::Shutdown() noexcept
@@ -343,7 +352,9 @@ void WidgetExampleScene::Shutdown() noexcept
         inputRouter_.Reset(*canvas_);
     }
     dynamicWidgetIds_.clear();
-    canvas_.reset();
+    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
+    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
+    canvas_ = nullptr;
 }
 
 std::int64_t WidgetExampleScene::LatestPointerTimestamp(
