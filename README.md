@@ -44,6 +44,9 @@ Visual Studio 2022, MSVC v143, Windows SDK와 FMOD Studio API for Windows가
 
 ## 현재 실행 흐름
 
+공통 오디오 재생은 `SceneGameClient::AudioPlayback()`이 관리하며 gameplay는
+자신의 재생 ID만 일시정지·정지합니다. 파일 등록과 리듬 시각 변환은 Client가 담당합니다.
+
 기본 실행은 AliceBlue 배경의 FingerDrum 로고로 시작합니다. Game Start는
 Penpot 기반 곡 선택 화면으로 이동합니다. 곡 선택 화면은 기존 catalog 자산과
 Git에서 제외한 로컬 곡·패턴을 표시하며, 기록 저장소가 없으므로 점수를 꾸며내지 않고 명시적인

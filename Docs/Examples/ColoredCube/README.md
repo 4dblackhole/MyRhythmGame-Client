@@ -9,3 +9,8 @@
 - [FPS/UPS overlay 예제](PerformanceOverlay.md)
 
 대응하는 소스는 `Client/Examples/ColoredCube/`에 있다.
+
+기존 `--smoke-test --example=mesh|collision|widgets` 경로는 첫 화면을 렌더한 뒤
+Blank Scene으로 전환하면서 공통 AudioPlaybackManager의 재생 유지를 확인한다.
+기존 pop.wav를 일시정지 상태로 재생하고 로컬 Clip 참조를 해제한 뒤에도 Voice가
+유효한지, 전환 후 재개·명시적 정지가 가능한지 검증한다.

@@ -86,10 +86,72 @@ void ColoredCubeGame::OnClientInitialized(
     updatesPerSecondFont_ = services.textRendering.LoadFontFile(
         mrg::platform::ResolveExecutableRelativePath(
             L"assets\\fonts\\Rajdhani-SemiBold.ttf"));
+    if (smokeTest_)
+    {
+        BeginAudioPlaybackSmokeCheck(services);
+    }
+}
+
+void ColoredCubeGame::BeginAudioPlaybackSmokeCheck(
+    const mrg::EngineServices& services)
+{
+    std::string error;
+    std::shared_ptr<mrg::audio::AudioClip> clip = services.audio.LoadSound(
+        mrg::platform::ResolveExecutableRelativePath(L"assets\\sounds\\pop.wav"),
+        mrg::audio::AudioLoadMode::Sample,
+        error);
+    if (clip == nullptr)
+    {
+        throw std::runtime_error("Audio smoke load failed: " + error);
+    }
+    mrg::audio::AudioPlaybackSettings settings;
+    settings.startPaused = true;
+    audioSmokePlayback_ = AudioPlayback().Play(clip, settings, nullptr, error);
+    if (audioSmokePlayback_ == mrg::audio::InvalidAudioPlaybackId)
+    {
+        throw std::runtime_error("Audio smoke setup failed: " + error);
+    }
+    // Only the game-wide playback manager retains the clip after this returns.
+}
+
+void ColoredCubeGame::CompleteAudioPlaybackSmokeCheck()
+{
+    if (audioSmokePlayback_ == mrg::audio::InvalidAudioPlaybackId)
+    {
+        return;
+    }
+    if (!audioSmokeSourceRendered_)
+    {
+        return;
+    }
+    if (!audioSmokeTransitionRequested_)
+    {
+        if (!Scenes().ChangeScene(game::scene_ids::Blank))
+        {
+            throw std::runtime_error("Audio smoke Scene transition failed.");
+        }
+        audioSmokeTransitionRequested_ = true;
+        return;
+    }
+    auto* voice = AudioPlayback().FindVoice(audioSmokePlayback_);
+    if (Scenes().CurrentSceneId() != game::scene_ids::Blank ||
+        voice == nullptr || !voice->IsPlaying())
+    {
+        throw std::runtime_error("Managed audio did not survive the Scene transition.");
+    }
+    std::string error;
+    if (!voice->SetPaused(false, error) ||
+        !AudioPlayback().Stop(audioSmokePlayback_, error) ||
+        AudioPlayback().FindVoice(audioSmokePlayback_) != nullptr)
+    {
+        throw std::runtime_error("Audio smoke playback control failed: " + error);
+    }
+    audioSmokePlayback_ = mrg::audio::InvalidAudioPlaybackId;
 }
 
 void ColoredCubeGame::OnClientUpdated(const mrg::UpdateContext& context)
 {
+    CompleteAudioPlaybackSmokeCheck();
     // Visibility is a game policy: F1 affects only this Client's overlay,
     // not Engine scheduling or the performance measurement itself.
     if (context.input.WasKeyPressed(VK_F1))
@@ -112,6 +174,7 @@ void ColoredCubeGame::OnClientUpdated(const mrg::UpdateContext& context)
 void ColoredCubeGame::OnClientRendered(
     const mrg::graphics::RenderContext& context)
 {
+    audioSmokeSourceRendered_ = true;
     if (!showPerformanceOverlay_ || context.textRendering == nullptr ||
         framesPerSecondFont_ == nullptr || updatesPerSecondFont_ == nullptr)
     {

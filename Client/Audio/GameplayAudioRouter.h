@@ -18,7 +18,8 @@ namespace finger_drum::audio
     class GameplayAudioRouter final
     {
     public:
-        GameplayAudioRouter() = default;
+        explicit GameplayAudioRouter(
+            mrg::audio::AudioPlaybackManager& playback) noexcept;
         ~GameplayAudioRouter();
 
         GameplayAudioRouter(const GameplayAudioRouter&) = delete;
@@ -60,15 +61,17 @@ namespace finger_drum::audio
         void ApplyAutomationValue(const mode::AutomationValue& value);
 
         mrg::audio::AudioSystem* audioSystem_{};
-        std::map<std::string, std::unique_ptr<mrg::audio::AudioBus>, std::less<>>
+        mrg::audio::AudioPlaybackManager& playback_;
+        std::map<std::string, std::shared_ptr<mrg::audio::AudioBus>, std::less<>>
             buses_;
-        std::map<std::string, std::unique_ptr<mrg::audio::AudioClip>, std::less<>>
+        std::map<std::string, std::shared_ptr<mrg::audio::AudioClip>, std::less<>>
             clips_;
         std::map<std::string,
             std::map<mrg::audio::AudioEffectType,
                 std::unique_ptr<mrg::audio::AudioEffect>>,
             std::less<>> effects_;
-        std::vector<std::unique_ptr<mrg::audio::AudioVoice>> voices_;
+        // Only IDs for this play session. Voice ownership belongs to the Client.
+        std::vector<mrg::audio::AudioPlaybackId> voices_;
         std::string lastError_;
     };
 }

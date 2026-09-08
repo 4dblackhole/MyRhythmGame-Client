@@ -27,6 +27,8 @@ protected:
     void OnClientShuttingDown() noexcept override;
 
 private:
+    void BeginAudioPlaybackSmokeCheck(const mrg::EngineServices& services);
+    void CompleteAudioPlaybackSmokeCheck();
     void RefreshPerformanceText(
         const mrg::PerformanceStatistics& performance);
     static void SubmitPerformanceLine(
@@ -41,6 +43,9 @@ private:
         float lineHeight);
 
     bool smokeTest_{};
+    mrg::audio::AudioPlaybackId audioSmokePlayback_{};
+    bool audioSmokeSourceRendered_{};
+    bool audioSmokeTransitionRequested_{};
     bool showPerformanceOverlay_{};
     std::string initialSceneId_;
     mrg::graphics::FontHandle framesPerSecondFont_;

@@ -7,6 +7,12 @@
 
 namespace finger_drum::audio
 {
+    GameplayAudioRouter::GameplayAudioRouter(
+        mrg::audio::AudioPlaybackManager& playback) noexcept
+        : playback_(playback)
+    {
+    }
+
     GameplayAudioRouter::~GameplayAudioRouter()
     {
         Shutdown();
@@ -44,7 +50,7 @@ namespace finger_drum::audio
 
     void GameplayAudioRouter::Shutdown() noexcept
     {
-        voices_.clear();
+        StopAllVoices();
         effects_.clear();
         clips_.clear();
         buses_.clear();
@@ -127,16 +133,18 @@ namespace finger_drum::audio
                 ? requestedClock
                 : 0;
             std::string error;
-            std::unique_ptr<mrg::audio::AudioVoice> voice = clip->second->Play(
+            const auto bus = buses_.find(cue.bus);
+            const mrg::audio::AudioPlaybackId voice = playback_.Play(
+                clip->second,
                 settings,
-                FindBus(cue.bus),
+                bus == buses_.end() ? nullptr : bus->second,
                 error);
-            if (voice == nullptr)
+            if (voice == mrg::audio::InvalidAudioPlaybackId)
             {
                 lastError_ = std::move(error);
                 continue;
             }
-            voices_.push_back(std::move(voice));
+            voices_.push_back(voice);
         }
     }
 
@@ -151,8 +159,22 @@ namespace finger_drum::audio
 
     void GameplayAudioRouter::StopAllVoices() noexcept
     {
-        // AudioVoice destruction stops playback while retaining loaded Clips,
-        // Buses and effects for an inexpensive chart restart.
+        // Stop only this session; menu/UI playback may share the manager.
+        for (const mrg::audio::AudioPlaybackId id : voices_)
+        {
+            try
+            {
+                std::string ignoredError;
+                if (playback_.FindVoice(id) != nullptr)
+                {
+                    static_cast<void>(playback_.Stop(id, ignoredError));
+                }
+            }
+            catch (...)
+            {
+                // The global manager retains any remaining voice until shutdown.
+            }
+        }
         voices_.clear();
     }
 
@@ -160,8 +182,9 @@ namespace finger_drum::audio
         const bool paused,
         std::string& errorMessage)
     {
-        for (const std::unique_ptr<mrg::audio::AudioVoice>& voice : voices_)
+        for (const mrg::audio::AudioPlaybackId id : voices_)
         {
+            mrg::audio::AudioVoice* const voice = playback_.FindVoice(id);
             if (voice != nullptr && !voice->SetPaused(paused, errorMessage))
             {
                 lastError_ = errorMessage;
@@ -176,8 +199,9 @@ namespace finger_drum::audio
     {
         std::erase_if(
             voices_,
-            [](const std::unique_ptr<mrg::audio::AudioVoice>& voice)
+            [this](const mrg::audio::AudioPlaybackId id)
             {
+                const mrg::audio::AudioVoice* voice = playback_.FindVoice(id);
                 return voice == nullptr || !voice->IsPlaying();
             });
     }
