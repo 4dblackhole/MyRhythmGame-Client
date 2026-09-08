@@ -22,9 +22,12 @@ public:
     explicit RhythmTestScene(
         std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
         mrg::audio::AudioPlaybackManager& playback,
+        mrg::visual2d::ScreenVisual2DManager& screenVisuals,
         bool debugMode = false);
 
     void Initialize(const mrg::EngineServices& services) override;
+    void BeginScene() override;
+    void EndScene() noexcept override;
     void Update(
         const mrg::UpdateContext& context,
         mrg::scene::SceneManager& scenes) override;
@@ -76,19 +79,13 @@ private:
     [[nodiscard]] std::unique_ptr<finger_drum::mode::PlaySession>
         CreateLongNoteDebugSession();
     void PrepareDebugLaunchRequest();
-    void CreatePresentation(const mrg::EngineServices& services);
-    void CreateLaneVisuals(
-        const mrg::EngineServices& services,
-        mrg::visual2d::Visual2DNode& sceneRoot);
-    void CreateLaneSurface(
-        const mrg::EngineServices& services);
+    void CreatePresentation();
+    void CreateLaneVisuals(mrg::visual2d::Visual2DNode& sceneRoot);
+    void CreateLaneSurface();
     void UpdateLaneSurfaceLayout(float laneLength);
-    void CreateMeasureLineVisuals(
-        const mrg::EngineServices& services);
-    void CreateKeyIndicators(
-        const mrg::EngineServices& services,
-        mrg::visual2d::Visual2DNode& inputPanel);
-    void CreateNoteVisuals(const mrg::EngineServices& services);
+    void CreateMeasureLineVisuals();
+    void CreateKeyIndicators(mrg::visual2d::Visual2DNode& inputPanel);
+    void CreateNoteVisuals();
     void UpdatePresentationLayout();
     void InitializeAudio(const mrg::EngineServices& services);
     void RegisterTaikoSounds(std::string& errorMessage);
@@ -126,7 +123,9 @@ private:
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest_;
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
-    std::unique_ptr<mrg::visual2d::Visual2DCanvas> canvas_;
+    mrg::visual2d::ScreenVisual2DManager& screenVisuals_;
+    mrg::visual2d::ScreenCanvasId canvasId_{};
+    mrg::visual2d::Visual2DCanvas* canvas_{};
     std::unique_ptr<finger_drum::mode::PlaySession> session_;
     finger_drum::rhythm::RhythmTimer timer_;
     finger_drum::audio::GameplayAudioRouter audioRouter_;

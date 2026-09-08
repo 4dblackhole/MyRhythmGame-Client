@@ -274,8 +274,10 @@ namespace
 }
 
 LobbyScene::LobbyScene(
+    mrg::visual2d::ScreenVisual2DManager& screenVisuals,
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest)
-    : launchRequest_(std::move(launchRequest))
+    : launchRequest_(std::move(launchRequest)),
+      screenVisuals_(screenVisuals)
 {
 }
 
@@ -289,12 +291,14 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
     width_ = services.windowWidth;
     height_ = services.windowHeight;
     catalog_ = finger_drum::chart::SongCatalog{}.Load(RuntimeSongsPath());
-    canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>(
+    canvasId_ = screenVisuals_.CreateCanvas({
         layout::CanvasSize,
-        mrg::visual2d::CanvasScaleMode::FixedHeight);
-    canvas_->SetViewportSize({
-        static_cast<float>(width_),
-        static_cast<float>(height_)});
+        mrg::visual2d::CanvasScaleMode::FixedHeight});
+    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    if (canvas_ == nullptr)
+    {
+        throw std::runtime_error("Failed to create the Lobby screen Canvas.");
+    }
 
     board_ = &canvas_->CreateNode(
         mrg::visual2d::Anchor::Center,
@@ -312,6 +316,16 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
     RebuildVisibleSongs();
 }
 
+void LobbyScene::BeginScene()
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+}
+
+void LobbyScene::EndScene() noexcept
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
+}
+
 void LobbyScene::Update(
     const mrg::UpdateContext& context,
     mrg::scene::SceneManager& scenes)
@@ -320,7 +334,6 @@ void LobbyScene::Update(
     {
         return;
     }
-    canvas_->Update(context.deltaSeconds);
     ProcessPointer(context.input);
     if (ProcessActions(scenes) || ProcessKeyboard(context.input, scenes))
     {
@@ -328,12 +341,8 @@ void LobbyScene::Update(
     }
 }
 
-void LobbyScene::Render(const mrg::graphics::RenderContext& context)
+void LobbyScene::Render(const mrg::graphics::RenderContext&)
 {
-    if (canvas_ != nullptr && context.visual2DRendering != nullptr)
-    {
-        context.visual2DRendering->SubmitScreen(*canvas_, context);
-    }
 }
 
 void LobbyScene::OnResize(
@@ -344,9 +353,6 @@ void LobbyScene::OnResize(
     height_ = height;
     if (canvas_ != nullptr)
     {
-        canvas_->SetViewportSize({
-            static_cast<float>(width_),
-            static_cast<float>(height_)});
         inputRouter_.InvalidateHitTest();
     }
 }
@@ -371,7 +377,9 @@ void LobbyScene::Shutdown() noexcept
     songContent_ = nullptr;
     songViewport_ = nullptr;
     board_ = nullptr;
-    canvas_.reset();
+    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
+    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
+    canvas_ = nullptr;
     catalog_ = {};
 }
 

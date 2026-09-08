@@ -16,12 +16,20 @@ Canvas 논리 원점은 화면 정중앙이며 `+X`는 오른쪽, `+Y`는 위쪽
 `SubmitScreen`의 `screenOrigin`만 좌상단 원점 픽셀을 사용하고 엔진 경계에서
 Canvas 좌표로 변환한다.
 
+`SceneGameClient` 기반 화면에서는 Client의 공통 관리자를 Scene factory에 주입하고
+Canvas와 이미지를 그 관리자에 등록한다.
+
 ```cpp
-canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>();
-canvas_->SetViewportSize({
-    static_cast<float>(viewportWidth),
-    static_cast<float>(viewportHeight)});
+canvasId_ = screenVisuals_.CreateCanvas();
+canvas_ = screenVisuals_.FindCanvas(canvasId_);
+const auto image = screenVisuals_.RegisterImage(imagePath);
 ```
+
+Scene은 `BeginScene`/`EndScene`에서 Canvas 표시 상태를 바꾸고 `Shutdown`에서
+InputRouter를 Reset한 뒤 `RemoveCanvas`를 호출한다. Canvas Update, 창 크기 반영,
+`SubmitScreen`은 `SceneGameClient`가 자동으로 수행하므로 Scene의 `Render`에서는
+호출하지 않는다. 이미지 경로는 Client 수명 동안 한 번 등록되며 실제 GPU 자원은
+엔진 Visual2D backend 캐시가 소유한다.
 
 Canvas는 렌더링되지 않는 앵커 노드 아홉 개를 항상 소유한다.
 
@@ -254,9 +262,10 @@ context.visual2DRendering->SubmitScreen(audioCanvas, context, {}, 1); // 전체�
 
 ## 프레임 처리
 
-Update에서는 `canvas.Update(deltaSeconds)`, 입력 라우팅, `TakeActions()` 순서로
-게임 상태를 갱신한다. Render에서는 Canvas를 제출하기만 하고 실제 D3D12 명령
-기록과 인스턴스 배치는 엔진이 프레임 끝에 수행한다.
+관리자가 Canvas를 Update한 뒤 Scene은 입력 라우팅과 `TakeActions()`로 게임 상태를
+갱신한다. 화면 Canvas 제출과 실제 D3D12 명령 기록은 엔진이 수행한다.
+월드·곡면·render texture Canvas는 화면 관리자 대상이 아니므로 해당 Scene이
+명시적인 pass와 자원 수명을 유지한다.
 
 보관된 실제 사용 코드는 `Client/Examples/ColoredCube/GameScene/ColoredCubeScene.cpp`와
 `Client/Examples/ColoredCube/GameScene/Examples/WidgetExampleScene.cpp`에 있다.

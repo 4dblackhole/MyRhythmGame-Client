@@ -87,6 +87,12 @@ namespace
     }
 }
 
+FingerDrumLogoScene::FingerDrumLogoScene(
+    mrg::visual2d::ScreenVisual2DManager& screenVisuals) noexcept
+    : screenVisuals_(screenVisuals)
+{
+}
+
 void FingerDrumLogoScene::Initialize(const mrg::EngineServices& services)
 {
     width_ = services.windowWidth;
@@ -94,16 +100,28 @@ void FingerDrumLogoScene::Initialize(const mrg::EngineServices& services)
 
     // FixedHeight keeps the logo composition measured against a 720-unit
     // vertical reference while expanding the logical width for wider screens.
-    canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>(
-        mrg::visual2d::Size{1280.0F, 720.0F},
-        mrg::visual2d::CanvasScaleMode::FixedHeight);
-    canvas_->SetViewportSize({
-        static_cast<float>(width_),
-        static_cast<float>(height_)});
+    canvasId_ = screenVisuals_.CreateCanvas({
+        {1280.0F, 720.0F},
+        mrg::visual2d::CanvasScaleMode::FixedHeight});
+    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    if (canvas_ == nullptr)
+    {
+        throw std::runtime_error("Failed to create the logo screen Canvas.");
+    }
 
-    CreateLogoStrip(services);
-    CreateMenu(services);
+    CreateLogoStrip();
+    CreateMenu();
     UpdateLogoStripLayout();
+}
+
+void FingerDrumLogoScene::BeginScene()
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+}
+
+void FingerDrumLogoScene::EndScene() noexcept
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
 }
 
 void FingerDrumLogoScene::Update(
@@ -115,7 +133,6 @@ void FingerDrumLogoScene::Update(
         return;
     }
 
-    canvas_->Update(context.deltaSeconds);
     ProcessPointer(context.input);
     UpdateSelectionFromPointer(context.input);
     if (ApplyMenuActions(scenes))
@@ -125,16 +142,8 @@ void FingerDrumLogoScene::Update(
     HandleKeyboard(context.input, scenes);
 }
 
-void FingerDrumLogoScene::Render(const mrg::graphics::RenderContext& context)
+void FingerDrumLogoScene::Render(const mrg::graphics::RenderContext&)
 {
-    if (canvas_ == nullptr || context.visual2DRendering == nullptr)
-    {
-        return;
-    }
-
-    // Logo art and interactive menu share one tree, so their paint order and
-    // scaling are submitted through the same screen-space Visual2D pass.
-    context.visual2DRendering->SubmitScreen(*canvas_, context);
 }
 
 void FingerDrumLogoScene::OnResize(
@@ -148,9 +157,6 @@ void FingerDrumLogoScene::OnResize(
         return;
     }
 
-    canvas_->SetViewportSize({
-        static_cast<float>(width_),
-        static_cast<float>(height_)});
     UpdateLogoStripLayout();
     inputRouter_.InvalidateHitTest();
 }
@@ -171,11 +177,12 @@ void FingerDrumLogoScene::Shutdown() noexcept
     centerLogo_ = nullptr;
     leftFade_ = nullptr;
     logoStrip_ = nullptr;
-    canvas_.reset();
+    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
+    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
+    canvas_ = nullptr;
 }
 
-void FingerDrumLogoScene::CreateLogoStrip(
-    const mrg::EngineServices& services)
+void FingerDrumLogoScene::CreateLogoStrip()
 {
     auto& strip = canvas_->CreateNode(
         mrg::visual2d::Anchor::Center,
@@ -189,24 +196,24 @@ void FingerDrumLogoScene::CreateLogoStrip(
     leftFade_ = &mrg::visual2d::CreateSprite(
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
-        services.visual2DRendering.LoadImage(
+        screenVisuals_.RegisterImage(
             RuntimeAssetPath(L"logo\\LeftFade.png")),
         "FingerDrum.LeftFade");
     centerLogo_ = &mrg::visual2d::CreateSprite(
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
-        services.visual2DRendering.LoadImage(
+        screenVisuals_.RegisterImage(
             RuntimeAssetPath(L"logo\\Center.png")),
         "FingerDrum.CenterLogo");
     rightFade_ = &mrg::visual2d::CreateSprite(
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
-        services.visual2DRendering.LoadImage(
+        screenVisuals_.RegisterImage(
             RuntimeAssetPath(L"logo\\RightFade.png")),
         "FingerDrum.RightFade");
 }
 
-void FingerDrumLogoScene::CreateMenu(const mrg::EngineServices& services)
+void FingerDrumLogoScene::CreateMenu()
 {
     auto& menu = canvas_->CreateNode(
         mrg::visual2d::Anchor::Center,
@@ -241,7 +248,7 @@ void FingerDrumLogoScene::CreateMenu(const mrg::EngineServices& services)
     }
 
     const mrg::visual2d::ImageHandle cursorImage =
-        services.visual2DRendering.LoadImage(
+        screenVisuals_.RegisterImage(
             RuntimeAssetPath(L"menu\\SelectionCursor.png"));
     auto& cursor = mrg::visual2d::CreateSprite(
         menu,

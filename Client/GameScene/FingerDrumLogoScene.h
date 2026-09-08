@@ -13,7 +13,12 @@
 class FingerDrumLogoScene final : public mrg::scene::GameScene
 {
 public:
+    explicit FingerDrumLogoScene(
+        mrg::visual2d::ScreenVisual2DManager& screenVisuals) noexcept;
+
     void Initialize(const mrg::EngineServices& services) override;
+    void BeginScene() override;
+    void EndScene() noexcept override;
     void Update(
         const mrg::UpdateContext& context,
         mrg::scene::SceneManager& scenes) override;
@@ -22,8 +27,8 @@ public:
     void Shutdown() noexcept override;
 
 private:
-    void CreateLogoStrip(const mrg::EngineServices& services);
-    void CreateMenu(const mrg::EngineServices& services);
+    void CreateLogoStrip();
+    void CreateMenu();
     void UpdateLogoStripLayout();
     void ProcessPointer(const mrg::platform::InputState& input);
     void UpdateSelectionFromPointer(
@@ -44,7 +49,9 @@ private:
 
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
-    std::unique_ptr<mrg::visual2d::Visual2DCanvas> canvas_;
+    mrg::visual2d::ScreenVisual2DManager& screenVisuals_;
+    mrg::visual2d::ScreenCanvasId canvasId_{};
+    mrg::visual2d::Visual2DCanvas* canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;
     mrg::visual2d::Visual2DNode* logoStrip_{};
     mrg::visual2d::Visual2DNode* leftFade_{};

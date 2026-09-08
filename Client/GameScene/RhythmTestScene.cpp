@@ -70,7 +70,7 @@ namespace
     constexpr float TwoPi = 6.28318530717958647692F;
 
     [[nodiscard]] mrg::visual2d::Size ScaledImageSize(
-        const mrg::graphics::Visual2DRenderSystem& rendering,
+        const mrg::visual2d::ScreenVisual2DManager& rendering,
         const mrg::visual2d::ImageHandle image)
     {
         const mrg::visual2d::Size imageSize = rendering.GetImageSize(image);
@@ -183,8 +183,10 @@ namespace
 RhythmTestScene::RhythmTestScene(
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
     mrg::audio::AudioPlaybackManager& playback,
+    mrg::visual2d::ScreenVisual2DManager& screenVisuals,
     const bool debugMode)
     : launchRequest_(std::move(launchRequest)),
+      screenVisuals_(screenVisuals),
       audioRouter_(playback),
       debugMode_(debugMode)
 {
@@ -201,20 +203,32 @@ void RhythmTestScene::Initialize(const mrg::EngineServices& services)
     height_ = services.windowHeight;
     PrepareDebugLaunchRequest();
     session_ = CreateSession();
-    canvas_ = std::make_unique<mrg::visual2d::Visual2DCanvas>(
-        mrg::visual2d::Size{1280.0F, 720.0F},
-        mrg::visual2d::CanvasScaleMode::FixedHeight);
-    canvas_->SetViewportSize({
-        static_cast<float>(width_),
-        static_cast<float>(height_)});
-    CreatePresentation(services);
-    CreateNoteVisuals(services);
+    canvasId_ = screenVisuals_.CreateCanvas({
+        {1280.0F, 720.0F},
+        mrg::visual2d::CanvasScaleMode::FixedHeight});
+    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    if (canvas_ == nullptr)
+    {
+        throw std::runtime_error("Failed to create the gameplay screen Canvas.");
+    }
+    CreatePresentation();
+    CreateNoteVisuals();
     InitializeAudio(services);
     StartTimeline(services.audio.CaptureClockSnapshot());
     if (!debugMode_)
     {
         ScheduleMusic();
     }
+}
+
+void RhythmTestScene::BeginScene()
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+}
+
+void RhythmTestScene::EndScene() noexcept
+{
+    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
 }
 
 void RhythmTestScene::Update(
@@ -273,15 +287,10 @@ void RhythmTestScene::Update(
             return;
         }
     }
-    canvas_->Update(context.deltaSeconds);
 }
 
-void RhythmTestScene::Render(const mrg::graphics::RenderContext& context)
+void RhythmTestScene::Render(const mrg::graphics::RenderContext&)
 {
-    if (canvas_ != nullptr && context.visual2DRendering != nullptr)
-    {
-        context.visual2DRendering->SubmitScreen(*canvas_, context);
-    }
 }
 
 void RhythmTestScene::OnResize(
@@ -292,9 +301,6 @@ void RhythmTestScene::OnResize(
     height_ = height;
     if (canvas_ != nullptr)
     {
-        canvas_->SetViewportSize({
-            static_cast<float>(width_),
-            static_cast<float>(height_)});
         UpdatePresentationLayout();
     }
 }
@@ -321,7 +327,9 @@ void RhythmTestScene::Shutdown() noexcept
     gameProgressBar_ = nullptr;
     accuracyIndicator_ = nullptr;
     judgementIndicator_ = nullptr;
-    canvas_.reset();
+    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
+    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
+    canvas_ = nullptr;
     session_.reset();
     musicRegistered_ = false;
     if (launchRequest_ != nullptr)
@@ -473,8 +481,7 @@ RhythmTestScene::CreateLongNoteDebugSession()
     return std::move(result.session);
 }
 
-void RhythmTestScene::CreatePresentation(
-    const mrg::EngineServices& services)
+void RhythmTestScene::CreatePresentation()
 {
     auto& root = canvas_->Root();
 
@@ -487,10 +494,10 @@ void RhythmTestScene::CreatePresentation(
         "Background");
     SetColor(*background_, {0.941F, 0.973F, 1.0F, 1.0F});
 
-    const auto progressImage = services.visual2DRendering.LoadImage(
+    const auto progressImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"GameProgressBar.png"));
     const auto progressSize = ScaledImageSize(
-        services.visual2DRendering, progressImage);
+        screenVisuals_, progressImage);
     gameProgressBar_ = &mrg::visual2d::CreateSprite(
         root,
         {-CanvasReferenceWidth * 0.5F + GearMargin,
@@ -501,10 +508,10 @@ void RhythmTestScene::CreatePresentation(
         "Hud.GameProgress");
     gameProgressBar_->SetZIndex(5);
 
-    const auto accuracyImage = services.visual2DRendering.LoadImage(
+    const auto accuracyImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"AccuracyIndicator.png"));
     const auto accuracySize = ScaledImageSize(
-        services.visual2DRendering, accuracyImage);
+        screenVisuals_, accuracyImage);
     accuracyIndicator_ = &mrg::visual2d::CreateSprite(
         root,
         {CanvasReferenceWidth * 0.5F - GearMargin - accuracySize.width,
@@ -515,10 +522,10 @@ void RhythmTestScene::CreatePresentation(
         "Hud.Accuracy.Unavailable");
     accuracyIndicator_->SetZIndex(5);
 
-    const auto judgementImage = services.visual2DRendering.LoadImage(
+    const auto judgementImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"JudgementIndicator.png"));
     const auto judgementSize = ScaledImageSize(
-        services.visual2DRendering, judgementImage);
+        screenVisuals_, judgementImage);
     judgementIndicator_ = &mrg::visual2d::CreateSprite(
         root,
         {-judgementSize.width * 0.5F,
@@ -547,26 +554,25 @@ void RhythmTestScene::CreatePresentation(
         "ScrollGear.Surface");
     SetColor(*scrollGearSurface_, {0.73F, 0.82F, 0.93F, 1.0F});
 
-    CreateLaneVisuals(services, root);
+    CreateLaneVisuals(root);
     inputPresentationRoot_ = &root.CreateChild("InputPresentation");
     inputPresentationRoot_->SetZIndex(2);
-    const auto inputPanelImage = services.visual2DRendering.LoadImage(
+    const auto inputPanelImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"InputPanel.png"));
     inputPanelSize_ = ScaledImageSize(
-        services.visual2DRendering, inputPanelImage);
+        screenVisuals_, inputPanelImage);
     inputPanel_ = &mrg::visual2d::CreateSprite(
         *inputPresentationRoot_,
         {0.0F, 0.0F, inputPanelSize_.width, inputPanelSize_.height},
         inputPanelImage,
         "Input.Panel");
     inputPanel_->SetZIndex(0);
-    CreateKeyIndicators(services, *inputPanel_);
+    CreateKeyIndicators(*inputPanel_);
 
     UpdatePresentationLayout();
 }
 
 void RhythmTestScene::CreateLaneVisuals(
-    const mrg::EngineServices& services,
     mrg::visual2d::Visual2DNode& sceneRoot)
 {
     // Author the lane in its reusable default orientation: local +Y is the
@@ -592,13 +598,13 @@ void RhythmTestScene::CreateLaneVisuals(
         0.0F,
         -DirectX::XM_PIDIV2);
 
-    CreateLaneSurface(services);
-    CreateMeasureLineVisuals(services);
+    CreateLaneSurface();
+    CreateMeasureLineVisuals();
 
-    const auto judgementImage = services.visual2DRendering.LoadImage(
+    const auto judgementImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"JudgementCircle.png"));
     const auto judgementSize = ScaledImageSize(
-        services.visual2DRendering, judgementImage);
+        screenVisuals_, judgementImage);
     auto& judgementLine = mrg::visual2d::CreateSprite(
         *laneRoot_,
         {(laneWidth_ - judgementSize.width) * 0.5F,
@@ -610,18 +616,17 @@ void RhythmTestScene::CreateLaneVisuals(
     judgementLine.SetZIndex(4);
 }
 
-void RhythmTestScene::CreateLaneSurface(
-    const mrg::EngineServices& services)
+void RhythmTestScene::CreateLaneSurface()
 {
     if (laneRoot_ == nullptr)
     {
         throw std::logic_error("Lane background requires a Lane root.");
     }
 
-    laneImage_ = services.visual2DRendering.LoadImage(
+    laneImage_ = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"Lane.png"));
     const auto tileSize = ScaledImageSize(
-        services.visual2DRendering, laneImage_);
+        screenVisuals_, laneImage_);
     laneWidth_ = tileSize.width;
     laneTileLength_ = tileSize.height;
     judgementLocalY_ = laneWidth_ * 0.5F;
@@ -666,8 +671,7 @@ void RhythmTestScene::UpdateLaneSurfaceLayout(const float laneLength)
     }
 }
 
-void RhythmTestScene::CreateMeasureLineVisuals(
-    const mrg::EngineServices&)
+void RhythmTestScene::CreateMeasureLineVisuals()
 {
     for (const finger_drum::rhythm::RhythmTime timing :
         session_->MeasureLines())
@@ -684,7 +688,6 @@ void RhythmTestScene::CreateMeasureLineVisuals(
 }
 
 void RhythmTestScene::CreateKeyIndicators(
-    const mrg::EngineServices& services,
     mrg::visual2d::Visual2DNode& inputPanel)
 {
     struct KeySpec
@@ -704,12 +707,12 @@ void RhythmTestScene::CreateKeyIndicators(
          InputKeyBaseColors[3], L"KeyButtonRightKat.png"},
     }};
 
-    strongKeyLightImage_ = services.visual2DRendering.LoadImage(
+    strongKeyLightImage_ = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"KeyLightStrong.png"));
-    weakKeyLightImage_ = services.visual2DRendering.LoadImage(
+    weakKeyLightImage_ = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"KeyLightWeak.png"));
     const auto lightSize = ScaledImageSize(
-        services.visual2DRendering, strongKeyLightImage_);
+        screenVisuals_, strongKeyLightImage_);
     for (std::size_t index = 0; index < keys.size(); ++index)
     {
         const mrg::visual2d::Rect bounds{
@@ -733,7 +736,7 @@ void RhythmTestScene::CreateKeyIndicators(
         glow.SetZIndex(1);
         keyGlows_[index] = &glow;
 
-        const auto keyImage = services.visual2DRendering.LoadImage(
+        const auto keyImage = screenVisuals_.RegisterImage(
             InGameSkinAssetPath(keys[index].image));
         auto& face = mrg::visual2d::CreateSprite(
             inputPanel,
@@ -747,78 +750,77 @@ void RhythmTestScene::CreateKeyIndicators(
     }
 }
 
-void RhythmTestScene::CreateNoteVisuals(
-    const mrg::EngineServices& services)
+void RhythmTestScene::CreateNoteVisuals()
 {
-    const auto noteImage = services.visual2DRendering.LoadImage(
+    const auto noteImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"note.png"));
-    const auto noteOverlay = services.visual2DRendering.LoadImage(
+    const auto noteOverlay = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"noteoverlay.png"));
-    const auto bigNoteImage = services.visual2DRendering.LoadImage(
+    const auto bigNoteImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"bignote.png"));
-    const auto bigOverlay = services.visual2DRendering.LoadImage(
+    const auto bigOverlay = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"bigcircleoverlay.png"));
-    const auto bodyImage = services.visual2DRendering.LoadImage(
+    const auto bodyImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"LNBody.png"));
-    const auto bodyOverlayImage = services.visual2DRendering.LoadImage(
+    const auto bodyOverlayImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"LNBodyOverlay.png"));
-    const auto tailImage = services.visual2DRendering.LoadImage(
+    const auto tailImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"LNTail.png"));
-    const auto tailOverlayImage = services.visual2DRendering.LoadImage(
+    const auto tailOverlayImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"LNTailOverlay.png"));
-    const auto bigBodyImage = services.visual2DRendering.LoadImage(
+    const auto bigBodyImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"BigLNBody.png"));
-    const auto bigBodyOverlayImage = services.visual2DRendering.LoadImage(
+    const auto bigBodyOverlayImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"BigLNBodyOverlay.png"));
-    const auto bigTailImage = services.visual2DRendering.LoadImage(
+    const auto bigTailImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"BigLNTail.png"));
-    const auto bigTailOverlayImage = services.visual2DRendering.LoadImage(
+    const auto bigTailOverlayImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"BigLNTailOverlay.png"));
-    const auto tickImage = services.visual2DRendering.LoadImage(
+    const auto tickImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"TickMarker.png"));
-    const auto buzzTickImage = services.visual2DRendering.LoadImage(
+    const auto buzzTickImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"BuzzTickDiamond.png"));
-    const auto balloonImage = services.visual2DRendering.LoadImage(
+    const auto balloonImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"Balloon.png"));
-    const auto dengDengImage = services.visual2DRendering.LoadImage(
+    const auto dengDengImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"DengDeng.png"));
-    const auto balloonProcessingImage = services.visual2DRendering.LoadImage(
+    const auto balloonProcessingImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"BalloonProcessing.png"));
-    const auto balloonBurstImage = services.visual2DRendering.LoadImage(
+    const auto balloonBurstImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"BalloonBurst.png"));
-    const auto dengDengProcessingImage = services.visual2DRendering.LoadImage(
+    const auto dengDengProcessingImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"DengDengProcessing.png"));
-    const auto counterImage = services.visual2DRendering.LoadImage(
+    const auto counterImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"HitCounterCloud.png"));
 
     const auto noteSize = ScaledImageSize(
-        services.visual2DRendering, noteImage);
+        screenVisuals_, noteImage);
     const auto bigNoteSize = ScaledImageSize(
-        services.visual2DRendering, bigNoteImage);
+        screenVisuals_, bigNoteImage);
     const auto bodySize = ScaledImageSize(
-        services.visual2DRendering, bodyImage);
+        screenVisuals_, bodyImage);
     const auto tailSize = ScaledImageSize(
-        services.visual2DRendering, tailImage);
+        screenVisuals_, tailImage);
     const auto bigBodySize = ScaledImageSize(
-        services.visual2DRendering, bigBodyImage);
+        screenVisuals_, bigBodyImage);
     const auto bigTailSize = ScaledImageSize(
-        services.visual2DRendering, bigTailImage);
+        screenVisuals_, bigTailImage);
     const auto tickSize = ScaledImageSize(
-        services.visual2DRendering, tickImage);
+        screenVisuals_, tickImage);
     const auto buzzTickSize = ScaledImageSize(
-        services.visual2DRendering, buzzTickImage);
+        screenVisuals_, buzzTickImage);
     const auto balloonSize = ScaledImageSize(
-        services.visual2DRendering, balloonImage);
+        screenVisuals_, balloonImage);
     const auto dengDengSize = ScaledImageSize(
-        services.visual2DRendering, dengDengImage);
+        screenVisuals_, dengDengImage);
     const auto balloonProcessingSize = ScaledImageSize(
-        services.visual2DRendering, balloonProcessingImage);
+        screenVisuals_, balloonProcessingImage);
     const auto balloonBurstSize = ScaledImageSize(
-        services.visual2DRendering, balloonBurstImage);
+        screenVisuals_, balloonBurstImage);
     const auto dengDengProcessingSize = ScaledImageSize(
-        services.visual2DRendering, dengDengProcessingImage);
+        screenVisuals_, dengDengProcessingImage);
     const auto counterSize = ScaledImageSize(
-        services.visual2DRendering, counterImage);
+        screenVisuals_, counterImage);
 
     if (laneRoot_ == nullptr)
     {

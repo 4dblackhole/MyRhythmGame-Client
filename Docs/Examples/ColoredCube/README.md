@@ -14,3 +14,5 @@
 Blank Scene으로 전환하면서 공통 AudioPlaybackManager의 재생 유지를 확인한다.
 기존 pop.wav를 일시정지 상태로 재생하고 로컬 Clip 참조를 해제한 뒤에도 Voice가
 유효한지, 전환 후 재개·명시적 정지가 가능한지 검증한다.
+Widget route는 `ScreenVisual2DManager`가 소유한 Canvas를 사용해 Scene의 직접
+`SubmitScreen` 호출 없이 화면 표시·resize·정리를 함께 검증한다.

@@ -53,10 +53,12 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
     // catalog instead of reviving the ColoredCube sample as a dependency.
     if (!scenes.RegisterScene<FingerDrumLogoScene>(
             std::string(finger_drum::scene_ids::Logo),
-            mrg::scene::SceneRetention::KeepAlive) ||
+            mrg::scene::SceneRetention::KeepAlive,
+            std::ref(ScreenVisuals())) ||
         !scenes.RegisterScene<LobbyScene>(
             std::string(finger_drum::scene_ids::Lobby),
             mrg::scene::SceneRetention::KeepAlive,
+            std::ref(ScreenVisuals()),
             launchRequest_) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),
@@ -66,6 +68,7 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             mrg::scene::SceneRetention::DestroyOnExit,
             launchRequest_,
             std::ref(AudioPlayback()),
+            std::ref(ScreenVisuals()),
             rhythmDebugMode_))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
