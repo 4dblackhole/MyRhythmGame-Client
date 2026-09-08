@@ -182,8 +182,10 @@ namespace
 
 RhythmTestScene::RhythmTestScene(
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
+    mrg::audio::AudioPlaybackManager& playback,
     const bool debugMode)
     : launchRequest_(std::move(launchRequest)),
+      audioRouter_(playback),
       debugMode_(debugMode)
 {
 }

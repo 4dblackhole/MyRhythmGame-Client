@@ -30,6 +30,12 @@ flowchart TD
 4. `SceneManager`가 최초 Logo Scene을 활성화하고 `Initialize`를 한 번
    호출합니다.
 
+`SceneGameClient`는 SceneManager와 공통 AudioPlaybackManager를 함께 소유합니다.
+`FingerDrumGame`은 gameplay factory에 `AudioPlayback()` 참조를 전달하고,
+GameplayAudioRouter는 이를 통해 재생하며 세션에 속한 ID만 관리합니다.
+Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신 후 끝난 재생을
+정리하고 종료 시에는 Scene의 세션 정리 후 남은 전역 재생을 모두 정지합니다.
+
 ## Scene 흐름
 
 - Logo에서 Game Start를 누르면 Lobby로 이동합니다.

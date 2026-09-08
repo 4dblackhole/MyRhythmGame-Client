@@ -21,6 +21,7 @@ class RhythmTestScene final : public mrg::scene::GameScene
 public:
     explicit RhythmTestScene(
         std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
+        mrg::audio::AudioPlaybackManager& playback,
         bool debugMode = false);
 
     void Initialize(const mrg::EngineServices& services) override;

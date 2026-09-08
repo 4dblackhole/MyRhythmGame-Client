@@ -28,6 +28,15 @@ flowchart LR
   구현입니다. 현재 `TaikoMode`가 테스트 드라이버 역할을 합니다.
 - `Client/Audio/GameplayAudioRouter`: 의미 기반 SoundId와 BusId를 엔진
   `AudioClip`, `AudioBus`, `AudioEffect`에 연결하는 게임 전용 계층입니다.
+  실제 Voice는 `SceneGameClient::AudioPlayback()`이 소유하고 라우터는 해당
+  플레이 세션의 재생 ID만 보관합니다. 일시정지·재시작·종료 시 그 ID만 제어하여
+  다른 Scene이나 공통 UI의 재생에 영향을 주지 않습니다.
+
+파일 등록은 라우터의 `RegisterSound`가 SoundId와 경로를 연결하고
+`AudioSystem::LoadSound`로 Clip을 로드합니다. 음악은 Stream, 히트사운드는
+Sample 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 재생 관리자는 재생 중
+Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system은 `mrg::Run`이
+소유하는 AudioSystem 하나가 관리합니다.
 
 ## 한 개의 타이머
 

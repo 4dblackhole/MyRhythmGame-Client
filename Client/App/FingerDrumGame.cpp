@@ -8,6 +8,7 @@
 #include <Windows.h>
 
 #include <algorithm>
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -64,6 +65,7 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             // soon as it returns to Lobby.
             mrg::scene::SceneRetention::DestroyOnExit,
             launchRequest_,
+            std::ref(AudioPlayback()),
             rhythmDebugMode_))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
