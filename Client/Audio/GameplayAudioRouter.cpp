@@ -81,7 +81,11 @@ namespace finger_drum::audio
         {
             return false;
         }
-        clips_.insert_or_assign(std::move(soundId), std::move(clip));
+        clips_.insert_or_assign(
+            std::move(soundId),
+            RegisteredSound{
+                std::move(clip),
+                loadMode == mrg::audio::AudioLoadMode::Sample});
         errorMessage.clear();
         return true;
     }
@@ -120,25 +124,41 @@ namespace finger_drum::audio
         std::shared_ptr<mrg::audio::AudioClip> clip = std::move(loaded);
         for (const rhythm::SoundId& soundId : soundIds)
         {
-            clips_.insert_or_assign(soundId, clip);
+            clips_.insert_or_assign(
+                soundId,
+                RegisteredSound{clip, true});
         }
         errorMessage.clear();
         return true;
     }
 
-    void GameplayAudioRouter::Route(
+    void GameplayAudioRouter::PlayNow(
+        const std::span<const rhythm::AudioCueRequest> cues)
+    {
+        Route(cues, nullptr);
+    }
+
+    void GameplayAudioRouter::Schedule(
         const std::span<const rhythm::AudioCueRequest> cues,
         const rhythm::RhythmTimer& timer)
+    {
+        Route(cues, &timer);
+    }
+
+    void GameplayAudioRouter::Route(
+        const std::span<const rhythm::AudioCueRequest> cues,
+        const rhythm::RhythmTimer* const timer)
     {
         if (audioSystem_ == nullptr)
         {
             return;
         }
-        const std::uint64_t currentDspClock = audioSystem_->DspClock();
+        const std::uint64_t currentDspClock =
+            timer != nullptr ? audioSystem_->DspClock() : 0;
         for (const rhythm::AudioCueRequest& cue : cues)
         {
-            const auto clip = clips_.find(cue.sound);
-            if (clip == clips_.end())
+            const auto sound = clips_.find(cue.sound);
+            if (sound == clips_.end())
             {
                 lastError_ = "No AudioClip is registered for SoundId: " +
                     cue.sound;
@@ -148,17 +168,58 @@ namespace finger_drum::audio
             mrg::audio::AudioPlaybackSettings settings;
             settings.volume = std::max(cue.volume, 0.0F);
             settings.pitch = std::max(cue.pitch, 0.01F);
-            const std::uint64_t requestedClock =
-                timer.ToDspClock(cue.timelineTime);
-            settings.startDspClock = requestedClock > currentDspClock
-                ? requestedClock
-                : 0;
+            if (timer != nullptr)
+            {
+                const std::uint64_t requestedClock =
+                    timer->ToDspClock(cue.timelineTime);
+                settings.startDspClock = requestedClock > currentDspClock
+                    ? requestedClock
+                    : 0;
+            }
             std::string error;
             const auto bus = buses_.find(cue.bus);
+            const std::shared_ptr<mrg::audio::AudioBus> playbackBus =
+                bus == buses_.end() ? nullptr : bus->second;
+
+            const mrg::audio::AudioClip* const clipAddress =
+                sound->second.clip.get();
+            if (sound->second.restartWhilePlaying)
+            {
+                const auto active = sampleVoices_.find(clipAddress);
+                if (active != sampleVoices_.end())
+                {
+                    mrg::audio::AudioVoice* const voice =
+                        playback_.FindVoice(active->second);
+                    if (voice != nullptr && voice->IsPlaying())
+                    {
+                        if (!playback_.Restart(
+                                active->second,
+                                settings,
+                                playbackBus,
+                                error))
+                        {
+                            lastError_ = std::move(error);
+                        }
+                        continue;
+                    }
+
+                    const mrg::audio::AudioPlaybackId finishedId =
+                        active->second;
+                    sampleVoices_.erase(active);
+                    std::erase(voices_, finishedId);
+                    if (voice != nullptr)
+                    {
+                        std::string ignoredError;
+                        static_cast<void>(playback_.Stop(
+                            finishedId, ignoredError));
+                    }
+                }
+            }
+
             const mrg::audio::AudioPlaybackId voice = playback_.Play(
-                clip->second,
+                sound->second.clip,
                 settings,
-                bus == buses_.end() ? nullptr : bus->second,
+                playbackBus,
                 error);
             if (voice == mrg::audio::InvalidAudioPlaybackId)
             {
@@ -166,6 +227,10 @@ namespace finger_drum::audio
                 continue;
             }
             voices_.push_back(voice);
+            if (sound->second.restartWhilePlaying)
+            {
+                sampleVoices_.insert_or_assign(clipAddress, voice);
+            }
         }
     }
 
@@ -197,6 +262,7 @@ namespace finger_drum::audio
             }
         }
         voices_.clear();
+        sampleVoices_.clear();
     }
 
     bool GameplayAudioRouter::SetVoicesPaused(
@@ -224,6 +290,13 @@ namespace finger_drum::audio
             {
                 const mrg::audio::AudioVoice* voice = playback_.FindVoice(id);
                 return voice == nullptr || !voice->IsPlaying();
+            });
+        std::erase_if(
+            sampleVoices_,
+            [this](const auto& entry)
+            {
+                return std::ranges::find(voices_, entry.second) ==
+                    voices_.end();
             });
     }
 

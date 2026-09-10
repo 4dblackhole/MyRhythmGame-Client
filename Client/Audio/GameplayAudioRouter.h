@@ -39,7 +39,10 @@ namespace finger_drum::audio
             const std::filesystem::path& path,
             std::string& errorMessage);
 
-        void Route(
+        // Input-driven cues start immediately. Timeline scheduling remains a
+        // separate path for music and other deliberately future playback.
+        void PlayNow(std::span<const rhythm::AudioCueRequest> cues);
+        void Schedule(
             std::span<const rhythm::AudioCueRequest> cues,
             const rhythm::RhythmTimer& timer);
         void ApplyAutomation(
@@ -53,6 +56,15 @@ namespace finger_drum::audio
         [[nodiscard]] std::string_view LastError() const noexcept;
 
     private:
+        struct RegisteredSound
+        {
+            std::shared_ptr<mrg::audio::AudioClip> clip;
+            bool restartWhilePlaying{};
+        };
+
+        void Route(
+            std::span<const rhythm::AudioCueRequest> cues,
+            const rhythm::RhythmTimer* timer);
         [[nodiscard]] mrg::audio::AudioBus* FindBus(
             std::string_view id) noexcept;
         [[nodiscard]] mrg::audio::AudioEffect* EnsureEffect(
@@ -64,14 +76,18 @@ namespace finger_drum::audio
         mrg::audio::AudioPlaybackManager& playback_;
         std::map<std::string, std::shared_ptr<mrg::audio::AudioBus>, std::less<>>
             buses_;
-        std::map<std::string, std::shared_ptr<mrg::audio::AudioClip>, std::less<>>
-            clips_;
+        std::map<std::string, RegisteredSound, std::less<>> clips_;
         std::map<std::string,
             std::map<mrg::audio::AudioEffectType,
                 std::unique_ptr<mrg::audio::AudioEffect>>,
             std::less<>> effects_;
         // Only IDs for this play session. Voice ownership belongs to the Client.
         std::vector<mrg::audio::AudioPlaybackId> voices_;
+        // Aliased SoundIds share this entry by their common AudioClip address.
+        // Sample playback therefore has at most one active native channel per
+        // loaded sound resource.
+        std::map<const mrg::audio::AudioClip*, mrg::audio::AudioPlaybackId>
+            sampleVoices_;
         std::string lastError_;
     };
 }
