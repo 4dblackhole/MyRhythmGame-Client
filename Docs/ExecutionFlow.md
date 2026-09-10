@@ -32,6 +32,10 @@ flowchart TD
 
 `SceneGameClient`는 SceneManager, 공통 AudioPlaybackManager와 화면
 ScreenVisual2DManager를 함께 소유합니다.
+
+엔진 루프에서 예외가 발생하면 GPU 대기를 최선으로 시도한 뒤 Client를 먼저
+Shutdown하고, 그 다음 Audio와 renderer 지역 객체를 정리합니다. 따라서 Scene이
+보관한 Canvas·이미지·voice는 해당 서비스를 참조할 수 있는 동안 해제됩니다.
 `FingerDrumGame`은 gameplay factory에 `AudioPlayback()` 참조를 전달하고,
 GameplayAudioRouter는 이를 통해 재생하며 세션에 속한 ID만 관리합니다.
 Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신 후 끝난 재생을

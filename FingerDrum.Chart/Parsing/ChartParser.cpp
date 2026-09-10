@@ -634,7 +634,17 @@ namespace finger_drum::chart
             }
 
             const auto [key, value] = SplitKeyValue(line);
-            if (key == "Version") static_cast<void>(ParseInteger(value, result.document.version));
+            if (key == "Version")
+            {
+                if (!ParseInteger(value, result.document.version))
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "Version must be an integer.");
+                }
+            }
             else if (key == "Music metadata") result.document.musicMetadataFile = PathFromUtf8(value);
             else if (StartsWithInsensitive(key, "Pattern Maker") && !StartsWithInsensitive(key, "Pattern Maker Count")) result.document.makers.emplace_back(value);
             else if (key == "Pattern Name") result.document.name = std::string(value);
@@ -665,7 +675,18 @@ namespace finger_drum::chart
                         "Base BPM requires a finite numeric value.");
                 }
             }
-            else if (key == "JudgeLevel") static_cast<void>(ParseInteger(value, result.document.judgementLevel));
+            else if (key == "JudgeLevel")
+            {
+                if (!ParseInteger(value, result.document.judgementLevel) ||
+                    result.document.judgementLevel == 0)
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "JudgeLevel must be a positive integer.");
+                }
+            }
             else if (key == "Tags")
             {
                 for (const std::string_view tag : Split(value, ',')) result.document.tags.emplace_back(tag);
@@ -722,7 +743,14 @@ namespace finger_drum::chart
             const auto [key, value] = SplitKeyValue(line);
             if (section.empty() && key == "Version")
             {
-                static_cast<void>(ParseInteger(value, result.document.version));
+                if (!ParseInteger(value, result.document.version))
+                {
+                    AddDiagnostic(
+                        result.diagnostics,
+                        source,
+                        lineNumber,
+                        "Version must be an integer.");
+                }
                 continue;
             }
 
@@ -743,16 +771,51 @@ namespace finger_drum::chart
             command.type = ParseEffectType(fields[1]);
             command.source = {source, lineNumber, 1};
             if (fields.size() > 2) command.target = std::string(fields[2]);
-            if (fields.size() > 3) static_cast<void>(ParseDouble(fields[3], command.beginValue));
+            bool valid = true;
+            if (fields.size() > 3 &&
+                (!ParseDouble(fields[3], command.beginValue) ||
+                    !IsFinite(command.beginValue)))
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "An effect begin value must be a finite number.");
+                valid = false;
+            }
             command.endValue = command.beginValue;
-            if (fields.size() > 4) static_cast<void>(ParseDouble(fields[4], command.endValue));
-            if (fields.size() > 5) static_cast<void>(ParseDouble(fields[5], command.durationMilliseconds));
+            if (fields.size() > 4 &&
+                (!ParseDouble(fields[4], command.endValue) ||
+                    !IsFinite(command.endValue)))
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "An effect end value must be a finite number.");
+                valid = false;
+            }
+            if (fields.size() > 5 &&
+                (!ParseDouble(fields[5], command.durationMilliseconds) ||
+                    !IsFinite(command.durationMilliseconds) ||
+                    command.durationMilliseconds < 0.0))
+            {
+                AddDiagnostic(
+                    result.diagnostics,
+                    source,
+                    lineNumber,
+                    "An effect duration must be a finite non-negative millisecond value.");
+                valid = false;
+            }
             if (fields.size() > 6) command.curve = ParseCurve(fields[6]);
             for (std::size_t index = 7; index < fields.size(); ++index)
             {
                 command.arguments.emplace_back(fields[index]);
             }
-            result.document.commands.push_back(std::move(command));
+            if (valid)
+            {
+                result.document.commands.push_back(std::move(command));
+            }
         }
         return result;
     }

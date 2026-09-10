@@ -117,6 +117,7 @@ private:
     std::size_t selectedPatternIndex_{};
     SortMode sortMode_{SortMode::Difficulty};
     std::wstring searchText_;
+    std::wstring launchError_;
     float scrollOffset_{};
     float contentHeight_{};
     std::uint32_t width_{1280};
@@ -124,7 +125,7 @@ private:
     bool searchFocused_{};
 
     mrg::visual2d::ScreenVisual2DManager& screenVisuals_;
-    mrg::visual2d::ScreenCanvasId canvasId_{};
+    mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas* canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;
     mrg::visual2d::Visual2DNode* board_{};

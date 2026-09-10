@@ -20,15 +20,16 @@ Canvas 좌표로 변환한다.
 Canvas와 이미지를 그 관리자에 등록한다.
 
 ```cpp
-canvasId_ = screenVisuals_.CreateCanvas();
-canvas_ = screenVisuals_.FindCanvas(canvasId_);
+canvasHandle_ = screenVisuals_.CreateOwnedCanvas();
+canvas_ = canvasHandle_.Get();
 const auto image = screenVisuals_.RegisterImage(imagePath);
 ```
 
 Scene은 `BeginScene`/`EndScene`에서 Canvas 표시 상태를 바꾸고 `Shutdown`에서
-InputRouter를 Reset한 뒤 `RemoveCanvas`를 호출한다. Canvas Update, 창 크기 반영,
+InputRouter를 Reset한 뒤 `canvasHandle_.Reset()`을 호출한다. 초기화 예외나 Scene
+소멸 시에도 이동 전용 handle이 Canvas 등록을 자동 해제한다. Canvas Update, 창 크기 반영,
 `SubmitScreen`은 `SceneGameClient`가 자동으로 수행하므로 Scene의 `Render`에서는
-호출하지 않는다. 이미지 경로는 Client 수명 동안 한 번 등록되며 실제 GPU 자원은
+호출하지 않는다. 이미지 경로는 정규화 후 대소문자 구분 없이 Client 수명 동안 한 번 등록되며 실제 GPU 자원은
 엔진 Visual2D backend 캐시가 소유한다.
 
 Canvas는 렌더링되지 않는 앵커 노드 아홉 개를 항상 소유한다.

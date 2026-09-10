@@ -89,6 +89,7 @@ private:
     void UpdatePresentationLayout();
     void InitializeAudio(const mrg::EngineServices& services);
     void RegisterTaikoSounds(std::string& errorMessage);
+    void PresentAudioError(std::string_view message);
     void ScheduleMusic();
     void StartTimeline(const mrg::audio::AudioClockSnapshot& clock);
     void ResetTimeline(const mrg::audio::AudioClockSnapshot& clock);
@@ -124,13 +125,14 @@ private:
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
     mrg::visual2d::ScreenVisual2DManager& screenVisuals_;
-    mrg::visual2d::ScreenCanvasId canvasId_{};
+    mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas* canvas_{};
     std::unique_ptr<finger_drum::mode::PlaySession> session_;
     finger_drum::rhythm::RhythmTimer timer_;
     finger_drum::audio::GameplayAudioRouter audioRouter_;
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers>
         noteVisuals_;
+    std::vector<finger_drum::rhythm::NoteId> presentedNoteIds_;
     std::unordered_map<finger_drum::rhythm::NoteId,
         finger_drum::rhythm::RhythmTime> completionEffects_;
     std::vector<TimedVisual> measureLineVisuals_;
@@ -149,6 +151,7 @@ private:
     mrg::visual2d::Visual2DNode* gameProgressBar_{};
     mrg::visual2d::Visual2DNode* accuracyIndicator_{};
     mrg::visual2d::Visual2DNode* judgementIndicator_{};
+    mrg::visual2d::Visual2DNode* audioErrorLabel_{};
     float laneWidth_{152.0F};
     float laneTileLength_{42.0F};
     float judgementLocalY_{76.0F};

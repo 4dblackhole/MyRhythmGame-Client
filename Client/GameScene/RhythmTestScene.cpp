@@ -129,6 +129,34 @@ namespace
             std::filesystem::path(L"assets\\sounds") / file);
     }
 
+    [[nodiscard]] std::wstring Utf8ToWide(const std::string_view value)
+    {
+        if (value.empty())
+        {
+            return {};
+        }
+        const int length = MultiByteToWideChar(
+            CP_UTF8,
+            MB_ERR_INVALID_CHARS,
+            value.data(),
+            static_cast<int>(value.size()),
+            nullptr,
+            0);
+        if (length <= 0)
+        {
+            return L"Audio initialization failed.";
+        }
+        std::wstring result(static_cast<std::size_t>(length), L'\0');
+        MultiByteToWideChar(
+            CP_UTF8,
+            MB_ERR_INVALID_CHARS,
+            value.data(),
+            static_cast<int>(value.size()),
+            result.data(),
+            length);
+        return result;
+    }
+
     void AddPatternNote(
         finger_drum::chart::PatternDocument& pattern,
         const std::int64_t measure,
@@ -203,10 +231,10 @@ void RhythmTestScene::Initialize(const mrg::EngineServices& services)
     height_ = services.windowHeight;
     PrepareDebugLaunchRequest();
     session_ = CreateSession();
-    canvasId_ = screenVisuals_.CreateCanvas({
+    canvasHandle_ = screenVisuals_.CreateOwnedCanvas({
         {1280.0F, 720.0F},
         mrg::visual2d::CanvasScaleMode::FixedHeight});
-    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    canvas_ = canvasHandle_.Get();
     if (canvas_ == nullptr)
     {
         throw std::runtime_error("Failed to create the gameplay screen Canvas.");
@@ -223,12 +251,12 @@ void RhythmTestScene::Initialize(const mrg::EngineServices& services)
 
 void RhythmTestScene::BeginScene()
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+    static_cast<void>(canvasHandle_.SetVisible(true));
 }
 
 void RhythmTestScene::EndScene() noexcept
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
+    static_cast<void>(canvasHandle_.SetVisible(false));
 }
 
 void RhythmTestScene::Update(
@@ -272,6 +300,10 @@ void RhythmTestScene::Update(
     }
     UpdateInputPresentation(context.input);
     audioRouter_.Update();
+    if (!audioRouter_.LastError().empty())
+    {
+        PresentAudioError(audioRouter_.LastError());
+    }
 
     // DestroyOnExit removes this complete mode instance after the deferred
     // transition. Only Lobby and its selected catalog data remain alive.
@@ -310,6 +342,7 @@ void RhythmTestScene::Shutdown() noexcept
     timer_.Stop();
     audioRouter_.Shutdown();
     noteVisuals_.clear();
+    presentedNoteIds_.clear();
     completionEffects_.clear();
     measureLineVisuals_.clear();
     keyIndicators_.fill(nullptr);
@@ -327,9 +360,9 @@ void RhythmTestScene::Shutdown() noexcept
     gameProgressBar_ = nullptr;
     accuracyIndicator_ = nullptr;
     judgementIndicator_ = nullptr;
-    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
-    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
+    audioErrorLabel_ = nullptr;
     canvas_ = nullptr;
+    canvasHandle_.Reset();
     session_.reset();
     musicRegistered_ = false;
     if (launchRequest_ != nullptr)
@@ -493,6 +526,20 @@ void RhythmTestScene::CreatePresentation()
          CanvasReferenceHeight},
         "Background");
     SetColor(*background_, {0.941F, 0.973F, 1.0F, 1.0F});
+
+    audioErrorLabel_ = &mrg::visual2d::CreateLabel(
+        root,
+        {-500.0F, 320.0F, 1000.0F, 28.0F},
+        L"",
+        "Hud.AudioError");
+    audioErrorLabel_->SetZIndex(20);
+    audioErrorLabel_->SetVisible(false);
+    auto& audioErrorText = RequireComponent<
+        mrg::visual2d::TextVisualComponent>(*audioErrorLabel_);
+    audioErrorText.SetFontSize(16.0F);
+    audioErrorText.SetTextColor({0.78F, 0.06F, 0.08F, 1.0F});
+    audioErrorText.SetHorizontalAlignment(
+        mrg::visual2d::TextAlignment::Center);
 
     const auto progressImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"GameProgressBar.png"));
@@ -1144,53 +1191,87 @@ void RhythmTestScene::UpdatePresentationLayout()
 
 void RhythmTestScene::InitializeAudio(const mrg::EngineServices& services)
 {
-    std::string audioError;
-    if (audioRouter_.Initialize(services.audio, audioError))
+    std::string initializationError;
+    if (!audioRouter_.Initialize(services.audio, initializationError))
     {
-        RegisterTaikoSounds(audioError);
-        if (audioError.empty() && launchRequest_->IsValid())
-        {
-            musicRegistered_ = audioRouter_.RegisterSound(
-                "Music.Track",
-                launchRequest_->musicPath,
-                mrg::audio::AudioLoadMode::Stream,
-                audioError);
-        }
+        PresentAudioError(initializationError);
+        return;
+    }
+
+    std::string hitSoundError;
+    RegisterTaikoSounds(hitSoundError);
+
+    std::string musicError;
+    if (launchRequest_->IsValid())
+    {
+        musicRegistered_ = audioRouter_.RegisterSound(
+            "Music.Track",
+            launchRequest_->musicPath,
+            mrg::audio::AudioLoadMode::Stream,
+            musicError);
+    }
+
+    if (!hitSoundError.empty() || !musicError.empty())
+    {
+        PresentAudioError(!musicError.empty() ? musicError : hitSoundError);
     }
 }
 
 void RhythmTestScene::RegisterTaikoSounds(std::string& errorMessage)
 {
-    struct SoundRegistration
+    struct SoundRegistration final
     {
-        std::string_view id;
+        std::span<const finger_drum::rhythm::SoundId> ids;
         std::wstring_view file;
     };
-    constexpr std::array<SoundRegistration, 7> registrations{{
-        {"Taiko.Don.Hit", L"don.wav"},
-        {"Taiko.Kat.Hit", L"kat.wav"},
-        {"Taiko.BigDon.FirstHit", L"bigdon.wav"},
-        {"Taiko.BigKat.FirstHit", L"bigkat.wav"},
-        {"Taiko.LongNote.Tick", L"don.wav"},
-        {"Taiko.Don.FreeInput", L"don.wav"},
-        {"Taiko.Kat.FreeInput", L"kat.wav"},
+    static const std::array<finger_drum::rhythm::SoundId, 3> DonIds{
+        "Taiko.Don.Hit", "Taiko.LongNote.Tick", "Taiko.Don.FreeInput"};
+    static const std::array<finger_drum::rhythm::SoundId, 2> KatIds{
+        "Taiko.Kat.Hit", "Taiko.Kat.FreeInput"};
+    static const std::array<finger_drum::rhythm::SoundId, 1> BigDonIds{
+        "Taiko.BigDon.FirstHit"};
+    static const std::array<finger_drum::rhythm::SoundId, 1> BigKatIds{
+        "Taiko.BigKat.FirstHit"};
+    const std::array<SoundRegistration, 4> registrations{{
+        {DonIds, L"don.wav"},
+        {KatIds, L"kat.wav"},
+        {BigDonIds, L"bigdon.wav"},
+        {BigKatIds, L"bigkat.wav"},
     }};
+    std::string firstError;
     for (const SoundRegistration& registration : registrations)
     {
-        if (!audioRouter_.RegisterSound(
-                std::string(registration.id),
+        std::string registrationError;
+        if (!audioRouter_.RegisterSoundAliases(
+                registration.ids,
                 SkinAssetPath(registration.file),
-                mrg::audio::AudioLoadMode::Sample,
-                errorMessage))
+                registrationError) && firstError.empty())
         {
-            return;
+            firstError = registration.ids.front() + ": " +
+                registrationError;
         }
     }
-    static_cast<void>(audioRouter_.RegisterSound(
+    std::string balloonError;
+    if (!audioRouter_.RegisterSound(
         "Taiko.Balloon.Pop",
         SoundAssetPath(L"pop.wav"),
         mrg::audio::AudioLoadMode::Sample,
-        errorMessage));
+        balloonError) && firstError.empty())
+    {
+        firstError = "Taiko.Balloon.Pop: " + balloonError;
+    }
+    errorMessage = std::move(firstError);
+}
+
+void RhythmTestScene::PresentAudioError(const std::string_view message)
+{
+    if (audioErrorLabel_ == nullptr || message.empty())
+    {
+        return;
+    }
+    RequireComponent<mrg::visual2d::TextVisualComponent>(
+        *audioErrorLabel_).SetText(L"AUDIO: " + Utf8ToWide(message));
+    audioErrorLabel_->SetVisible(true);
 }
 
 void RhythmTestScene::ScheduleMusic()
@@ -1453,9 +1534,14 @@ void RhythmTestScene::ConsumeResult(
 
 void RhythmTestScene::HideTransientNoteVisuals()
 {
-    for (auto& [id, layers] : noteVisuals_)
+    for (const finger_drum::rhythm::NoteId id : presentedNoteIds_)
     {
-        static_cast<void>(id);
+        const auto visual = noteVisuals_.find(id);
+        if (visual == noteVisuals_.end())
+        {
+            continue;
+        }
+        NoteVisualLayers& layers = visual->second;
         layers.root->SetVisible(false);
         if (layers.processing != nullptr)
         {
@@ -1470,6 +1556,7 @@ void RhythmTestScene::HideTransientNoteVisuals()
             layers.counter->SetVisible(false);
         }
     }
+    presentedNoteIds_.clear();
 }
 
 void RhythmTestScene::PresentFocusCounter(
@@ -1567,6 +1654,7 @@ void RhythmTestScene::PresentCompletionEffect(
         return;
     }
     NoteVisualLayers& layers = visual->second;
+    presentedNoteIds_.push_back(selected->first);
     const float progress = std::clamp(
         static_cast<float>((time - selected->second).count()) /
             static_cast<float>(FocusSuccessDuration.count()),
@@ -1638,6 +1726,7 @@ void RhythmTestScene::UpdatePresentation(
             continue;
         }
         NoteVisualLayers& layers = found->second;
+        presentedNoteIds_.push_back(note.noteId);
         const finger_drum::mode::NotePresentationInfo* presentation =
             session_->FindNotePresentation(note.noteId);
         const bool focusNote = layers.focusType != FocusNoteType::None;

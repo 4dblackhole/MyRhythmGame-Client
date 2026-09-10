@@ -91,17 +91,38 @@ namespace finger_drum::audio
         const std::filesystem::path& path,
         std::string& errorMessage)
     {
+        if (audioSystem_ == nullptr)
+        {
+            errorMessage = "The gameplay audio router is not initialized.";
+            return false;
+        }
+        if (soundIds.empty() ||
+            std::ranges::any_of(
+                soundIds,
+                [](const rhythm::SoundId& soundId)
+                {
+                    return soundId.empty();
+                }))
+        {
+            errorMessage = "Gameplay sound aliases require non-empty IDs.";
+            return false;
+        }
+
+        std::unique_ptr<mrg::audio::AudioClip> loaded =
+            audioSystem_->LoadSound(
+                path,
+                mrg::audio::AudioLoadMode::Sample,
+                errorMessage);
+        if (loaded == nullptr)
+        {
+            return false;
+        }
+        std::shared_ptr<mrg::audio::AudioClip> clip = std::move(loaded);
         for (const rhythm::SoundId& soundId : soundIds)
         {
-            if (!RegisterSound(
-                    soundId,
-                    path,
-                    mrg::audio::AudioLoadMode::Sample,
-                    errorMessage))
-            {
-                return false;
-            }
+            clips_.insert_or_assign(soundId, clip);
         }
+        errorMessage.clear();
         return true;
     }
 

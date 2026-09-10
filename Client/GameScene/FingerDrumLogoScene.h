@@ -50,7 +50,7 @@ private:
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
     mrg::visual2d::ScreenVisual2DManager& screenVisuals_;
-    mrg::visual2d::ScreenCanvasId canvasId_{};
+    mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas* canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;
     mrg::visual2d::Visual2DNode* logoStrip_{};

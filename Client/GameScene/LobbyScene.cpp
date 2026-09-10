@@ -2,6 +2,7 @@
 
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "Presentation/MarqueeTextComponent.h"
+#include "Taiko/TaikoMode.h"
 
 #include <Windows.h>
 
@@ -291,10 +292,15 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
     width_ = services.windowWidth;
     height_ = services.windowHeight;
     catalog_ = finger_drum::chart::SongCatalog{}.Load(RuntimeSongsPath());
-    canvasId_ = screenVisuals_.CreateCanvas({
+    if (catalog_.songs.empty() && !catalog_.diagnostics.empty())
+    {
+        launchError_ = L"CATALOG ERROR: " + DecodeDisplayText(
+            catalog_.diagnostics.front().message);
+    }
+    canvasHandle_ = screenVisuals_.CreateOwnedCanvas({
         layout::CanvasSize,
         mrg::visual2d::CanvasScaleMode::FixedHeight});
-    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    canvas_ = canvasHandle_.Get();
     if (canvas_ == nullptr)
     {
         throw std::runtime_error("Failed to create the Lobby screen Canvas.");
@@ -318,12 +324,12 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
 
 void LobbyScene::BeginScene()
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+    static_cast<void>(canvasHandle_.SetVisible(true));
 }
 
 void LobbyScene::EndScene() noexcept
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
+    static_cast<void>(canvasHandle_.SetVisible(false));
 }
 
 void LobbyScene::Update(
@@ -377,9 +383,8 @@ void LobbyScene::Shutdown() noexcept
     songContent_ = nullptr;
     songViewport_ = nullptr;
     board_ = nullptr;
-    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
-    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
     canvas_ = nullptr;
+    canvasHandle_.Reset();
     catalog_ = {};
 }
 
@@ -817,8 +822,9 @@ void LobbyScene::RefreshSelectionPresentation()
         RequireComponent<mrg::visual2d::TextVisualComponent>(
             *selectedCreatorLabel_).SetText(L"—");
         RequireComponent<mrg::visual2d::TextVisualComponent>(
-            *selectedDetailsLabel_).SetText(
-                L"LEVEL —   BPM —   NOTES —   MODE —");
+            *selectedDetailsLabel_).SetText(launchError_.empty()
+                ? L"LEVEL —   BPM —   NOTES —   MODE —"
+                : launchError_);
         return;
     }
 
@@ -860,6 +866,12 @@ void LobbyScene::RefreshSelectionPresentation()
         {
             return static_cast<wchar_t>(std::towupper(character));
         });
+    if (!launchError_.empty())
+    {
+        RequireComponent<mrg::visual2d::TextVisualComponent>(
+            *selectedDetailsLabel_).SetText(launchError_);
+        return;
+    }
     RequireComponent<mrg::visual2d::TextVisualComponent>(
         *selectedDetailsLabel_).SetText(std::format(
             L"LEVEL —   BPM {}   NOTES {}   MODE {}",
@@ -1199,6 +1211,7 @@ void LobbyScene::SelectVisibleSong(const std::size_t visiblePosition)
     }
     focusedSongPosition_ = visiblePosition;
     selectedPatternIndex_ = 0;
+    launchError_.clear();
     RebuildSongCards();
     RefreshSelectionPresentation();
     EnsureFocusedCardVisible();
@@ -1217,6 +1230,7 @@ void LobbyScene::SelectPattern(const std::size_t index)
         return;
     }
     selectedPatternIndex_ = index;
+    launchError_.clear();
     for (const auto [id, patternIndex] : difficultyButtonIds_)
     {
         if (mrg::visual2d::Visual2DNode* button = canvas_->FindNode(id))
@@ -1245,6 +1259,38 @@ bool LobbyScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
         return false;
     }
     const auto& pattern = song.patterns[selectedPatternIndex_];
+    if (!pattern.pattern.mode.empty() && pattern.pattern.mode != "Taiko")
+    {
+        launchError_ = L"UNSUPPORTED MODE: " +
+            DecodeDisplayText(pattern.pattern.mode);
+        RefreshSelectionPresentation();
+        return false;
+    }
+
+    try
+    {
+        finger_drum::mode::ModeLoadResult validation =
+            finger_drum::mode::TaikoMode{}.LoadSession(
+                pattern.patternPath,
+                pattern.effectPath);
+        if (!validation.Succeeded())
+        {
+            launchError_ = L"PATTERN ERROR: " + DecodeDisplayText(
+                validation.diagnostics.empty()
+                    ? std::string_view{"Unknown chart error."}
+                    : std::string_view{validation.diagnostics.front().message});
+            RefreshSelectionPresentation();
+            return false;
+        }
+    }
+    catch (const std::exception& exception)
+    {
+        launchError_ = L"PATTERN ERROR: " + DecodeDisplayText(exception.what());
+        RefreshSelectionPresentation();
+        return false;
+    }
+
+    launchError_.clear();
     launchRequest_->patternPath = pattern.patternPath;
     launchRequest_->effectPath = pattern.effectPath;
     launchRequest_->musicPath = song.audioPath;

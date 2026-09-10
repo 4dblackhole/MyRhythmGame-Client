@@ -10,9 +10,11 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <span>
@@ -30,6 +32,46 @@ namespace
         {
             throw std::runtime_error(message);
         }
+    }
+
+    class TemporaryDirectory final
+    {
+    public:
+        explicit TemporaryDirectory(std::string_view name)
+        {
+            const auto nonce = std::chrono::steady_clock::now()
+                .time_since_epoch().count();
+            path_ = std::filesystem::temp_directory_path() /
+                (std::string(name) + "-" + std::to_string(nonce));
+            std::filesystem::create_directories(path_);
+        }
+
+        ~TemporaryDirectory()
+        {
+            std::error_code ignored;
+            std::filesystem::remove_all(path_, ignored);
+        }
+
+        [[nodiscard]] const std::filesystem::path& Path() const noexcept
+        {
+            return path_;
+        }
+
+    private:
+        std::filesystem::path path_;
+    };
+
+    void WriteTextFile(
+        const std::filesystem::path& path,
+        const std::string_view contents)
+    {
+        std::filesystem::create_directories(path.parent_path());
+        std::ofstream stream(path, std::ios::binary);
+        if (!stream)
+        {
+            throw std::runtime_error("Failed to create a temporary chart file.");
+        }
+        stream.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     }
 
     [[nodiscard]] bool HasEvent(
@@ -234,6 +276,40 @@ namespace
             expiredTrail.notes.empty(),
             "A missed timed note must remain in the snapshot for its explicit "
             "post-expiry travel window only.");
+    }
+
+    void TestOverlappingLongTrailIsNotHiddenByShorterNote()
+    {
+        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        rhythm::ScrollGear gear;
+        rhythm::Lane& lane = gear.CreateLane();
+        lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(
+            1,
+            rhythm::RhythmTime::zero(),
+            profile,
+            std::make_unique<rhythm::TimedSequenceInputRule>(
+                std::vector<rhythm::NoteAction>{1},
+                2,
+                rhythm::RhythmTime{1'000'000})));
+        lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(
+            2,
+            rhythm::RhythmTime{100'000},
+            profile,
+            std::make_unique<rhythm::TimedSequenceInputRule>(
+                std::vector<rhythm::NoteAction>{1},
+                2,
+                rhythm::RhythmTime{100'000})));
+        gear.Finalize();
+
+        static_cast<void>(gear.Update(rhythm::RhythmTime{1'000'000}));
+        const rhythm::ScrollGearSnapshot snapshot = gear.BuildSnapshot(
+            rhythm::RhythmTime{1'100'000},
+            rhythm::RhythmDuration{2'000'000},
+            rhythm::RhythmDuration{220'000});
+        Require(
+            snapshot.notes.size() == 1 && snapshot.notes.front().noteId == 1,
+            "An older long-note trail must remain visible when an intervening "
+            "short note has already left the past window.");
     }
 
     [[nodiscard]] chart::PatternDocument MakeLongPattern(
@@ -815,6 +891,61 @@ Base BPM: 120
                   << " patterns.\n";
     }
 
+    void TestSongCatalogIsolatesInvalidFiles()
+    {
+        TemporaryDirectory fixture("FingerDrumCatalogValidation");
+        const std::filesystem::path music = fixture.Path() / "Music";
+        const std::filesystem::path patterns = fixture.Path() / "Pattern";
+        WriteTextFile(
+            music / "valid.ymm",
+            "Version: 1\nFile: valid.mp3\nMusic Name 1: Valid\n");
+        WriteTextFile(music / "valid.mp3", "audio-placeholder");
+        WriteTextFile(
+            music / "invalid.ymm",
+            "Version: nope\nMusic Name 1: Invalid\n");
+        WriteTextFile(
+            patterns / "valid.ymp",
+            "Version: 1\nMusic metadata: Music/valid.ymm\n"
+            "Pattern Name: Valid\nMode: Taiko\nBase BPM: 120\n"
+            "[Pattern]\n0/1,1,0\n");
+        WriteTextFile(
+            patterns / "invalid.ymp",
+            "Version: nope\nMusic metadata: Music/valid.ymm\n"
+            "Pattern Name: Invalid\nMode: Taiko\nBase BPM: 120\n"
+            "[Pattern]\n0/1,1,0\n");
+
+        const chart::SongCatalogLoadResult catalog =
+            chart::SongCatalog{}.Load(fixture.Path());
+        Require(
+            !catalog.Succeeded() && catalog.discoveredMusicFiles == 2 &&
+                catalog.discoveredPatternFiles == 2,
+            "Catalog discovery must retain diagnostics and source counts for invalid files.");
+        Require(
+            catalog.songs.size() == 1 && catalog.PatternCount() == 1,
+            "Invalid YMM/YMP files must be isolated from otherwise playable catalog entries "
+            "(songs=" + std::to_string(catalog.songs.size()) +
+            ", patterns=" + std::to_string(catalog.PatternCount()) + ").");
+    }
+
+    void TestInvalidNumericFieldsReportDiagnostics()
+    {
+        chart::ChartParser parser;
+        const auto pattern = parser.ParsePattern(
+            "Version: nope\nBase BPM: 120\nJudgeLevel: 0\n",
+            "invalid.ymp");
+        Require(
+            !pattern.Succeeded() && pattern.diagnostics.size() >= 2,
+            "Invalid YMP integer fields must produce parse diagnostics.");
+
+        const auto effects = parser.ParseEffect(
+            "Version: nope\n[AudioAutomation]\n"
+            "0/1,#BusVolume,HitSound,invalid,0.5,-1,Linear\n",
+            "invalid.yme");
+        Require(
+            !effects.Succeeded() && effects.document.commands.empty(),
+            "Invalid YME numeric fields must be diagnosed and excluded.");
+    }
+
     void TestLegacyParsingAndMicroseconds()
     {
         constexpr std::string_view Pattern = R"(
@@ -887,6 +1018,7 @@ int main(const int argumentCount, char* arguments[])
         TestLargeNoteSoundState();
         TestHoldTicksAreExactlyOnce();
         TestLongNoteRemainsInScrollSnapshotUntilItsTail();
+        TestOverlappingLongTrailIsNotHiddenByShorterNote();
         TestTaikoRollAndTickRollRules();
         TestBalloonDengDengAndBuzzRules();
         TestMusicalSubdivisionTicksFollowTempo();
@@ -898,6 +1030,8 @@ int main(const int argumentCount, char* arguments[])
         TestAbsoluteMeasurePositionsAndTempoAnchors();
         TestOutOfMeasureEntriesAreIgnored();
         TestLegacyParsingAndMicroseconds();
+        TestInvalidNumericFieldsReportDiagnostics();
+        TestSongCatalogIsolatesInvalidFiles();
         if (argumentCount == 3 &&
             std::string_view(arguments[1]) == "--catalog-root")
         {
