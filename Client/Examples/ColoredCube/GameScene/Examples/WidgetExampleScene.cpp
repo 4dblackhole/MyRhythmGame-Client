@@ -50,8 +50,8 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
 {
     width_ = services.windowWidth;
     height_ = services.windowHeight;
-    canvasId_ = screenVisuals_.CreateCanvas();
-    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    canvasHandle_ = screenVisuals_.CreateOwnedCanvas();
+    canvas_ = canvasHandle_.Get();
     if (canvas_ == nullptr)
     {
         throw std::runtime_error("Failed to create the widget screen Canvas.");
@@ -77,12 +77,12 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
 
 void WidgetExampleScene::BeginScene()
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+    static_cast<void>(canvasHandle_.SetVisible(true));
 }
 
 void WidgetExampleScene::EndScene() noexcept
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
+    static_cast<void>(canvasHandle_.SetVisible(false));
 }
 
 void WidgetExampleScene::BuildCanvas()
@@ -352,9 +352,8 @@ void WidgetExampleScene::Shutdown() noexcept
         inputRouter_.Reset(*canvas_);
     }
     dynamicWidgetIds_.clear();
-    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
-    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
     canvas_ = nullptr;
+    canvasHandle_.Reset();
 }
 
 std::int64_t WidgetExampleScene::LatestPointerTimestamp(

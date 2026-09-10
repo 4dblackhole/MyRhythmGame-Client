@@ -100,10 +100,10 @@ void FingerDrumLogoScene::Initialize(const mrg::EngineServices& services)
 
     // FixedHeight keeps the logo composition measured against a 720-unit
     // vertical reference while expanding the logical width for wider screens.
-    canvasId_ = screenVisuals_.CreateCanvas({
+    canvasHandle_ = screenVisuals_.CreateOwnedCanvas({
         {1280.0F, 720.0F},
         mrg::visual2d::CanvasScaleMode::FixedHeight});
-    canvas_ = screenVisuals_.FindCanvas(canvasId_);
+    canvas_ = canvasHandle_.Get();
     if (canvas_ == nullptr)
     {
         throw std::runtime_error("Failed to create the logo screen Canvas.");
@@ -116,12 +116,12 @@ void FingerDrumLogoScene::Initialize(const mrg::EngineServices& services)
 
 void FingerDrumLogoScene::BeginScene()
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, true));
+    static_cast<void>(canvasHandle_.SetVisible(true));
 }
 
 void FingerDrumLogoScene::EndScene() noexcept
 {
-    static_cast<void>(screenVisuals_.SetCanvasVisible(canvasId_, false));
+    static_cast<void>(canvasHandle_.SetVisible(false));
 }
 
 void FingerDrumLogoScene::Update(
@@ -177,9 +177,8 @@ void FingerDrumLogoScene::Shutdown() noexcept
     centerLogo_ = nullptr;
     leftFade_ = nullptr;
     logoStrip_ = nullptr;
-    static_cast<void>(screenVisuals_.RemoveCanvas(canvasId_));
-    canvasId_ = mrg::visual2d::InvalidScreenCanvasId;
     canvas_ = nullptr;
+    canvasHandle_.Reset();
 }
 
 void FingerDrumLogoScene::CreateLogoStrip()

@@ -33,6 +33,8 @@ namespace finger_drum::rhythm
             Notes() const noexcept;
 
     private:
+        friend class ScrollGear;
+
         void AdvancePastTerminalNotes() noexcept;
         [[nodiscard]] NoteEvent MakeEarlyBadEvent(
             const INote& note,
@@ -41,6 +43,10 @@ namespace finger_drum::rhythm
 
         std::size_t id_{};
         std::vector<std::unique_ptr<INote>> notes_;
+        // Prefix maximum lets ScrollGear skip terminal history without
+        // assuming that note expiry is ordered by head timing. Overlapping
+        // long notes can otherwise hide an older, still-visible tail.
+        std::vector<RhythmTime> latestExpireThrough_;
         std::size_t currentIndex_{};
         bool finalized_{};
     };

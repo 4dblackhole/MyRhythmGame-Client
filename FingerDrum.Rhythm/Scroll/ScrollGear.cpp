@@ -85,12 +85,33 @@ namespace finger_drum::rhythm
              laneIndex < lanes_.size();
              ++laneIndex)
         {
-            for (const std::unique_ptr<INote>& note : lanes_[laneIndex]->Notes())
+            const Lane& lane = *lanes_[laneIndex];
+            const auto& notes = lane.Notes();
+            std::size_t firstIndex = std::min(lane.CurrentIndex(), notes.size());
+            while (firstIndex > 0 &&
+                time <= lane.latestExpireThrough_[firstIndex - 1] + pastDuration)
             {
+                --firstIndex;
+            }
+            const RhythmTime latestTiming = time + approachDuration;
+            const auto last = std::ranges::upper_bound(
+                notes.begin() + static_cast<std::ptrdiff_t>(firstIndex),
+                notes.end(),
+                latestTiming,
+                {},
+                [](const std::unique_ptr<INote>& note)
+                {
+                    return note->Timing();
+                });
+            for (auto iterator = notes.begin() +
+                    static_cast<std::ptrdiff_t>(firstIndex);
+                 iterator != last;
+                 ++iterator)
+            {
+                const std::unique_ptr<INote>& note = *iterator;
                 const RhythmDuration delta = note->Timing() - time;
                 const RhythmTime expireTime = note->ExpireTime();
-                if (delta > approachDuration ||
-                    time > expireTime + pastDuration)
+                if (time > expireTime + pastDuration)
                 {
                     continue;
                 }

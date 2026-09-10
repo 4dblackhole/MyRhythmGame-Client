@@ -43,6 +43,16 @@ namespace finger_drum::rhythm
                 }
                 return left->Id() < right->Id();
             });
+        latestExpireThrough_.clear();
+        latestExpireThrough_.reserve(notes_.size());
+        for (const std::unique_ptr<INote>& note : notes_)
+        {
+            const RhythmTime expireTime = note->ExpireTime();
+            latestExpireThrough_.push_back(
+                latestExpireThrough_.empty()
+                    ? expireTime
+                    : std::max(latestExpireThrough_.back(), expireTime));
+        }
         finalized_ = true;
         Reset();
     }
