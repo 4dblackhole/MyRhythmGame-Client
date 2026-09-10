@@ -34,17 +34,21 @@ flowchart LR
 
 파일 등록은 라우터의 `RegisterSound`가 SoundId와 경로를 연결하고
 `AudioSystem::LoadSound`로 Clip을 로드합니다. 음악은 Stream, 히트사운드는
-Sample 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 재생 관리자는 재생 중
+Sample 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 같은 Sample을 가리키는
+SoundId 별칭은 하나의 활성 Voice를 공유합니다. 이전 재생이 끝나기 전에 같은
+Sample을 다시 요청하면 새 Channel을 만들지 않고 기존 Channel의 위치를 처음으로
+되돌려 재생하며, 끝난 뒤 요청한 경우에만 새 Voice를 만듭니다. 재생 관리자는 재생 중
 Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system은 `mrg::Run`이
 소유하는 AudioSystem 하나가 관리합니다.
 
 ## 한 개의 타이머
 
 `RhythmTimer` 하나가 QPC와 리듬 시간을 연결합니다. `AnchorDspClock`은 같은
-리듬 시간을 오디오 장치의 sample clock에도 연결합니다. 배경음악, BMS 예약
-음, 히트사운드는 모두 이 변환을 사용해야 하므로 별도의 `AudioTimeline`은
-필요하지 않습니다. 일시정지 후에는 DSP clock이 계속 흘렀으므로 현재 리듬
-시각과 현재 DSP clock을 다시 anchor해야 합니다.
+리듬 시간을 오디오 장치의 sample clock에도 연결합니다. 배경음악과 BMS처럼
+미래 시각에 예약할 음은 이 변환을 사용합니다. 실시간 입력 히트사운드는 QPC
+timestamp로 판정한 직후 즉시 재생하며 DSP 미래 예약을 사용하지 않습니다.
+별도의 `AudioTimeline`은 필요하지 않으며, 일시정지 후에는 DSP clock이 계속
+흘렀으므로 현재 리듬 시각과 현재 DSP clock을 다시 anchor해야 합니다.
 
 ## 판정과 점수
 
@@ -141,6 +145,9 @@ tail과 tail overlay는 별도로 회전하지 않고, 둥근 면이 위를 향�
 그대로 Lane 부모의 회전만 상속합니다.
 기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`입니다.
 음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
+Raw Input으로 발생한 히트사운드는 입력 timestamp를 판정에만 사용하고 즉시
+재생합니다. 따라서 QPC와 장치 DSP clock의 장시간 미세 드리프트가 실시간 입력음을
+미래 시각으로 예약해 지연을 누적시키지 않습니다.
 오디오 초기화·파일 등록·재생 요청이 실패하면 가능한 나머지 파일 등록은 계속하고,
 게임플레이 화면 상단에 첫 오류를 표시합니다. 오류는 무음으로 삼키지 않으며 노트
 판정 시간축은 오디오 오류와 독립적으로 유지됩니다.

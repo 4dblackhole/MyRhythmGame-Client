@@ -142,7 +142,11 @@ void ColoredCubeGame::CompleteAudioPlaybackSmokeCheck()
         throw std::runtime_error("Managed audio did not survive the Scene transition.");
     }
     std::string error;
-    if (!voice->SetPaused(false, error) ||
+    const std::size_t playbackCount = AudioPlayback().PlaybackCount();
+    mrg::audio::AudioPlaybackSettings restartSettings;
+    if (!AudioPlayback().Restart(
+            audioSmokePlayback_, restartSettings, nullptr, error) ||
+        AudioPlayback().PlaybackCount() != playbackCount ||
         !AudioPlayback().Stop(audioSmokePlayback_, error) ||
         AudioPlayback().FindVoice(audioSmokePlayback_) != nullptr)
     {

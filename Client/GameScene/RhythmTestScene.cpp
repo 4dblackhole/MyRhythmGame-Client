@@ -1285,7 +1285,7 @@ void RhythmTestScene::ScheduleMusic()
     cue.bus = "Music";
     cue.timelineTime = finger_drum::rhythm::RhythmTime::zero();
     const std::array cues{cue};
-    audioRouter_.Route(cues, timer_);
+    audioRouter_.Schedule(cues, timer_);
 }
 
 void RhythmTestScene::StartTimeline(
@@ -1529,7 +1529,7 @@ void RhythmTestScene::ConsumeResult(
             completionEffects_[event.noteId] = event.eventTime;
         }
     }
-    audioRouter_.Route(result.audioCues, timer_);
+    audioRouter_.PlayNow(result.audioCues);
 }
 
 void RhythmTestScene::HideTransientNoteVisuals()
