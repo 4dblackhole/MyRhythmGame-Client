@@ -73,7 +73,6 @@ namespace
         constexpr float ContentLeft = 8.0F;
         constexpr float ContentTop = 14.0F;
         constexpr float ContentBottom = 720.0F;
-        constexpr float ContentWidth = 454.29F;
         constexpr float ViewportVisibleHeight = ContentBottom - ContentTop;
         constexpr float SongGap = 12.0F;
         constexpr float NormalSongHeight = 72.0F;
@@ -89,6 +88,135 @@ namespace
         constexpr mrg::visual2d::Rect GoButton{1664.0F, 1006.0F, 280.0F, 82.0F};
         constexpr mrg::visual2d::Rect GoLabel{36.0F, 10.0F, 208.0F, 44.0F};
     }
+
+    struct ResponsiveSongSelectLayout
+    {
+        mrg::visual2d::Rect background;
+        mrg::visual2d::Rect category;
+        mrg::visual2d::Rect record;
+        mrg::visual2d::Rect information;
+        mrg::visual2d::Rect browser;
+        mrg::visual2d::Rect option;
+        mrg::visual2d::Rect back;
+        mrg::visual2d::Rect go;
+    };
+
+    [[nodiscard]] constexpr mrg::visual2d::Rect CanvasTopLeftBounds(
+        const float x,
+        const float top,
+        const float width,
+        const float height) noexcept
+    {
+        return {x, layout::CanvasSize.height - top - height, width, height};
+    }
+
+    [[nodiscard]] constexpr ResponsiveSongSelectLayout CalculateResponsiveLayout(
+        const float logicalWidth) noexcept
+    {
+        constexpr float ReferenceOuterMargin = 54.0F * DesignToCanvasScale;
+        constexpr float ReferenceColumnGap = 20.0F * DesignToCanvasScale;
+        constexpr float ReferenceSideWidth =
+            layout::RecordPanel.width * DesignToCanvasScale;
+        constexpr float ReferenceInformationWidth =
+            layout::InformationPanel.width * DesignToCanvasScale;
+        constexpr float ReferenceColumnWidth =
+            ReferenceSideWidth * 2.0F + ReferenceInformationWidth;
+
+        // Keep the Penpot panel widths at 16:9 and wider. For narrower aspect
+        // ratios, shrink the complete three-column composition uniformly so
+        // its ownership and ordering remain unambiguous even in portrait.
+        const float chromeScale = std::min(1.0F, logicalWidth / 960.0F);
+        const float outerMargin = ReferenceOuterMargin * chromeScale;
+        const float columnGap = ReferenceColumnGap * chromeScale;
+        const float availableWidth = std::max(
+            logicalWidth - outerMargin * 2.0F - columnGap * 2.0F,
+            1.0F);
+        const float columnScale = std::min(
+            1.0F, availableWidth / ReferenceColumnWidth);
+        const float sideWidth = ReferenceSideWidth * columnScale;
+        const float informationWidth = std::max(
+            availableWidth - sideWidth * 2.0F,
+            1.0F);
+        const float recordX = outerMargin;
+        const float informationX = recordX + sideWidth + columnGap;
+        const float browserX = logicalWidth - outerMargin - sideWidth;
+
+        constexpr float MainTop = 94.0F * DesignToCanvasScale;
+        constexpr float MainHeight = 852.0F * DesignToCanvasScale;
+        constexpr float BrowserTop = 20.0F * DesignToCanvasScale;
+        constexpr float BrowserHeight = 926.0F * DesignToCanvasScale;
+        constexpr float CategoryHeight = 56.0F * DesignToCanvasScale;
+        const float categoryWidth = std::max(
+            browserX - columnGap - recordX,
+            1.0F);
+
+        const float footerScale = std::min(1.0F, logicalWidth / 640.0F);
+        const float edgeWidth = layout::BackButton.width *
+            DesignToCanvasScale * footerScale;
+        const float edgeOverflow = -layout::BackButton.x *
+            DesignToCanvasScale * footerScale;
+        const float footerGap = ReferenceColumnGap * chromeScale;
+        const float optionWidth = std::min(
+            layout::OptionButton.width * DesignToCanvasScale,
+            std::max(
+                logicalWidth -
+                    2.0F * (edgeWidth - edgeOverflow + footerGap),
+                1.0F));
+        const float optionX = (logicalWidth - optionWidth) * 0.5F;
+
+        return {
+            {0.0F, 0.0F, logicalWidth, layout::CanvasSize.height},
+            CanvasTopLeftBounds(
+                recordX, BrowserTop, categoryWidth, CategoryHeight),
+            CanvasTopLeftBounds(
+                recordX, MainTop, sideWidth, MainHeight),
+            CanvasTopLeftBounds(
+                informationX, MainTop, informationWidth, MainHeight),
+            CanvasTopLeftBounds(
+                browserX, BrowserTop, sideWidth, BrowserHeight),
+            CanvasTopLeftBounds(
+                optionX,
+                layout::OptionButton.y * DesignToCanvasScale,
+                optionWidth,
+                layout::OptionButton.height * DesignToCanvasScale),
+            CanvasTopLeftBounds(
+                -edgeOverflow,
+                layout::BackButton.y * DesignToCanvasScale,
+                edgeWidth,
+                layout::BackButton.height * DesignToCanvasScale),
+            CanvasTopLeftBounds(
+                logicalWidth - edgeWidth + edgeOverflow,
+                layout::GoButton.y * DesignToCanvasScale,
+                edgeWidth,
+                layout::GoButton.height * DesignToCanvasScale)};
+    }
+
+    constexpr ResponsiveSongSelectLayout PortraitLayout =
+        CalculateResponsiveLayout(405.0F);
+    static_assert(PortraitLayout.record.x >= 0.0F);
+    static_assert(
+        PortraitLayout.record.x + PortraitLayout.record.width <
+        PortraitLayout.information.x);
+    static_assert(
+        PortraitLayout.information.x + PortraitLayout.information.width <
+        PortraitLayout.browser.x);
+    static_assert(
+        PortraitLayout.browser.x + PortraitLayout.browser.width <= 405.0F);
+    static_assert(
+        PortraitLayout.back.x + PortraitLayout.back.width <
+        PortraitLayout.option.x);
+    static_assert(
+        PortraitLayout.option.x + PortraitLayout.option.width <
+        PortraitLayout.go.x);
+
+    constexpr ResponsiveSongSelectLayout UltrawideLayout =
+        CalculateResponsiveLayout(1680.0F);
+    static_assert(
+        UltrawideLayout.information.width >
+        layout::InformationPanel.width * DesignToCanvasScale);
+    static_assert(
+        UltrawideLayout.option.x + UltrawideLayout.option.width * 0.5F ==
+        840.0F);
 
     [[nodiscard]] mrg::visual2d::Rect ScaleTopLeftBounds(
         const mrg::visual2d::Rect bounds,
@@ -313,12 +441,14 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
     board_->SetSize(layout::CanvasSize);
     board_->SetPosition({0.0F, 0.0F});
 
-    AddPanel(*board_, layout::DesignBoard, CanvasBlue, "Background");
+    background_ = &AddPanel(
+        *board_, layout::DesignBoard, CanvasBlue, "Background");
     CreateCategoryBar();
     CreateRecordPanel();
     CreateSongInformationPanel();
     CreateSongBrowser();
     CreateFooter();
+    UpdateResponsiveLayout();
     RebuildVisibleSongs();
 }
 
@@ -359,6 +489,9 @@ void LobbyScene::OnResize(
     height_ = height;
     if (canvas_ != nullptr)
     {
+        UpdateResponsiveLayout();
+        RebuildSongCards();
+        EnsureFocusedCardVisible();
         inputRouter_.InvalidateHitTest();
     }
 }
@@ -372,16 +505,41 @@ void LobbyScene::Shutdown() noexcept
     difficultyButtonIds_.clear();
     songCards_.clear();
     visibleSongIndices_.clear();
+    goLabel_ = nullptr;
+    goFill_ = nullptr;
+    goButton_ = nullptr;
+    backLabel_ = nullptr;
+    backFill_ = nullptr;
+    backButton_ = nullptr;
+    optionLabel_ = nullptr;
+    optionButton_ = nullptr;
     selectedDetailsLabel_ = nullptr;
     selectedCreatorLabel_ = nullptr;
     selectedPatternLabel_ = nullptr;
     selectedArtistLabel_ = nullptr;
     selectedSongLabel_ = nullptr;
+    browserHint_ = nullptr;
+    sortSelector_ = nullptr;
     searchCountLabel_ = nullptr;
     searchField_ = nullptr;
     scrollbarHandle_ = nullptr;
+    scrollbarTrack_ = nullptr;
     songContent_ = nullptr;
     songViewport_ = nullptr;
+    browserPanel_ = nullptr;
+    informationDivider_ = nullptr;
+    creatorHeading_ = nullptr;
+    difficultyHeading_ = nullptr;
+    difficultyInformation_ = nullptr;
+    previewEmpty_ = nullptr;
+    previewTitle_ = nullptr;
+    preview_ = nullptr;
+    informationPanel_ = nullptr;
+    emptyRecordMessage_ = nullptr;
+    recordSelector_ = nullptr;
+    recordPanel_ = nullptr;
+    categoryBar_ = nullptr;
+    background_ = nullptr;
     board_ = nullptr;
     canvas_ = nullptr;
     canvasHandle_.Reset();
@@ -393,6 +551,7 @@ void LobbyScene::CreateCategoryBar()
     auto& bar = AddBorderedPanel(
         *board_, layout::CategoryBar, PanelWhite, BorderBlue,
         3.0F, 20.0F, "Categories");
+    categoryBar_ = &bar;
     auto& all = AddPanel(
         bar, layout::AllCategory, AccentBlue, "AllCategory", 19.0F);
     AddLabel(
@@ -407,11 +566,13 @@ void LobbyScene::CreateRecordPanel()
     auto& panel = AddBorderedPanel(
         *board_, layout::RecordPanel, PanelWhite, BorderBlue,
         3.0F, 24.0F, "RecordPanel");
+    recordPanel_ = &panel;
     auto& selector = mrg::visual2d::CreateComboBox(
         panel,
         ScaleTopLeftBounds(layout::RecordSelector, panel.NodeSize().height),
         {L"PERSONAL RECORD"},
         "RecordSelector");
+    recordSelector_ = &selector;
     recordSelectorId_ = selector.Id();
     ApplySpriteStyle(selector, PaleBlue, PaleBlue);
     SetCornerRadius(selector, 10.0F);
@@ -421,7 +582,7 @@ void LobbyScene::CreateRecordPanel()
     recordBehavior.SetTextColor(DeepBlue);
     recordBehavior.SetSelectedTextColor(PureWhite);
     recordBehavior.SetPopupBackgroundColor(PureWhite);
-    AddLabel(
+    emptyRecordMessage_ = &AddLabel(
         panel, layout::EmptyRecordMessage, L"NO RECORDS",
         28.0F, DeepBlue, "NoRecords",
         mrg::visual2d::TextAlignment::Center);
@@ -432,15 +593,17 @@ void LobbyScene::CreateSongInformationPanel()
     auto& panel = AddBorderedPanel(
         *board_, layout::InformationPanel, PanelWhite, BorderBlue,
         3.0F, 24.0F, "SongInformation");
+    informationPanel_ = &panel;
     auto& preview = AddPanel(
         panel, layout::Preview,
         {0.765F, 0.906F, 0.980F, 1.0F},
         "BackgroundPreview", 12.0F);
-    AddLabel(
+    preview_ = &preview;
+    previewTitle_ = &AddLabel(
         preview, layout::PreviewTitle, L"BACKGROUND PREVIEW",
         13.0F, MutedBlue, "PreviewTitle",
         mrg::visual2d::TextAlignment::Center);
-    AddLabel(
+    previewEmpty_ = &AddLabel(
         preview, layout::PreviewEmpty, L"NO IMAGE",
         10.0F, SoftTextBlue, "PreviewEmpty",
         mrg::visual2d::TextAlignment::Center);
@@ -460,10 +623,11 @@ void LobbyScene::CreateSongInformationPanel()
     auto& information = AddBorderedPanel(
         panel, layout::DifficultyInformation, PaleBlue, PaleBorder,
         1.0F, 12.0F, "DifficultyInformation");
-    AddLabel(
+    difficultyInformation_ = &information;
+    difficultyHeading_ = &AddLabel(
         information, layout::DifficultyHeading, L"DIFFICULTY",
         9.0F, SoftTextBlue, "DifficultyHeading");
-    AddLabel(
+    creatorHeading_ = &AddLabel(
         information, layout::CreatorHeading, L"CREATOR",
         9.0F, SoftTextBlue, "CreatorHeading");
     selectedPatternLabel_ = &AddLabel(
@@ -472,7 +636,7 @@ void LobbyScene::CreateSongInformationPanel()
     selectedCreatorLabel_ = &AddLabel(
         information, layout::SelectedCreator, L"—",
         18.0F, DeepBlue, "SelectedCreator");
-    AddPanel(
+    informationDivider_ = &AddPanel(
         information, layout::InformationDivider,
         PaleBorder, "InformationDivider");
     selectedDetailsLabel_ = &AddLabel(
@@ -487,6 +651,7 @@ void LobbyScene::CreateSongBrowser()
     auto& panel = AddBorderedPanel(
         *board_, layout::BrowserPanel, PanelWhite, BorderBlue,
         3.0F, 24.0F, "SongBrowser");
+    browserPanel_ = &panel;
 
     auto& search = mrg::visual2d::CreateButton(
         panel,
@@ -512,6 +677,7 @@ void LobbyScene::CreateSongBrowser()
         ScaleTopLeftBounds(layout::SortSelector, panel.NodeSize().height),
         {L"난이도순", L"곡 이름순", L"아티스트 이름순"},
         "SortSelector");
+    sortSelector_ = &sort;
     sortSelectorId_ = sort.Id();
     ApplySpriteStyle(sort, PaleBlue, PaleBlue);
     SetCornerRadius(sort, 10.0F);
@@ -536,16 +702,17 @@ void LobbyScene::CreateSongBrowser()
     songContent_->SetSize(viewport.NodeSize());
     songContent_->SetPosition({0.0F, 0.0F});
     songContent_->SetZIndex(1);
-    AddPanel(
+    scrollbarTrack_ = &AddPanel(
         viewport, layout::ScrollbarTrack,
         {0.835F, 0.910F, 0.957F, 1.0F},
-        "ScrollbarTrack", 3.0F).SetZIndex(2);
+        "ScrollbarTrack", 3.0F);
+    scrollbarTrack_->SetZIndex(2);
     scrollbarHandle_ = &AddPanel(
         viewport, layout::ScrollbarTrack,
         AccentBlue, "ScrollbarHandle", 3.0F);
     scrollbarHandle_->SetZIndex(3);
 
-    AddLabel(
+    browserHint_ = &AddLabel(
         panel, layout::BrowserHint,
         L"← / →  MOVE SONG     ↑ / ↓  DIFFICULTY     ENTER  GO",
         9.0F, SoftTextBlue, "BrowserHint",
@@ -557,17 +724,25 @@ void LobbyScene::CreateFooter()
     auto& option = AddBorderedPanel(
         *board_, layout::OptionButton, PureWhite, BorderBlue,
         3.0F, 12.0F, "OptionSelect");
-    AddLabel(
+    optionButton_ = &option;
+    optionLabel_ = &AddLabel(
         option, {0.0F, 0.0F, 696.0F, 60.0F},
         L"OPTION SELECT", 14.0F, MutedBlue, "OptionLabel",
         mrg::visual2d::TextAlignment::Center);
     optionButtonId_ = option.Id();
 
+    struct EdgeButtonNodes
+    {
+        mrg::visual2d::NodeId id{};
+        mrg::visual2d::Visual2DNode* button{};
+        mrg::visual2d::Visual2DNode* fill{};
+        mrg::visual2d::Visual2DNode* label{};
+    };
     auto createEdgeButton = [this](
         const mrg::visual2d::Rect bounds,
         const mrg::visual2d::Rect labelBounds,
         const std::wstring& text,
-        const std::string& name) -> mrg::visual2d::NodeId
+        const std::string& name) -> EdgeButtonNodes
     {
         auto& button = mrg::visual2d::CreateButton(
             *board_,
@@ -576,21 +751,306 @@ void LobbyScene::CreateFooter()
             name);
         ApplyButtonStyle(button, PureWhite, PureWhite, PureWhite);
         SetCornerRadius(button, 28.0F);
-        AddPanel(
+        auto& fill = AddPanel(
             button,
             {4.0F, 4.0F, bounds.width - 8.0F, bounds.height - 8.0F},
             AccentBlue,
             name + ".Fill",
             24.0F);
-        AddLabel(
+        auto& label = AddLabel(
             button, labelBounds, text, 27.0F, PureWhite,
             name + ".Label", mrg::visual2d::TextAlignment::Center);
-        return button.Id();
+        return {button.Id(), &button, &fill, &label};
     };
-    backButtonId_ = createEdgeButton(
+    const EdgeButtonNodes back = createEdgeButton(
         layout::BackButton, layout::BackLabel, L"BACK", "Back");
-    goButtonId_ = createEdgeButton(
+    backButtonId_ = back.id;
+    backButton_ = back.button;
+    backFill_ = back.fill;
+    backLabel_ = back.label;
+    const EdgeButtonNodes go = createEdgeButton(
         layout::GoButton, layout::GoLabel, L"GO", "Go");
+    goButtonId_ = go.id;
+    goButton_ = go.button;
+    goFill_ = go.fill;
+    goLabel_ = go.label;
+}
+
+void LobbyScene::UpdateResponsiveLayout()
+{
+    if (canvas_ == nullptr || board_ == nullptr || background_ == nullptr ||
+        categoryBar_ == nullptr || recordPanel_ == nullptr ||
+        informationPanel_ == nullptr || browserPanel_ == nullptr ||
+        optionButton_ == nullptr || backButton_ == nullptr ||
+        goButton_ == nullptr)
+    {
+        return;
+    }
+
+    const mrg::visual2d::Size canvasSize = canvas_->LogicalSize();
+    const ResponsiveSongSelectLayout responsive =
+        CalculateResponsiveLayout(canvasSize.width);
+    board_->SetSize(canvasSize);
+    board_->SetPosition({0.0F, 0.0F});
+    background_->SetBounds(responsive.background);
+
+    ResizeBorderedPanel(*categoryBar_, responsive.category, 3.0F);
+    ResizeBorderedPanel(*recordPanel_, responsive.record, 3.0F);
+    ResizeBorderedPanel(*informationPanel_, responsive.information, 3.0F);
+    ResizeBorderedPanel(*browserPanel_, responsive.browser, 3.0F);
+    categoryBar_->SetClipRect({
+        0.0F, 0.0F,
+        categoryBar_->NodeSize().width,
+        categoryBar_->NodeSize().height});
+    recordPanel_->SetClipRect({
+        0.0F, 0.0F,
+        recordPanel_->NodeSize().width,
+        recordPanel_->NodeSize().height});
+    informationPanel_->SetClipRect({
+        0.0F, 0.0F,
+        informationPanel_->NodeSize().width,
+        informationPanel_->NodeSize().height});
+    browserPanel_->SetClipRect({
+        0.0F, 0.0F,
+        browserPanel_->NodeSize().width,
+        browserPanel_->NodeSize().height});
+
+    UpdateRecordPanelLayout();
+    UpdateSongInformationLayout();
+    UpdateSongBrowserLayout();
+
+    ResizeBorderedPanel(*optionButton_, responsive.option, 3.0F);
+    backButton_->SetBounds(responsive.back);
+    goButton_->SetBounds(responsive.go);
+    UpdateFooterLayout();
+}
+
+void LobbyScene::UpdateRecordPanelLayout()
+{
+    if (recordPanel_ == nullptr || recordSelector_ == nullptr ||
+        emptyRecordMessage_ == nullptr)
+    {
+        return;
+    }
+    const float panelWidth =
+        recordPanel_->NodeSize().width / DesignToCanvasScale;
+    const float innerWidth = std::max(panelWidth - 44.0F, 1.0F);
+    recordSelector_->SetBounds(ScaleTopLeftBounds(
+        {22.0F, 22.0F, innerWidth, layout::RecordSelector.height},
+        recordPanel_->NodeSize().height));
+    emptyRecordMessage_->SetBounds(ScaleTopLeftBounds(
+        {22.0F, 400.0F, innerWidth, layout::EmptyRecordMessage.height},
+        recordPanel_->NodeSize().height));
+}
+
+void LobbyScene::UpdateSongInformationLayout()
+{
+    if (informationPanel_ == nullptr || preview_ == nullptr ||
+        previewTitle_ == nullptr || previewEmpty_ == nullptr ||
+        selectedSongLabel_ == nullptr || selectedArtistLabel_ == nullptr ||
+        difficultyInformation_ == nullptr || difficultyHeading_ == nullptr ||
+        creatorHeading_ == nullptr || selectedPatternLabel_ == nullptr ||
+        selectedCreatorLabel_ == nullptr || informationDivider_ == nullptr ||
+        selectedDetailsLabel_ == nullptr)
+    {
+        return;
+    }
+
+    const float panelWidth =
+        informationPanel_->NodeSize().width / DesignToCanvasScale;
+    const bool showPreview = panelWidth >= 500.0F;
+    preview_->SetVisible(showPreview);
+
+    float detailsX = 24.0F;
+    if (showPreview)
+    {
+        const float previewWidth = std::clamp(
+            layout::Preview.width * panelWidth /
+                layout::InformationPanel.width,
+            160.0F,
+            layout::Preview.width);
+        preview_->SetBounds(ScaleTopLeftBounds(
+            {24.0F, 24.0F, previewWidth, previewWidth},
+            informationPanel_->NodeSize().height));
+        previewTitle_->SetBounds(ScaleTopLeftBounds(
+            {20.0F,
+             layout::PreviewTitle.y * previewWidth / layout::Preview.width,
+             std::max(previewWidth - 40.0F, 1.0F),
+             layout::PreviewTitle.height},
+            preview_->NodeSize().height));
+        previewEmpty_->SetBounds(ScaleTopLeftBounds(
+            {20.0F,
+             layout::PreviewEmpty.y * previewWidth / layout::Preview.width,
+             std::max(previewWidth - 40.0F, 1.0F),
+             layout::PreviewEmpty.height},
+            preview_->NodeSize().height));
+        detailsX += previewWidth + 20.0F;
+    }
+
+    const float detailsWidth = std::max(panelWidth - detailsX - 24.0F, 1.0F);
+    selectedSongLabel_->SetBounds(ScaleTopLeftBounds(
+        {detailsX, layout::SelectedSong.y,
+         detailsWidth, layout::SelectedSong.height},
+        informationPanel_->NodeSize().height));
+    selectedArtistLabel_->SetBounds(ScaleTopLeftBounds(
+        {detailsX, layout::SelectedArtist.y,
+         detailsWidth, layout::SelectedArtist.height},
+        informationPanel_->NodeSize().height));
+    ResizeBorderedPanel(
+        *difficultyInformation_,
+        ScaleTopLeftBounds(
+            {detailsX, layout::DifficultyInformation.y,
+             detailsWidth, layout::DifficultyInformation.height},
+            informationPanel_->NodeSize().height),
+        1.0F);
+
+    const float headingGap = std::clamp(
+        (detailsWidth - 32.0F) * 0.03F, 2.0F, 8.71F);
+    const float headingWidth = std::max(
+        (detailsWidth - 32.0F - headingGap) * 0.5F,
+        1.0F);
+    const float creatorX = 16.0F + headingWidth + headingGap;
+    difficultyHeading_->SetBounds(ScaleTopLeftBounds(
+        {16.0F, layout::DifficultyHeading.y,
+         headingWidth, layout::DifficultyHeading.height},
+        difficultyInformation_->NodeSize().height));
+    creatorHeading_->SetBounds(ScaleTopLeftBounds(
+        {creatorX, layout::CreatorHeading.y,
+         headingWidth, layout::CreatorHeading.height},
+        difficultyInformation_->NodeSize().height));
+    selectedPatternLabel_->SetBounds(ScaleTopLeftBounds(
+        {16.0F, layout::SelectedDifficulty.y,
+         headingWidth, layout::SelectedDifficulty.height},
+        difficultyInformation_->NodeSize().height));
+    selectedCreatorLabel_->SetBounds(ScaleTopLeftBounds(
+        {creatorX, layout::SelectedCreator.y,
+         headingWidth, layout::SelectedCreator.height},
+        difficultyInformation_->NodeSize().height));
+    const float informationInnerWidth = std::max(detailsWidth - 32.0F, 1.0F);
+    informationDivider_->SetBounds(ScaleTopLeftBounds(
+        {16.0F, layout::InformationDivider.y,
+         informationInnerWidth, layout::InformationDivider.height},
+        difficultyInformation_->NodeSize().height));
+    selectedDetailsLabel_->SetBounds(ScaleTopLeftBounds(
+        {16.0F, layout::SelectedDetails.y,
+         informationInnerWidth, layout::SelectedDetails.height},
+        difficultyInformation_->NodeSize().height));
+}
+
+void LobbyScene::UpdateSongBrowserLayout()
+{
+    if (browserPanel_ == nullptr || searchField_ == nullptr ||
+        searchCountLabel_ == nullptr || sortSelector_ == nullptr ||
+        songViewport_ == nullptr || songContent_ == nullptr ||
+        scrollbarTrack_ == nullptr || scrollbarHandle_ == nullptr ||
+        browserHint_ == nullptr)
+    {
+        return;
+    }
+
+    const float panelWidth =
+        browserPanel_->NodeSize().width / DesignToCanvasScale;
+    const float innerWidth = std::max(panelWidth - 28.0F, 1.0F);
+    searchField_->SetBounds(ScaleTopLeftBounds(
+        {14.0F, layout::SearchField.y,
+         innerWidth, layout::SearchField.height},
+        browserPanel_->NodeSize().height));
+    auto& searchText = RequireComponent<
+        mrg::visual2d::TextVisualComponent>(*searchField_);
+    const float countWidth = std::min(96.0F, innerWidth);
+    const float searchTextWidth = std::max(innerWidth - countWidth - 18.0F, 1.0F);
+    searchText.SetContentBounds(ScaleTopLeftBounds(
+        {14.0F, 0.0F, searchTextWidth, layout::SearchField.height},
+        searchField_->NodeSize().height));
+    searchCountLabel_->SetBounds(ScaleTopLeftBounds(
+        {std::max(innerWidth - countWidth - 17.0F, 0.0F),
+         0.0F, countWidth, layout::SearchCount.height},
+        searchField_->NodeSize().height));
+
+    sortSelector_->SetBounds(ScaleTopLeftBounds(
+        {14.0F, layout::SortSelector.y,
+         innerWidth, layout::SortSelector.height},
+        browserPanel_->NodeSize().height));
+    ResizeBorderedPanel(
+        *songViewport_,
+        ScaleTopLeftBounds(
+            {14.0F, layout::SongViewport.y,
+             innerWidth, layout::SongViewport.height},
+            browserPanel_->NodeSize().height),
+        1.5F);
+    songViewport_->SetClipRect({
+        0.0F, 0.0F,
+        songViewport_->NodeSize().width,
+        songViewport_->NodeSize().height});
+    songContent_->SetSize(songViewport_->NodeSize());
+    songContentWidth_ = std::max(innerWidth - 24.0F, 1.0F);
+
+    const float trackX = std::max(innerWidth - 9.0F, 0.0F);
+    scrollbarTrack_->SetBounds(ScaleTopLeftBounds(
+        {trackX, layout::ScrollbarTrack.y,
+         layout::ScrollbarTrack.width, layout::ScrollbarTrack.height},
+        songViewport_->NodeSize().height));
+    browserHint_->SetBounds(ScaleTopLeftBounds(
+        {18.0F, layout::BrowserHint.y,
+         std::max(panelWidth - 36.0F, 1.0F),
+         layout::BrowserHint.height},
+        browserPanel_->NodeSize().height));
+    UpdateScrollbar();
+}
+
+void LobbyScene::UpdateFooterLayout()
+{
+    if (optionButton_ == nullptr || optionLabel_ == nullptr ||
+        backButton_ == nullptr || backFill_ == nullptr ||
+        backLabel_ == nullptr || goButton_ == nullptr ||
+        goFill_ == nullptr || goLabel_ == nullptr)
+    {
+        return;
+    }
+    optionLabel_->SetBounds({
+        0.0F, 0.0F,
+        optionButton_->NodeSize().width,
+        optionButton_->NodeSize().height});
+
+    const auto resizeEdgeButton = [](
+        mrg::visual2d::Visual2DNode& button,
+        mrg::visual2d::Visual2DNode& fill,
+        mrg::visual2d::Visual2DNode& label)
+    {
+        const mrg::visual2d::Size buttonSize = button.NodeSize();
+        const float padding = std::min({
+            4.0F * DesignToCanvasScale,
+            buttonSize.width * 0.1F,
+            buttonSize.height * 0.1F});
+        fill.SetBounds({
+            padding, padding,
+            std::max(buttonSize.width - padding * 2.0F, 1.0F),
+            std::max(buttonSize.height - padding * 2.0F, 1.0F)});
+        label.SetBounds({0.0F, 0.0F, buttonSize.width, buttonSize.height});
+    };
+    resizeEdgeButton(*backButton_, *backFill_, *backLabel_);
+    resizeEdgeButton(*goButton_, *goFill_, *goLabel_);
+}
+
+void LobbyScene::ResizeBorderedPanel(
+    mrg::visual2d::Visual2DNode& panel,
+    const mrg::visual2d::Rect bounds,
+    const float penpotBorderWidth)
+{
+    panel.SetBounds(bounds);
+    const float borderWidth = penpotBorderWidth * DesignToCanvasScale;
+    for (const auto& child : panel.Children())
+    {
+        if (child->Name() == "Surface")
+        {
+            child->SetBounds({
+                borderWidth,
+                borderWidth,
+                std::max(panel.NodeSize().width - borderWidth * 2.0F, 1.0F),
+                std::max(panel.NodeSize().height - borderWidth * 2.0F, 1.0F)});
+            break;
+        }
+    }
 }
 
 void LobbyScene::RebuildVisibleSongs()
@@ -675,7 +1135,11 @@ void LobbyScene::RebuildSongCards()
     if (visibleSongIndices_.empty())
     {
         AddLabel(
-            *songContent_, layout::EmptySongMessage,
+            *songContent_,
+            {layout::EmptySongMessage.x,
+             layout::EmptySongMessage.y,
+             std::max(songContentWidth_ - 32.0F, 1.0F),
+             layout::EmptySongMessage.height},
             L"NO SONGS AVAILABLE", 20.0F, DeepBlue, "NoSongs",
             mrg::visual2d::TextAlignment::Center);
         contentHeight_ = layout::ContentBottom;
@@ -716,7 +1180,7 @@ void LobbyScene::CreateSongCard(
     auto& button = mrg::visual2d::CreateButton(
         *songContent_,
         ScaleTopLeftBounds(
-            {layout::ContentLeft, top, layout::ContentWidth, height},
+            {layout::ContentLeft, top, songContentWidth_, height},
             songContent_->NodeSize().height),
         L"",
         std::format("Song.{}", visiblePosition));
@@ -728,12 +1192,13 @@ void LobbyScene::CreateSongCard(
     SetCornerRadius(button, 14.0F);
     AddPanel(
         button,
-        {2.0F, 2.0F, layout::ContentWidth - 4.0F, height - 4.0F},
+        {2.0F, 2.0F, std::max(songContentWidth_ - 4.0F, 1.0F),
+         height - 4.0F},
         focused ? FocusBlue : RowBlue,
         "Surface",
         12.0F);
 
-    const float titleWidth = layout::ContentWidth - 28.0F;
+    const float titleWidth = std::max(songContentWidth_ - 28.0F, 1.0F);
     auto& title = AddLabel(
         button,
         {14.0F, focused ? 16.0F : 10.0F, titleWidth,
@@ -960,8 +1425,11 @@ void LobbyScene::UpdateScrollbar()
     const float travel = layout::ScrollbarTrack.height - handleHeight;
     const float handleTop = layout::ScrollbarTrack.y +
         (maximum <= 0.0F ? 0.0F : travel * scrollOffset_ / maximum);
+    const float trackX = std::max(
+        songViewport_->NodeSize().width / DesignToCanvasScale - 9.0F,
+        0.0F);
     scrollbarHandle_->SetBounds(ScaleTopLeftBounds(
-        {layout::ScrollbarTrack.x,
+        {trackX,
          handleTop,
          layout::ScrollbarTrack.width,
          handleHeight},

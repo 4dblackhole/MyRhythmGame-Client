@@ -55,6 +55,15 @@ private:
     void CreateSongInformationPanel();
     void CreateSongBrowser();
     void CreateFooter();
+    void UpdateResponsiveLayout();
+    void UpdateRecordPanelLayout();
+    void UpdateSongInformationLayout();
+    void UpdateSongBrowserLayout();
+    void UpdateFooterLayout();
+    void ResizeBorderedPanel(
+        mrg::visual2d::Visual2DNode& panel,
+        mrg::visual2d::Rect bounds,
+        float penpotBorderWidth);
     void RebuildVisibleSongs();
     void RebuildSongCards();
     void CreateSongCard(
@@ -120,6 +129,7 @@ private:
     std::wstring launchError_;
     float scrollOffset_{};
     float contentHeight_{};
+    float songContentWidth_{454.29F};
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
     bool searchFocused_{};
@@ -129,16 +139,41 @@ private:
     mrg::visual2d::Visual2DCanvas* canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;
     mrg::visual2d::Visual2DNode* board_{};
+    mrg::visual2d::Visual2DNode* background_{};
+    mrg::visual2d::Visual2DNode* categoryBar_{};
+    mrg::visual2d::Visual2DNode* recordPanel_{};
+    mrg::visual2d::Visual2DNode* recordSelector_{};
+    mrg::visual2d::Visual2DNode* emptyRecordMessage_{};
+    mrg::visual2d::Visual2DNode* informationPanel_{};
+    mrg::visual2d::Visual2DNode* preview_{};
+    mrg::visual2d::Visual2DNode* previewTitle_{};
+    mrg::visual2d::Visual2DNode* previewEmpty_{};
+    mrg::visual2d::Visual2DNode* difficultyInformation_{};
+    mrg::visual2d::Visual2DNode* difficultyHeading_{};
+    mrg::visual2d::Visual2DNode* creatorHeading_{};
+    mrg::visual2d::Visual2DNode* informationDivider_{};
+    mrg::visual2d::Visual2DNode* browserPanel_{};
     mrg::visual2d::Visual2DNode* songViewport_{};
     mrg::visual2d::Visual2DNode* songContent_{};
+    mrg::visual2d::Visual2DNode* scrollbarTrack_{};
     mrg::visual2d::Visual2DNode* scrollbarHandle_{};
     mrg::visual2d::Visual2DNode* searchField_{};
     mrg::visual2d::Visual2DNode* searchCountLabel_{};
+    mrg::visual2d::Visual2DNode* sortSelector_{};
+    mrg::visual2d::Visual2DNode* browserHint_{};
     mrg::visual2d::Visual2DNode* selectedSongLabel_{};
     mrg::visual2d::Visual2DNode* selectedArtistLabel_{};
     mrg::visual2d::Visual2DNode* selectedPatternLabel_{};
     mrg::visual2d::Visual2DNode* selectedCreatorLabel_{};
     mrg::visual2d::Visual2DNode* selectedDetailsLabel_{};
+    mrg::visual2d::Visual2DNode* optionButton_{};
+    mrg::visual2d::Visual2DNode* optionLabel_{};
+    mrg::visual2d::Visual2DNode* backButton_{};
+    mrg::visual2d::Visual2DNode* backFill_{};
+    mrg::visual2d::Visual2DNode* backLabel_{};
+    mrg::visual2d::Visual2DNode* goButton_{};
+    mrg::visual2d::Visual2DNode* goFill_{};
+    mrg::visual2d::Visual2DNode* goLabel_{};
     mrg::visual2d::NodeId recordSelectorId_{};
     mrg::visual2d::NodeId sortSelectorId_{};
     mrg::visual2d::NodeId searchFieldId_{};
