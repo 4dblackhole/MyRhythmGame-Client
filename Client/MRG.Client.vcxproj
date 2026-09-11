@@ -79,6 +79,7 @@
     <ClInclude Include="GameScene\LobbyScene.h" />
     <ClInclude Include="GameScene\RhythmTestScene.h" />
     <ClInclude Include="Presentation\MarqueeTextComponent.h" />
+    <ClInclude Include="Presentation\LaneKeyBeam.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FingerDrumGame.cpp" />
@@ -94,6 +95,7 @@
     <ClCompile Include="GameScene\LobbyScene.cpp" />
     <ClCompile Include="GameScene\RhythmTestScene.cpp" />
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
+    <ClCompile Include="Presentation\LaneKeyBeam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\awhc.png">

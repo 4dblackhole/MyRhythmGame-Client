@@ -111,6 +111,9 @@
     <ClInclude Include="Presentation\MarqueeTextComponent.h">
       <Filter>Presentation</Filter>
     </ClInclude>
+    <ClInclude Include="Presentation\LaneKeyBeam.h">
+      <Filter>Presentation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App\FingerDrumGame.cpp">
@@ -150,6 +153,9 @@
       <Filter>GameScene</Filter>
     </ClCompile>
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp">
+      <Filter>Presentation</Filter>
+    </ClCompile>
+    <ClCompile Include="Presentation\LaneKeyBeam.cpp">
       <Filter>Presentation</Filter>
     </ClCompile>
   </ItemGroup>
