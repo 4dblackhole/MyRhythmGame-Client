@@ -1490,8 +1490,7 @@ void RhythmTestScene::UpdateInputPresentation(
             glow.SetImage(primaryPressed
                 ? strongKeyLightImage_
                 : weakKeyLightImage_);
-            glow.SetTint({
-                faceColor.red, faceColor.green, faceColor.blue, 1.0F});
+            glow.SetTint(InputKeyBaseColors[index]);
             keyGlows_[index]->SetVisible(
                 primaryPressed || secondaryPressed);
         }
