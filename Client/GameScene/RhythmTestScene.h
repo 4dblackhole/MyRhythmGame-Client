@@ -6,6 +6,7 @@
 #include "GameFlow/GameplayLaunchRequest.h"
 #include "Mode/PlayGameMode.h"
 #include "Time/RhythmTimer.h"
+#include "Presentation/LaneKeyBeam.h"
 
 #include <cstdint>
 #include <array>
@@ -130,6 +131,7 @@ private:
     std::unique_ptr<finger_drum::mode::PlaySession> session_;
     finger_drum::rhythm::RhythmTimer timer_;
     finger_drum::audio::GameplayAudioRouter audioRouter_;
+    finger_drum::presentation::LaneKeyBeam keyBeam_;
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers>
         noteVisuals_;
     std::vector<finger_drum::rhythm::NoteId> presentedNoteIds_;

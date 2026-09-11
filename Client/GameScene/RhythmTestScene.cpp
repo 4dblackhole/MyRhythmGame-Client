@@ -279,6 +279,7 @@ void RhythmTestScene::Update(
         return;
     }
 
+    keyBeam_.Update(context.deltaSeconds);
     ProcessControlKeys(context.input, clock);
     if (debugMode_)
     {
@@ -339,6 +340,7 @@ void RhythmTestScene::OnResize(
 
 void RhythmTestScene::Shutdown() noexcept
 {
+    keyBeam_.Shutdown();
     timer_.Stop();
     audioRouter_.Shutdown();
     noteVisuals_.clear();
@@ -648,6 +650,11 @@ void RhythmTestScene::CreateLaneVisuals(
     CreateLaneSurface();
     CreateMeasureLineVisuals();
 
+    const auto beamImage = screenVisuals_.RegisterImage(
+        InGameSkinAssetPath(L"LaneLight.png"));
+    keyBeam_.Initialize(*laneRoot_, beamImage,
+        ScaledImageSize(screenVisuals_, beamImage));
+
     const auto judgementImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"JudgementCircle.png"));
     const auto judgementSize = ScaledImageSize(
@@ -685,6 +692,7 @@ void RhythmTestScene::CreateLaneSurface()
 
 void RhythmTestScene::UpdateLaneSurfaceLayout(const float laneLength)
 {
+    keyBeam_.SetLayout(laneWidth_, laneLength);
     if (laneRoot_ == nullptr || !laneImage_ || laneTileLength_ <= 0.0F)
     {
         return;
@@ -1306,6 +1314,7 @@ void RhythmTestScene::StartTimeline(
 void RhythmTestScene::ResetTimeline(
     const mrg::audio::AudioClockSnapshot& clock)
 {
+    keyBeam_.Reset();
     session_->Reset();
     completionEffects_.clear();
     audioRouter_.StopAllVoices();
@@ -1407,6 +1416,7 @@ void RhythmTestScene::ProcessDebugTimeline(
         finger_drum::rhythm::RhythmDuration{deltaMicroseconds};
     if (after < before)
     {
+        keyBeam_.Reset();
         session_->Reset();
         completionEffects_.clear();
         audioRouter_.StopAllVoices();
@@ -1441,6 +1451,10 @@ void RhythmTestScene::ProcessRhythmInput(
         const auto eventTime = timer_.Now(event.performanceCounterTicks);
         finger_drum::rhythm::NoteProcessResult result =
             session_->ProcessInput(event.code, edge, eventTime);
+        if (edge == finger_drum::rhythm::InputEdge::Pressed)
+        {
+            keyBeam_.OnKeyPressed(result);
+        }
         ConsumeResult(std::move(result));
     }
 }
