@@ -192,7 +192,7 @@ namespace
     {
         return visualId == "Taiko.BigDon" || visualId == "Taiko.BigKat" ||
             visualId == "Taiko.BigRoll" || visualId == "Taiko.Balloon" ||
-            visualId == "Taiko.DengDeng";
+            visualId == "Taiko.DengDeng" || visualId == "Taiko.Purple";
     }
 
     [[nodiscard]] bool IsLongVisual(const std::string_view visualId) noexcept
@@ -207,6 +207,10 @@ namespace
     [[nodiscard]] mrg::visual2d::Color AmbientColor(
         const std::string_view visualId) noexcept
     {
+        if (visualId == "Taiko.Purple")
+        {
+            return {0.65F, 0.25F, 0.90F, 1.0F};
+        }
         if (visualId == "Taiko.Kat" || visualId == "Taiko.BigKat" ||
             visualId == "Taiko.Buzz.Kat")
         {
@@ -377,6 +381,9 @@ void RhythmTestScene::Shutdown() noexcept
     keyPressFlashImage_ = {};
     gameProgressBar_ = nullptr;
     accuracyIndicator_ = nullptr;
+#if defined(_DEBUG)
+    noteDebugLabel_ = nullptr;
+#endif
     judgementIndicator_ = nullptr;
     audioErrorLabel_ = nullptr;
     canvas_ = nullptr;
@@ -577,15 +584,31 @@ void RhythmTestScene::CreatePresentation()
         InGameSkinAssetPath(L"AccuracyIndicator.png"));
     const auto accuracySize = ScaledImageSize(
         screenVisuals_, accuracyImage);
-    accuracyIndicator_ = &mrg::visual2d::CreateSprite(
+    accuracyIndicator_ = &mrg::visual2d::CreateLabel(
         root,
         {CanvasReferenceWidth * 0.5F - GearMargin - accuracySize.width,
          CanvasReferenceHeight * 0.5F - 50.0F - accuracySize.height,
          accuracySize.width,
          accuracySize.height},
-        accuracyImage,
-        "Hud.Accuracy.Unavailable");
+        L"--.--%",
+        "Hud.Accuracy");
     accuracyIndicator_->SetZIndex(5);
+    auto& accuracyText = RequireComponent<
+        mrg::visual2d::TextVisualComponent>(*accuracyIndicator_);
+    accuracyText.SetFontSize(32.0F);
+    accuracyText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
+    accuracyText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Trailing);
+
+#if defined(_DEBUG)
+    noteDebugLabel_ = &mrg::visual2d::CreateLabel(root,
+        {-CanvasReferenceWidth * 0.5F + 12.0F, 160.0F,
+         CanvasReferenceWidth - 24.0F, 120.0F}, L"", "Debug.NoteState");
+    noteDebugLabel_->SetZIndex(30);
+    auto& debugText = RequireComponent<
+        mrg::visual2d::TextVisualComponent>(*noteDebugLabel_);
+    debugText.SetFontSize(16.0F);
+    debugText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
+#endif
 
     const auto judgementImage = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"JudgementIndicator.png"));
@@ -1151,6 +1174,13 @@ void RhythmTestScene::UpdatePresentationLayout()
     }
 
     const float logicalWidth = canvas_->LogicalSize().width;
+#if defined(_DEBUG)
+    if (noteDebugLabel_ != nullptr)
+    {
+        noteDebugLabel_->SetBounds({-logicalWidth * 0.5F + 12.0F,
+            160.0F, std::max(logicalWidth - 24.0F, 1.0F), 120.0F});
+    }
+#endif
     const float laneScreenLeft = GearMargin + inputPanelSize_.width;
     const float laneLength = std::max(
         logicalWidth - laneScreenLeft - GearRightMargin,
@@ -1770,9 +1800,38 @@ void RhythmTestScene::PresentCompletionEffect(
     node->SetVisible(true);
 }
 
+void RhythmTestScene::UpdateAccuracyPresentation()
+{
+    const std::optional<double> accuracy = session_->AccuracyRate();
+    RequireComponent<mrg::visual2d::TextVisualComponent>(
+        *accuracyIndicator_).SetText(accuracy.has_value()
+            ? std::format(L"{:.2f}%", *accuracy * 100.0) : L"--.--%");
+#if defined(_DEBUG)
+    std::wstring debug = L"Focus: none";
+    if (session_->Gear().LaneCount() > 0)
+    {
+        if (const auto* note = session_->Gear().Lanes().front()->CurrentNote())
+        {
+            debug = L"Focus: " + note->DebugText();
+        }
+    }
+    if (const auto& last = session_->LastNoteAccuracy())
+    {
+        debug += std::format(L"\nLast #{}: {}", last->noteId, last->DebugText());
+    }
+    else
+    {
+        debug += L"\nLast: none";
+    }
+    RequireComponent<mrg::visual2d::TextVisualComponent>(
+        *noteDebugLabel_).SetText(std::move(debug));
+#endif
+}
+
 void RhythmTestScene::UpdatePresentation(
     const finger_drum::rhythm::RhythmTime time)
 {
+    UpdateAccuracyPresentation();
     const auto snapshot = session_->Gear().BuildSnapshot(
         time,
         ApproachDuration,

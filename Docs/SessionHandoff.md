@@ -103,7 +103,13 @@ wWinMain
 
 ## 현재 태고 테스트 표시
 
-- Don, Kat, BigDon, BigKat과 모든 태고 롱노트를 한 Lane에서 관리합니다.
+- Don, Kat, BigDon, BigKat, Purple(ID 5)과 모든 태고 롱노트를 한 Lane에서 관리합니다.
+- 정확도는 확정된 논리 노트의 동일 가중 평균입니다. 큰/보라 노트는 2타 평균,
+  연타류는 실제/목표 횟수, TickRoll은 틱 처리 비율, Buzz는 시작 정확도와
+  몸통 틱 비율을 50:50으로 계산합니다. Roll/BigRoll/Balloon/DengDeng의
+  ExtraData는 bare 횟수 또는 `HitCount=N`, 기본값은 `ceil(유리수 길이 × 12)`입니다.
+- Debug 빌드의 플레이 화면에는 현재 포커스 상태와 마지막 확정 노트의
+  개별 타격/틱/횟수 및 최종 정확도가 표시됩니다.
 - `--rhythm-debug`는 엔젤드림 롱노트 테스트 YMP를 열고 1ms 수동 타이머와
   현재 대상 노트 디버그 텍스트를 제공합니다.
 - RPG의 `Files/Skins/test Skin`에서 옮긴 Ambient/Overlay 및 hit sound를

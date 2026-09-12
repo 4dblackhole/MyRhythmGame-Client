@@ -109,6 +109,7 @@ private:
         finger_drum::rhythm::RhythmTime time);
     void ConsumeResult(finger_drum::rhythm::NoteProcessResult result);
     void UpdatePresentation(finger_drum::rhythm::RhythmTime time);
+    void UpdateAccuracyPresentation();
     void HideTransientNoteVisuals();
     void PresentFocusNoteProcessing(
         NoteVisualLayers& layers,
@@ -156,6 +157,9 @@ private:
     mrg::visual2d::ImageHandle keyPressFlashImage_{};
     mrg::visual2d::Visual2DNode* gameProgressBar_{};
     mrg::visual2d::Visual2DNode* accuracyIndicator_{};
+#if defined(_DEBUG)
+    mrg::visual2d::Visual2DNode* noteDebugLabel_{};
+#endif
     mrg::visual2d::Visual2DNode* judgementIndicator_{};
     mrg::visual2d::Visual2DNode* audioErrorLabel_{};
     float laneWidth_{152.0F};

@@ -59,6 +59,7 @@ namespace finger_drum::mode
         Kat = 2,
         BigDon = 3,
         BigKat = 4,
+        Purple = 5,
         Roll = 11,
         TickRoll = 12,
         BigRoll = 13,

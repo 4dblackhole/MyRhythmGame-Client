@@ -155,7 +155,8 @@ N/D,KeyType,ActionType,HitSound,ExtraData...
 | 2 | Kat | 캇 1회 |
 | 3 | BigDon | Good 이내의 동 2회 |
 | 4 | BigKat | Good 이내의 캇 2회 |
-| 11 | Roll | 구간 안에서 동·캇 입력을 횟수 제한 없이 처리 |
+| 5 | Purple | Good 이내 동·캇 각 1회, 순서 무관. 큰 노트 이미지에 보라색 Ambient 적용 |
+| 11 | Roll | 구간 안에서 동·캇 연타. 목표 횟수 이상이면 성공, 정확도는 최대 100% |
 | 12 | TickRoll | 작성된 각 틱마다 동·캇 입력을 최대 1회 처리 |
 | 13 | BigRoll | Roll과 같은 규칙, 큰 노트 두께로 표시 |
 | 14 | BigTickRoll | TickRoll과 같은 규칙, 큰 노트 두께로 표시 |
@@ -169,15 +170,19 @@ N/D,KeyType,ActionType,HitSound,ExtraData...
 | 노트 | 시작 줄의 옵션 | 설명 |
 | --- | --- | --- |
 | TickRoll, BigTickRoll | `TickDivision=16` | 온음표를 몇 등분할지 지정합니다. 16은 16분음표 간격입니다. 생략 시 16입니다. 각 틱은 현재 `JudgeLevel`의 Good 범위 안에서 한 번만 받을 수 있습니다. |
-| Balloon | `8` | 필요한 동 입력 횟수입니다. bare 양의 정수가 표준 표기이며 `HitCount=8`도 호환됩니다. 생략하면 롱노트의 정확한 유리수 길이를 `L`이라 할 때 `ceil(L × 12)`회입니다. 예를 들어 길이 `1/4`는 3회입니다. |
-| DengDeng | `HitCount=8` | 필요한 교대 입력 총횟수이며 필수입니다. 첫 입력은 동입니다. |
+| Roll, BigRoll, Balloon, DengDeng | `8` | 목표 입력 횟수입니다. bare 양의 정수와 `HitCount=8`을 모두 지원합니다. 생략하면 롱노트의 정확한 유리수 길이 `L`에 대해 `ceil(L × 12)`회입니다. 길이 `1/4`는 3회, `1/7`은 2회입니다. Balloon은 동만, DengDeng은 동부터 교대합니다. |
 | Buzz | `Action=Don,TickDivision=16` | 유지할 입력은 `Don` 또는 `Kat`이며 필수입니다. 틱 분할은 생략 시 16입니다. |
+
+TickRoll은 시작점도 하나의 틱이며 모든 틱은 Good 범위 내 성공/실패만
+판정합니다. 세부 등급이나 BAD 감점은 없습니다. Buzz는 시작점을 별도의
+타이밍 판정으로 처리하고, 이후 틱만 유지 비율의 분모에 포함합니다.
+정확도 계산 및 Debug 표시 계약은 [RhythmGameplay.md](RhythmGameplay.md)를 참조합니다.
 
 예시는 다음과 같습니다.
 
 ```text
 [Pattern]
-0/4,11,1
+0/4,11,1,,8
 1/4,11,2
 2/4,12,1,,TickDivision=16
 3/4,12,2

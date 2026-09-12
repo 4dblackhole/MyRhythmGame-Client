@@ -129,7 +129,7 @@ namespace finger_drum::mode
             return parsed;
         }
 
-        [[nodiscard]] std::optional<std::size_t> ReadBalloonHitCount(
+        [[nodiscard]] std::optional<std::size_t> ReadHitCount(
             const chart::PatternNote& note,
             const std::size_t fallback,
             std::vector<chart::Diagnostic>& diagnostics)
@@ -157,7 +157,7 @@ namespace finger_drum::mode
                 diagnostics.push_back({
                     chart::DiagnosticSeverity::Error,
                     note.source,
-                    "Balloon hit count must be an integer from 1 through 1024."});
+                    "Hit count must be an integer from 1 through 1024."});
                 return std::nullopt;
             }
             return parsed;
@@ -219,6 +219,7 @@ namespace finger_drum::mode
             case TaikoNoteType::Kat: return "Taiko.Kat";
             case TaikoNoteType::BigDon: return "Taiko.BigDon";
             case TaikoNoteType::BigKat: return "Taiko.BigKat";
+            case TaikoNoteType::Purple: return "Taiko.Purple";
             default: return "Taiko.Unknown";
             }
         }
@@ -350,6 +351,13 @@ namespace finger_drum::mode
                         rhythm::JudgementGrade::Good))
                 : std::unique_ptr<rhythm::INoteRule>(
                     std::make_unique<rhythm::TapInputRule>(requiredAction));
+            if (type == TaikoNoteType::Purple)
+            {
+                rule = std::make_unique<rhythm::SequenceInputRule>(
+                    std::vector<rhythm::NoteAction>{ActionValue(TaikoAction::Don),
+                        ActionValue(TaikoAction::Kat)},
+                    rhythm::JudgementGrade::Good, true);
+            }
             std::string soundId = source.hitSound;
             if (soundId.empty())
             {
@@ -358,14 +366,29 @@ namespace finger_drum::mode
                     : (don ? "Taiko.Don.Hit" : "Taiko.Kat.Hit");
             }
             const rhythm::NoteId noteId = nextId++;
+            std::shared_ptr<const rhythm::INoteSoundPolicy> soundPolicy = big
+                ? MakeBigSoundPolicy(std::move(soundId))
+                : MakeTapSoundPolicy(std::move(soundId));
+            if (type == TaikoNoteType::Purple)
+            {
+                auto purplePolicy = std::make_shared<rhythm::MappedNoteSoundPolicy>();
+                for (const TaikoAction inputAction : {TaikoAction::Don, TaikoAction::Kat})
+                {
+                    purplePolicy->Bind(rhythm::SoundBinding{
+                        .eventType = rhythm::NoteEventType::HitAccepted,
+                        .cue = Cue(source.hitSound.empty()
+                            ? (inputAction == TaikoAction::Don
+                                ? "Taiko.Don.Hit" : "Taiko.Kat.Hit") : source.hitSound),
+                        .inputAction = ActionValue(inputAction)});
+                }
+                soundPolicy = std::move(purplePolicy);
+            }
             lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(
                 noteId,
                 compiledNote.timing,
                 profile,
                 std::move(rule),
-                big
-                    ? MakeBigSoundPolicy(std::move(soundId))
-                    : MakeTapSoundPolicy(std::move(soundId))));
+                std::move(soundPolicy)));
             session->SetNotePresentation(noteId, {
                 std::string(TapVisualId(type)),
                 {},
@@ -430,16 +453,25 @@ namespace finger_drum::mode
         {
         case TaikoNoteType::Roll:
         case TaikoNoteType::BigRoll:
+        {
+            const auto hitCount = ReadHitCount(head,
+                timeline.CountSubdivisions(head.position, tail.position, 12),
+                diagnostics);
+            if (!hitCount.has_value())
+            {
+                break;
+            }
             rule = std::make_unique<rhythm::DrumRollInputRule>(
                 std::vector<rhythm::NoteAction>{
                     ActionValue(TaikoAction::Don),
                     ActionValue(TaikoAction::Kat)},
-                end);
+                end, *hitCount);
             soundPolicy = MakeTickSoundPolicy(
                 head.hitSound.empty()
                     ? "Taiko.LongNote.Tick"
                     : head.hitSound);
             break;
+        }
         case TaikoNoteType::TickRoll:
         case TaikoNoteType::BigTickRoll:
             if (const auto division = ReadPositiveOption(
@@ -465,7 +497,7 @@ namespace finger_drum::mode
             }
             break;
         case TaikoNoteType::Balloon:
-            if (const auto hitCount = ReadBalloonHitCount(
+            if (const auto hitCount = ReadHitCount(
                     head,
                     timeline.CountSubdivisions(
                         head.position,
@@ -482,10 +514,9 @@ namespace finger_drum::mode
             }
             break;
         case TaikoNoteType::DengDeng:
-            if (const auto hitCount = ReadPositiveOption(
+            if (const auto hitCount = ReadHitCount(
                     head,
-                    "HitCount",
-                    std::nullopt,
+                    timeline.CountSubdivisions(head.position, tail.position, 12),
                     diagnostics))
             {
                 rule = std::make_unique<rhythm::TimedSequenceInputRule>(
@@ -510,16 +541,28 @@ namespace finger_drum::mode
                     head.position,
                     tail.position,
                     *division);
+                // The head has its own timing score, not a body tick.
+                if (!tickTimes.empty())
+                {
+                    tickTimes.erase(tickTimes.begin());
+                }
                 rule = std::make_unique<rhythm::HoldInputRule>(
                     ActionValue(*buzzAction),
                     end,
                     tickTimes);
-                soundPolicy = MakeTickSoundPolicy(
-                    head.hitSound.empty()
+                const std::string buzzSound = head.hitSound.empty()
                         ? (*buzzAction == TaikoAction::Don
                             ? "Taiko.Don.Hit"
                             : "Taiko.Kat.Hit")
-                        : head.hitSound);
+                        : head.hitSound;
+                auto buzzPolicy = std::make_shared<rhythm::MappedNoteSoundPolicy>();
+                buzzPolicy->Bind(rhythm::SoundBinding{
+                    .eventType = rhythm::NoteEventType::HitAccepted,
+                    .cue = Cue(buzzSound)});
+                buzzPolicy->Bind(rhythm::SoundBinding{
+                    .eventType = rhythm::NoteEventType::TickAccepted,
+                    .cue = Cue(buzzSound, "TickSound")});
+                soundPolicy = std::move(buzzPolicy);
             }
             break;
         default:
