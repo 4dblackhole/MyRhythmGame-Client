@@ -141,7 +141,8 @@ namespace
     }
 
     [[nodiscard]] constexpr ResponsiveSongSelectLayout CalculateResponsiveLayout(
-        const float logicalWidth) noexcept
+        const float logicalWidth,
+        const bool editorSongSelect = false) noexcept
     {
         constexpr float ReferenceOuterMargin = 54.0F * DesignToCanvasScale;
         constexpr float ReferenceColumnGap = 20.0F * DesignToCanvasScale;
@@ -194,7 +195,7 @@ namespace
                 1.0F));
         const float optionX = (logicalWidth - optionWidth) * 0.5F;
 
-        return {
+        ResponsiveSongSelectLayout result{
             {0.0F, 0.0F, logicalWidth, layout::CanvasSize.height},
             CanvasTopLeftBounds(
                 recordX, BrowserTop, categoryWidth, CategoryHeight),
@@ -219,6 +220,14 @@ namespace
                 layout::GoButton.y * DesignToCanvasScale,
                 edgeWidth,
                 layout::GoButton.height * DesignToCanvasScale)};
+        if (editorSongSelect)
+        {
+            result.information.x = result.record.x;
+            result.information.width = std::max(
+                result.browser.x - columnGap - result.record.x,
+                1.0F);
+        }
+        return result;
     }
 
     constexpr ResponsiveSongSelectLayout PortraitLayout =
@@ -247,6 +256,15 @@ namespace
     static_assert(
         UltrawideLayout.option.x + UltrawideLayout.option.width * 0.5F ==
         840.0F);
+
+    constexpr ResponsiveSongSelectLayout EditorReferenceLayout =
+        CalculateResponsiveLayout(1280.0F, true);
+    static_assert(
+        EditorReferenceLayout.information.x == EditorReferenceLayout.record.x);
+    static_assert(
+        EditorReferenceLayout.information.x +
+            EditorReferenceLayout.information.width <
+        EditorReferenceLayout.browser.x);
 
     [[nodiscard]] mrg::visual2d::Rect ScaleTopLeftBounds(
         const mrg::visual2d::Rect bounds,
@@ -435,8 +453,10 @@ namespace
 LobbyScene::LobbyScene(
     mrg::visual2d::ScreenVisual2DManager& screenVisuals,
     mrg::audio::AudioPlaybackManager& audioPlayback,
-    std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest)
+    std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
+    const SongSelectPurpose purpose)
     : launchRequest_(std::move(launchRequest)),
+      purpose_(purpose),
       screenVisuals_(screenVisuals),
       audioPlayback_(audioPlayback)
 {
@@ -469,7 +489,9 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
 
     board_ = &canvas_->CreateNode(
         mrg::visual2d::Anchor::Center,
-        "FingerDrum.SongSelect.Board");
+        IsEditorSongSelect()
+            ? "FingerDrum.EditorSongSelect.Board"
+            : "FingerDrum.SongSelect.Board");
     board_->SetPivot({0.5F, 0.5F});
     board_->SetSize(layout::CanvasSize);
     board_->SetPosition({0.0F, 0.0F});
@@ -477,7 +499,10 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
     background_ = &AddPanel(
         *board_, layout::DesignBoard, CanvasBlue, "Background");
     CreateCategoryBar();
-    CreateRecordPanel();
+    if (!IsEditorSongSelect())
+    {
+        CreateRecordPanel();
+    }
     CreateSongInformationPanel();
     CreateSongBrowser();
     CreateFooter();
@@ -820,7 +845,8 @@ void LobbyScene::CreateFooter()
 void LobbyScene::UpdateResponsiveLayout()
 {
     if (canvas_ == nullptr || board_ == nullptr || background_ == nullptr ||
-        categoryBar_ == nullptr || recordPanel_ == nullptr ||
+        categoryBar_ == nullptr ||
+        (!IsEditorSongSelect() && recordPanel_ == nullptr) ||
         informationPanel_ == nullptr || browserPanel_ == nullptr ||
         optionButton_ == nullptr || backButton_ == nullptr ||
         goButton_ == nullptr)
@@ -830,23 +856,29 @@ void LobbyScene::UpdateResponsiveLayout()
 
     const mrg::visual2d::Size canvasSize = canvas_->LogicalSize();
     const ResponsiveSongSelectLayout responsive =
-        CalculateResponsiveLayout(canvasSize.width);
+        CalculateResponsiveLayout(canvasSize.width, IsEditorSongSelect());
     board_->SetSize(canvasSize);
     board_->SetPosition({0.0F, 0.0F});
     background_->SetBounds(responsive.background);
 
     ResizeBorderedPanel(*categoryBar_, responsive.category, 3.0F);
-    ResizeBorderedPanel(*recordPanel_, responsive.record, 3.0F);
+    if (recordPanel_ != nullptr)
+    {
+        ResizeBorderedPanel(*recordPanel_, responsive.record, 3.0F);
+    }
     ResizeBorderedPanel(*informationPanel_, responsive.information, 3.0F);
     ResizeBorderedPanel(*browserPanel_, responsive.browser, 3.0F);
     categoryBar_->SetClipRect({
         0.0F, 0.0F,
         categoryBar_->NodeSize().width,
         categoryBar_->NodeSize().height});
-    recordPanel_->SetClipRect({
-        0.0F, 0.0F,
-        recordPanel_->NodeSize().width,
-        recordPanel_->NodeSize().height});
+    if (recordPanel_ != nullptr)
+    {
+        recordPanel_->SetClipRect({
+            0.0F, 0.0F,
+            recordPanel_->NodeSize().width,
+            recordPanel_->NodeSize().height});
+    }
     informationPanel_->SetClipRect({
         0.0F, 0.0F,
         informationPanel_->NodeSize().width,
@@ -1923,6 +1955,12 @@ void LobbyScene::SelectPattern(const std::size_t index)
 
 bool LobbyScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
 {
+    // The editor workspace is the next implementation stage. Do not route an
+    // editor selection into gameplay while that destination does not exist.
+    if (IsEditorSongSelect())
+    {
+        return false;
+    }
     if (focusedSongPosition_ >= visibleSongIndices_.size())
     {
         return false;
@@ -1975,6 +2013,11 @@ bool LobbyScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
         throw std::runtime_error("Failed to enter transient gameplay.");
     }
     return true;
+}
+
+bool LobbyScene::IsEditorSongSelect() const noexcept
+{
+    return purpose_ == SongSelectPurpose::Editor;
 }
 
 bool LobbyScene::ReturnToLogo(mrg::scene::SceneManager& scenes) const

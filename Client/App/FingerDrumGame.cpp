@@ -61,6 +61,13 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             std::ref(ScreenVisuals()),
             std::ref(AudioPlayback()),
             launchRequest_) ||
+        !scenes.RegisterScene<LobbyScene>(
+            std::string(finger_drum::scene_ids::EditorSongSelect),
+            mrg::scene::SceneRetention::KeepAlive,
+            std::ref(ScreenVisuals()),
+            std::ref(AudioPlayback()),
+            launchRequest_,
+            SongSelectPurpose::Editor) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),
             // Gameplay routes keep only their factory while inactive. The

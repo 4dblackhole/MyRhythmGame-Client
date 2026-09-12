@@ -463,7 +463,16 @@ void FingerDrumLogoScene::ActivateMenuItem(
         }
         return;
     }
-    if (index == EditorIndex || index == OptionIndex)
+    if (index == EditorIndex)
+    {
+        if (!scenes.ChangeScene(finger_drum::scene_ids::EditorSongSelect))
+        {
+            throw std::runtime_error(
+                "Failed to enter the editor song-select Scene.");
+        }
+        return;
+    }
+    if (index == OptionIndex)
     {
         return;
     }
