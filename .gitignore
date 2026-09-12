@@ -1,4 +1,5 @@
 .vs/
+.codex-work/
 bin/
 build/
 *.user

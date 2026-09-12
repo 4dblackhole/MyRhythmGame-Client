@@ -47,10 +47,10 @@ namespace finger_drum::mode
     };
 
     inline constexpr std::array<TaikoInputBinding, 4> TaikoInputBindings{{
-        {TaikoAction::Kat, 'E', {'D', 'C'}},
-        {TaikoAction::Don, 'R', {'F', 'V'}},
-        {TaikoAction::Don, 'U', {'J', 'M'}},
-        {TaikoAction::Kat, 'I', {'K', 0xBC}},
+        {TaikoAction::Kat, 'D', {'C', 0}},
+        {TaikoAction::Don, 'F', {'V', 0}},
+        {TaikoAction::Don, 'J', {'N', 0}},
+        {TaikoAction::Kat, 'K', {'M', 0}},
     }};
 
     enum class TaikoNoteType : int
