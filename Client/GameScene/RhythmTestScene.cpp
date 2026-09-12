@@ -61,6 +61,7 @@ namespace
     constexpr float GearPadding = 4.0F;
     constexpr float GearRightMargin = 0.0F;
     constexpr float LaneCenterY = 0.0F;
+    constexpr double KeyPressFlashDurationSeconds = 0.1;
     constexpr float TravelDistance = 920.0F;
     constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{900'000};
     constexpr finger_drum::rhythm::RhythmDuration MissedTravelDuration{
@@ -299,7 +300,7 @@ void RhythmTestScene::Update(
     {
         UpdatePresentation(timer_.Now(clock.performanceCounterTicks));
     }
-    UpdateInputPresentation(context.input);
+    UpdateInputPresentation(context.input, context.deltaSeconds);
     audioRouter_.Update();
     if (!audioRouter_.LastError().empty())
     {
@@ -350,6 +351,7 @@ void RhythmTestScene::Shutdown() noexcept
     keyIndicators_.fill(nullptr);
     keyGlows_.fill(nullptr);
     keyPressFlashes_.fill(nullptr);
+    keyPressFlashRemainingSeconds_.fill(0.0);
     background_ = nullptr;
     scrollGearBorder_ = nullptr;
     scrollGearSurface_ = nullptr;
@@ -1478,7 +1480,8 @@ void RhythmTestScene::ProcessRhythmInput(
 }
 
 void RhythmTestScene::UpdateInputPresentation(
-    const mrg::platform::InputState& input)
+    const mrg::platform::InputState& input,
+    const double deltaSeconds)
 {
     for (std::size_t index = 0; index < keyIndicators_.size(); ++index)
     {
@@ -1522,7 +1525,23 @@ void RhythmTestScene::UpdateInputPresentation(
         }
         if (keyPressFlashes_[index] != nullptr)
         {
-            keyPressFlashes_[index]->SetVisible(pressedThisFrame);
+            double& remaining = keyPressFlashRemainingSeconds_[index];
+            if (pressedThisFrame)
+            {
+                remaining = KeyPressFlashDurationSeconds;
+            }
+            else
+            {
+                remaining = std::max(
+                    0.0, remaining - std::max(deltaSeconds, 0.0));
+            }
+            auto& flash = RequireComponent<
+                mrg::visual2d::SpriteVisualComponent>(
+                    *keyPressFlashes_[index]);
+            flash.SetTint({1.0F, 1.0F, 1.0F,
+                static_cast<float>(
+                    remaining / KeyPressFlashDurationSeconds)});
+            keyPressFlashes_[index]->SetVisible(remaining > 0.0);
         }
     }
 }

@@ -102,7 +102,8 @@ private:
         const mrg::audio::AudioClockSnapshot& clock,
         double deltaSeconds);
     void ProcessRhythmInput(const mrg::platform::InputState& input);
-    void UpdateInputPresentation(const mrg::platform::InputState& input);
+    void UpdateInputPresentation(
+        const mrg::platform::InputState& input, double deltaSeconds);
     void UpdateSession(
         const mrg::platform::InputState& input,
         finger_drum::rhythm::RhythmTime time);
@@ -141,6 +142,7 @@ private:
     std::array<mrg::visual2d::Visual2DNode*, 4> keyIndicators_{};
     std::array<mrg::visual2d::Visual2DNode*, 4> keyGlows_{};
     std::array<mrg::visual2d::Visual2DNode*, 4> keyPressFlashes_{};
+    std::array<double, 4> keyPressFlashRemainingSeconds_{};
     mrg::visual2d::Visual2DNode* background_{};
     mrg::visual2d::Visual2DNode* scrollGearBorder_{};
     mrg::visual2d::Visual2DNode* scrollGearSurface_{};
