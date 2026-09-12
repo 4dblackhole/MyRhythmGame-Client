@@ -720,7 +720,7 @@ void LobbyScene::CreateSongBrowser()
     sortSelector_ = &sort;
     sortSelectorId_ = sort.Id();
     sort.SetZIndex(10);
-    ApplySpriteStyle(sort, PaleBlue, PaleBlue);
+    ApplySpriteStyle(sort, PaleBlue, FocusBlue);
     SetCornerRadius(sort, 10.0F);
     auto& sortBehavior =
         RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(sort);
