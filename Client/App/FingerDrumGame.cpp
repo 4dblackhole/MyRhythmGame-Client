@@ -59,6 +59,7 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             std::string(finger_drum::scene_ids::Lobby),
             mrg::scene::SceneRetention::KeepAlive,
             std::ref(ScreenVisuals()),
+            std::ref(AudioPlayback()),
             launchRequest_) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),

@@ -19,6 +19,36 @@
 namespace
 {
     constexpr float DesignToCanvasScale = 2.0F / 3.0F;
+    constexpr double PreviewFadeSeconds = 0.2;
+
+    [[nodiscard]] constexpr float ReadableFontScale(
+        const float penpotFontSize) noexcept
+    {
+        if (penpotFontSize <= 10.0F)
+        {
+            return 1.45F;
+        }
+        if (penpotFontSize <= 13.0F)
+        {
+            return 1.30F;
+        }
+        if (penpotFontSize <= 18.0F)
+        {
+            return 1.15F;
+        }
+        if (penpotFontSize <= 20.0F)
+        {
+            return 1.08F;
+        }
+        return 1.0F;
+    }
+
+    [[nodiscard]] constexpr float CanvasFontSize(
+        const float penpotFontSize) noexcept
+    {
+        return penpotFontSize * DesignToCanvasScale *
+            ReadableFontScale(penpotFontSize);
+    }
     constexpr mrg::visual2d::Color CanvasBlue{0.918F, 0.965F, 1.0F, 1.0F};
     constexpr mrg::visual2d::Color PanelWhite{0.976F, 0.992F, 1.0F, 0.98F};
     constexpr mrg::visual2d::Color PureWhite{1.0F, 1.0F, 1.0F, 1.0F};
@@ -76,7 +106,7 @@ namespace
         constexpr float ViewportVisibleHeight = ContentBottom - ContentTop;
         constexpr float SongGap = 12.0F;
         constexpr float NormalSongHeight = 72.0F;
-        constexpr float ExpandedBaseHeight = 144.0F;
+        constexpr float ExpandedBaseHeight = 116.0F;
         constexpr float DifficultyRowHeight = 34.0F;
         constexpr float DifficultyRowStep = 42.0F;
         constexpr float ScrollStep = 84.0F;
@@ -404,9 +434,11 @@ namespace
 
 LobbyScene::LobbyScene(
     mrg::visual2d::ScreenVisual2DManager& screenVisuals,
+    mrg::audio::AudioPlaybackManager& audioPlayback,
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest)
     : launchRequest_(std::move(launchRequest)),
-      screenVisuals_(screenVisuals)
+      screenVisuals_(screenVisuals),
+      audioPlayback_(audioPlayback)
 {
 }
 
@@ -419,6 +451,7 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
 
     width_ = services.windowWidth;
     height_ = services.windowHeight;
+    audioSystem_ = &services.audio;
     catalog_ = finger_drum::chart::SongCatalog{}.Load(RuntimeSongsPath());
     if (catalog_.songs.empty() && !catalog_.diagnostics.empty())
     {
@@ -454,11 +487,15 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
 
 void LobbyScene::BeginScene()
 {
+    sceneActive_ = true;
     static_cast<void>(canvasHandle_.SetVisible(true));
+    SyncPreviewToFocusedSong();
 }
 
 void LobbyScene::EndScene() noexcept
 {
+    sceneActive_ = false;
+    StopPreviewAudio();
     static_cast<void>(canvasHandle_.SetVisible(false));
 }
 
@@ -470,6 +507,7 @@ void LobbyScene::Update(
     {
         return;
     }
+    UpdatePreviewAudio(context.deltaSeconds);
     ProcessPointer(context.input);
     if (ProcessActions(scenes) || ProcessKeyboard(context.input, scenes))
     {
@@ -498,6 +536,8 @@ void LobbyScene::OnResize(
 
 void LobbyScene::Shutdown() noexcept
 {
+    StopPreviewAudio();
+    audioSystem_ = nullptr;
     if (canvas_ != nullptr)
     {
         inputRouter_.Reset(*canvas_);
@@ -578,7 +618,7 @@ void LobbyScene::CreateRecordPanel()
     SetCornerRadius(selector, 10.0F);
     auto& recordBehavior = RequireComponent<
         mrg::visual2d::ComboBoxBehaviorComponent>(selector);
-    recordBehavior.SetFontSize(10.0F * DesignToCanvasScale);
+    recordBehavior.SetFontSize(CanvasFontSize(10.0F));
     recordBehavior.SetTextColor(DeepBlue);
     recordBehavior.SetSelectedTextColor(PureWhite);
     recordBehavior.SetPopupBackgroundColor(PureWhite);
@@ -663,7 +703,7 @@ void LobbyScene::CreateSongBrowser()
     ApplyButtonStyle(search, PureWhite, PaleBlue, SoftTextBlue);
     SetCornerRadius(search, 12.0F);
     auto& searchText = RequireComponent<mrg::visual2d::TextVisualComponent>(search);
-    searchText.SetFontSize(11.0F * DesignToCanvasScale);
+    searchText.SetFontSize(CanvasFontSize(11.0F));
     searchText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Leading);
     searchText.SetContentBounds(
         ScaleTopLeftBounds({14.0F, 0.0F, 340.0F, 54.0F}, search.NodeSize().height));
@@ -685,7 +725,7 @@ void LobbyScene::CreateSongBrowser()
         RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(sort);
     sortBehavior.SetItemHeight(38.0F * DesignToCanvasScale);
     sortBehavior.SetMaxVisibleItems(3);
-    sortBehavior.SetFontSize(12.0F * DesignToCanvasScale);
+    sortBehavior.SetFontSize(CanvasFontSize(12.0F));
     sortBehavior.SetTextColor(DeepBlue);
     sortBehavior.SetSelectedTextColor(PureWhite);
     sortBehavior.SetPopupBackgroundColor(PureWhite);
@@ -1110,6 +1150,7 @@ void LobbyScene::RebuildVisibleSongs()
     RefreshSelectionPresentation();
     RefreshSearchPresentation();
     EnsureFocusedCardVisible();
+    SyncPreviewToFocusedSong();
 }
 
 void LobbyScene::RebuildSongCards()
@@ -1218,14 +1259,10 @@ void LobbyScene::CreateSongCard(
         AddPanel(
             button, {14.0F, 80.0F, titleWidth, 1.0F},
             PaleBorder, "Divider");
-        AddLabel(
-            button, {14.0F, 92.0F, titleWidth, 18.0F},
-            L"CHOOSE DIFFICULTY", 9.0F, SoftTextBlue,
-            "DifficultyHeading");
         if (song.patterns.empty())
         {
             AddLabel(
-                button, {14.0F, 116.0F, titleWidth, 24.0F},
+                button, {14.0F, 92.0F, titleWidth, 24.0F},
                 L"NO DIFFICULTIES", 12.0F, MutedBlue,
                 "NoDifficulties",
                 mrg::visual2d::TextAlignment::Center);
@@ -1236,7 +1273,7 @@ void LobbyScene::CreateSongCard(
                 button,
                 ScaleTopLeftBounds(
                     {14.0F,
-                     120.0F + layout::DifficultyRowStep *
+                     92.0F + layout::DifficultyRowStep *
                          static_cast<float>(index),
                      titleWidth,
                      layout::DifficultyRowHeight},
@@ -1252,7 +1289,7 @@ void LobbyScene::CreateSongCard(
             SetCornerRadius(difficulty, 8.0F);
             auto& text = RequireComponent<
                 mrg::visual2d::TextVisualComponent>(difficulty);
-            text.SetFontSize(12.0F * DesignToCanvasScale);
+            text.SetFontSize(CanvasFontSize(12.0F));
             text.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Leading);
             text.SetContentBounds(ScaleTopLeftBounds(
                 {12.0F, 0.0F, titleWidth - 24.0F,
@@ -1657,6 +1694,11 @@ void LobbyScene::MoveDifficultyFocus(const int delta)
         if (!patterns.empty() && selectedPatternIndex_ > 0)
         {
             SelectPattern(selectedPatternIndex_ - 1);
+            return;
+        }
+        if (focusedSongPosition_ > 0)
+        {
+            SelectVisibleSong(focusedSongPosition_ - 1);
         }
         return;
     }
@@ -1683,6 +1725,170 @@ void LobbyScene::SelectVisibleSong(const std::size_t visiblePosition)
     RebuildSongCards();
     RefreshSelectionPresentation();
     EnsureFocusedCardVisible();
+    SyncPreviewToFocusedSong();
+}
+
+void LobbyScene::SyncPreviewToFocusedSong()
+{
+    if (!sceneActive_ || audioSystem_ == nullptr)
+    {
+        return;
+    }
+
+    if (visibleSongIndices_.empty() ||
+        focusedSongPosition_ >= visibleSongIndices_.size())
+    {
+        if (currentPreviewSlot_.has_value())
+        {
+            previewSlots_[*currentPreviewSlot_].targetVolume = 0.0F;
+            currentPreviewSlot_.reset();
+        }
+        return;
+    }
+
+    const std::size_t catalogIndex = visibleSongIndices_[focusedSongPosition_];
+    if (currentPreviewSlot_.has_value())
+    {
+        const PreviewSlot& current = previewSlots_[*currentPreviewSlot_];
+        if (current.catalogIndex == catalogIndex &&
+            current.playbackId != mrg::audio::InvalidAudioPlaybackId)
+        {
+            return;
+        }
+    }
+
+    StartSongPreview(catalogIndex);
+}
+
+void LobbyScene::StartSongPreview(const std::size_t catalogIndex)
+{
+    if (audioSystem_ == nullptr || catalogIndex >= catalog_.songs.size())
+    {
+        return;
+    }
+
+    if (currentPreviewSlot_.has_value())
+    {
+        previewSlots_[*currentPreviewSlot_].targetVolume = 0.0F;
+    }
+
+    const std::size_t nextSlotIndex = currentPreviewSlot_.has_value()
+        ? 1U - *currentPreviewSlot_
+        : (previewSlots_[0].playbackId == mrg::audio::InvalidAudioPlaybackId
+               ? 0U
+               : 1U);
+    PreviewSlot& nextSlot = previewSlots_[nextSlotIndex];
+    StopPreviewSlot(nextSlot);
+
+    std::string errorMessage;
+    std::unique_ptr<mrg::audio::AudioClip> loadedClip =
+        audioSystem_->LoadSound(
+            catalog_.songs[catalogIndex].audioPath,
+            mrg::audio::AudioLoadMode::Stream,
+            errorMessage);
+    if (loadedClip == nullptr)
+    {
+        return;
+    }
+
+    auto clip = std::shared_ptr<mrg::audio::AudioClip>(std::move(loadedClip));
+    mrg::audio::AudioPlaybackSettings settings;
+    settings.volume = 0.0F;
+    const mrg::audio::AudioPlaybackId playbackId = audioPlayback_.Play(
+        clip, settings, nullptr, errorMessage);
+    if (playbackId == mrg::audio::InvalidAudioPlaybackId)
+    {
+        return;
+    }
+
+    nextSlot.clip = std::move(clip);
+    nextSlot.playbackId = playbackId;
+    nextSlot.catalogIndex = catalogIndex;
+    nextSlot.volume = 0.0F;
+    nextSlot.targetVolume = 1.0F;
+    currentPreviewSlot_ = nextSlotIndex;
+}
+
+void LobbyScene::UpdatePreviewAudio(const double deltaSeconds)
+{
+    const float fadeStep = static_cast<float>(
+        std::max(deltaSeconds, 0.0) / PreviewFadeSeconds);
+
+    for (std::size_t index = 0; index < previewSlots_.size(); ++index)
+    {
+        PreviewSlot& slot = previewSlots_[index];
+        if (slot.playbackId == mrg::audio::InvalidAudioPlaybackId)
+        {
+            continue;
+        }
+
+        mrg::audio::AudioVoice* const voice =
+            audioPlayback_.FindVoice(slot.playbackId);
+        if (voice == nullptr)
+        {
+            slot = {};
+            if (currentPreviewSlot_ == index)
+            {
+                currentPreviewSlot_.reset();
+            }
+            continue;
+        }
+
+        if (slot.volume < slot.targetVolume)
+        {
+            slot.volume = std::min(slot.volume + fadeStep, slot.targetVolume);
+        }
+        else if (slot.volume > slot.targetVolume)
+        {
+            slot.volume = std::max(slot.volume - fadeStep, slot.targetVolume);
+        }
+
+        std::string errorMessage;
+        if (!voice->SetVolume(slot.volume, errorMessage))
+        {
+            StopPreviewSlot(slot);
+            if (currentPreviewSlot_ == index)
+            {
+                currentPreviewSlot_.reset();
+            }
+            continue;
+        }
+
+        if (slot.targetVolume <= 0.0F && slot.volume <= 0.0F)
+        {
+            StopPreviewSlot(slot);
+            if (currentPreviewSlot_ == index)
+            {
+                currentPreviewSlot_.reset();
+            }
+        }
+    }
+}
+
+void LobbyScene::StopPreviewAudio() noexcept
+{
+    for (PreviewSlot& slot : previewSlots_)
+    {
+        StopPreviewSlot(slot);
+    }
+    currentPreviewSlot_.reset();
+}
+
+void LobbyScene::StopPreviewSlot(PreviewSlot& slot) noexcept
+{
+    if (slot.playbackId != mrg::audio::InvalidAudioPlaybackId)
+    {
+        try
+        {
+            std::string ignoredError;
+            static_cast<void>(
+                audioPlayback_.Stop(slot.playbackId, ignoredError));
+        }
+        catch (...)
+        {
+        }
+    }
+    slot = {};
 }
 
 void LobbyScene::SelectPattern(const std::size_t index)
@@ -1834,7 +2040,7 @@ mrg::visual2d::Visual2DNode& LobbyScene::AddLabel(
         std::move(name));
     auto& textComponent =
         RequireComponent<mrg::visual2d::TextVisualComponent>(label);
-    textComponent.SetFontSize(penpotFontSize * DesignToCanvasScale);
+    textComponent.SetFontSize(CanvasFontSize(penpotFontSize));
     textComponent.SetTextColor(color);
     textComponent.SetHorizontalAlignment(alignment);
     return label;

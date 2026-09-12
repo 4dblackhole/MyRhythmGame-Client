@@ -7,7 +7,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,6 +22,7 @@ class LobbyScene final : public mrg::scene::GameScene
 public:
     explicit LobbyScene(
         mrg::visual2d::ScreenVisual2DManager& screenVisuals,
+        mrg::audio::AudioPlaybackManager& audioPlayback,
         std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest);
 
     void Initialize(const mrg::EngineServices& services) override;
@@ -48,6 +51,16 @@ private:
         mrg::visual2d::Visual2DNode* button{};
         mrg::visual2d::Visual2DNode* title{};
         mrg::visual2d::Visual2DNode* artist{};
+    };
+
+    struct PreviewSlot
+    {
+        std::shared_ptr<mrg::audio::AudioClip> clip;
+        mrg::audio::AudioPlaybackId playbackId{
+            mrg::audio::InvalidAudioPlaybackId};
+        std::optional<std::size_t> catalogIndex;
+        float volume{};
+        float targetVolume{};
     };
 
     void CreateCategoryBar();
@@ -88,6 +101,11 @@ private:
     void MoveDifficultyFocus(int delta);
     void SelectVisibleSong(std::size_t visiblePosition);
     void SelectPattern(std::size_t index);
+    void SyncPreviewToFocusedSong();
+    void StartSongPreview(std::size_t catalogIndex);
+    void UpdatePreviewAudio(double deltaSeconds);
+    void StopPreviewAudio() noexcept;
+    void StopPreviewSlot(PreviewSlot& slot) noexcept;
     [[nodiscard]] bool StartSelectedPattern(
         mrg::scene::SceneManager& scenes);
     [[nodiscard]] bool ReturnToLogo(mrg::scene::SceneManager& scenes) const;
@@ -133,8 +151,13 @@ private:
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
     bool searchFocused_{};
+    bool sceneActive_{};
 
     mrg::visual2d::ScreenVisual2DManager& screenVisuals_;
+    mrg::audio::AudioPlaybackManager& audioPlayback_;
+    mrg::audio::AudioSystem* audioSystem_{};
+    std::array<PreviewSlot, 2> previewSlots_{};
+    std::optional<std::size_t> currentPreviewSlot_;
     mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas* canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;
