@@ -63,8 +63,13 @@ namespace finger_drum::mode
         [[nodiscard]] std::vector<AutomationValue> EvaluateAutomation(
             rhythm::RhythmTime time) const;
         void Reset() noexcept;
+        [[nodiscard]] std::optional<double> AccuracyRate() const noexcept;
+        [[nodiscard]] std::size_t FinalizedNoteCount() const noexcept;
+        [[nodiscard]] const std::optional<rhythm::NoteAccuracy>&
+            LastNoteAccuracy() const noexcept;
 
     private:
+        void AccumulateAccuracy(const rhythm::NoteProcessResult& result);
         [[nodiscard]] static double Interpolate(
             const chart::CompiledEffectCommand& command,
             rhythm::RhythmTime time) noexcept;
@@ -75,6 +80,9 @@ namespace finger_drum::mode
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;
         std::vector<rhythm::RhythmTime> measureLines_;
+        double accuracySum_{};
+        std::size_t finalizedNoteCount_{};
+        std::optional<rhythm::NoteAccuracy> lastNoteAccuracy_;
     };
 
     struct ModeLoadResult

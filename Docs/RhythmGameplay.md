@@ -76,7 +76,7 @@ late Bad이며 다음 노트가 같은 입력을 Good 이내로 받을 수 있�
 Miss 처리한 뒤 같은 입력을 다음 노트에 전달합니다.
 
 현재 `TaikoMode`는 RPG `PlayScene`과 같은 방식으로 Don, Kat, BigDon,
-BigKat, Roll, TickRoll, Balloon, DengDeng, Buzz를 모두 **한 Lane**에 넣습니다. long-note head를
+BigKat, Purple, Roll, TickRoll, Balloon, DengDeng, Buzz를 모두 **한 Lane**에 넣습니다. long-note head를
 받은 뒤 일치하는 tail을 받을 때까지 같은 Lane의 중복 head와 일반 Down은
 무시합니다. 따라서 종류별 Lane을 따로 두지 않고 전체 노트의 시간순 focus와
 배드말림 방지 규칙을 한 곳에서 적용합니다.
@@ -87,7 +87,8 @@ BigKat, Roll, TickRoll, Balloon, DengDeng, Buzz를 모두 **한 Lane**에 넣습
 
 - `TapInputRule`: 한 번 누르는 노트
 - `CountedHitInputRule`: 큰 노트처럼 횟수가 필요한 노트
-- `SequenceInputRule`: 제한 시간 안에 순서가 필요한 노트
+- `SequenceInputRule`: 제한 시간 안에 순서가 필요한 노트. `allowAnyOrder`는
+  보라 노트의 동·캇 각 1회를 순서와 무관하게 받습니다.
 - `HoldInputRule`: 시작 판정, held 상태와 tick을 갖는 롱노트
 - `DrumRollInputRule`: 구간 안의 반복 입력을 받는 드럼롤
 - `TickRollInputRule`: 각 틱을 Good 범위에서 한 번만 받는 속도 제한 드럼롤
@@ -96,6 +97,30 @@ BigKat, Roll, TickRoll, Balloon, DengDeng, Buzz를 모두 **한 Lane**에 넣습
 
 새 노트는 `INote` 전체를 다시 만들거나, 대부분의 경우 기존
 `RuleBasedNote`에 새 `INoteRule`만 주입해 추가합니다.
+
+## 노트별 정확도와 세션 집계
+
+노트의 정확도 집계는 히트사운드/키빔의 개별 `JudgementResult`와 분리합니다.
+`RuleBasedNote`가 rule의 목표와 수락된 이벤트로 `NoteAccuracy`를 갱신하고,
+Completed/Missed에서 `NoteProcessResult::finalizedAccuracies`로 한 번만 내보냅니다.
+`PlaySession`은 각 논리 노트에 동일한 가중치를 주어 평균을 계산합니다.
+완료 전 노트는 누적 평균에서 제외하고, 미스 확정 노트는 부분 점수 또는 0점으로
+포함합니다. `Reset()`은 현재/마지막 노트 상세와 누적 집계를 모두 초기화합니다.
+
+| 노트 | 최종 정확도 |
+| --- | --- |
+| Don/Kat | 기존 선형 보간 타이밍 정확도 |
+| BigDon/BigKat/Purple | `(1타 정확도 + 2타 정확도) / 2`, 미입력 항목은 0 |
+| Roll/BigRoll/Balloon/DengDeng | `min(타격수 / 목표 타격수, 1)`; 시간 초과에도 부분 점수 보존 |
+| TickRoll/BigTickRoll | `성공 틱 / 전체 틱`; 시작점도 틱, Good 이내면 1, 나머지는 0 |
+| Buzz | `시작 정확도 × 0.5 + 시작점 이후 유지 틱 비율 × 0.5` |
+
+Buzz가 틱 간격보다 짧아 몸통 틱이 하나도 없으면 존재하는 시작 판정만 사용합니다.
+입력 시각 이전 틱은 이전 held 상태로 확정하고 입력과 같은 시각의 틱은 변경된
+상태로 판정합니다. 같은 동작에 여러 키를 할당한 경우 마지막 키를 놓아야
+유지가 해제됩니다. 예를 들어 시작 96%, 유지 98/100이면 최종 97%입니다.
+보라 노트의 기본 히트사운드는 수락한 입력에 맞는 Don/Kat이며 명시적 hitsound도
+지원합니다. 이는 게임별 라우터를 거치며 새 오디오 채널 정책을 추가하지 않습니다.
 
 ## 상태 기반 히트사운드
 
@@ -195,8 +220,14 @@ Canvas는 `FixedHeight`이므로 창 높이에 비례해 이미지와 글자도
 사용하고, 강한 불빛은 같은 색조의 채도를 높여 100% tint 알파로 표시하므로
 PNG 자체의 밝기 차이와 함께 강·약 상태가 명확히 구분됩니다. 키를 누를
 때마다 홀드 점등 위에 반투명 흰색 `KeyPressFlash` 십자광이 최대 불투명도로
-다시 켜지고 0.1초 동안 선형으로 투명해진 뒤 사라집니다. 아직
-점수 집계가 없으므로 정확도 자산은 `--.--%`의 명시적인 미집계 상태를 유지합니다.
+다시 켜지고 0.1초 동안 선형으로 투명해진 뒤 사라집니다.
+우측 정확도 표시는 같은 HUD 영역의 동적 텍스트로 노트별 평균을 소수점 두 자리까지
+표시합니다. 아직 확정된 노트가 없으면 `--.--%`입니다.
+
+Debug 빌드에서는 실행 인자와 무관하게 좌측 상단에 현재 포커스 노트의 ID,
+상태, timing/expire(us), 개별 정확도와 마지막 확정 노트의 상세를 표시합니다.
+큰 노트/보라 노트는 Hit1, Hit2, Final, Buzz는 시작 입력·유지 틱 비율·Final,
+연타는 실제/목표 횟수·Final로 표시하여 최종값에 가려진 부분 항목도 확인할 수 있습니다.
 
 - `D`, `K`: Kat
 - `F`, `J`: Don

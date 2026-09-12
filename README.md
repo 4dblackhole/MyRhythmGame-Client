@@ -7,6 +7,11 @@
 [엔진 기능 색인](Dependencies/MRG-Engine/Docs/EngineOverview.md),
 [실행 흐름](Docs/ExecutionFlow.md)을 순서대로 읽습니다.
 
+플레이 화면은 노트별 정확도의 누적 평균을 표시하고, Debug 빌드에서는 포커스
+노트 상태와 마지막 노트의 개별 타격/틱 정확도를 함께 표시합니다.
+계산 규칙과 보라 노트(ID 5)는 [리듬게임 문서](Docs/RhythmGameplay.md),
+연타 목표 횟수의 공통 문법은 [차트 문법](Docs/ChartFormats.md)을 참고하세요.
+
 ## 구조
 
 ```text

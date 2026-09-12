@@ -80,6 +80,7 @@ namespace finger_drum::mode
             physicalKey,
             edge};
         result = gear_.Lanes().front()->ProcessInput(input);
+        AccumulateAccuracy(result);
 
         // Free-input feedback is deliberately separate from note-owned cues.
         // Therefore an early/out-of-range big note can play a normal Don/Kat
@@ -123,7 +124,9 @@ namespace finger_drum::mode
         const std::vector<rhythm::NoteAction> heldActions(
             uniqueActions.begin(),
             uniqueActions.end());
-        return gear_.Update(time, heldActions);
+        rhythm::NoteProcessResult result = gear_.Update(time, heldActions);
+        AccumulateAccuracy(result);
+        return result;
     }
 
     std::vector<AutomationValue> PlaySession::EvaluateAutomation(
@@ -147,6 +150,36 @@ namespace finger_drum::mode
     void PlaySession::Reset() noexcept
     {
         gear_.Reset();
+        accuracySum_ = 0.0;
+        finalizedNoteCount_ = 0;
+        lastNoteAccuracy_.reset();
+    }
+
+    void PlaySession::AccumulateAccuracy(const rhythm::NoteProcessResult& result)
+    {
+        for (const rhythm::NoteAccuracy& accuracy : result.finalizedAccuracies)
+        {
+            accuracySum_ += accuracy.ScoreRate();
+            ++finalizedNoteCount_;
+            lastNoteAccuracy_ = accuracy;
+        }
+    }
+
+    std::optional<double> PlaySession::AccuracyRate() const noexcept
+    {
+        return finalizedNoteCount_ == 0 ? std::nullopt :
+            std::optional<double>{accuracySum_ / finalizedNoteCount_};
+    }
+
+    std::size_t PlaySession::FinalizedNoteCount() const noexcept
+    {
+        return finalizedNoteCount_;
+    }
+
+    const std::optional<rhythm::NoteAccuracy>&
+    PlaySession::LastNoteAccuracy() const noexcept
+    {
+        return lastNoteAccuracy_;
     }
 
     double PlaySession::Interpolate(

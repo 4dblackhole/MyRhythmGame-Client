@@ -87,7 +87,8 @@ namespace finger_drum::rhythm
         // An early Bad is reported as an attempt, but it deliberately keeps
         // focus on the same note so one premature press cannot start a bad
         // judgement cascade through a dense pattern.
-        if (currentJudgement.grade == JudgementGrade::Bad &&
+        if (current->Accuracy().target.kind != NoteAccuracyKind::Ticks &&
+            currentJudgement.grade == JudgementGrade::Bad &&
             currentJudgement.signedError < RhythmDuration::zero())
         {
             result.events.push_back(MakeEarlyBadEvent(
@@ -100,7 +101,8 @@ namespace finger_drum::rhythm
         // If the current note is already in late Bad while the next note can
         // accept this same input within Good, retire the missed note first and
         // apply the input to the next note in one deterministic transaction.
-        if (currentJudgement.grade == JudgementGrade::Bad &&
+        if (current->Accuracy().target.kind == NoteAccuracyKind::TimingHits &&
+            currentJudgement.grade == JudgementGrade::Bad &&
             currentJudgement.signedError > RhythmDuration::zero() &&
             currentIndex_ + 1 < notes_.size())
         {

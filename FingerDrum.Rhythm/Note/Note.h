@@ -61,6 +61,7 @@ namespace finger_drum::rhythm
         RhythmTime eventTime{};
         std::size_t hitIndex{};
         std::size_t tickIndex{};
+        std::optional<NoteAction> inputAction;
     };
 
     struct AudioCueRequest
@@ -75,10 +76,42 @@ namespace finger_drum::rhythm
         int priority{};
     };
 
+    enum class NoteAccuracyKind : std::uint8_t
+    {
+        TimingHits,
+        HitCount,
+        Ticks,
+        Hold,
+    };
+
+    struct NoteAccuracyTarget
+    {
+        NoteAccuracyKind kind{NoteAccuracyKind::TimingHits};
+        std::size_t hits{1};
+        std::size_t ticks{};
+    };
+
+    // A logical note contributes once, independently of its number of inputs.
+    struct NoteAccuracy
+    {
+        NoteId noteId{};
+        NoteAccuracyTarget target;
+        std::vector<double> hitScoreRates;
+        std::size_t acceptedHits{};
+        std::size_t acceptedTicks{};
+        bool finalized{};
+
+        [[nodiscard]] double ScoreRate() const noexcept;
+#if defined(_DEBUG)
+        [[nodiscard]] std::wstring DebugText() const;
+#endif
+    };
+
     struct NoteProcessResult
     {
         std::vector<NoteEvent> events;
         std::vector<AudioCueRequest> audioCues;
+        std::vector<NoteAccuracy> finalizedAccuracies;
 
         void Append(NoteProcessResult other);
     };
@@ -102,6 +135,7 @@ namespace finger_drum::rhythm
         std::optional<std::size_t> tickIndex;
         AudioCueRequest cue;
         bool stopAfterMatch{};
+        std::optional<NoteAction> inputAction;
     };
 
     class MappedNoteSoundPolicy final : public INoteSoundPolicy
@@ -148,6 +182,10 @@ namespace finger_drum::rhythm
     {
     public:
         virtual ~INoteRule() = default;
+        [[nodiscard]] virtual NoteAccuracyTarget AccuracyTarget() const noexcept
+        {
+            return {};
+        }
         virtual void Reset() noexcept = 0;
         [[nodiscard]] virtual NoteState State() const noexcept = 0;
         [[nodiscard]] virtual bool CanAccept(
@@ -180,6 +218,7 @@ namespace finger_drum::rhythm
     {
     public:
         virtual ~INote() = default;
+        [[nodiscard]] virtual const NoteAccuracy& Accuracy() const noexcept = 0;
         [[nodiscard]] virtual NoteId Id() const noexcept = 0;
         [[nodiscard]] virtual RhythmTime Timing() const noexcept = 0;
         [[nodiscard]] virtual RhythmTime ExpireTime() const noexcept = 0;
@@ -213,6 +252,7 @@ namespace finger_drum::rhythm
             std::unique_ptr<INoteRule> rule,
             std::shared_ptr<const INoteSoundPolicy> soundPolicy = {});
         ~RuleBasedNote() override;
+        [[nodiscard]] const NoteAccuracy& Accuracy() const noexcept override;
 
         [[nodiscard]] NoteId Id() const noexcept override;
         [[nodiscard]] RhythmTime Timing() const noexcept override;
@@ -239,12 +279,14 @@ namespace finger_drum::rhythm
     private:
         [[nodiscard]] NoteRuleContext Context() const noexcept;
         void AppendAudioCues(NoteProcessResult& result) const;
+        void AccumulateAccuracy(NoteProcessResult& result);
 
         NoteId id_{};
         RhythmTime timing_{};
         std::shared_ptr<const JudgementProfile> profile_;
         std::unique_ptr<INoteRule> rule_;
         std::shared_ptr<const INoteSoundPolicy> soundPolicy_;
+        NoteAccuracy accuracy_;
     };
 
     class TapInputRule final : public INoteRule
@@ -285,6 +327,10 @@ namespace finger_drum::rhythm
     class CountedHitInputRule final : public INoteRule
     {
     public:
+        [[nodiscard]] NoteAccuracyTarget AccuracyTarget() const noexcept override
+        {
+            return {NoteAccuracyKind::TimingHits, requiredHitCount_};
+        }
         CountedHitInputRule(
             NoteAction requiredAction,
             std::size_t requiredHitCount,
@@ -330,9 +376,14 @@ namespace finger_drum::rhythm
     class SequenceInputRule final : public INoteRule
     {
     public:
+        [[nodiscard]] NoteAccuracyTarget AccuracyTarget() const noexcept override
+        {
+            return {NoteAccuracyKind::TimingHits, sequence_.size()};
+        }
         SequenceInputRule(
             std::vector<NoteAction> sequence,
-            JudgementGrade maximumGrade = JudgementGrade::Good);
+            JudgementGrade maximumGrade = JudgementGrade::Good,
+            bool allowAnyOrder = false);
 
         void Reset() noexcept override;
         [[nodiscard]] NoteState State() const noexcept override;
@@ -358,6 +409,7 @@ namespace finger_drum::rhythm
 
     private:
         std::vector<NoteAction> sequence_;
+        bool allowAnyOrder_{};
         JudgementGrade maximumGrade_{JudgementGrade::Good};
         NoteState state_{NoteState::Pending};
         std::size_t nextActionIndex_{};
@@ -366,6 +418,10 @@ namespace finger_drum::rhythm
     class HoldInputRule final : public INoteRule
     {
     public:
+        [[nodiscard]] NoteAccuracyTarget AccuracyTarget() const noexcept override
+        {
+            return {NoteAccuracyKind::Hold, 1, tickTimes_.size()};
+        }
         HoldInputRule(
             NoteAction requiredAction,
             RhythmTime endTime,
@@ -403,14 +459,22 @@ namespace finger_drum::rhythm
         std::size_t nextTickIndex_{};
         bool started_{};
         bool held_{};
+        std::unordered_set<PhysicalKey> heldPhysicalKeys_;
+        void AdvanceTicks(const NoteRuleContext& context, RhythmTime time,
+            NoteProcessResult& output);
     };
 
     class DrumRollInputRule final : public INoteRule
     {
     public:
+        [[nodiscard]] NoteAccuracyTarget AccuracyTarget() const noexcept override
+        {
+            return {NoteAccuracyKind::HitCount, requiredHitCount_};
+        }
         DrumRollInputRule(
             std::vector<NoteAction> acceptedActions,
-            RhythmTime endTime);
+            RhythmTime endTime,
+            std::size_t requiredHitCount = 1);
 
         void Reset() noexcept override;
         [[nodiscard]] NoteState State() const noexcept override;
@@ -439,6 +503,7 @@ namespace finger_drum::rhythm
         RhythmTime endTime_{};
         NoteState state_{NoteState::Active};
         std::size_t tickCount_{};
+        std::size_t requiredHitCount_{1};
     };
 
     // Accepts a fixed number of presses during a long-note interval. The
@@ -447,6 +512,10 @@ namespace finger_drum::rhythm
     class TimedSequenceInputRule final : public INoteRule
     {
     public:
+        [[nodiscard]] NoteAccuracyTarget AccuracyTarget() const noexcept override
+        {
+            return {NoteAccuracyKind::HitCount, requiredHitCount_};
+        }
         TimedSequenceInputRule(
             std::vector<NoteAction> repeatingSequence,
             std::size_t requiredHitCount,
@@ -489,6 +558,10 @@ namespace finger_drum::rhythm
     class TickRollInputRule final : public INoteRule
     {
     public:
+        [[nodiscard]] NoteAccuracyTarget AccuracyTarget() const noexcept override
+        {
+            return {NoteAccuracyKind::Ticks, 0, tickTimes_.size()};
+        }
         TickRollInputRule(
             std::vector<NoteAction> acceptedActions,
             RhythmTime endTime,

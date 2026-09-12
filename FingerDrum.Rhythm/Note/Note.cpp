@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <format>
 #include <iterator>
+#include <numeric>
 #include <stdexcept>
 #include <utility>
 
@@ -75,7 +76,61 @@ namespace finger_drum::rhythm
             audioCues.end(),
             std::make_move_iterator(other.audioCues.begin()),
             std::make_move_iterator(other.audioCues.end()));
+        finalizedAccuracies.insert(
+            finalizedAccuracies.end(),
+            std::make_move_iterator(other.finalizedAccuracies.begin()),
+            std::make_move_iterator(other.finalizedAccuracies.end()));
     }
+
+    double NoteAccuracy::ScoreRate() const noexcept
+    {
+        const auto ratio = [](std::size_t accepted, std::size_t required)
+        {
+            return required == 0 ? 0.0 : std::min(1.0,
+                static_cast<double>(accepted) / static_cast<double>(required));
+        };
+        const double timing = hitScoreRates.empty() ? 0.0 :
+            std::accumulate(hitScoreRates.begin(), hitScoreRates.end(), 0.0) /
+                static_cast<double>(hitScoreRates.size());
+        switch (target.kind)
+        {
+        case NoteAccuracyKind::TimingHits: return timing;
+        case NoteAccuracyKind::HitCount: return ratio(acceptedHits, target.hits);
+        case NoteAccuracyKind::Ticks: return ratio(acceptedTicks, target.ticks);
+        case NoteAccuracyKind::Hold:
+            return target.ticks == 0 ? timing :
+                0.5 * timing + 0.5 * ratio(acceptedTicks, target.ticks);
+        }
+        return 0.0;
+    }
+
+#if defined(_DEBUG)
+    std::wstring NoteAccuracy::DebugText() const
+    {
+        std::wstring result;
+        for (std::size_t index = 0; index < hitScoreRates.size(); ++index)
+        {
+            result += std::format(L"Hit{}={:.2f}%{}  ", index + 1,
+                hitScoreRates[index] * 100.0,
+                index < acceptedHits ? L"" : L" (unfilled)");
+        }
+        if (target.kind == NoteAccuracyKind::HitCount)
+        {
+            result += std::format(L"Hits={}/{}  ", acceptedHits, target.hits);
+        }
+        if (target.kind == NoteAccuracyKind::Hold ||
+            target.kind == NoteAccuracyKind::Ticks)
+        {
+            const double ratio = target.ticks == 0 ? 0.0 :
+                100.0 * static_cast<double>(acceptedTicks) / target.ticks;
+            result += std::format(L"Ticks={}/{} ({:.2f}%){}  ",
+                acceptedTicks, target.ticks, ratio,
+                target.kind == NoteAccuracyKind::Hold ? L" [head/ticks 50:50]" : L"");
+        }
+        return result + std::format(L"{}={:.2f}%",
+            finalized ? L"Final" : L"Current", ScoreRate() * 100.0);
+    }
+#endif
 
     MappedNoteSoundPolicy& MappedNoteSoundPolicy::Bind(
         SoundBinding binding)
@@ -109,6 +164,7 @@ namespace finger_drum::rhythm
         const NoteEvent& event) noexcept
     {
         if (binding.eventType != event.type ||
+            (binding.inputAction.has_value() && binding.inputAction != event.inputAction) ||
             (binding.stateBefore.has_value() &&
                 *binding.stateBefore != event.stateBefore) ||
             (binding.stateAfter.has_value() &&
@@ -148,9 +204,21 @@ namespace finger_drum::rhythm
             throw std::invalid_argument(
                 "A rule-based note requires a profile and input rule.");
         }
+        accuracy_.noteId = id_;
+        accuracy_.target = rule_->AccuracyTarget();
+        if (accuracy_.target.kind == NoteAccuracyKind::TimingHits ||
+            accuracy_.target.kind == NoteAccuracyKind::Hold)
+        {
+            accuracy_.hitScoreRates.resize(accuracy_.target.hits);
+        }
     }
 
     RuleBasedNote::~RuleBasedNote() = default;
+
+    const NoteAccuracy& RuleBasedNote::Accuracy() const noexcept
+    {
+        return accuracy_;
+    }
 
     NoteId RuleBasedNote::Id() const noexcept
     {
@@ -193,7 +261,7 @@ namespace finger_drum::rhythm
                 progress->accepted,
                 progress->required);
         }
-        return result;
+        return result + L"\n" + accuracy_.DebugText();
     }
 #endif
 
@@ -221,6 +289,14 @@ namespace finger_drum::rhythm
         NoteProcessResult result;
         const JudgementResult judgement = Preview(input);
         rule_->ProcessInput(Context(), input, judgement, result);
+        for (NoteEvent& event : result.events)
+        {
+            if (event.type == NoteEventType::HitAccepted)
+            {
+                event.inputAction = input.action;
+            }
+        }
+        AccumulateAccuracy(result);
         AppendAudioCues(result);
         return result;
     }
@@ -230,6 +306,7 @@ namespace finger_drum::rhythm
     {
         NoteProcessResult result;
         rule_->Update(Context(), update, result);
+        AccumulateAccuracy(result);
         AppendAudioCues(result);
         return result;
     }
@@ -238,6 +315,7 @@ namespace finger_drum::rhythm
     {
         NoteProcessResult result;
         rule_->MarkMissed(Context(), time, result);
+        AccumulateAccuracy(result);
         AppendAudioCues(result);
         return result;
     }
@@ -245,6 +323,47 @@ namespace finger_drum::rhythm
     void RuleBasedNote::Reset() noexcept
     {
         rule_->Reset();
+        std::ranges::fill(accuracy_.hitScoreRates, 0.0);
+        accuracy_.acceptedHits = 0;
+        accuracy_.acceptedTicks = 0;
+        accuracy_.finalized = false;
+    }
+
+    void RuleBasedNote::AccumulateAccuracy(NoteProcessResult& result)
+    {
+        if (accuracy_.finalized)
+        {
+            return;
+        }
+        for (const NoteEvent& event : result.events)
+        {
+            if (event.type == NoteEventType::HitAccepted)
+            {
+                if (event.hitIndex < accuracy_.hitScoreRates.size())
+                {
+                    accuracy_.hitScoreRates[event.hitIndex] = event.judgement.scoreRate;
+                }
+                ++accuracy_.acceptedHits;
+            }
+            else if (event.type == NoteEventType::TickAccepted)
+            {
+                if (accuracy_.target.kind == NoteAccuracyKind::HitCount)
+                {
+                    ++accuracy_.acceptedHits;
+                }
+                else
+                {
+                    ++accuracy_.acceptedTicks;
+                }
+            }
+            else if (event.type == NoteEventType::Completed ||
+                event.type == NoteEventType::Missed)
+            {
+                accuracy_.finalized = true;
+                result.finalizedAccuracies.push_back(accuracy_);
+                break;
+            }
+        }
     }
 
     NoteRuleContext RuleBasedNote::Context() const noexcept
@@ -497,8 +616,10 @@ namespace finger_drum::rhythm
 
     SequenceInputRule::SequenceInputRule(
         std::vector<NoteAction> sequence,
-        const JudgementGrade maximumGrade)
+        const JudgementGrade maximumGrade,
+        const bool allowAnyOrder)
         : sequence_(std::move(sequence)),
+          allowAnyOrder_(allowAnyOrder),
           maximumGrade_(maximumGrade)
     {
         if (sequence_.empty())
@@ -525,7 +646,10 @@ namespace finger_drum::rhythm
     {
         return !IsTerminal(state_) &&
             input.edge == InputEdge::Pressed &&
-            input.action == sequence_[nextActionIndex_] &&
+            (allowAnyOrder_
+                ? std::find(sequence_.begin() + nextActionIndex_, sequence_.end(),
+                    input.action) != sequence_.end()
+                : input.action == sequence_[nextActionIndex_]) &&
             IsAtLeastAsAccurateAs(judgement.grade, maximumGrade_);
     }
 
@@ -549,6 +673,11 @@ namespace finger_drum::rhythm
         }
 
         const NoteState before = state_;
+        if (allowAnyOrder_)
+        {
+            const auto next = sequence_.begin() + nextActionIndex_;
+            std::iter_swap(next, std::find(next, sequence_.end(), input.action));
+        }
         const std::size_t acceptedIndex = nextActionIndex_++;
         state_ = nextActionIndex_ == sequence_.size()
             ? NoteState::Completed
@@ -627,6 +756,7 @@ namespace finger_drum::rhythm
         nextTickIndex_ = 0;
         started_ = false;
         held_ = false;
+        heldPhysicalKeys_.clear();
     }
 
     NoteState HoldInputRule::State() const noexcept
@@ -660,6 +790,12 @@ namespace finger_drum::rhythm
         const JudgementResult& judgement,
         NoteProcessResult& output)
     {
+        if (!IsTerminal(state_))
+        {
+            // Preserve the held state before this timestamp. A press at a tick
+            // accepts it; a release at that timestamp does not.
+            AdvanceTicks(context, input.time - RhythmDuration{1}, output);
+        }
         if (!CanAccept(context, input, judgement))
         {
             output.events.push_back(MakeEvent(
@@ -675,6 +811,7 @@ namespace finger_drum::rhythm
         const NoteState before = state_;
         if (input.edge == InputEdge::Pressed)
         {
+            heldPhysicalKeys_.insert(input.physicalKey);
             held_ = true;
             state_ = NoteState::Holding;
             if (!started_)
@@ -695,11 +832,13 @@ namespace finger_drum::rhythm
                     judgement,
                     input.time));
             }
+            AdvanceTicks(context, input.time, output);
             return;
         }
 
-        held_ = false;
-        state_ = NoteState::Active;
+        heldPhysicalKeys_.erase(input.physicalKey);
+        held_ = !heldPhysicalKeys_.empty();
+        state_ = held_ ? NoteState::Holding : NoteState::Active;
         output.events.push_back(MakeEvent(
             context,
             NoteEventType::HoldReleased,
@@ -707,6 +846,7 @@ namespace finger_drum::rhythm
             state_,
             judgement,
             input.time));
+        AdvanceTicks(context, input.time, output);
     }
 
     void HoldInputRule::Update(
@@ -724,23 +864,7 @@ namespace finger_drum::rhythm
             state_ = held_ ? NoteState::Holding : NoteState::Active;
         }
 
-        while (nextTickIndex_ < tickTimes_.size() &&
-            tickTimes_[nextTickIndex_] <= update.time)
-        {
-            const std::size_t index = nextTickIndex_++;
-            const NoteEventType type = held_
-                ? NoteEventType::TickAccepted
-                : NoteEventType::TickMissed;
-            output.events.push_back(MakeEvent(
-                context,
-                type,
-                state_,
-                state_,
-                {JudgementGrade::Unjudged, {}, held_ ? 1.0 : 0.0},
-                tickTimes_[index],
-                0,
-                index));
-        }
+        AdvanceTicks(context, update.time, output);
 
         if (update.time < endTime_)
         {
@@ -781,6 +905,21 @@ namespace finger_drum::rhythm
             time));
     }
 
+    void HoldInputRule::AdvanceTicks(const NoteRuleContext& context,
+        const RhythmTime time, NoteProcessResult& output)
+    {
+        while (nextTickIndex_ < tickTimes_.size() &&
+            tickTimes_[nextTickIndex_] <= time)
+        {
+            const std::size_t index = nextTickIndex_++;
+            output.events.push_back(MakeEvent(context,
+                held_ ? NoteEventType::TickAccepted : NoteEventType::TickMissed,
+                state_, state_,
+                {JudgementGrade::Unjudged, {}, held_ ? 1.0 : 0.0},
+                tickTimes_[index], 0, index));
+        }
+    }
+
     RhythmTime HoldInputRule::ExpireTime(
         const NoteRuleContext&) const noexcept
     {
@@ -789,9 +928,11 @@ namespace finger_drum::rhythm
 
     DrumRollInputRule::DrumRollInputRule(
         std::vector<NoteAction> acceptedActions,
-        const RhythmTime endTime)
+        const RhythmTime endTime,
+        const std::size_t requiredHitCount)
         : acceptedActions_(std::move(acceptedActions)),
-          endTime_(endTime)
+          endTime_(endTime),
+          requiredHitCount_(std::max<std::size_t>(requiredHitCount, 1))
     {
         if (acceptedActions_.empty())
         {
@@ -862,10 +1003,10 @@ namespace finger_drum::rhythm
             return;
         }
         const NoteState before = state_;
-        state_ = NoteState::Completed;
+        state_ = tickCount_ >= requiredHitCount_ ? NoteState::Completed : NoteState::Missed;
         output.events.push_back(MakeEvent(
             context,
-            NoteEventType::Completed,
+            state_ == NoteState::Completed ? NoteEventType::Completed : NoteEventType::Missed,
             before,
             state_,
             {JudgementGrade::Unjudged, {}, 1.0},
@@ -1103,7 +1244,7 @@ namespace finger_drum::rhythm
                 NoteEventType::InputRejected,
                 state_,
                 state_,
-                judgement,
+                {JudgementGrade::Unjudged, {}, 0.0},
                 input.time,
                 0,
                 nextTickIndex_));
@@ -1116,9 +1257,7 @@ namespace finger_drum::rhythm
             NoteEventType::TickAccepted,
             state_,
             state_,
-            context.judgementProfile.Evaluate(
-                tickTimes_[acceptedIndex],
-                input.time),
+            {JudgementGrade::Unjudged, input.time - tickTimes_[acceptedIndex], 1.0},
             input.time,
             0,
             acceptedIndex));
