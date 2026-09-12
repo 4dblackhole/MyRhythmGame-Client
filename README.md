@@ -12,6 +12,10 @@
 계산 규칙과 보라 노트(ID 5)는 [리듬게임 문서](Docs/RhythmGameplay.md),
 연타 목표 횟수의 공통 문법은 [차트 문법](Docs/ChartFormats.md)을 참고하세요.
 
+타이틀의 `Editor`는 기록 패널 없이 곡·난이도 정보를 넓게 표시하는
+[에디터 곡 선택 화면](Docs/EditorSongSelect.md)으로 이동합니다. 실제 차트 편집
+workspace와 저장 기능은 후속 단계입니다.
+
 ## 구조
 
 ```text

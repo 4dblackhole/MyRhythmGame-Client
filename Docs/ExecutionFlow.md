@@ -14,6 +14,7 @@ flowchart TD
     Game --> Manager["SceneManager"]
     Manager --> Logo["FingerDrumLogoScene"]
     Logo --> Lobby["LobbyScene · Music Select"]
+    Logo --> EditorSelect["LobbyScene · Editor Song Select"]
     Lobby --> Request["GameplayLaunchRequest"]
     Request --> Manager
     Manager --> Test["RhythmTestScene · transient Taiko play"]
@@ -26,7 +27,7 @@ flowchart TD
    재사용 엔진 검증용 `ColoredCubeGame`을 생성합니다.
 2. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다.
-3. `RegisterScenes`가 Logo, Lobby, RhythmTest route를 등록합니다.
+3. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, RhythmTest route를 등록합니다.
 4. `SceneManager`가 최초 Logo Scene을 활성화하고 `Initialize`를 한 번
    호출합니다.
 
@@ -44,6 +45,9 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 ## Scene 흐름
 
 - Logo에서 Game Start를 누르면 Lobby로 이동합니다.
+- Logo에서 Editor를 누르면 기록 패널이 없는 EditorSongSelect로 이동합니다.
+  이 Scene은 Lobby의 카탈로그·미리듣기·검색·정렬·곡/난이도 탐색을 공유하며,
+  실제 편집 workspace 전환은 아직 연결하지 않습니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
   `SongCatalog`가 기존 YMM 5개와 YMP 8개 및 선택적 로컬 패턴을 연결해 표시합니다.
   포커스된 곡 카드만 난이도 목록을 펼치며 좌우키는 곡, 상하키는 난이도를

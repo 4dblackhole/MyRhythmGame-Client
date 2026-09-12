@@ -56,6 +56,7 @@ wWinMain
    └─ SceneManager
       ├─ FingerDrumLogoScene       KeepAlive
       ├─ LobbyScene                KeepAlive
+      ├─ LobbyScene(Editor)        KeepAlive
       └─ RhythmTestScene           DestroyOnExit
 ```
 
@@ -67,6 +68,10 @@ wWinMain
 - 곡 목록에는 실제 곡명과 아티스트만 표시하며 포커스된 곡 카드 하나만 난이도를
   펼칩니다. 좌우키는 곡을, 상하키는 난이도를 이동하고 마지막 난이도에서 아래키를
   누르면 다음 곡의 첫 난이도로 이동합니다. 긴 곡명은 marquee로 표시합니다.
+- 타이틀의 Editor는 `FingerDrum.EditorSongSelect`로 이동합니다. 구현은
+  `LobbyScene`의 Editor 구성으로 카탈로그·검색·정렬·미리듣기·난이도 탐색을
+  공유하지만 기록 패널은 만들지 않으며 정보 패널이 왼쪽 빈 영역까지 넓어집니다.
+  실제 편집 workspace와 파일 저장은 아직 구현하지 않았습니다.
 - Lobby가 `GameplayLaunchRequest`에 music/pattern/optional YME/mode를 기록한
   뒤 gameplay Scene 전환을 요청합니다.
 - Gameplay Scene은 진입 시 동적 생성되고 ESC 또는 패턴 종료 3초 뒤 Lobby로

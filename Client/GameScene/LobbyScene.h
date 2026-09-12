@@ -14,16 +14,22 @@
 #include <utility>
 #include <vector>
 
-// Presents the Penpot song browser. Only the focused song expands, and the
-// selected catalog paths are copied to GameplayLaunchRequest before entering
-// the transient gameplay Scene.
+enum class SongSelectPurpose : std::uint8_t
+{
+    Gameplay,
+    Editor,
+};
+
+// Presents the shared song browser. Editor selection deliberately reuses the
+// catalog and navigation while replacing the record column with song details.
 class LobbyScene final : public mrg::scene::GameScene
 {
 public:
     explicit LobbyScene(
         mrg::visual2d::ScreenVisual2DManager& screenVisuals,
         mrg::audio::AudioPlaybackManager& audioPlayback,
-        std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest);
+        std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
+        SongSelectPurpose purpose = SongSelectPurpose::Gameplay);
 
     void Initialize(const mrg::EngineServices& services) override;
     void BeginScene() override;
@@ -109,6 +115,7 @@ private:
     [[nodiscard]] bool StartSelectedPattern(
         mrg::scene::SceneManager& scenes);
     [[nodiscard]] bool ReturnToLogo(mrg::scene::SceneManager& scenes) const;
+    [[nodiscard]] bool IsEditorSongSelect() const noexcept;
 
     mrg::visual2d::Visual2DNode& AddPanel(
         mrg::visual2d::Visual2DNode& parent,
@@ -135,6 +142,7 @@ private:
             mrg::visual2d::TextAlignment::Leading);
 
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest_;
+    SongSelectPurpose purpose_{SongSelectPurpose::Gameplay};
     finger_drum::chart::SongCatalogLoadResult catalog_;
     std::vector<std::size_t> visibleSongIndices_;
     std::vector<SongCard> songCards_;

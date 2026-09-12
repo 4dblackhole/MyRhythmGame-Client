@@ -25,6 +25,8 @@
 ## 타이틀 메뉴 조작
 
 - `Game Start`: YMM/YMP catalog를 표시하는 `LobbyScene`으로 이동한다.
+- `Editor`: 같은 catalog 탐색을 사용하는 에디터 곡 선택 Scene으로 이동한다.
+  기록 패널은 생성하지 않고 곡·난이도 정보 패널이 그 영역까지 차지한다.
 - `Exit`: `SceneManager::Quit`을 요청해 게임을 정상 종료한다.
 - 마우스 이동: hover한 버튼으로 삼각형 선택 커서가 이동한다.
 - 마우스 왼쪽 클릭: 해당 버튼을 실행한다.
