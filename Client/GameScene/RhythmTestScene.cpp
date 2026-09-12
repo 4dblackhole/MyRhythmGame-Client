@@ -47,6 +47,18 @@ namespace
         {1.0F, 0.45F, 0.49F, 1.0F},
         {0.56F, 0.90F, 1.0F, 1.0F},
     }};
+    constexpr std::array<mrg::visual2d::Color, 4> InputKeyWeakGlowColors{{
+        {KatBlue.red, KatBlue.green, KatBlue.blue, 0.45F},
+        {DonRed.red, DonRed.green, DonRed.blue, 0.45F},
+        {DonRed.red, DonRed.green, DonRed.blue, 0.45F},
+        {KatBlue.red, KatBlue.green, KatBlue.blue, 0.45F},
+    }};
+    constexpr std::array<mrg::visual2d::Color, 4> InputKeyStrongGlowColors{{
+        {0.02F, 0.52F, 1.0F, 1.0F},
+        {1.0F, 0.06F, 0.12F, 1.0F},
+        {1.0F, 0.06F, 0.12F, 1.0F},
+        {0.02F, 0.52F, 1.0F, 1.0F},
+    }};
 #if defined(_DEBUG)
     // Match the former RPG project's single compile-time switch. Set this to
     // false when a Debug build should use only the real QPC/DSP timeline.
@@ -1519,7 +1531,9 @@ void RhythmTestScene::UpdateInputPresentation(
             glow.SetImage(primaryPressed
                 ? strongKeyLightImage_
                 : weakKeyLightImage_);
-            glow.SetTint(InputKeyBaseColors[index]);
+            glow.SetTint(primaryPressed
+                ? InputKeyStrongGlowColors[index]
+                : InputKeyWeakGlowColors[index]);
             keyGlows_[index]->SetVisible(
                 primaryPressed || secondaryPressed);
         }
