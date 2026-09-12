@@ -349,6 +349,7 @@ void RhythmTestScene::Shutdown() noexcept
     measureLineVisuals_.clear();
     keyIndicators_.fill(nullptr);
     keyGlows_.fill(nullptr);
+    keyPressFlashes_.fill(nullptr);
     background_ = nullptr;
     scrollGearBorder_ = nullptr;
     scrollGearSurface_ = nullptr;
@@ -359,6 +360,7 @@ void RhythmTestScene::Shutdown() noexcept
     laneImage_ = {};
     strongKeyLightImage_ = {};
     weakKeyLightImage_ = {};
+    keyPressFlashImage_ = {};
     gameProgressBar_ = nullptr;
     accuracyIndicator_ = nullptr;
     judgementIndicator_ = nullptr;
@@ -766,8 +768,12 @@ void RhythmTestScene::CreateKeyIndicators(
         InGameSkinAssetPath(L"KeyLightStrong.png"));
     weakKeyLightImage_ = screenVisuals_.RegisterImage(
         InGameSkinAssetPath(L"KeyLightWeak.png"));
+    keyPressFlashImage_ = screenVisuals_.RegisterImage(
+        InGameSkinAssetPath(L"KeyPressFlash.png"));
     const auto lightSize = ScaledImageSize(
         screenVisuals_, strongKeyLightImage_);
+    const auto pressFlashSize = ScaledImageSize(
+        screenVisuals_, keyPressFlashImage_);
     for (std::size_t index = 0; index < keys.size(); ++index)
     {
         const mrg::visual2d::Rect bounds{
@@ -802,6 +808,18 @@ void RhythmTestScene::CreateKeyIndicators(
             SetTint(keys[index].baseColor);
         face.SetZIndex(2);
         keyIndicators_[index] = &face;
+
+        auto& pressFlash = mrg::visual2d::CreateSprite(
+            inputPanel,
+            {bounds.x - (pressFlashSize.width - bounds.width) * 0.5F,
+             bounds.y - (pressFlashSize.height - bounds.height) * 0.5F,
+             pressFlashSize.width,
+             pressFlashSize.height},
+            keyPressFlashImage_,
+            "Input.Key.PressFlash");
+        pressFlash.SetVisible(false);
+        pressFlash.SetZIndex(3);
+        keyPressFlashes_[index] = &pressFlash;
     }
 }
 
@@ -1473,6 +1491,14 @@ void RhythmTestScene::UpdateInputPresentation(
             {
                 return input.IsKeyDown(key);
             });
+        const bool pressedThisFrame =
+            input.WasKeyPressed(binding.primaryKey) ||
+            std::ranges::any_of(
+                binding.secondaryKeys,
+                [&input](const finger_drum::rhythm::PhysicalKey key)
+                {
+                    return input.WasKeyPressed(key);
+                });
         const mrg::visual2d::Color& faceColor = primaryPressed
             ? InputKeyStrongColors[index]
             : (secondaryPressed
@@ -1493,6 +1519,10 @@ void RhythmTestScene::UpdateInputPresentation(
             glow.SetTint(InputKeyBaseColors[index]);
             keyGlows_[index]->SetVisible(
                 primaryPressed || secondaryPressed);
+        }
+        if (keyPressFlashes_[index] != nullptr)
+        {
+            keyPressFlashes_[index]->SetVisible(pressedThisFrame);
         }
     }
 }

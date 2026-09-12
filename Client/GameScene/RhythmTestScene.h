@@ -140,6 +140,7 @@ private:
     std::vector<TimedVisual> measureLineVisuals_;
     std::array<mrg::visual2d::Visual2DNode*, 4> keyIndicators_{};
     std::array<mrg::visual2d::Visual2DNode*, 4> keyGlows_{};
+    std::array<mrg::visual2d::Visual2DNode*, 4> keyPressFlashes_{};
     mrg::visual2d::Visual2DNode* background_{};
     mrg::visual2d::Visual2DNode* scrollGearBorder_{};
     mrg::visual2d::Visual2DNode* scrollGearSurface_{};
@@ -150,6 +151,7 @@ private:
     mrg::visual2d::ImageHandle laneImage_{};
     mrg::visual2d::ImageHandle strongKeyLightImage_{};
     mrg::visual2d::ImageHandle weakKeyLightImage_{};
+    mrg::visual2d::ImageHandle keyPressFlashImage_{};
     mrg::visual2d::Visual2DNode* gameProgressBar_{};
     mrg::visual2d::Visual2DNode* accuracyIndicator_{};
     mrg::visual2d::Visual2DNode* judgementIndicator_{};
