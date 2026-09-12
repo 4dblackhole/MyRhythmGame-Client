@@ -57,8 +57,8 @@ private:
     mrg::visual2d::Visual2DNode* leftFade_{};
     mrg::visual2d::Visual2DNode* centerLogo_{};
     mrg::visual2d::Visual2DNode* rightFade_{};
-    std::array<mrg::visual2d::Visual2DNode*, 2> menuButtons_{};
-    std::array<mrg::visual2d::NodeId, 2> menuButtonIds_{};
+    std::array<mrg::visual2d::Visual2DNode*, 4> menuButtons_{};
+    std::array<mrg::visual2d::NodeId, 4> menuButtonIds_{};
     mrg::visual2d::Visual2DNode* selectionCursor_{};
     std::size_t selectedMenuIndex_{};
 };

@@ -15,7 +15,7 @@ namespace
     constexpr mrg::visual2d::Size CenterLogoSourceSize{2400.0F, 1280.0F};
     constexpr mrg::visual2d::Size RightFadeSourceSize{1680.0F, 1280.0F};
     constexpr float StripSourceHeight = 1280.0F;
-    constexpr mrg::visual2d::Size MenuSize{360.0F, 128.0F};
+    constexpr mrg::visual2d::Size MenuSize{360.0F, 280.0F};
     constexpr float MenuCenterOffsetY = -190.0F;
     constexpr float ButtonLeft = 60.0F;
     constexpr float ButtonWidth = 300.0F;
@@ -24,7 +24,9 @@ namespace
     constexpr mrg::visual2d::Size CursorSize{48.0F, 48.0F};
     constexpr float CursorCenterX = 28.0F;
     constexpr std::size_t GameStartIndex = 0;
-    constexpr std::size_t ExitIndex = 1;
+    constexpr std::size_t EditorIndex = 1;
+    constexpr std::size_t OptionIndex = 2;
+    constexpr std::size_t ExitIndex = 3;
 
     [[nodiscard]] std::filesystem::path RuntimeAssetPath(
         const std::filesystem::path& relativePath)
@@ -229,16 +231,33 @@ void FingerDrumLogoScene::CreateMenu()
          ButtonHeight},
         L"Game Start",
         "FingerDrum.GameStart");
-    auto& exit = mrg::visual2d::CreateButton(
+    auto& editor = mrg::visual2d::CreateButton(
         menu,
         {ButtonLeft,
          MenuSize.height - ButtonVerticalStep - ButtonHeight,
          ButtonWidth,
          ButtonHeight},
+        L"Editor",
+        "FingerDrum.Editor");
+    auto& option = mrg::visual2d::CreateButton(
+        menu,
+        {ButtonLeft,
+         MenuSize.height - ButtonVerticalStep * 2.0F - ButtonHeight,
+         ButtonWidth,
+         ButtonHeight},
+        L"Option",
+        "FingerDrum.Option");
+    auto& exit = mrg::visual2d::CreateButton(
+        menu,
+        {ButtonLeft,
+         MenuSize.height - ButtonVerticalStep * 3.0F - ButtonHeight,
+         ButtonWidth,
+         ButtonHeight},
         L"Exit",
         "FingerDrum.Exit");
-    menuButtons_ = {&gameStart, &exit};
-    menuButtonIds_ = {gameStart.Id(), exit.Id()};
+    menuButtons_ = {&gameStart, &editor, &option, &exit};
+    menuButtonIds_ = {
+        gameStart.Id(), editor.Id(), option.Id(), exit.Id()};
 
     for (mrg::visual2d::Visual2DNode* button : menuButtons_)
     {
@@ -442,6 +461,10 @@ void FingerDrumLogoScene::ActivateMenuItem(
             throw std::runtime_error(
                 "Failed to enter the temporary FingerDrum Lobby Scene.");
         }
+        return;
+    }
+    if (index == EditorIndex || index == OptionIndex)
+    {
         return;
     }
     if (index == ExitIndex)
