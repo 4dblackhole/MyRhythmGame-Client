@@ -719,6 +719,7 @@ void LobbyScene::CreateSongBrowser()
         "SortSelector");
     sortSelector_ = &sort;
     sortSelectorId_ = sort.Id();
+    sort.SetZIndex(10);
     ApplySpriteStyle(sort, PaleBlue, PaleBlue);
     SetCornerRadius(sort, 10.0F);
     auto& sortBehavior =
