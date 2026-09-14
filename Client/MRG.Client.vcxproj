@@ -80,7 +80,7 @@
     <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
-    <ClInclude Include="GameScene\EditorScene.h" />
+    <ClInclude Include="EditorScene\EditorScene.h" />
     <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
     <ClInclude Include="GameScene\MusicSelectScene.h" />
     <ClInclude Include="GameScene\RhythmTestScene.h" />
@@ -100,7 +100,7 @@
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" />
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
-    <ClCompile Include="GameScene\EditorScene.cpp" />
+    <ClCompile Include="EditorScene\EditorScene.cpp" />
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
     <ClCompile Include="GameScene\MusicSelectScene.cpp" />
     <ClCompile Include="GameScene\RhythmTestScene.cpp" />

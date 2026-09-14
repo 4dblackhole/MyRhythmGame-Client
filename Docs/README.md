@@ -35,7 +35,7 @@ submodule의 `Docs`에 있습니다. 게임 규칙, Scene ID, 차트 문법, 게
 | 로고 화면 | `Client/GameScene/FingerDrumLogoScene.*` |
 | Penpot 곡 선택 화면 | `Client/GameScene/MusicSelectScene.*` |
 | 에디터 곡 선택 화면 | `Client/GameScene/MusicSelectScene.*`의 `SongSelectPurpose::Editor` 구성 |
-| 에디터 작업 화면 | `Client/GameScene/EditorScene.*` |
+| 에디터 작업 화면 | `Client/EditorScene/EditorScene.*` |
 | 리듬 구조 통합 테스트 Scene | `Client/GameScene/RhythmTestScene.*` |
 | 게임 재생용 오디오 라우터 | `Client/Audio/GameplayAudioRouter.*` |
 | 판정·노트·Lane·스크롤 | `FingerDrum.Rhythm/` |
