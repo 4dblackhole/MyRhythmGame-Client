@@ -969,6 +969,40 @@ Base BPM: 140
             "N/D must be an absolute whole-note position inside its measure and BPM anchors must accumulate from the previous anchor.");
     }
 
+    void TestYmpSystemBreaksAdvanceAndRemainAvailable()
+    {
+        constexpr std::string_view Pattern = R"(
+[Metadata]
+Base BPM: 120
+[Time Signature]
+---
+#measure 3/4
+[Pattern]
+0/4,1,0
+---
+0/4,2,0
+--
+0/4,1,0
+---
+0/4,2,0
+)";
+        const auto parsed = chart::ChartParser{}.ParsePattern(
+            Pattern,
+            "system-breaks.ymp");
+        Require(
+            parsed.Succeeded() && parsed.document.notes.size() == 4 &&
+            parsed.document.notes[0].position.measure == 0 &&
+            parsed.document.notes[1].position.measure == 1 &&
+            parsed.document.notes[2].position.measure == 2 &&
+            parsed.document.notes[3].position.measure == 3,
+            "Both YMP measure separators must advance the current measure.");
+        Require(
+            parsed.document.systemBreakMeasures ==
+                std::vector<std::int64_t>{1, 3},
+            "The parser must preserve each unique measure that starts after "
+            "a triple-dash system break.");
+    }
+
     void TestOutOfMeasureEntriesAreIgnored()
     {
         constexpr std::string_view Pattern = R"(
@@ -1232,6 +1266,7 @@ int main(const int argumentCount, char* arguments[])
         TestRationalNumberUsesExactOrderingAndArithmetic();
         TestTimingCommandWhitespaceGrammar();
         TestAbsoluteMeasurePositionsAndTempoAnchors();
+        TestYmpSystemBreaksAdvanceAndRemainAvailable();
         TestOutOfMeasureEntriesAreIgnored();
         TestLegacyParsingAndMicroseconds();
         TestInvalidNumericFieldsReportDiagnostics();

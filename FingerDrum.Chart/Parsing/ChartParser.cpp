@@ -575,10 +575,26 @@ namespace finger_drum::chart
                 section = std::string(Trim(line.substr(1, line.size() - 2)));
                 continue;
             }
-            if (line == "--")
+            if (line == "--" || line == "---")
             {
-                if (section == "Pattern") ++patternMeasure;
-                else if (section == "Time Signature") ++timingMeasure;
+                std::int64_t* nextMeasure = nullptr;
+                if (section == "Pattern")
+                {
+                    nextMeasure = &patternMeasure;
+                }
+                else if (section == "Time Signature")
+                {
+                    nextMeasure = &timingMeasure;
+                }
+                if (nextMeasure != nullptr)
+                {
+                    ++*nextMeasure;
+                    if (line == "---")
+                    {
+                        result.document.systemBreakMeasures.push_back(
+                            *nextMeasure);
+                    }
+                }
                 continue;
             }
 
@@ -705,6 +721,12 @@ namespace finger_drum::chart
                 "Base BPM must be greater than zero.");
         }
         RemoveOutOfMeasureEntries(result);
+        std::ranges::sort(result.document.systemBreakMeasures);
+        const auto duplicateBreaks = std::ranges::unique(
+            result.document.systemBreakMeasures);
+        result.document.systemBreakMeasures.erase(
+            duplicateBreaks.begin(),
+            duplicateBreaks.end());
         std::ranges::stable_sort(
             result.document.notes,
             [](const PatternNote& left, const PatternNote& right)

@@ -112,6 +112,9 @@ namespace finger_drum::chart
         std::map<std::string, std::filesystem::path, std::less<>> hitSounds;
         std::vector<TimingDirective> timing;
         std::vector<PatternNote> notes;
+        // Each entry is the zero-based measure that starts a new notation
+        // system after a `---` boundary in the source YMP.
+        std::vector<std::int64_t> systemBreakMeasures;
     };
 
     enum class EffectCommandType : std::uint8_t
