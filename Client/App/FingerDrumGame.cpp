@@ -2,7 +2,7 @@
 
 #include "App/AssetPaths.h"
 #include "GameFlow/FingerDrumSceneIds.h"
-#include "GameScene/EditorScene.h"
+#include "EditorScene/EditorScene.h"
 #include "GameScene/FingerDrumLogoScene.h"
 #include "GameScene/MusicSelectScene.h"
 #include "GameScene/RhythmTestScene.h"
