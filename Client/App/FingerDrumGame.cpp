@@ -2,6 +2,7 @@
 
 #include "App/AssetPaths.h"
 #include "GameFlow/FingerDrumSceneIds.h"
+#include "GameScene/EditorScene.h"
 #include "GameScene/FingerDrumLogoScene.h"
 #include "GameScene/MusicSelectScene.h"
 #include "GameScene/RhythmTestScene.h"
@@ -69,6 +70,9 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             std::ref(AudioPlayback()),
             launchRequest_,
             SongSelectPurpose::Editor) ||
+        !scenes.RegisterScene<EditorScene>(
+            std::string(finger_drum::scene_ids::Editor),
+            mrg::scene::SceneRetention::DestroyOnExit) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),
             // Gameplay routes keep only their factory while inactive. The

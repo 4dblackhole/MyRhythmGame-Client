@@ -57,6 +57,7 @@ wWinMain
       ├─ FingerDrumLogoScene       KeepAlive
       ├─ MusicSelectScene                KeepAlive
       ├─ MusicSelectScene(Editor)        KeepAlive
+      ├─ EditorScene                     DestroyOnExit
       └─ RhythmTestScene           DestroyOnExit
 ```
 
@@ -71,7 +72,9 @@ wWinMain
 - 타이틀의 Editor는 `FingerDrum.EditorSongSelect`로 이동합니다. 구현은
   `MusicSelectScene`의 Editor 구성으로 카탈로그·검색·정렬·미리듣기·난이도 탐색을
   공유하지만 기록 패널은 만들지 않으며 정보 패널이 왼쪽 빈 영역까지 넓어집니다.
-  실제 편집 workspace와 파일 저장은 아직 구현하지 않았습니다.
+  난이도를 확정하면 빈 `EditorScene`으로 이동하며, 포커스할 UI가 없는 현재
+  단계에서는 Escape로 에디터 곡 선택 화면에 돌아갑니다. 실제 편집 UI와 파일
+  저장은 아직 구현하지 않았습니다.
 - Lobby가 `GameplayLaunchRequest`에 music/pattern/optional YME/mode를 기록한
   뒤 gameplay Scene 전환을 요청합니다.
 - Gameplay Scene은 진입 시 동적 생성되고 ESC 또는 패턴 종료 3초 뒤 Lobby로
