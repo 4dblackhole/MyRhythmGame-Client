@@ -63,6 +63,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Pch.h" />
     <ClInclude Include="App\AssetPaths.h">
       <Filter>App</Filter>
     </ClInclude>
@@ -116,6 +117,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Pch.cpp" />
     <ClCompile Include="App\FingerDrumGame.cpp">
       <Filter>App</Filter>
     </ClCompile>
