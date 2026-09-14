@@ -37,23 +37,14 @@
     <Filter Include="Assets\Fonts">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555554}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Assets\Images">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555558}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Images\Logo">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555565}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Images\Menu">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555566}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Presentation">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555569}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Assets\Images\Profile">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555568}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Sounds">
+    <Filter Include="Assets\Unused">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Unused\Sounds">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555573}</UniqueIdentifier>
     </Filter>
     <Filter Include="Assets\Songs">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555570}</UniqueIdentifier>
@@ -61,11 +52,20 @@
     <Filter Include="Assets\Skins">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555571}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Assets\Skins\test Skin">
+    <Filter Include="Assets\Skins\Default Skin">
       <UniqueIdentifier>{50555555-5555-4555-8555-555555555572}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Skins\Default Skin\HitSounds">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555574}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Skins\Default Skin\HitSounds\TaikoMode">
+      <UniqueIdentifier>{50555555-5555-4555-8555-555555555575}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="App\AssetPaths.h">
+      <Filter>App</Filter>
+    </ClInclude>
     <ClInclude Include="App\FingerDrumGame.h">
       <Filter>App</Filter>
     </ClInclude>
@@ -172,20 +172,20 @@
     <None Include="Assets\Fonts\Rajdhani-OFL.txt">
       <Filter>Assets\Fonts</Filter>
     </None>
-    <None Include="Assets\Sounds\pop.wav">
-      <Filter>Assets\Sounds</Filter>
+    <None Include="Assets\Unused\Sounds\pop.wav">
+      <Filter>Assets\Unused\Sounds</Filter>
     </None>
-    <None Include="Assets\Skins\test Skin\bigdon.wav">
-      <Filter>Assets\Skins\test Skin</Filter>
+    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\bigdon.wav">
+      <Filter>Assets\Skins\Default Skin\HitSounds\TaikoMode</Filter>
     </None>
-    <None Include="Assets\Skins\test Skin\bigkat.wav">
-      <Filter>Assets\Skins\test Skin</Filter>
+    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\bigkat.wav">
+      <Filter>Assets\Skins\Default Skin\HitSounds\TaikoMode</Filter>
     </None>
-    <None Include="Assets\Skins\test Skin\don.wav">
-      <Filter>Assets\Skins\test Skin</Filter>
+    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\don.wav">
+      <Filter>Assets\Skins\Default Skin\HitSounds\TaikoMode</Filter>
     </None>
-    <None Include="Assets\Skins\test Skin\kat.wav">
-      <Filter>Assets\Skins\test Skin</Filter>
+    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\kat.wav">
+      <Filter>Assets\Skins\Default Skin\HitSounds\TaikoMode</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 #include "WidgetExampleScene.h"
 
+#include "App/AssetPaths.h"
 #include "Examples/ColoredCube/GameFlow/SceneIds.h"
 
 #include <Windows.h>
@@ -59,7 +60,7 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
     const mrg::visual2d::ImageHandle widgetImage =
         screenVisuals_.RegisterImage(
             mrg::platform::ResolveExecutableRelativePath(
-                L"assets\\images\\Widget1.png"));
+                mrg_client::asset_paths::default_skin::widget::First));
     const mrg::visual2d::Size nativeSize =
         screenVisuals_.GetImageSize(widgetImage);
     if (nativeSize.width != WidgetImageSize.width ||

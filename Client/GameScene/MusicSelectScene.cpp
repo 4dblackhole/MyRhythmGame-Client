@@ -1,5 +1,6 @@
 #include "MusicSelectScene.h"
 
+#include "App/AssetPaths.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "Presentation/MarqueeTextComponent.h"
 #include "Taiko/TaikoMode.h"
@@ -280,7 +281,8 @@ namespace
 
     [[nodiscard]] std::filesystem::path RuntimeSongsPath()
     {
-        return mrg::platform::ResolveExecutableRelativePath(L"assets\\songs");
+        return mrg::platform::ResolveExecutableRelativePath(
+            mrg_client::asset_paths::Songs);
     }
 
     [[nodiscard]] std::wstring DecodeDisplayText(const std::string_view value)
