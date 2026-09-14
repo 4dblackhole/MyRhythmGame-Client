@@ -24,7 +24,7 @@
 
 ## 타이틀 메뉴 조작
 
-- `Game Start`: YMM/YMP catalog를 표시하는 `LobbyScene`으로 이동한다.
+- `Game Start`: YMM/YMP catalog를 표시하는 `MusicSelectScene`으로 이동한다.
 - `Editor`: 같은 catalog 탐색을 사용하는 에디터 곡 선택 Scene으로 이동한다.
   기록 패널은 생성하지 않고 곡·난이도 정보 패널이 그 영역까지 차지한다.
 - `Exit`: `SceneManager::Quit`을 요청해 게임을 정상 종료한다.
@@ -41,7 +41,7 @@ event가 발생했을 때만 pointer hover를 선택 상태에 반영한다.
 ## 소스와 예제의 분리
 
 - 실제 게임: `Client/App/FingerDrumGame.*`, `Client/GameScene/FingerDrumLogoScene.*`,
-  `Client/GameScene/LobbyScene.*`, `Client/GameFlow/FingerDrumSceneIds.h`
+  `Client/GameScene/MusicSelectScene.*`, `Client/GameFlow/FingerDrumSceneIds.h`
 - 보관한 기술 예제: `Client/Examples/ColoredCube/`
 - 예제 문서: `Docs/Examples/ColoredCube/`
 

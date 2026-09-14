@@ -2,7 +2,7 @@
 
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "GameScene/FingerDrumLogoScene.h"
-#include "GameScene/LobbyScene.h"
+#include "GameScene/MusicSelectScene.h"
 #include "GameScene/RhythmTestScene.h"
 
 #include <Windows.h>
@@ -55,13 +55,13 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             std::string(finger_drum::scene_ids::Logo),
             mrg::scene::SceneRetention::KeepAlive,
             std::ref(ScreenVisuals())) ||
-        !scenes.RegisterScene<LobbyScene>(
+        !scenes.RegisterScene<MusicSelectScene>(
             std::string(finger_drum::scene_ids::Lobby),
             mrg::scene::SceneRetention::KeepAlive,
             std::ref(ScreenVisuals()),
             std::ref(AudioPlayback()),
             launchRequest_) ||
-        !scenes.RegisterScene<LobbyScene>(
+        !scenes.RegisterScene<MusicSelectScene>(
             std::string(finger_drum::scene_ids::EditorSongSelect),
             mrg::scene::SceneRetention::KeepAlive,
             std::ref(ScreenVisuals()),

@@ -76,7 +76,7 @@
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
     <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
-    <ClInclude Include="GameScene\LobbyScene.h" />
+    <ClInclude Include="GameScene\MusicSelectScene.h" />
     <ClInclude Include="GameScene\RhythmTestScene.h" />
     <ClInclude Include="Presentation\MarqueeTextComponent.h" />
     <ClInclude Include="Presentation\LaneKeyBeam.h" />
@@ -92,7 +92,7 @@
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
-    <ClCompile Include="GameScene\LobbyScene.cpp" />
+    <ClCompile Include="GameScene\MusicSelectScene.cpp" />
     <ClCompile Include="GameScene\RhythmTestScene.cpp" />
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
     <ClCompile Include="Presentation\LaneKeyBeam.cpp" />

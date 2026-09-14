@@ -33,8 +33,8 @@ submodule의 `Docs`에 있습니다. 게임 규칙, Scene ID, 차트 문법, 게
 | 프로그램 진입과 CRT 누수 검사 | `Client/App/Main.cpp` |
 | Client 설정과 Scene 등록 | `Client/App/FingerDrumGame.*` |
 | 로고 화면 | `Client/GameScene/FingerDrumLogoScene.*` |
-| Penpot 곡 선택 화면 | `Client/GameScene/LobbyScene.*` |
-| 에디터 곡 선택 화면 | `Client/GameScene/LobbyScene.*`의 `SongSelectPurpose::Editor` 구성 |
+| Penpot 곡 선택 화면 | `Client/GameScene/MusicSelectScene.*` |
+| 에디터 곡 선택 화면 | `Client/GameScene/MusicSelectScene.*`의 `SongSelectPurpose::Editor` 구성 |
 | 리듬 구조 통합 테스트 Scene | `Client/GameScene/RhythmTestScene.*` |
 | 게임 재생용 오디오 라우터 | `Client/Audio/GameplayAudioRouter.*` |
 | 판정·노트·Lane·스크롤 | `FingerDrum.Rhythm/` |

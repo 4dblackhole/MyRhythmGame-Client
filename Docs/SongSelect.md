@@ -1,6 +1,6 @@
 # Penpot 곡 선택 화면
 
-`LobbyScene`은 Penpot `Music Select · Sky` 페이지의
+`MusicSelectScene`은 Penpot `Music Select · Sky` 페이지의
 `곡 선택 화면 · Song List Focus · 1920×1080` 보드를 기준으로 구성한다.
 1920×1080 좌표에 `2/3`을 적용한 1280×720 `FixedHeight` Canvas를 사용한다.
 Canvas의 논리 높이는 720으로 유지하되 창 화면비에 따라 논리 폭과 보드 폭을

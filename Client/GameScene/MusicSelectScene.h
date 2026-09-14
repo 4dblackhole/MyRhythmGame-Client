@@ -22,10 +22,10 @@ enum class SongSelectPurpose : std::uint8_t
 
 // Presents the shared song browser. Editor selection deliberately reuses the
 // catalog and navigation while replacing the record column with song details.
-class LobbyScene final : public mrg::scene::GameScene
+class MusicSelectScene final : public mrg::scene::GameScene
 {
 public:
-    explicit LobbyScene(
+    explicit MusicSelectScene(
         mrg::visual2d::ScreenVisual2DManager& screenVisuals,
         mrg::audio::AudioPlaybackManager& audioPlayback,
         std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,

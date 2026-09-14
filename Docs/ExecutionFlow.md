@@ -13,8 +13,8 @@ flowchart TD
     Run --> Systems["Win32 · D3D12 · Raw Input · Audio"]
     Game --> Manager["SceneManager"]
     Manager --> Logo["FingerDrumLogoScene"]
-    Logo --> Lobby["LobbyScene · Music Select"]
-    Logo --> EditorSelect["LobbyScene · Editor Song Select"]
+    Logo --> Lobby["MusicSelectScene · Music Select"]
+    Logo --> EditorSelect["MusicSelectScene · Editor Song Select"]
     Lobby --> Request["GameplayLaunchRequest"]
     Request --> Manager
     Manager --> Test["RhythmTestScene · transient Taiko play"]
