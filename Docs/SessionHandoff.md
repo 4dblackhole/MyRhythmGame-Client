@@ -125,9 +125,12 @@ wWinMain
 - Lane은 기본 로컬 `+Y` 방향의 세로 계층으로 작성하고 Taiko에서는 부모만
   Z축 `-90°` 회전합니다. 배경, light, judge, note, long-note part가 그 회전을
   상속하고 note 이동은 로컬 Y만 갱신합니다.
-- 플레이 화면은 `Assets/Skins/test Skin/InGame` 자산을 사용합니다. `Lane.png`는
+- 플레이 화면은 `Assets/Skins/Default Skin/InGame` 자산을 사용합니다. `Lane.png`는
   늘이지 않고 원본 비율로 반복 배치하며 노트와 롱노트 파츠는 PNG 메타데이터로
   표시 크기를 정합니다.
+- 런타임 자산 디렉터리와 개별 공용 자산 경로는
+  `Client/App/AssetPaths.h`에서 관리합니다. 자산을 옮길 때 Scene마다 문자열을
+  수정하지 말고 이 테이블과 MSBuild 복사 규칙을 함께 갱신합니다.
 - 입력 패널 키와 판정원 간격은 Penpot `Gameplay · Sky` 좌표를 사용하고 Lane은
   오른쪽 화면 끝까지 이어집니다. 롱노트 tail/overlay는 별도로 회전하지 않고
   원본 방향 그대로 Lane 부모의 회전만 상속합니다.
@@ -183,8 +186,8 @@ Mesh·Camera·렌더 변경은 `--smoke-test --example=mesh`가 기본 통합 �
 현재 사용자 소유로 남아 있을 수 있는 다음 파일은 별도 요청 없이 stage하거나
 덮어쓰지 않습니다.
 
-- `Client/Assets/Images/Logo/LeftFade.png`
-- `Client/Assets/Images/Logo/RightFade.png`
+- `Client/Assets/Skins/Default Skin/TitleImage/Logo/LeftFade.png`
+- `Client/Assets/Skins/Default Skin/TitleImage/Logo/RightFade.png`
 - `Client/Assets/Songs/Music/angel dream hand shaking.mp3`
 - `TODOLIST.txt`
 

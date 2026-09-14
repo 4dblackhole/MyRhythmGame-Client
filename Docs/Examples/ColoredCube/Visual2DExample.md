@@ -11,7 +11,7 @@
 - `OUTPUT API`: SYSTEM DEFAULT(FMOD AUTO), WASAPI, ASIO 순환 선택
 - `DEVICE`: 선택한 output API에서 탐지된 driver를 ComboBox로 선택
 - `DSP BUFFER LENGTH`: buffer당 sample 수 선택, 기본 256
-- `Z`: 현재 선택된 출력으로 `Assets/Sounds/pop.wav` 재생
+- `Z`: 현재 선택된 출력으로 `Assets/Unused/Sounds/pop.wav` 재생
 - 마우스 왼쪽 버튼: Visual2D 입력
 - 마우스 오른쪽 버튼: 카메라 회전
 

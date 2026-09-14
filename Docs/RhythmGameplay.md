@@ -174,7 +174,7 @@ ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 Balloon/D
 Lane 위·아래까지의 거리가 같습니다. Lane과 ScrollGear 표면은 오른쪽 논리 화면
 끝까지 이어지고 마지막 `Lane.png` 타일만 UV로 잘립니다.
 
-노트와 플레이 HUD는 `Client/Assets/Skins/test Skin/InGame`의 PNG로 그립니다.
+노트와 플레이 HUD는 `Client/Assets/Skins/Default Skin/InGame`의 PNG로 그립니다.
 `note.png`, `bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient
 색상을 곱하고 대응하는 `*Overlay.png`는 흰색 원본으로 위에 그립니다. 일반/큰
 롱노트는 서로 다른 body와 tail을 사용하고 Buzz tick은 마름모 자산을 사용합니다.

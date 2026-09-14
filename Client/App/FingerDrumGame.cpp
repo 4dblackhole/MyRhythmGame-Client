@@ -1,5 +1,6 @@
 #include "FingerDrumGame.h"
 
+#include "App/AssetPaths.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "GameScene/EditorScene.h"
 #include "GameScene/FingerDrumLogoScene.h"
@@ -99,7 +100,7 @@ void FingerDrumGame::OnClientInitialized(
     // chooses F7 independently from Engine scheduling.
     performanceFont_ = services.textRendering.LoadFontFile(
         mrg::platform::ResolveExecutableRelativePath(
-            L"assets\\fonts\\Rajdhani-SemiBold.ttf"));
+            mrg_client::asset_paths::fonts::FingerDrum));
 }
 
 void FingerDrumGame::OnClientUpdated(const mrg::UpdateContext& context)
