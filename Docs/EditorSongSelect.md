@@ -1,7 +1,7 @@
 # 에디터 곡 선택 화면
 
 타이틀의 `Editor` 버튼은 `FingerDrum.EditorSongSelect` Scene으로 이동합니다.
-이 화면은 별도의 곡 목록 구현을 복제하지 않고 `LobbyScene`을
+이 화면은 별도의 곡 목록 구현을 복제하지 않고 `MusicSelectScene`을
 `SongSelectPurpose::Editor`로 생성합니다.
 
 ## 공유하는 동작

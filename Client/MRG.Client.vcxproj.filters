@@ -102,7 +102,7 @@
     <ClInclude Include="GameScene\FingerDrumLogoScene.h">
       <Filter>GameScene</Filter>
     </ClInclude>
-    <ClInclude Include="GameScene\LobbyScene.h">
+    <ClInclude Include="GameScene\MusicSelectScene.h">
       <Filter>GameScene</Filter>
     </ClInclude>
     <ClInclude Include="GameScene\RhythmTestScene.h">
@@ -146,7 +146,7 @@
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp">
       <Filter>GameScene</Filter>
     </ClCompile>
-    <ClCompile Include="GameScene\LobbyScene.cpp">
+    <ClCompile Include="GameScene\MusicSelectScene.cpp">
       <Filter>GameScene</Filter>
     </ClCompile>
     <ClCompile Include="GameScene\RhythmTestScene.cpp">

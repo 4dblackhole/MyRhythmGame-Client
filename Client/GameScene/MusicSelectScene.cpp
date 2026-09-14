@@ -1,4 +1,4 @@
-#include "LobbyScene.h"
+#include "MusicSelectScene.h"
 
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "Presentation/MarqueeTextComponent.h"
@@ -450,7 +450,7 @@ namespace
     }
 }
 
-LobbyScene::LobbyScene(
+MusicSelectScene::MusicSelectScene(
     mrg::visual2d::ScreenVisual2DManager& screenVisuals,
     mrg::audio::AudioPlaybackManager& audioPlayback,
     std::shared_ptr<finger_drum::GameplayLaunchRequest> launchRequest,
@@ -462,7 +462,7 @@ LobbyScene::LobbyScene(
 {
 }
 
-void LobbyScene::Initialize(const mrg::EngineServices& services)
+void MusicSelectScene::Initialize(const mrg::EngineServices& services)
 {
     if (launchRequest_ == nullptr)
     {
@@ -510,21 +510,21 @@ void LobbyScene::Initialize(const mrg::EngineServices& services)
     RebuildVisibleSongs();
 }
 
-void LobbyScene::BeginScene()
+void MusicSelectScene::BeginScene()
 {
     sceneActive_ = true;
     static_cast<void>(canvasHandle_.SetVisible(true));
     SyncPreviewToFocusedSong();
 }
 
-void LobbyScene::EndScene() noexcept
+void MusicSelectScene::EndScene() noexcept
 {
     sceneActive_ = false;
     StopPreviewAudio();
     static_cast<void>(canvasHandle_.SetVisible(false));
 }
 
-void LobbyScene::Update(
+void MusicSelectScene::Update(
     const mrg::UpdateContext& context,
     mrg::scene::SceneManager& scenes)
 {
@@ -540,11 +540,11 @@ void LobbyScene::Update(
     }
 }
 
-void LobbyScene::Render(const mrg::graphics::RenderContext&)
+void MusicSelectScene::Render(const mrg::graphics::RenderContext&)
 {
 }
 
-void LobbyScene::OnResize(
+void MusicSelectScene::OnResize(
     const std::uint32_t width,
     const std::uint32_t height)
 {
@@ -559,7 +559,7 @@ void LobbyScene::OnResize(
     }
 }
 
-void LobbyScene::Shutdown() noexcept
+void MusicSelectScene::Shutdown() noexcept
 {
     StopPreviewAudio();
     audioSystem_ = nullptr;
@@ -611,7 +611,7 @@ void LobbyScene::Shutdown() noexcept
     catalog_ = {};
 }
 
-void LobbyScene::CreateCategoryBar()
+void MusicSelectScene::CreateCategoryBar()
 {
     auto& bar = AddBorderedPanel(
         *board_, layout::CategoryBar, PanelWhite, BorderBlue,
@@ -626,7 +626,7 @@ void LobbyScene::CreateCategoryBar()
         mrg::visual2d::TextAlignment::Center);
 }
 
-void LobbyScene::CreateRecordPanel()
+void MusicSelectScene::CreateRecordPanel()
 {
     auto& panel = AddBorderedPanel(
         *board_, layout::RecordPanel, PanelWhite, BorderBlue,
@@ -653,7 +653,7 @@ void LobbyScene::CreateRecordPanel()
         mrg::visual2d::TextAlignment::Center);
 }
 
-void LobbyScene::CreateSongInformationPanel()
+void MusicSelectScene::CreateSongInformationPanel()
 {
     auto& panel = AddBorderedPanel(
         *board_, layout::InformationPanel, PanelWhite, BorderBlue,
@@ -711,7 +711,7 @@ void LobbyScene::CreateSongInformationPanel()
         mrg::visual2d::TextAlignment::Center);
 }
 
-void LobbyScene::CreateSongBrowser()
+void MusicSelectScene::CreateSongBrowser()
 {
     auto& panel = AddBorderedPanel(
         *board_, layout::BrowserPanel, PanelWhite, BorderBlue,
@@ -785,7 +785,7 @@ void LobbyScene::CreateSongBrowser()
         mrg::visual2d::TextAlignment::Center);
 }
 
-void LobbyScene::CreateFooter()
+void MusicSelectScene::CreateFooter()
 {
     auto& option = AddBorderedPanel(
         *board_, layout::OptionButton, PureWhite, BorderBlue,
@@ -842,7 +842,7 @@ void LobbyScene::CreateFooter()
     goLabel_ = go.label;
 }
 
-void LobbyScene::UpdateResponsiveLayout()
+void MusicSelectScene::UpdateResponsiveLayout()
 {
     if (canvas_ == nullptr || board_ == nullptr || background_ == nullptr ||
         categoryBar_ == nullptr ||
@@ -898,7 +898,7 @@ void LobbyScene::UpdateResponsiveLayout()
     UpdateFooterLayout();
 }
 
-void LobbyScene::UpdateRecordPanelLayout()
+void MusicSelectScene::UpdateRecordPanelLayout()
 {
     if (recordPanel_ == nullptr || recordSelector_ == nullptr ||
         emptyRecordMessage_ == nullptr)
@@ -916,7 +916,7 @@ void LobbyScene::UpdateRecordPanelLayout()
         recordPanel_->NodeSize().height));
 }
 
-void LobbyScene::UpdateSongInformationLayout()
+void MusicSelectScene::UpdateSongInformationLayout()
 {
     if (informationPanel_ == nullptr || preview_ == nullptr ||
         previewTitle_ == nullptr || previewEmpty_ == nullptr ||
@@ -1010,7 +1010,7 @@ void LobbyScene::UpdateSongInformationLayout()
         difficultyInformation_->NodeSize().height));
 }
 
-void LobbyScene::UpdateSongBrowserLayout()
+void MusicSelectScene::UpdateSongBrowserLayout()
 {
     if (browserPanel_ == nullptr || searchField_ == nullptr ||
         searchCountLabel_ == nullptr || sortSelector_ == nullptr ||
@@ -1071,7 +1071,7 @@ void LobbyScene::UpdateSongBrowserLayout()
     UpdateScrollbar();
 }
 
-void LobbyScene::UpdateFooterLayout()
+void MusicSelectScene::UpdateFooterLayout()
 {
     if (optionButton_ == nullptr || optionLabel_ == nullptr ||
         backButton_ == nullptr || backFill_ == nullptr ||
@@ -1105,7 +1105,7 @@ void LobbyScene::UpdateFooterLayout()
     resizeEdgeButton(*goButton_, *goFill_, *goLabel_);
 }
 
-void LobbyScene::ResizeBorderedPanel(
+void MusicSelectScene::ResizeBorderedPanel(
     mrg::visual2d::Visual2DNode& panel,
     const mrg::visual2d::Rect bounds,
     const float penpotBorderWidth)
@@ -1126,7 +1126,7 @@ void LobbyScene::ResizeBorderedPanel(
     }
 }
 
-void LobbyScene::RebuildVisibleSongs()
+void MusicSelectScene::RebuildVisibleSongs()
 {
     std::optional<std::size_t> previousCatalogIndex;
     if (focusedSongPosition_ < visibleSongIndices_.size())
@@ -1186,7 +1186,7 @@ void LobbyScene::RebuildVisibleSongs()
     SyncPreviewToFocusedSong();
 }
 
-void LobbyScene::RebuildSongCards()
+void MusicSelectScene::RebuildSongCards()
 {
     if (songContent_ == nullptr || canvas_ == nullptr)
     {
@@ -1243,7 +1243,7 @@ void LobbyScene::RebuildSongCards()
     inputRouter_.InvalidateHitTest();
 }
 
-void LobbyScene::CreateSongCard(
+void MusicSelectScene::CreateSongCard(
     const std::size_t visiblePosition,
     const std::size_t catalogIndex,
     const float top,
@@ -1335,7 +1335,7 @@ void LobbyScene::CreateSongCard(
         catalogIndex, top, height, &button, &title, &artist});
 }
 
-void LobbyScene::RefreshSelectionPresentation()
+void MusicSelectScene::RefreshSelectionPresentation()
 {
     if (selectedSongLabel_ == nullptr || selectedArtistLabel_ == nullptr ||
         selectedPatternLabel_ == nullptr || selectedCreatorLabel_ == nullptr ||
@@ -1415,7 +1415,7 @@ void LobbyScene::RefreshSelectionPresentation()
             mode));
 }
 
-void LobbyScene::RefreshSearchPresentation()
+void MusicSelectScene::RefreshSearchPresentation()
 {
     if (searchField_ != nullptr)
     {
@@ -1437,7 +1437,7 @@ void LobbyScene::RefreshSearchPresentation()
     }
 }
 
-void LobbyScene::EnsureFocusedCardVisible()
+void MusicSelectScene::EnsureFocusedCardVisible()
 {
     if (focusedSongPosition_ >= songCards_.size())
     {
@@ -1459,7 +1459,7 @@ void LobbyScene::EnsureFocusedCardVisible()
     ApplyScrollOffset();
 }
 
-void LobbyScene::ApplyScrollOffset()
+void MusicSelectScene::ApplyScrollOffset()
 {
     const float maximum = std::max(
         contentHeight_ - layout::ContentBottom,
@@ -1475,7 +1475,7 @@ void LobbyScene::ApplyScrollOffset()
     inputRouter_.InvalidateHitTest();
 }
 
-void LobbyScene::UpdateScrollbar()
+void MusicSelectScene::UpdateScrollbar()
 {
     if (scrollbarHandle_ == nullptr || songViewport_ == nullptr)
     {
@@ -1506,7 +1506,7 @@ void LobbyScene::UpdateScrollbar()
         songViewport_->NodeSize().height));
 }
 
-void LobbyScene::ProcessPointer(const mrg::platform::InputState& input)
+void MusicSelectScene::ProcessPointer(const mrg::platform::InputState& input)
 {
     const std::optional<mrg::visual2d::Point> canvasPointer =
         input.IsMouseInsideWindow()
@@ -1538,7 +1538,7 @@ void LobbyScene::ProcessPointer(const mrg::platform::InputState& input)
     }
 }
 
-bool LobbyScene::ProcessActions(mrg::scene::SceneManager& scenes)
+bool MusicSelectScene::ProcessActions(mrg::scene::SceneManager& scenes)
 {
     for (const mrg::visual2d::Action& action : canvas_->TakeActions())
     {
@@ -1594,7 +1594,7 @@ bool LobbyScene::ProcessActions(mrg::scene::SceneManager& scenes)
     return false;
 }
 
-bool LobbyScene::ProcessKeyboard(
+bool MusicSelectScene::ProcessKeyboard(
     const mrg::platform::InputState& input,
     mrg::scene::SceneManager& scenes)
 {
@@ -1648,7 +1648,7 @@ bool LobbyScene::ProcessKeyboard(
     return false;
 }
 
-bool LobbyScene::ProcessSearchKeyboard(
+bool MusicSelectScene::ProcessSearchKeyboard(
     const mrg::platform::InputState& input)
 {
     if (!searchFocused_)
@@ -1701,7 +1701,7 @@ bool LobbyScene::ProcessSearchKeyboard(
     return changed;
 }
 
-void LobbyScene::MoveSongFocus(const int delta)
+void MusicSelectScene::MoveSongFocus(const int delta)
 {
     if (visibleSongIndices_.empty())
     {
@@ -1714,7 +1714,7 @@ void LobbyScene::MoveSongFocus(const int delta)
     SelectVisibleSong(static_cast<std::size_t>(target));
 }
 
-void LobbyScene::MoveDifficultyFocus(const int delta)
+void MusicSelectScene::MoveDifficultyFocus(const int delta)
 {
     if (visibleSongIndices_.empty())
     {
@@ -1746,7 +1746,7 @@ void LobbyScene::MoveDifficultyFocus(const int delta)
     }
 }
 
-void LobbyScene::SelectVisibleSong(const std::size_t visiblePosition)
+void MusicSelectScene::SelectVisibleSong(const std::size_t visiblePosition)
 {
     if (visiblePosition >= visibleSongIndices_.size())
     {
@@ -1761,7 +1761,7 @@ void LobbyScene::SelectVisibleSong(const std::size_t visiblePosition)
     SyncPreviewToFocusedSong();
 }
 
-void LobbyScene::SyncPreviewToFocusedSong()
+void MusicSelectScene::SyncPreviewToFocusedSong()
 {
     if (!sceneActive_ || audioSystem_ == nullptr)
     {
@@ -1793,7 +1793,7 @@ void LobbyScene::SyncPreviewToFocusedSong()
     StartSongPreview(catalogIndex);
 }
 
-void LobbyScene::StartSongPreview(const std::size_t catalogIndex)
+void MusicSelectScene::StartSongPreview(const std::size_t catalogIndex)
 {
     if (audioSystem_ == nullptr || catalogIndex >= catalog_.songs.size())
     {
@@ -1842,7 +1842,7 @@ void LobbyScene::StartSongPreview(const std::size_t catalogIndex)
     currentPreviewSlot_ = nextSlotIndex;
 }
 
-void LobbyScene::UpdatePreviewAudio(const double deltaSeconds)
+void MusicSelectScene::UpdatePreviewAudio(const double deltaSeconds)
 {
     const float fadeStep = static_cast<float>(
         std::max(deltaSeconds, 0.0) / PreviewFadeSeconds);
@@ -1898,7 +1898,7 @@ void LobbyScene::UpdatePreviewAudio(const double deltaSeconds)
     }
 }
 
-void LobbyScene::StopPreviewAudio() noexcept
+void MusicSelectScene::StopPreviewAudio() noexcept
 {
     for (PreviewSlot& slot : previewSlots_)
     {
@@ -1907,7 +1907,7 @@ void LobbyScene::StopPreviewAudio() noexcept
     currentPreviewSlot_.reset();
 }
 
-void LobbyScene::StopPreviewSlot(PreviewSlot& slot) noexcept
+void MusicSelectScene::StopPreviewSlot(PreviewSlot& slot) noexcept
 {
     if (slot.playbackId != mrg::audio::InvalidAudioPlaybackId)
     {
@@ -1924,7 +1924,7 @@ void LobbyScene::StopPreviewSlot(PreviewSlot& slot) noexcept
     slot = {};
 }
 
-void LobbyScene::SelectPattern(const std::size_t index)
+void MusicSelectScene::SelectPattern(const std::size_t index)
 {
     if (focusedSongPosition_ >= visibleSongIndices_.size())
     {
@@ -1953,7 +1953,7 @@ void LobbyScene::SelectPattern(const std::size_t index)
     RefreshSelectionPresentation();
 }
 
-bool LobbyScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
+bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
 {
     // The editor workspace is the next implementation stage. Do not route an
     // editor selection into gameplay while that destination does not exist.
@@ -2015,12 +2015,12 @@ bool LobbyScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
     return true;
 }
 
-bool LobbyScene::IsEditorSongSelect() const noexcept
+bool MusicSelectScene::IsEditorSongSelect() const noexcept
 {
     return purpose_ == SongSelectPurpose::Editor;
 }
 
-bool LobbyScene::ReturnToLogo(mrg::scene::SceneManager& scenes) const
+bool MusicSelectScene::ReturnToLogo(mrg::scene::SceneManager& scenes) const
 {
     if (!scenes.ChangeScene(finger_drum::scene_ids::Logo))
     {
@@ -2029,7 +2029,7 @@ bool LobbyScene::ReturnToLogo(mrg::scene::SceneManager& scenes) const
     return true;
 }
 
-mrg::visual2d::Visual2DNode& LobbyScene::AddPanel(
+mrg::visual2d::Visual2DNode& MusicSelectScene::AddPanel(
     mrg::visual2d::Visual2DNode& parent,
     const mrg::visual2d::Rect penpotBounds,
     const mrg::visual2d::Color color,
@@ -2045,7 +2045,7 @@ mrg::visual2d::Visual2DNode& LobbyScene::AddPanel(
     return panel;
 }
 
-mrg::visual2d::Visual2DNode& LobbyScene::AddBorderedPanel(
+mrg::visual2d::Visual2DNode& MusicSelectScene::AddBorderedPanel(
     mrg::visual2d::Visual2DNode& parent,
     const mrg::visual2d::Rect penpotBounds,
     const mrg::visual2d::Color fill,
@@ -2068,7 +2068,7 @@ mrg::visual2d::Visual2DNode& LobbyScene::AddBorderedPanel(
     return outer;
 }
 
-mrg::visual2d::Visual2DNode& LobbyScene::AddLabel(
+mrg::visual2d::Visual2DNode& MusicSelectScene::AddLabel(
     mrg::visual2d::Visual2DNode& parent,
     const mrg::visual2d::Rect penpotBounds,
     std::wstring text,
