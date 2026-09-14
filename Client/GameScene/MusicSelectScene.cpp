@@ -1955,12 +1955,6 @@ void MusicSelectScene::SelectPattern(const std::size_t index)
 
 bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
 {
-    // The editor workspace is the next implementation stage. Do not route an
-    // editor selection into gameplay while that destination does not exist.
-    if (IsEditorSongSelect())
-    {
-        return false;
-    }
     if (focusedSongPosition_ >= visibleSongIndices_.size())
     {
         return false;
@@ -1972,6 +1966,21 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager& scenes)
         return false;
     }
     const auto& pattern = song.patterns[selectedPatternIndex_];
+
+    if (IsEditorSongSelect())
+    {
+        launchError_.clear();
+        launchRequest_->patternPath = pattern.patternPath;
+        launchRequest_->effectPath = pattern.effectPath;
+        launchRequest_->musicPath = song.audioPath;
+        launchRequest_->mode = pattern.pattern.mode;
+        if (!scenes.ChangeScene(finger_drum::scene_ids::Editor))
+        {
+            throw std::runtime_error("Failed to enter the editor scene.");
+        }
+        return true;
+    }
+
     if (!pattern.pattern.mode.empty() && pattern.pattern.mode != "Taiko")
     {
         launchError_ = L"UNSUPPORTED MODE: " +
