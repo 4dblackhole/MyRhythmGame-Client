@@ -1021,19 +1021,39 @@ Base BPM: 120
         Require(catalog.Succeeded(),
             "The copied RPG song catalog must parse without errors.");
         Require(
-            catalog.discoveredMusicFiles == 5 &&
-            catalog.songs.size() == 5,
-            "All five YMM music entries must appear in SONG LIST.");
+            catalog.discoveredMusicFiles >= 1 &&
+            catalog.songs.size() == catalog.discoveredMusicFiles,
+            "Every discovered YMM music entry must appear in SONG LIST.");
         Require(
-            catalog.discoveredPatternFiles >= 8 &&
+            catalog.discoveredPatternFiles >= 3 &&
             catalog.PatternCount() == catalog.discoveredPatternFiles,
             "All bundled and optional local YMP patterns must be associated with their songs.");
         mode::TaikoMode taiko;
-        bool checkedSaikaTempoSequence = false;
+        bool checkedAngelDream = false;
         for (const chart::SongCatalogEntry& song : catalog.songs)
         {
             Require(std::filesystem::is_regular_file(song.audioPath),
                 "Every YMM entry must resolve its music file.");
+            if (song.metadataPath.filename() ==
+                "angel dream hand shaking.ymm")
+            {
+                constexpr std::array RequiredPatterns{
+                    "angeldream [measure test].ymp",
+                    "angeldream [test].ymp",
+                    "angeldream.ymp"};
+                for (const std::string_view required : RequiredPatterns)
+                {
+                    Require(
+                        std::ranges::any_of(
+                            song.patterns,
+                            [required](const chart::SongCatalogPattern& pattern)
+                            {
+                                return pattern.patternPath.filename() == required;
+                            }),
+                        "The bundled AngelDream catalog must include every test pattern.");
+                }
+                checkedAngelDream = true;
+            }
             for (const chart::SongCatalogPattern& pattern : song.patterns)
             {
                 if (pattern.patternPath.filename().string() ==
@@ -1053,7 +1073,6 @@ Base BPM: 120
                             rhythm::RhythmDuration{166'667} &&
                         finalChange < nextBarline,
                         "Saika's 20/8 measure must keep every BPM anchor at its absolute N/D position.");
-                    checkedSaikaTempoSequence = true;
                 }
                 mode::ModeLoadResult loaded = taiko.LoadSession(
                     pattern.patternPath,
@@ -1065,8 +1084,8 @@ Base BPM: 120
             }
         }
         Require(
-            checkedSaikaTempoSequence,
-            "The catalog test must exercise the Saika multi-BPM pattern.");
+            checkedAngelDream,
+            "The catalog test must exercise the bundled AngelDream song.");
         std::cout << "Catalog verified: " << catalog.songs.size()
                   << " songs, " << catalog.PatternCount()
                   << " patterns.\n";

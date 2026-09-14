@@ -49,7 +49,8 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
   이 Scene은 Lobby의 카탈로그·미리듣기·검색·정렬·곡/난이도 탐색을 공유하며,
   실제 편집 workspace 전환은 아직 연결하지 않습니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
-  `SongCatalog`가 기존 YMM 5개와 YMP 8개 및 선택적 로컬 패턴을 연결해 표시합니다.
+  `SongCatalog`가 번들된 AngelDream YMM과 YMP 3개 및 선택적 로컬 곡·패턴을
+  연결해 표시합니다.
   포커스된 곡 카드만 난이도 목록을 펼치며 좌우키는 곡, 상하키는 난이도를
   이동합니다. 하단 BACK 버튼이나 Escape로 Logo에 돌아갑니다.
 - Lobby의 GO/Enter는 선택 경로를 `GameplayLaunchRequest`에 기록한 뒤

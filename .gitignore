@@ -12,8 +12,20 @@ ThirdParty/
 *.dll
 *.lib
 
-# Songs are user-added local content and must not be committed.
-Client/Assets/Songs/
+# Songs are user-added local content. Only the bundled AngelDream test song
+# and its patterns are tracked.
+Client/Assets/Songs/*
+!Client/Assets/Songs/Music/
+Client/Assets/Songs/Music/*
+!Client/Assets/Songs/Music/Angeldream/
+Client/Assets/Songs/Music/Angeldream/*
+!Client/Assets/Songs/Music/Angeldream/angel dream hand shaking.mp3
+!Client/Assets/Songs/Music/Angeldream/angel dream hand shaking.ymm
+!Client/Assets/Songs/Pattern/
+Client/Assets/Songs/Pattern/*
+!Client/Assets/Songs/Pattern/angeldream/
+Client/Assets/Songs/Pattern/angeldream/*
+!Client/Assets/Songs/Pattern/angeldream/*.ymp
 
 # Only the bundled default skin is tracked. User-added skins stay local.
 Client/Assets/Skins/*

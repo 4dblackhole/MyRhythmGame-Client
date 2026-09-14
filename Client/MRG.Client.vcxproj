@@ -98,33 +98,6 @@
     <ClCompile Include="Presentation\LaneKeyBeam.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\awhc.png">
-      <AssetTargetPath>awhc.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\bwhc.png">
-      <AssetTargetPath>bwhc.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\Images\Widget1.png">
-      <AssetTargetPath>images\Widget1.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\Images\Widget2.png">
-      <AssetTargetPath>images\Widget2.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\Images\Logo\Center.png">
-      <AssetTargetPath>images\logo\Center.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\Images\Logo\LeftFade.png">
-      <AssetTargetPath>images\logo\LeftFade.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\Images\Logo\RightFade.png">
-      <AssetTargetPath>images\logo\RightFade.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\Images\Menu\SelectionCursor.png">
-      <AssetTargetPath>images\menu\SelectionCursor.png</AssetTargetPath>
-    </None>
-    <None Include="Assets\Images\Profile\TemporaryPilot.png">
-      <AssetTargetPath>images\profile\TemporaryPilot.png</AssetTargetPath>
-    </None>
     <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
       <AssetTargetPath>fonts\PressStart2P-Regular.ttf</AssetTargetPath>
     </None>
@@ -144,7 +117,7 @@
       <AssetTargetDirectory>songs\%(RecursiveDir)</AssetTargetDirectory>
       <AssetTargetPath>songs\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
     </None>
-    <None Include="Assets\Skins\test Skin\**\*.*">
+    <None Include="Assets\Skins\test Skin\**\*.wav">
       <AssetTargetDirectory>skins\test Skin\%(RecursiveDir)</AssetTargetDirectory>
       <AssetTargetPath>skins\test Skin\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
     </None>
@@ -170,6 +143,11 @@
     <FmodRuntime Include="$(FmodLibraryDir)\fmod.dll" />
   </ItemGroup>
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
+    <ItemGroup>
+      <RootRuntimePng Include="Assets\*.png" />
+      <ImageRuntimePng Include="Assets\Images\**\*.png" />
+      <SkinRuntimePng Include="Assets\Skins\test Skin\**\*.png" />
+    </ItemGroup>
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
     <MakeDir Directories="$(OutDir)assets\images" />
@@ -179,7 +157,12 @@
     <MakeDir Directories="$(OutDir)assets\fonts" />
     <MakeDir Directories="$(OutDir)assets\sounds" />
     <MakeDir Directories="@(None->'$(OutDir)assets\%(AssetTargetDirectory)')" />
+    <MakeDir Directories="@(ImageRuntimePng->'$(OutDir)assets\images\%(RecursiveDir)')" />
+    <MakeDir Directories="@(SkinRuntimePng->'$(OutDir)assets\skins\test Skin\%(RecursiveDir)')" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RootRuntimePng)" DestinationFolder="$(OutDir)assets" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(ImageRuntimePng)" DestinationFiles="@(ImageRuntimePng->'$(OutDir)assets\images\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(SkinRuntimePng)" DestinationFiles="@(SkinRuntimePng->'$(OutDir)assets\skins\test Skin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(Configuration)' == 'Debug' and !Exists('$(FmodLibraryDir)\fmodL_vc.lib')" Text="FMOD debug x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />
