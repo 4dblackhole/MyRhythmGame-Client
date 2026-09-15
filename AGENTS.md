@@ -95,6 +95,8 @@ This file applies to the entire repository except the independently versioned
 
 ## Repository synchronization
 
+- Work directly on `main` unless the user explicitly requests a separate
+  branch. Do not create a task branch by default.
 - Treat synchronization as part of every completed engine/Client task. Fetch
   both repositories, verify the local work branch matches its upstream, and
   report exact commit IDs when handing work back.
@@ -106,10 +108,10 @@ This file applies to the entire repository except the independently versioned
   `git submodule sync --recursive` and `git submodule update --init
   --recursive`, and verify that both repositories are on the intended latest
   commits before declaring the task complete.
-- After validation succeeds, publish the task branch, create or update its PR,
-  mark it ready, and merge it into `main` as part of the normal completion
-  workflow. For combined changes, merge the engine first, update the Client
-  gitlink to the resulting engine `main` commit, and only then merge the Client.
+- When the user explicitly requests a task branch, publish it after validation,
+  create or update its PR, mark it ready, and merge it into `main`. For combined
+  changes, merge the engine first, update the Client gitlink to the resulting
+  engine `main` commit, and only then merge the Client.
 - Never claim that `main` is current while a required PR remains open. Do not
   bypass failed checks, merge conflicts, or branch protection; report such a
   blocker instead. Preserve unrelated working-tree files while synchronizing.
