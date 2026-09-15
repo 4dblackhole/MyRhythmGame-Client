@@ -125,12 +125,15 @@ wWinMain
 - Lane은 기본 로컬 `+Y` 방향의 세로 계층으로 작성하고 Taiko에서는 부모만
   Z축 `-90°` 회전합니다. 배경, light, judge, note, long-note part가 그 회전을
   상속하고 note 이동은 로컬 Y만 갱신합니다.
-- 플레이 화면은 `Assets/Skins/Default Skin/InGame` 자산을 사용합니다. `Lane.png`는
+- 플레이 화면은 `FingerDrum.Assets/Assets/Skins/Default Skin/InGame`의 내장
+  fallback 자산을 사용합니다. 실행 파일 옆 스킨에 같은 파일이 있으면 그 파일을
+  우선합니다. `Lane.png`는
   늘이지 않고 원본 비율로 반복 배치하며 노트와 롱노트 파츠는 PNG 메타데이터로
   표시 크기를 정합니다.
 - 런타임 자산 디렉터리와 개별 공용 자산 경로는
-  `Client/App/AssetPaths.h`에서 관리합니다. 자산을 옮길 때 Scene마다 문자열을
-  수정하지 말고 이 테이블과 MSBuild 복사 규칙을 함께 갱신합니다.
+  `Client/App/AssetPaths.h`에서 관리합니다. 기본 스킨, 글꼴, AngelDream은
+  `FingerDrum.Assets`의 RCDATA 팩으로 EXE에 포함됩니다. 자산을 옮길 때 Scene마다
+  문자열을 수정하지 말고 이 테이블과 팩 생성 규칙을 함께 갱신합니다.
 - 입력 패널 키와 판정원 간격은 Penpot `Gameplay · Sky` 좌표를 사용하고 Lane은
   오른쪽 화면 끝까지 이어집니다. 롱노트 tail/overlay는 별도로 회전하지 않고
   원본 방향 그대로 Lane 부모의 회전만 상속합니다.
@@ -172,8 +175,8 @@ Client 변경 후 Debug/Release x64에서 다음을 모두 수행합니다.
 ```powershell
 msbuild MyRhythmGame-Client.sln /m /t:Build /p:Configuration=Debug /p:Platform=x64
 msbuild MyRhythmGame-Client.sln /m /t:Build /p:Configuration=Release /p:Platform=x64
-bin\x64\Debug\FingerDrum.Rhythm.Tests.exe --catalog-root Client\Assets\Songs
-bin\x64\Release\FingerDrum.Rhythm.Tests.exe --catalog-root Client\Assets\Songs
+bin\x64\Debug\FingerDrum.Rhythm.Tests.exe --catalog-root FingerDrum.Assets\Assets\Songs
+bin\x64\Release\FingerDrum.Rhythm.Tests.exe --catalog-root FingerDrum.Assets\Assets\Songs
 ```
 
 두 구성의 `MyRhythmGame.exe`에 `--smoke-test`, `--smoke-lobby`,
@@ -183,13 +186,9 @@ Mesh·Camera·렌더 변경은 `--smoke-test --example=mesh`가 기본 통합 �
 검증 후 작업 PR을 병합하고 Client main, 엔진 gitlink, 엔진 main이 일치하는지
 확인합니다.
 
-현재 사용자 소유로 남아 있을 수 있는 다음 파일은 별도 요청 없이 stage하거나
-덮어쓰지 않습니다.
-
-- `Client/Assets/Skins/Default Skin/TitleImage/Logo/LeftFade.png`
-- `Client/Assets/Skins/Default Skin/TitleImage/Logo/RightFade.png`
-- `Client/Assets/Songs/Music/angel dream hand shaking.mp3`
-- `TODOLIST.txt`
+`Client/Assets/Songs`, `Client/Assets/Skins`의 사용자 추가 파일과 `TODOLIST.txt`는
+별도 요청 없이 stage하거나 덮어쓰지 않습니다. 배포 기본 자산은
+`FingerDrum.Assets/Assets`에서 추적합니다.
 
 ## 세션 분리 권장안
 

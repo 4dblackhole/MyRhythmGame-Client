@@ -1,459 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="App">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555551}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Audio">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555567}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Examples">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555559}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Examples\ColoredCube">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555560}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Examples\ColoredCube\App">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555561}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Examples\ColoredCube\GameFlow">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555562}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Examples\ColoredCube\GameScene">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555563}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Examples\ColoredCube\GameScene\Examples">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555564}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="GameScene">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555552}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="EditorScene">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555573}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="GameFlow">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555555}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555553}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Fonts">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555554}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Presentation">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555569}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Unused">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Unused\Sounds">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555573}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Songs">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555570}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Skins">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555571}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Skins\Default Skin">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555572}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Skins\Default Skin\HitSounds">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555574}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Skins\Default Skin\HitSounds\TaikoMode">
-      <UniqueIdentifier>{50555555-5555-4555-8555-555555555575}</UniqueIdentifier>
-    </Filter>
+    <Filter Include="App"><UniqueIdentifier>{50555555-5555-4555-8555-555555555551}</UniqueIdentifier></Filter>
+    <Filter Include="Audio"><UniqueIdentifier>{50555555-5555-4555-8555-555555555567}</UniqueIdentifier></Filter>
+    <Filter Include="EditorScene"><UniqueIdentifier>{50555555-5555-4555-8555-555555555573}</UniqueIdentifier></Filter>
+    <Filter Include="GameFlow"><UniqueIdentifier>{50555555-5555-4555-8555-555555555555}</UniqueIdentifier></Filter>
+    <Filter Include="GameScene"><UniqueIdentifier>{50555555-5555-4555-8555-555555555552}</UniqueIdentifier></Filter>
+    <Filter Include="Presentation"><UniqueIdentifier>{50555555-5555-4555-8555-555555555569}</UniqueIdentifier></Filter>
+    <Filter Include="Examples"><UniqueIdentifier>{50555555-5555-4555-8555-555555555559}</UniqueIdentifier></Filter>
+    <Filter Include="Examples\ColoredCube"><UniqueIdentifier>{50555555-5555-4555-8555-555555555560}</UniqueIdentifier></Filter>
+    <Filter Include="Examples\ColoredCube\App"><UniqueIdentifier>{50555555-5555-4555-8555-555555555561}</UniqueIdentifier></Filter>
+    <Filter Include="Examples\ColoredCube\GameFlow"><UniqueIdentifier>{50555555-5555-4555-8555-555555555562}</UniqueIdentifier></Filter>
+    <Filter Include="Examples\ColoredCube\GameScene"><UniqueIdentifier>{50555555-5555-4555-8555-555555555563}</UniqueIdentifier></Filter>
+    <Filter Include="Examples\ColoredCube\GameScene\Examples"><UniqueIdentifier>{50555555-5555-4555-8555-555555555564}</UniqueIdentifier></Filter>
+    <Filter Include="Assets"><UniqueIdentifier>{50555555-5555-4555-8555-555555555553}</UniqueIdentifier></Filter>
+    <Filter Include="Assets\Unused"><UniqueIdentifier>{50555555-5555-4555-8555-555555555556}</UniqueIdentifier></Filter>
+    <Filter Include="Assets\Unused\Sounds"><UniqueIdentifier>{50555555-5555-4555-8555-555555555574}</UniqueIdentifier></Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pch.h" />
-    <ClInclude Include="App\AssetPaths.h">
-      <Filter>App</Filter>
-    </ClInclude>
-    <ClInclude Include="App\FingerDrumGame.h">
-      <Filter>App</Filter>
-    </ClInclude>
-    <ClInclude Include="Audio\GameplayAudioRouter.h">
-      <Filter>Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h">
-      <Filter>Examples\ColoredCube\App</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h">
-      <Filter>Examples\ColoredCube\GameFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h">
-      <Filter>Examples\ColoredCube\GameScene</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h">
-      <Filter>Examples\ColoredCube\GameScene</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h">
-      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h">
-      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h">
-      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
-    </ClInclude>
-    <ClInclude Include="GameFlow\FingerDrumSceneIds.h">
-      <Filter>GameFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="GameFlow\GameplayLaunchRequest.h">
-      <Filter>GameFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="GameScene\FingerDrumLogoScene.h">
-      <Filter>GameScene</Filter>
-    </ClInclude>
-    <ClInclude Include="EditorScene\EditorScene.h">
-      <Filter>EditorScene</Filter>
-    </ClInclude>
-    <ClInclude Include="GameScene\MusicSelectScene.h">
-      <Filter>GameScene</Filter>
-    </ClInclude>
-    <ClInclude Include="GameScene\RhythmTestScene.h">
-      <Filter>GameScene</Filter>
-    </ClInclude>
-    <ClInclude Include="Presentation\MarqueeTextComponent.h">
-      <Filter>Presentation</Filter>
-    </ClInclude>
-    <ClInclude Include="Presentation\LaneKeyBeam.h">
-      <Filter>Presentation</Filter>
-    </ClInclude>
+    <ClInclude Include="App\AssetPaths.h"><Filter>App</Filter></ClInclude>
+    <ClInclude Include="App\FingerDrumGame.h"><Filter>App</Filter></ClInclude>
+    <ClInclude Include="Audio\GameplayAudioRouter.h"><Filter>Audio</Filter></ClInclude>
+    <ClInclude Include="EditorScene\EditorScene.h"><Filter>EditorScene</Filter></ClInclude>
+    <ClInclude Include="GameFlow\FingerDrumSceneIds.h"><Filter>GameFlow</Filter></ClInclude>
+    <ClInclude Include="GameFlow\GameplayLaunchRequest.h"><Filter>GameFlow</Filter></ClInclude>
+    <ClInclude Include="GameScene\FingerDrumLogoScene.h"><Filter>GameScene</Filter></ClInclude>
+    <ClInclude Include="GameScene\MusicSelectScene.h"><Filter>GameScene</Filter></ClInclude>
+    <ClInclude Include="GameScene\RhythmTestScene.h"><Filter>GameScene</Filter></ClInclude>
+    <ClInclude Include="Presentation\MarqueeTextComponent.h"><Filter>Presentation</Filter></ClInclude>
+    <ClInclude Include="Presentation\LaneKeyBeam.h"><Filter>Presentation</Filter></ClInclude>
+    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h"><Filter>Examples\ColoredCube\App</Filter></ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h"><Filter>Examples\ColoredCube\GameFlow</Filter></ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h"><Filter>Examples\ColoredCube\GameScene</Filter></ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h"><Filter>Examples\ColoredCube\GameScene</Filter></ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h"><Filter>Examples\ColoredCube\GameScene\Examples</Filter></ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h"><Filter>Examples\ColoredCube\GameScene\Examples</Filter></ClInclude>
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h"><Filter>Examples\ColoredCube\GameScene\Examples</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pch.cpp" />
-    <ClCompile Include="App\FingerDrumGame.cpp">
-      <Filter>App</Filter>
-    </ClCompile>
-    <ClCompile Include="App\Main.cpp">
-      <Filter>App</Filter>
-    </ClCompile>
-    <ClCompile Include="Audio\GameplayAudioRouter.cpp">
-      <Filter>Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp">
-      <Filter>Examples\ColoredCube\App</Filter>
-    </ClCompile>
-    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp">
-      <Filter>Examples\ColoredCube\GameScene</Filter>
-    </ClCompile>
-    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp">
-      <Filter>Examples\ColoredCube\GameScene</Filter>
-    </ClCompile>
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp">
-      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
-    </ClCompile>
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp">
-      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
-    </ClCompile>
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp">
-      <Filter>Examples\ColoredCube\GameScene\Examples</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene\FingerDrumLogoScene.cpp">
-      <Filter>GameScene</Filter>
-    </ClCompile>
-    <ClCompile Include="EditorScene\EditorScene.cpp">
-      <Filter>EditorScene</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene\MusicSelectScene.cpp">
-      <Filter>GameScene</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene\RhythmTestScene.cpp">
-      <Filter>GameScene</Filter>
-    </ClCompile>
-    <ClCompile Include="Presentation\MarqueeTextComponent.cpp">
-      <Filter>Presentation</Filter>
-    </ClCompile>
-    <ClCompile Include="Presentation\LaneKeyBeam.cpp">
-      <Filter>Presentation</Filter>
-    </ClCompile>
+    <ClCompile Include="App\FingerDrumGame.cpp"><Filter>App</Filter></ClCompile>
+    <ClCompile Include="App\Main.cpp"><Filter>App</Filter></ClCompile>
+    <ClCompile Include="Audio\GameplayAudioRouter.cpp"><Filter>Audio</Filter></ClCompile>
+    <ClCompile Include="EditorScene\EditorScene.cpp"><Filter>EditorScene</Filter></ClCompile>
+    <ClCompile Include="GameScene\FingerDrumLogoScene.cpp"><Filter>GameScene</Filter></ClCompile>
+    <ClCompile Include="GameScene\MusicSelectScene.cpp"><Filter>GameScene</Filter></ClCompile>
+    <ClCompile Include="GameScene\RhythmTestScene.cpp"><Filter>GameScene</Filter></ClCompile>
+    <ClCompile Include="Presentation\MarqueeTextComponent.cpp"><Filter>Presentation</Filter></ClCompile>
+    <ClCompile Include="Presentation\LaneKeyBeam.cpp"><Filter>Presentation</Filter></ClCompile>
+    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp"><Filter>Examples\ColoredCube\App</Filter></ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp"><Filter>Examples\ColoredCube\GameScene</Filter></ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp"><Filter>Examples\ColoredCube\GameScene</Filter></ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp"><Filter>Examples\ColoredCube\GameScene\Examples</Filter></ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp"><Filter>Examples\ColoredCube\GameScene\Examples</Filter></ClCompile>
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp"><Filter>Examples\ColoredCube\GameScene\Examples</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
-      <Filter>Assets\Fonts</Filter>
-    </None>
-    <None Include="Assets\Fonts\PressStart2P-OFL.txt">
-      <Filter>Assets\Fonts</Filter>
-    </None>
-    <None Include="Assets\Fonts\Rajdhani-SemiBold.ttf">
-      <Filter>Assets\Fonts</Filter>
-    </None>
-    <None Include="Assets\Fonts\Rajdhani-OFL.txt">
-      <Filter>Assets\Fonts</Filter>
-    </None>
-    <None Include="Assets\Unused\Sounds\pop.wav">
-      <Filter>Assets\Unused\Sounds</Filter>
-    </None>
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\**\*.*" />
-    <None Include="Assets\Songs\**\*.*" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\**\*.*" />
-    <None Include="Assets\Songs\**\*.*" />
-    <None Include="Assets\Songs\**\*.*" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Songs\Music\1Rabpit - Saika\saika.ymm" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3" />
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.mp3" />
-    <None Include="Assets\Songs\Music\Camellia feat. nanahira - Energy  Drin-ko  Fein-chan!  %28Camellia%27s MONSTERISTIC D. M. P. Remix%29\energy drin-ko.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani 1.5x.ymm" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.mp3" />
-    <None Include="Assets\Songs\Music\menimeni manimani\menimeni manimani.ymm" />
-    <None Include="Assets\Songs\Pattern\00pattern indicators.txt" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp" />
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani 1.5x.ymp" />
-    <None Include="Assets\Songs\Pattern\menimeni manimani\menimeni manimani.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika roll test.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test] - 복사본.ymp" />
-    <None Include="Assets\Songs\Pattern\Rapbit - Saika\Rapbit - Saika [test].ymp" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\bigkat.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\don.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\kat.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\bigkat.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\don.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\kat.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\bigkat.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\don.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\kat.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\bigkat.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\don.wav" />
-    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\kat.wav" />
+    <None Include="Assets\Unused\Sounds\pop.wav"><Filter>Assets\Unused\Sounds</Filter></None>
   </ItemGroup>
 </Project>

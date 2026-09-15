@@ -1,50 +1,108 @@
 #pragma once
 
+#include "FingerDrumAssets.h"
+
+#include <filesystem>
+
 // Runtime asset paths are centralized here so source code does not duplicate
 // directory strings when the asset layout changes.
 namespace mrg_client::asset_paths
 {
-    inline constexpr wchar_t Songs[] = L"assets\\songs";
+    [[nodiscard]] inline std::filesystem::path BuiltInSongs()
+    {
+        return finger_drum::assets::BuiltInSongsRoot();
+    }
+
+    [[nodiscard]] inline std::filesystem::path UserSongs()
+    {
+        return finger_drum::assets::UserSongsRoot();
+    }
 
     namespace fonts
     {
-        inline constexpr wchar_t FingerDrum[] =
-            L"assets\\fonts\\Rajdhani-SemiBold.ttf";
-        inline constexpr wchar_t ExamplePixel[] =
-            L"assets\\fonts\\PressStart2P-Regular.ttf";
+        [[nodiscard]] inline std::filesystem::path FingerDrum()
+        {
+            return finger_drum::assets::ResolveBuiltInAsset(
+                L"assets\\fonts\\Rajdhani-SemiBold.ttf");
+        }
+
+        [[nodiscard]] inline std::filesystem::path ExamplePixel()
+        {
+            return finger_drum::assets::ResolveBuiltInAsset(
+                L"assets\\fonts\\PressStart2P-Regular.ttf");
+        }
     }
 
     namespace default_skin
     {
-        inline constexpr wchar_t InGame[] =
-            L"assets\\skins\\Default Skin\\InGame";
-        inline constexpr wchar_t JudgeImages[] =
-            L"assets\\skins\\Default Skin\\JudgeImage";
-        inline constexpr wchar_t NumberImages[] =
-            L"assets\\skins\\Default Skin\\NumberImage";
-        inline constexpr wchar_t MeasureLine[] =
-            L"assets\\skins\\Default Skin\\InGame\\MeasureLine.png";
-        inline constexpr wchar_t TaikoHitSounds[] =
-            L"assets\\skins\\Default Skin\\HitSounds\\TaikoMode";
+        [[nodiscard]] inline std::filesystem::path InGame(
+            const std::filesystem::path& file)
+        {
+            return finger_drum::assets::ResolveDefaultSkinAsset(
+                std::filesystem::path(L"InGame") / file);
+        }
+
+        [[nodiscard]] inline std::filesystem::path JudgeImage(
+            const std::filesystem::path& file)
+        {
+            return finger_drum::assets::ResolveDefaultSkinAsset(
+                std::filesystem::path(L"JudgeImage") / file);
+        }
+
+        [[nodiscard]] inline std::filesystem::path NumberImage(
+            const std::filesystem::path& file)
+        {
+            return finger_drum::assets::ResolveDefaultSkinAsset(
+                std::filesystem::path(L"NumberImage") / file);
+        }
+
+        [[nodiscard]] inline std::filesystem::path TaikoHitSound(
+            const std::filesystem::path& file)
+        {
+            return finger_drum::assets::ResolveDefaultSkinAsset(
+                std::filesystem::path(L"HitSounds\\TaikoMode") / file);
+        }
 
         namespace title
         {
-            inline constexpr wchar_t LeftFade[] =
-                L"assets\\skins\\Default Skin\\TitleImage\\Logo\\LeftFade.png";
-            inline constexpr wchar_t Center[] =
-                L"assets\\skins\\Default Skin\\TitleImage\\Logo\\Center.png";
-            inline constexpr wchar_t RightFade[] =
-                L"assets\\skins\\Default Skin\\TitleImage\\Logo\\RightFade.png";
-            inline constexpr wchar_t SelectionCursor[] =
-                L"assets\\skins\\Default Skin\\TitleImage\\Menu\\SelectionCursor.png";
+            [[nodiscard]] inline std::filesystem::path LeftFade()
+            {
+                return finger_drum::assets::ResolveDefaultSkinAsset(
+                    L"TitleImage\\Logo\\LeftFade.png");
+            }
+
+            [[nodiscard]] inline std::filesystem::path Center()
+            {
+                return finger_drum::assets::ResolveDefaultSkinAsset(
+                    L"TitleImage\\Logo\\Center.png");
+            }
+
+            [[nodiscard]] inline std::filesystem::path RightFade()
+            {
+                return finger_drum::assets::ResolveDefaultSkinAsset(
+                    L"TitleImage\\Logo\\RightFade.png");
+            }
+
+            [[nodiscard]] inline std::filesystem::path SelectionCursor()
+            {
+                return finger_drum::assets::ResolveDefaultSkinAsset(
+                    L"TitleImage\\Menu\\SelectionCursor.png");
+            }
         }
 
         namespace widget
         {
-            inline constexpr wchar_t First[] =
-                L"assets\\skins\\Default Skin\\TitleImage\\Widget\\Widget1.png";
-            inline constexpr wchar_t Second[] =
-                L"assets\\skins\\Default Skin\\TitleImage\\Widget\\Widget2.png";
+            [[nodiscard]] inline std::filesystem::path First()
+            {
+                return finger_drum::assets::ResolveDefaultSkinAsset(
+                    L"TitleImage\\Widget\\Widget1.png");
+            }
+
+            [[nodiscard]] inline std::filesystem::path Second()
+            {
+                return finger_drum::assets::ResolveDefaultSkinAsset(
+                    L"TitleImage\\Widget\\Widget2.png");
+            }
         }
     }
 

@@ -48,7 +48,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\Dependencies\MRG-Engine\Engine\SDK;$(ProjectDir)..\FingerDrum.Rhythm;$(ProjectDir)..\FingerDrum.Chart;$(ProjectDir)..\FingerDrum.Modes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\Dependencies\MRG-Engine\Engine\SDK;$(ProjectDir)..\FingerDrum.Rhythm;$(ProjectDir)..\FingerDrum.Chart;$(ProjectDir)..\FingerDrum.Modes;$(ProjectDir)..\FingerDrum.Assets\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(FmodLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(BaseIntermediateOutputPath)FingerDrum.Assets\$(Platform)\$(Configuration)\FingerDrum.Assets.res;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -108,40 +108,8 @@
     <ClCompile Include="Presentation\LaneKeyBeam.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\Fonts\PressStart2P-Regular.ttf">
-      <AssetTargetPath>fonts\PressStart2P-Regular.ttf</AssetTargetPath>
-    </None>
-    <None Include="Assets\Fonts\PressStart2P-OFL.txt">
-      <AssetTargetPath>fonts\PressStart2P-OFL.txt</AssetTargetPath>
-    </None>
-    <None Include="Assets\Fonts\Rajdhani-SemiBold.ttf">
-      <AssetTargetPath>fonts\Rajdhani-SemiBold.ttf</AssetTargetPath>
-    </None>
-    <None Include="Assets\Fonts\Rajdhani-OFL.txt">
-      <AssetTargetPath>fonts\Rajdhani-OFL.txt</AssetTargetPath>
-    </None>
     <None Include="Assets\Unused\Sounds\pop.wav">
       <AssetTargetPath>Unused\Sounds\pop.wav</AssetTargetPath>
-    </None>
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3">
-      <AssetTargetDirectory>songs\Music\Angeldream\</AssetTargetDirectory>
-      <AssetTargetPath>songs\Music\Angeldream\angel dream hand shaking.mp3</AssetTargetPath>
-    </None>
-    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm">
-      <AssetTargetDirectory>songs\Music\Angeldream\</AssetTargetDirectory>
-      <AssetTargetPath>songs\Music\Angeldream\angel dream hand shaking.ymm</AssetTargetPath>
-    </None>
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp">
-      <AssetTargetDirectory>songs\Pattern\angeldream\</AssetTargetDirectory>
-      <AssetTargetPath>songs\Pattern\angeldream\angeldream [measure test].ymp</AssetTargetPath>
-    </None>
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp">
-      <AssetTargetDirectory>songs\Pattern\angeldream\</AssetTargetDirectory>
-      <AssetTargetPath>songs\Pattern\angeldream\angeldream [test].ymp</AssetTargetPath>
-    </None>
-    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp">
-      <AssetTargetDirectory>songs\Pattern\angeldream\</AssetTargetDirectory>
-      <AssetTargetPath>songs\Pattern\angeldream\angeldream.ymp</AssetTargetPath>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +125,9 @@
     <ProjectReference Include="..\FingerDrum.Modes\FingerDrum.Modes.vcxproj">
       <Project>{A3333333-3333-4333-8333-333333333333}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\FingerDrum.Assets\FingerDrum.Assets.vcxproj">
+      <Project>{B6666666-6666-4666-8666-666666666666}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <FmodRuntime Include="$(FmodLibraryDir)\fmodL.dll" />
@@ -166,17 +137,13 @@
   </ItemGroup>
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <ItemGroup>
-      <SkinRuntimePng Include="Assets\Skins\Default Skin\**\*.png" />
       <UnusedExamplePng Include="Assets\Unused\*.png" />
     </ItemGroup>
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
-    <MakeDir Directories="$(OutDir)assets\fonts" />
     <MakeDir Directories="@(None->'$(OutDir)assets\%(AssetTargetDirectory)')" />
-    <MakeDir Directories="@(SkinRuntimePng->'$(OutDir)assets\skins\Default Skin\%(RecursiveDir)')" />
     <MakeDir Directories="$(OutDir)assets\Unused" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(SkinRuntimePng)" DestinationFiles="@(SkinRuntimePng->'$(OutDir)assets\skins\Default Skin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(UnusedExamplePng)" DestinationFolder="$(OutDir)assets\Unused" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">

@@ -693,12 +693,10 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     // intercepting its controls.
     const mrg::visual2d::ImageHandle audioPanelBase =
         services.visual2DRendering.LoadImage(
-            mrg::platform::ResolveExecutableRelativePath(
-                mrg_client::asset_paths::default_skin::widget::Second));
+            mrg_client::asset_paths::default_skin::widget::Second());
     const mrg::visual2d::ImageHandle audioPanelHighlight =
         services.visual2DRendering.LoadImage(
-            mrg::platform::ResolveExecutableRelativePath(
-                mrg_client::asset_paths::default_skin::widget::First));
+            mrg_client::asset_paths::default_skin::widget::First());
     const mrg::visual2d::VisualStyle titleStyle = MakeStaticStyle(
         {0.035F, 0.105F, 0.235F, 0.92F});
     const mrg::visual2d::VisualStyle sectionLabelStyle = MakeStaticStyle(

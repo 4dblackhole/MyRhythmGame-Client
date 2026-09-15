@@ -126,18 +126,13 @@ namespace
     [[nodiscard]] std::filesystem::path InGameSkinAssetPath(
         const std::filesystem::path& file)
     {
-        return mrg::platform::ResolveExecutableRelativePath(
-            std::filesystem::path(
-                mrg_client::asset_paths::default_skin::InGame) / file);
+        return mrg_client::asset_paths::default_skin::InGame(file);
     }
 
     [[nodiscard]] std::filesystem::path TaikoHitSoundAssetPath(
         const std::filesystem::path& file)
     {
-        return mrg::platform::ResolveExecutableRelativePath(
-            std::filesystem::path(
-                mrg_client::asset_paths::default_skin::TaikoHitSounds) /
-                file);
+        return mrg_client::asset_paths::default_skin::TaikoHitSound(file);
     }
 
     [[nodiscard]] std::wstring Utf8ToWide(const std::string_view value)
@@ -431,8 +426,7 @@ void RhythmTestScene::PrepareDebugLaunchRequest()
         return;
     }
     const std::filesystem::path songs =
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::Songs);
+        mrg_client::asset_paths::UserSongs();
     const std::filesystem::path patternPath = songs /
         L"Pattern\\angeldream\\angeldream [long notes test].ymp";
     const std::filesystem::path musicPath = songs /

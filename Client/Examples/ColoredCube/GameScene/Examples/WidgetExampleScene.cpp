@@ -59,8 +59,7 @@ void WidgetExampleScene::Initialize(const mrg::EngineServices& services)
     }
     const mrg::visual2d::ImageHandle widgetImage =
         screenVisuals_.RegisterImage(
-            mrg::platform::ResolveExecutableRelativePath(
-                mrg_client::asset_paths::default_skin::widget::First));
+            mrg_client::asset_paths::default_skin::widget::First());
     const mrg::visual2d::Size nativeSize =
         screenVisuals_.GetImageSize(widgetImage);
     if (nativeSize.width != WidgetImageSize.width ||

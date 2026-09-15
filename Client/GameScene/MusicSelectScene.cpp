@@ -279,12 +279,6 @@ namespace
             scaledHeight};
     }
 
-    [[nodiscard]] std::filesystem::path RuntimeSongsPath()
-    {
-        return mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::Songs);
-    }
-
     [[nodiscard]] std::wstring DecodeDisplayText(const std::string_view value)
     {
         if (value.empty())
@@ -326,6 +320,57 @@ namespace
         return song.music.artists.empty()
             ? L"—"
             : DecodeDisplayText(song.music.artists.front());
+    }
+
+    [[nodiscard]] bool SameSongIdentity(
+        const finger_drum::chart::SongCatalogEntry& left,
+        const finger_drum::chart::SongCatalogEntry& right)
+    {
+        return left.music.names == right.music.names &&
+            left.music.artists == right.music.artists &&
+            left.music.audioFile.filename() ==
+                right.music.audioFile.filename();
+    }
+
+    void AppendCatalog(
+        finger_drum::chart::SongCatalogLoadResult& destination,
+        finger_drum::chart::SongCatalogLoadResult source)
+    {
+        destination.discoveredMusicFiles += source.discoveredMusicFiles;
+        destination.discoveredPatternFiles += source.discoveredPatternFiles;
+        destination.diagnostics.insert(
+            destination.diagnostics.end(),
+            std::make_move_iterator(source.diagnostics.begin()),
+            std::make_move_iterator(source.diagnostics.end()));
+        for (auto& song : source.songs)
+        {
+            if (std::ranges::none_of(
+                    destination.songs,
+                    [&song](const auto& existing)
+                    {
+                        return SameSongIdentity(existing, song);
+                    }))
+            {
+                destination.songs.push_back(std::move(song));
+            }
+        }
+    }
+
+    [[nodiscard]] finger_drum::chart::SongCatalogLoadResult
+        LoadRuntimeCatalog()
+    {
+        finger_drum::chart::SongCatalog loader;
+        finger_drum::chart::SongCatalogLoadResult result =
+            loader.Load(mrg_client::asset_paths::BuiltInSongs());
+
+        const std::filesystem::path userSongs =
+            mrg_client::asset_paths::UserSongs();
+        std::error_code error;
+        if (std::filesystem::is_directory(userSongs, error) && !error)
+        {
+            AppendCatalog(result, loader.Load(userSongs));
+        }
+        return result;
     }
 
     [[nodiscard]] std::wstring PatternName(
@@ -474,7 +519,7 @@ void MusicSelectScene::Initialize(const mrg::EngineServices& services)
     width_ = services.windowWidth;
     height_ = services.windowHeight;
     audioSystem_ = &services.audio;
-    catalog_ = finger_drum::chart::SongCatalog{}.Load(RuntimeSongsPath());
+    catalog_ = LoadRuntimeCatalog();
     if (catalog_.songs.empty() && !catalog_.diagnostics.empty())
     {
         launchError_ = L"CATALOG ERROR: " + DecodeDisplayText(

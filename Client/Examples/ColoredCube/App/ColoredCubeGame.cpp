@@ -84,11 +84,9 @@ void ColoredCubeGame::OnClientInitialized(
     // supplies TextRenderSystem as a service, but does not choose fonts or
     // draw a game-specific performance overlay.
     framesPerSecondFont_ = services.textRendering.LoadFontFile(
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::fonts::ExamplePixel));
+        mrg_client::asset_paths::fonts::ExamplePixel());
     updatesPerSecondFont_ = services.textRendering.LoadFontFile(
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::fonts::FingerDrum));
+        mrg_client::asset_paths::fonts::FingerDrum());
     if (smokeTest_)
     {
         BeginAudioPlaybackSmokeCheck(services);

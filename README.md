@@ -19,7 +19,8 @@ workspace와 저장 기능은 후속 단계입니다.
 ## 구조
 
 ```text
-Client/                    실행 파일, Scene, 게임별 오디오와 asset
+Client/                    실행 파일, Scene, 게임별 오디오와 사용자 asset 위치
+FingerDrum.Assets/         EXE 내장 기본 asset 팩, RCDATA 생성과 fallback 경로
 FingerDrum.Rhythm/         판정, 노트, Lane, 스크롤, 단일 타이머
 FingerDrum.Chart/          YMM/YMP/YME 파서와 음악 시간 컴파일
 FingerDrum.Modes/          PlayGameMode 계약과 모드 구현
@@ -37,7 +38,7 @@ cd MyRhythmGame-Client
 & 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' `
   MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
 
-.\bin\x64\Debug\FingerDrum.Rhythm.Tests.exe --catalog-root .\Client\Assets\Songs
+.\bin\x64\Debug\FingerDrum.Rhythm.Tests.exe --catalog-root .\FingerDrum.Assets\Assets\Songs
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-test
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-lobby
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-gameplay
@@ -50,6 +51,11 @@ Visual2D Canvas 논리 좌표는 화면 정중앙이 원점이고 `+Y`가 위쪽
 
 Visual Studio 2022, MSVC v143, Windows SDK와 FMOD Studio API for Windows가
 필요합니다. FMOD SDK와 DLL은 저장소에 커밋하지 않습니다.
+
+기본 스킨, 글꼴과 AngelDream의 MP3/YMM/YMP 3개는 `FingerDrum.Assets`가 한
+RCDATA 팩으로 만들어 `MyRhythmGame.exe` 안에 링크합니다. 실행 시 버전별 로컬
+캐시에 풀며, 외부 스킨 파일은 파일별로 우선하고 누락된 항목만 내장 기본 스킨을
+사용합니다. 자세한 흐름은 [내장 자산](Docs/BuiltInAssets.md)을 참고하세요.
 
 ## 현재 실행 흐름
 

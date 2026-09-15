@@ -12,23 +12,8 @@ ThirdParty/
 *.dll
 *.lib
 
-# Songs are user-added local content. Only the bundled AngelDream test song
-# and its patterns are tracked.
-Client/Assets/Songs/*
-!Client/Assets/Songs/Music/
-Client/Assets/Songs/Music/*
-!Client/Assets/Songs/Music/Angeldream/
-Client/Assets/Songs/Music/Angeldream/*
-!Client/Assets/Songs/Music/Angeldream/angel dream hand shaking.mp3
-!Client/Assets/Songs/Music/Angeldream/angel dream hand shaking.ymm
-!Client/Assets/Songs/Pattern/
-Client/Assets/Songs/Pattern/*
-!Client/Assets/Songs/Pattern/angeldream/
-Client/Assets/Songs/Pattern/angeldream/*
-!Client/Assets/Songs/Pattern/angeldream/*.ymp
-
-# Only the bundled default skin is tracked. User-added skins stay local.
-Client/Assets/Skins/*
-!Client/Assets/Skins/Default Skin/
-!Client/Assets/Skins/Default Skin/**
+# Songs and skins placed beside the executable are user-added local content.
+# Redistributed fallback content is tracked by FingerDrum.Assets instead.
+Client/Assets/Songs/
+Client/Assets/Skins/
 TODOLIST.txt

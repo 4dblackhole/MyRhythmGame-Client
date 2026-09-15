@@ -191,22 +191,19 @@ void FingerDrumLogoScene::CreateLogoStrip()
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
         screenVisuals_.RegisterImage(
-            mrg::platform::ResolveExecutableRelativePath(
-                mrg_client::asset_paths::default_skin::title::LeftFade)),
+            mrg_client::asset_paths::default_skin::title::LeftFade()),
         "FingerDrum.LeftFade");
     centerLogo_ = &mrg::visual2d::CreateSprite(
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
         screenVisuals_.RegisterImage(
-            mrg::platform::ResolveExecutableRelativePath(
-                mrg_client::asset_paths::default_skin::title::Center)),
+            mrg_client::asset_paths::default_skin::title::Center()),
         "FingerDrum.CenterLogo");
     rightFade_ = &mrg::visual2d::CreateSprite(
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
         screenVisuals_.RegisterImage(
-            mrg::platform::ResolveExecutableRelativePath(
-                mrg_client::asset_paths::default_skin::title::RightFade)),
+            mrg_client::asset_paths::default_skin::title::RightFade()),
         "FingerDrum.RightFade");
 }
 
@@ -263,8 +260,7 @@ void FingerDrumLogoScene::CreateMenu()
 
     const mrg::visual2d::ImageHandle cursorImage =
         screenVisuals_.RegisterImage(
-            mrg::platform::ResolveExecutableRelativePath(
-                mrg_client::asset_paths::default_skin::title::SelectionCursor));
+            mrg_client::asset_paths::default_skin::title::SelectionCursor());
     auto& cursor = mrg::visual2d::CreateSprite(
         menu,
         {0.0F, 0.0F, CursorSize.width, CursorSize.height},

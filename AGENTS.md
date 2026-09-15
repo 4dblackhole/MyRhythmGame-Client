@@ -120,7 +120,7 @@ This file applies to the entire repository except the independently versioned
 
 After changes, initialize the submodule and rebuild
 `MyRhythmGame-Client.sln` in Debug and Release x64. Run the resulting
-`FingerDrum.Rhythm.Tests.exe --catalog-root Client/Assets/Songs` and
+`FingerDrum.Rhythm.Tests.exe --catalog-root FingerDrum.Assets/Assets/Songs` and
 `MyRhythmGame.exe --smoke-test`, `--smoke-lobby`, and `--smoke-gameplay` in
 both configurations.
 For reusable engine features, also run the relevant `ColoredCubeGame` route in

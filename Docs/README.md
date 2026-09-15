@@ -14,6 +14,7 @@
 | --- | --- |
 | [SessionHandoff.md](SessionHandoff.md) | 새 세션용 현재 상태, 저장소 경계, 검증 및 역할 분담 요약 |
 | [ExecutionFlow.md](ExecutionFlow.md) | 프로그램 진입, Scene 전환, 게임 루프, 종료 순서 |
+| [BuiltInAssets.md](BuiltInAssets.md) | EXE RCDATA 기본 자산 팩, 캐시 추출, 사용자 파일 fallback |
 | [FingerDrum.md](FingerDrum.md) | 로고 화면과 반응형 이미지 배치 |
 | [SongSelect.md](SongSelect.md) | Penpot 곡 선택 화면의 Visual2D 구현과 조작법 |
 | [EditorSongSelect.md](EditorSongSelect.md) | 에디터 진입용 곡·난이도 선택 화면과 현재 구현 경계 |
@@ -31,6 +32,7 @@ submodule의 `Docs`에 있습니다. 게임 규칙, Scene ID, 차트 문법, 게
 | 목적 | 위치 |
 | --- | --- |
 | 프로그램 진입과 CRT 누수 검사 | `Client/App/Main.cpp` |
+| EXE 내장 자산 생성과 fallback | `FingerDrum.Assets/` |
 | Client 설정과 Scene 등록 | `Client/App/FingerDrumGame.*` |
 | 로고 화면 | `Client/GameScene/FingerDrumLogoScene.*` |
 | Penpot 곡 선택 화면 | `Client/GameScene/MusicSelectScene.*` |

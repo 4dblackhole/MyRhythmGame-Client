@@ -99,8 +99,7 @@ void FingerDrumGame::OnClientInitialized(
     // Performance text is Client presentation, so the game owns the font and
     // chooses F7 independently from Engine scheduling.
     performanceFont_ = services.textRendering.LoadFontFile(
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::fonts::FingerDrum));
+        mrg_client::asset_paths::fonts::FingerDrum());
 }
 
 void FingerDrumGame::OnClientUpdated(const mrg::UpdateContext& context)

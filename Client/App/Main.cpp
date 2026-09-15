@@ -9,10 +9,12 @@
 #include "App/FingerDrumGame.h"
 #include "Examples/ColoredCube/App/ColoredCubeGame.h"
 #include "Examples/ColoredCube/GameFlow/SceneIds.h"
+#include "FingerDrumAssets.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 
 #include <Windows.h>
 
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <string>
@@ -62,6 +64,17 @@ int WINAPI wWinMain(
     _In_ int)
 {
     EnableCrtMemoryLeakChecks();
+
+    std::string assetError;
+    if (!finger_drum::assets::InitializeBuiltInAssets(assetError))
+    {
+        MessageBoxA(
+            nullptr,
+            assetError.c_str(),
+            "FingerDrum built-in asset error",
+            MB_OK | MB_ICONERROR);
+        return EXIT_FAILURE;
+    }
 
     // The executable selects the requested Client route. Run owns the Win32,
     // D3D12, input, and audio lifetime around that object.

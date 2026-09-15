@@ -5,7 +5,8 @@
 
 ```mermaid
 flowchart TD
-    Entry["Client/App/Main.cpp\nwWinMain"] --> Route{"recognized --example?"}
+    Entry["Client/App/Main.cpp\nwWinMain"] --> Assets["RCDATA asset pack 확인 · cache 준비"]
+    Assets --> Route{"recognized --example?"}
     Route -->|"no"| Game["FingerDrumGame"]
     Route -->|"yes"| Example["ColoredCubeGame · engine example"]
     Game --> Run["mrg::Run"]
@@ -24,14 +25,22 @@ flowchart TD
 
 ## 시작
 
-1. `wWinMain`이 Debug CRT 누수 검사를 켭니다. 일반 실행과 FingerDrum smoke는
+1. `wWinMain`이 Debug CRT 누수 검사를 켜고 EXE의 RCDATA 기본 자산 팩을
+   `%LOCALAPPDATA%/FingerDrum/BuiltInAssets/<pack hash>`에 준비합니다. 같은 팩의
+   유효한 캐시가 있으면 다시 기록하지 않습니다.
+2. 일반 실행과 FingerDrum smoke는
    `FingerDrumGame`을 생성하고, 인식된 `--example=mesh|collision|widgets` 경로는
    재사용 엔진 검증용 `ColoredCubeGame`을 생성합니다.
-2. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
+3. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다.
-3. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest route를 등록합니다.
-4. `SceneManager`가 최초 Logo Scene을 활성화하고 `Initialize`를 한 번
+4. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest route를 등록합니다.
+5. `SceneManager`가 최초 Logo Scene을 활성화하고 `Initialize`를 한 번
    호출합니다.
+
+기본 스킨은 실행 파일 옆 `assets/skins/Default Skin`의 같은 상대 경로 파일을
+먼저 사용하고, 파일이 없을 때만 캐시의 내장 파일로 돌아갑니다. 곡 카탈로그는
+내장 AngelDream을 항상 읽고 실행 파일 옆 `assets/songs`가 있으면 사용자 곡을
+추가합니다. 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 
 `SceneGameClient`는 SceneManager, 공통 AudioPlaybackManager와 화면
 ScreenVisual2DManager를 함께 소유합니다.
