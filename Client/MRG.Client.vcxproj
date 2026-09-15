@@ -123,13 +123,25 @@
     <None Include="Assets\Unused\Sounds\pop.wav">
       <AssetTargetPath>Unused\Sounds\pop.wav</AssetTargetPath>
     </None>
-    <None Include="Assets\Songs\**\*.*">
-      <AssetTargetDirectory>songs\%(RecursiveDir)</AssetTargetDirectory>
-      <AssetTargetPath>songs\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
+    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.mp3">
+      <AssetTargetDirectory>songs\Music\Angeldream\</AssetTargetDirectory>
+      <AssetTargetPath>songs\Music\Angeldream\angel dream hand shaking.mp3</AssetTargetPath>
     </None>
-    <None Include="Assets\Skins\Default Skin\**\*.wav">
-      <AssetTargetDirectory>skins\Default Skin\%(RecursiveDir)</AssetTargetDirectory>
-      <AssetTargetPath>skins\Default Skin\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
+    <None Include="Assets\Songs\Music\Angeldream\angel dream hand shaking.ymm">
+      <AssetTargetDirectory>songs\Music\Angeldream\</AssetTargetDirectory>
+      <AssetTargetPath>songs\Music\Angeldream\angel dream hand shaking.ymm</AssetTargetPath>
+    </None>
+    <None Include="Assets\Songs\Pattern\angeldream\angeldream [measure test].ymp">
+      <AssetTargetDirectory>songs\Pattern\angeldream\</AssetTargetDirectory>
+      <AssetTargetPath>songs\Pattern\angeldream\angeldream [measure test].ymp</AssetTargetPath>
+    </None>
+    <None Include="Assets\Songs\Pattern\angeldream\angeldream [test].ymp">
+      <AssetTargetDirectory>songs\Pattern\angeldream\</AssetTargetDirectory>
+      <AssetTargetPath>songs\Pattern\angeldream\angeldream [test].ymp</AssetTargetPath>
+    </None>
+    <None Include="Assets\Songs\Pattern\angeldream\angeldream.ymp">
+      <AssetTargetDirectory>songs\Pattern\angeldream\</AssetTargetDirectory>
+      <AssetTargetPath>songs\Pattern\angeldream\angeldream.ymp</AssetTargetPath>
     </None>
   </ItemGroup>
   <ItemGroup>
