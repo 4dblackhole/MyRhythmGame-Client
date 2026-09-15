@@ -1,11 +1,11 @@
 #include "FingerDrumLogoScene.h"
 
+#include "App/AssetPaths.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 
 #include <Windows.h>
 
 #include <array>
-#include <filesystem>
 #include <optional>
 #include <stdexcept>
 
@@ -27,13 +27,6 @@ namespace
     constexpr std::size_t EditorIndex = 1;
     constexpr std::size_t OptionIndex = 2;
     constexpr std::size_t ExitIndex = 3;
-
-    [[nodiscard]] std::filesystem::path RuntimeAssetPath(
-        const std::filesystem::path& relativePath)
-    {
-        return mrg::platform::ResolveExecutableRelativePath(
-            std::filesystem::path(L"assets\\images") / relativePath);
-    }
 
     template <typename ComponentType>
     [[nodiscard]] ComponentType& RequireComponent(
@@ -198,19 +191,22 @@ void FingerDrumLogoScene::CreateLogoStrip()
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
         screenVisuals_.RegisterImage(
-            RuntimeAssetPath(L"logo\\LeftFade.png")),
+            mrg::platform::ResolveExecutableRelativePath(
+                mrg_client::asset_paths::default_skin::title::LeftFade)),
         "FingerDrum.LeftFade");
     centerLogo_ = &mrg::visual2d::CreateSprite(
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
         screenVisuals_.RegisterImage(
-            RuntimeAssetPath(L"logo\\Center.png")),
+            mrg::platform::ResolveExecutableRelativePath(
+                mrg_client::asset_paths::default_skin::title::Center)),
         "FingerDrum.CenterLogo");
     rightFade_ = &mrg::visual2d::CreateSprite(
         strip,
         {0.0F, 0.0F, 1.0F, 1.0F},
         screenVisuals_.RegisterImage(
-            RuntimeAssetPath(L"logo\\RightFade.png")),
+            mrg::platform::ResolveExecutableRelativePath(
+                mrg_client::asset_paths::default_skin::title::RightFade)),
         "FingerDrum.RightFade");
 }
 
@@ -267,7 +263,8 @@ void FingerDrumLogoScene::CreateMenu()
 
     const mrg::visual2d::ImageHandle cursorImage =
         screenVisuals_.RegisterImage(
-            RuntimeAssetPath(L"menu\\SelectionCursor.png"));
+            mrg::platform::ResolveExecutableRelativePath(
+                mrg_client::asset_paths::default_skin::title::SelectionCursor));
     auto& cursor = mrg::visual2d::CreateSprite(
         menu,
         {0.0F, 0.0F, CursorSize.width, CursorSize.height},

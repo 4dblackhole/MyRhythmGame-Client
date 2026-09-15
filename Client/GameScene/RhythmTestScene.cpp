@@ -1,5 +1,6 @@
 #include "RhythmTestScene.h"
 
+#include "App/AssetPaths.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "Model/ChartDocument.h"
 #include "Taiko/TaikoMode.h"
@@ -122,24 +123,21 @@ namespace
             SetStyle(style);
     }
 
-    [[nodiscard]] std::filesystem::path SkinAssetPath(
-        const std::filesystem::path& file)
-    {
-        return mrg::platform::ResolveExecutableRelativePath(
-            std::filesystem::path(L"assets\\skins\\test Skin") / file);
-    }
-
     [[nodiscard]] std::filesystem::path InGameSkinAssetPath(
         const std::filesystem::path& file)
     {
-        return SkinAssetPath(std::filesystem::path(L"InGame") / file);
+        return mrg::platform::ResolveExecutableRelativePath(
+            std::filesystem::path(
+                mrg_client::asset_paths::default_skin::InGame) / file);
     }
 
-    [[nodiscard]] std::filesystem::path SoundAssetPath(
+    [[nodiscard]] std::filesystem::path TaikoHitSoundAssetPath(
         const std::filesystem::path& file)
     {
         return mrg::platform::ResolveExecutableRelativePath(
-            std::filesystem::path(L"assets\\sounds") / file);
+            std::filesystem::path(
+                mrg_client::asset_paths::default_skin::TaikoHitSounds) /
+                file);
     }
 
     [[nodiscard]] std::wstring Utf8ToWide(const std::string_view value)
@@ -433,7 +431,8 @@ void RhythmTestScene::PrepareDebugLaunchRequest()
         return;
     }
     const std::filesystem::path songs =
-        mrg::platform::ResolveExecutableRelativePath(L"assets\\songs");
+        mrg::platform::ResolveExecutableRelativePath(
+            mrg_client::asset_paths::Songs);
     const std::filesystem::path patternPath = songs /
         L"Pattern\\angeldream\\angeldream [long notes test].ymp";
     const std::filesystem::path musicPath = songs /
@@ -1314,7 +1313,7 @@ void RhythmTestScene::RegisterTaikoSounds(std::string& errorMessage)
         std::string registrationError;
         if (!audioRouter_.RegisterSoundAliases(
                 registration.ids,
-                SkinAssetPath(registration.file),
+                TaikoHitSoundAssetPath(registration.file),
                 registrationError) && firstError.empty())
         {
             firstError = registration.ids.front() + ": " +
@@ -1324,7 +1323,8 @@ void RhythmTestScene::RegisterTaikoSounds(std::string& errorMessage)
     std::string balloonError;
     if (!audioRouter_.RegisterSound(
         "Taiko.Balloon.Pop",
-        SoundAssetPath(L"pop.wav"),
+        mrg::platform::ResolveExecutableRelativePath(
+            mrg_client::asset_paths::unused_examples::PopSound),
         mrg::audio::AudioLoadMode::Sample,
         balloonError) && firstError.empty())
     {

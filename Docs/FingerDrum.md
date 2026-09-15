@@ -9,9 +9,9 @@
 
 | 순서 | source asset | 원본 크기 |
 | --- | --- | --- |
-| 왼쪽 | `Client/Assets/Images/Logo/LeftFade.png` | 1680×1280 |
-| 가운데 | `Client/Assets/Images/Logo/Center.png` | 2400×1280 |
-| 오른쪽 | `Client/Assets/Images/Logo/RightFade.png` | 1680×1280 |
+| 왼쪽 | `Client/Assets/Skins/Default Skin/TitleImage/Logo/LeftFade.png` | 1680×1280 |
+| 가운데 | `Client/Assets/Skins/Default Skin/TitleImage/Logo/Center.png` | 2400×1280 |
+| 오른쪽 | `Client/Assets/Skins/Default Skin/TitleImage/Logo/RightFade.png` | 1680×1280 |
 
 세 node는 모두 `(0.5, 0.5)` pivot을 사용한다. 이 node들은 화면 중심 anchor를
 부모로 하는 하나의 strip 안에 놓인다. strip scale은 Canvas의 논리 폭과 높이 중
@@ -34,7 +34,8 @@
 - `Enter` 또는 `Space`: 현재 선택한 버튼을 실행한다.
 - `F7`: 모든 FingerDrum Scene 위 우측 하단 FPS/UPS 표시를 토글한다.
 
-커서 자산은 `Client/Assets/Images/Menu/SelectionCursor.png`이며 투명 PNG다.
+커서 자산은 `Client/Assets/Skins/Default Skin/TitleImage/Menu/SelectionCursor.png`이며
+투명 PNG다.
 마우스가 정지된 상태에서는 키보드로 옮긴 선택을 다시 빼앗지 않도록, 새 mouse
 event가 발생했을 때만 pointer hover를 선택 상태에 반영한다.
 

@@ -1,5 +1,6 @@
 #include "ColoredCubeGame.h"
 
+#include "App/AssetPaths.h"
 #include "Examples/ColoredCube/GameFlow/SceneIds.h"
 #include "Examples/ColoredCube/GameScene/BlankScene.h"
 #include "Examples/ColoredCube/GameScene/ColoredCubeScene.h"
@@ -84,10 +85,10 @@ void ColoredCubeGame::OnClientInitialized(
     // draw a game-specific performance overlay.
     framesPerSecondFont_ = services.textRendering.LoadFontFile(
         mrg::platform::ResolveExecutableRelativePath(
-            L"assets\\fonts\\PressStart2P-Regular.ttf"));
+            mrg_client::asset_paths::fonts::ExamplePixel));
     updatesPerSecondFont_ = services.textRendering.LoadFontFile(
         mrg::platform::ResolveExecutableRelativePath(
-            L"assets\\fonts\\Rajdhani-SemiBold.ttf"));
+            mrg_client::asset_paths::fonts::FingerDrum));
     if (smokeTest_)
     {
         BeginAudioPlaybackSmokeCheck(services);
@@ -99,7 +100,8 @@ void ColoredCubeGame::BeginAudioPlaybackSmokeCheck(
 {
     std::string error;
     std::shared_ptr<mrg::audio::AudioClip> clip = services.audio.LoadSound(
-        mrg::platform::ResolveExecutableRelativePath(L"assets\\sounds\\pop.wav"),
+        mrg::platform::ResolveExecutableRelativePath(
+            mrg_client::asset_paths::unused_examples::PopSound),
         mrg::audio::AudioLoadMode::Sample,
         error);
     if (clip == nullptr)

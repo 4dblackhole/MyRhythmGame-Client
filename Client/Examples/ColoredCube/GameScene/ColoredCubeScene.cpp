@@ -1,5 +1,6 @@
 #include "ColoredCubeScene.h"
 
+#include "App/AssetPaths.h"
 #include "Examples/ColoredCube/GameFlow/SceneIds.h"
 
 #include <Windows.h>
@@ -8,7 +9,6 @@
 
 #include <algorithm>
 #include <array>
-#include <filesystem>
 #include <memory>
 #include <optional>
 #include <random>
@@ -31,13 +31,6 @@ namespace
             throw std::logic_error("The Visual2D node is missing a component.");
         }
         return *component;
-    }
-
-    [[nodiscard]] std::filesystem::path RuntimeAssetPath(
-        const wchar_t* fileName)
-    {
-        return mrg::platform::ResolveExecutableRelativePath(
-            std::filesystem::path(L"assets") / fileName);
     }
 
     [[nodiscard]] std::wstring Utf8ToWide(const std::string_view value)
@@ -241,8 +234,10 @@ void ColoredCubeScene::Initialize(const mrg::EngineServices& services)
     // Each PNG remains an independently sized GPU Texture2D.  TextureSet is a
     // contiguous array of SRV descriptors, not a same-size Texture2DArray.
     const std::array texturePaths{
-        RuntimeAssetPath(L"awhc.png"),
-        RuntimeAssetPath(L"bwhc.png")};
+        mrg::platform::ResolveExecutableRelativePath(
+            mrg_client::asset_paths::unused_examples::WhiteCubeTexture),
+        mrg::platform::ResolveExecutableRelativePath(
+            mrg_client::asset_paths::unused_examples::BlackCubeTexture)};
     const mrg::graphics::TextureSetHandle textures =
         services.meshRendering.Textures().LoadTextureSet(texturePaths);
 
@@ -698,10 +693,12 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     // intercepting its controls.
     const mrg::visual2d::ImageHandle audioPanelBase =
         services.visual2DRendering.LoadImage(
-            RuntimeAssetPath(L"images\\Widget2.png"));
+            mrg::platform::ResolveExecutableRelativePath(
+                mrg_client::asset_paths::default_skin::widget::Second));
     const mrg::visual2d::ImageHandle audioPanelHighlight =
         services.visual2DRendering.LoadImage(
-            RuntimeAssetPath(L"images\\Widget1.png"));
+            mrg::platform::ResolveExecutableRelativePath(
+                mrg_client::asset_paths::default_skin::widget::First));
     const mrg::visual2d::VisualStyle titleStyle = MakeStaticStyle(
         {0.035F, 0.105F, 0.235F, 0.92F});
     const mrg::visual2d::VisualStyle sectionLabelStyle = MakeStaticStyle(
@@ -903,7 +900,7 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     if (!ReloadPopSound(errorMessage))
     {
         throw std::runtime_error(
-            "Failed to load assets/sounds/pop.wav: " + errorMessage);
+            "Failed to load assets/Unused/Sounds/pop.wav: " + errorMessage);
     }
 }
 
@@ -1234,7 +1231,8 @@ bool ColoredCubeScene::ReloadPopSound(std::string& errorMessage)
     }
 
     popSound_ = audioSystem_->LoadSound(
-        RuntimeAssetPath(L"sounds\\pop.wav"),
+        mrg::platform::ResolveExecutableRelativePath(
+            mrg_client::asset_paths::unused_examples::PopSound),
         errorMessage);
     return popSound_ != nullptr;
 }

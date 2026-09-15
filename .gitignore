@@ -29,6 +29,6 @@ Client/Assets/Songs/Pattern/angeldream/*
 
 # Only the bundled default skin is tracked. User-added skins stay local.
 Client/Assets/Skins/*
-!Client/Assets/Skins/test Skin/
-!Client/Assets/Skins/test Skin/**
+!Client/Assets/Skins/Default Skin/
+!Client/Assets/Skins/Default Skin/**
 TODOLIST.txt

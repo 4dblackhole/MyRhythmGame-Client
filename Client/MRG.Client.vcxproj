@@ -64,6 +64,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="App\AssetPaths.h" />
     <ClInclude Include="App\FingerDrumGame.h" />
     <ClInclude Include="Audio\GameplayAudioRouter.h" />
     <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h" />
@@ -75,7 +76,7 @@
     <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
-    <ClInclude Include="GameScene\EditorScene.h" />
+    <ClInclude Include="EditorScene\EditorScene.h" />
     <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
     <ClInclude Include="GameScene\MusicSelectScene.h" />
     <ClInclude Include="GameScene\RhythmTestScene.h" />
@@ -92,7 +93,7 @@
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" />
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
-    <ClCompile Include="GameScene\EditorScene.cpp" />
+    <ClCompile Include="EditorScene\EditorScene.cpp" />
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
     <ClCompile Include="GameScene\MusicSelectScene.cpp" />
     <ClCompile Include="GameScene\RhythmTestScene.cpp" />
@@ -112,16 +113,16 @@
     <None Include="Assets\Fonts\Rajdhani-OFL.txt">
       <AssetTargetPath>fonts\Rajdhani-OFL.txt</AssetTargetPath>
     </None>
-    <None Include="Assets\Sounds\pop.wav">
-      <AssetTargetPath>sounds\pop.wav</AssetTargetPath>
+    <None Include="Assets\Unused\Sounds\pop.wav">
+      <AssetTargetPath>Unused\Sounds\pop.wav</AssetTargetPath>
     </None>
     <None Include="Assets\Songs\**\*.*">
       <AssetTargetDirectory>songs\%(RecursiveDir)</AssetTargetDirectory>
       <AssetTargetPath>songs\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
     </None>
-    <None Include="Assets\Skins\test Skin\**\*.wav">
-      <AssetTargetDirectory>skins\test Skin\%(RecursiveDir)</AssetTargetDirectory>
-      <AssetTargetPath>skins\test Skin\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
+    <None Include="Assets\Skins\Default Skin\**\*.wav">
+      <AssetTargetDirectory>skins\Default Skin\%(RecursiveDir)</AssetTargetDirectory>
+      <AssetTargetPath>skins\Default Skin\%(RecursiveDir)%(Filename)%(Extension)</AssetTargetPath>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -146,25 +147,18 @@
   </ItemGroup>
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <ItemGroup>
-      <RootRuntimePng Include="Assets\*.png" />
-      <ImageRuntimePng Include="Assets\Images\**\*.png" />
-      <SkinRuntimePng Include="Assets\Skins\test Skin\**\*.png" />
+      <SkinRuntimePng Include="Assets\Skins\Default Skin\**\*.png" />
+      <UnusedExamplePng Include="Assets\Unused\*.png" />
     </ItemGroup>
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
-    <MakeDir Directories="$(OutDir)assets\images" />
-    <MakeDir Directories="$(OutDir)assets\images\logo" />
-    <MakeDir Directories="$(OutDir)assets\images\menu" />
-    <MakeDir Directories="$(OutDir)assets\images\profile" />
     <MakeDir Directories="$(OutDir)assets\fonts" />
-    <MakeDir Directories="$(OutDir)assets\sounds" />
     <MakeDir Directories="@(None->'$(OutDir)assets\%(AssetTargetDirectory)')" />
-    <MakeDir Directories="@(ImageRuntimePng->'$(OutDir)assets\images\%(RecursiveDir)')" />
-    <MakeDir Directories="@(SkinRuntimePng->'$(OutDir)assets\skins\test Skin\%(RecursiveDir)')" />
+    <MakeDir Directories="@(SkinRuntimePng->'$(OutDir)assets\skins\Default Skin\%(RecursiveDir)')" />
+    <MakeDir Directories="$(OutDir)assets\Unused" />
     <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(RootRuntimePng)" DestinationFolder="$(OutDir)assets" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(ImageRuntimePng)" DestinationFiles="@(ImageRuntimePng->'$(OutDir)assets\images\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(SkinRuntimePng)" DestinationFiles="@(SkinRuntimePng->'$(OutDir)assets\skins\test Skin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(SkinRuntimePng)" DestinationFiles="@(SkinRuntimePng->'$(OutDir)assets\skins\Default Skin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(UnusedExamplePng)" DestinationFolder="$(OutDir)assets\Unused" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(Configuration)' == 'Debug' and !Exists('$(FmodLibraryDir)\fmodL_vc.lib')" Text="FMOD debug x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />
