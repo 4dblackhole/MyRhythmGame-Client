@@ -157,9 +157,28 @@ BPM 구간별 시간을 계산할 때만 부동소수점으로 변환합니다. 
 CustomHit: Sounds/custom.wav
 ```
 
-`이름: 경로`를 등록하는 영역입니다. 현재 파서는 이 표를 보존하지만 Client가
-파일을 자동 등록하지는 않습니다. `[Pattern]`의 hitsound 칸을 사용할 때는 실행
-중 등록된 `SoundId`와 일치해야 합니다.
+`인덱스: 경로`를 등록하는 영역입니다. 숫자 인덱스(`1: Sounds/pop.wav`)와 기존
+문자열 이름을 모두 지원합니다. 경로는 YMP 기준이며 Client가 곡 로드 시 한 번
+등록합니다. 같은 파일의 별칭은 하나의 샘플/재생 채널을 공유합니다.
+`[Pattern]`의 hitsound 칸에 지정한 표의 인덱스는 아래 동·캇 기본값 변경보다 우선합니다.
+
+### YME 히트사운드 변경
+
+YME는 YMP와 같은 폴더에서 같은 stem을 사용합니다. 표 자체는 YMP의 `[HitSounds]`에
+두고 YME에서 참조합니다. 다음은 네 번째 마디의 2/4부터 캇을 `1`로 바꾸는 예입니다.
+
+```text
+Version: 1
+[HitSound Changes]
+4, 2/4, 1, 2
+```
+
+순서는 `마디번호(1부터), N/D, 히트사운드 인덱스, 노트ID`입니다. ID 1은 동,
+ID 2는 캇입니다. 둘 다 바꾸려면 같은 위치에 ID 1과 2를 각각 적습니다.
+각 설정은 다음 해당 입력의 변경까지 유지됩니다. 같은 입력/위치에서는 마지막 줄이
+우선합니다. BPM·마디 길이·offset을 반영한 cue 시각 기준으로 적용되며 빈 입력,
+큰 노트, 보라 노트, 연타와 Buzz에도 적용됩니다. 풍선 파열음은 동·캇음과 별개입니다.
+미등록 인덱스, 마디 밖 위치, 잘못된 노트 ID는 로드 오류입니다.
 
 ### 일반 노트와 롱노트
 
@@ -220,25 +239,34 @@ TickRoll은 시작점도 하나의 틱이며 모든 틱은 Good 범위 내 성�
 3/4,17,2
 ```
 
-## YME: 마디선 표시 문구
+## YME: automation과 박자 영역
 
-마디선 표시 전환 문구는 다음 모습으로 예약합니다.
+기존 수치 automation 형식을 유지합니다. `[Effects]`의 `--`는 YMP처럼 마디를 진행시킵니다.
+다음 예는 첫 마디 0/4부터 2/4까지 스크롤 배율을 1에서 2로 선형 증가시킵니다.
 
 ```text
-#measureLineVisible ON
-#measureLineVisible OFF
+Version: 1
+[Effects]
+0/4, #ScrollSpeed, , 1, 2, 0, Linear, End=1:2/4
+--
+0/4, #MeasureLineVisible, , 0, 0, 0, Step
 ```
 
-마디선 전환의 구체적인 위치를 어떤 문법으로 지정할지는 아직 정하지 않았습니다.
-따라서 위치 접두사나 섹션 구조를 이 문서에서 정의하지 않으며, 위 두 문구도 현재
-YME 파서와 화면에 아직 연결되지 않은 설계 표기입니다.
+필드는 `N/D, #종류, 대상, 시작값, 끝값, 기존 ms길이, 보간[, End=마디:N/D]`입니다.
+끝 마디는 1부터 셉니다. End가 있으면 유리수 박자 영역이 우선합니다. ScrollSpeed와
+NoteSpeed는 노트의 박자를 기준으로 보간하며, 둘을 함께 지정하면 배율을 곱합니다.
+영역 종료 후 끝값을 유지하고 다음 지시에서 바뀝니다. End가 없는 고정값은 시작/끝을
+같게 둡니다. BusVolume 대상은 `Music`, `HitSound`, `TickSound`, `UserInputFeedback`,
+`UI` 중 버스 이름입니다. MeasureLineVisible은 0=숨김, 1=표시입니다.
+과거 문서의 단독 `#measureLineVisible ON/OFF`는 예약 문구였으며 저장 문법은 위와 같습니다.
 
 ## 롱노트 확인용 채보와 디버그 실행
 
 로컬 파일 `Client/Assets/Songs/Pattern/angeldream/angeldream [long notes test].ymp`는
 엔젤드림 핸드셰이크 음원을 참조합니다. Roll, BigRoll, TickRoll, BigTickRoll,
 Balloon, DengDeng, Don Buzz, Kat Buzz의 시작점을 2박 간격으로 배치했습니다.
-곡·YMM·YMP·YME는 Git 제외 대상이므로 이 파일은 작업 PC에만 남습니다. 파일이
+사용자 추가 곡·YMM·YMP·YME는 Git 제외 대상이므로 이 테스트 파일은 작업 PC에만 남습니다.
+예외로 `FingerDrum.Assets/Assets/Songs`의 기본 AngelDream 음원·YMM·YMP 3개는 Git에서 추적합니다. 파일이
 없는 clean clone에서는 디버그 실행이 같은 배열의 내장 패턴을 사용합니다.
 
 ```powershell

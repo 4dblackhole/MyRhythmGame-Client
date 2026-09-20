@@ -18,6 +18,7 @@
 | [FingerDrum.md](FingerDrum.md) | 로고 화면과 반응형 이미지 배치 |
 | [SongSelect.md](SongSelect.md) | Penpot 곡 선택 화면의 Visual2D 구현과 조작법 |
 | [EditorSongSelect.md](EditorSongSelect.md) | 에디터 진입용 곡·난이도 선택 화면과 현재 구현 경계 |
+| [ChartEditor.md](ChartEditor.md) | 악보·실시간 편집, 타이밍/metadata/effect, 히트사운드 표, 저장과 오디오 분석 |
 | [RhythmGameplay.md](RhythmGameplay.md) | 타이머, 판정, 노트별/누적 정확도와 Debug 상세, Lane, 차트, 모드, 사운드 제어 |
 | [ChartFormats.md](ChartFormats.md) | YMM·YMP 문법, 태고 롱노트 옵션과 YME 마디선 표기 |
 | [Visual2DGuide.md](Visual2DGuide.md) | 공통 화면 관리자, Sprite·위젯 노드, Canvas, 입력, PNG와 Z-Order |

@@ -78,7 +78,7 @@ namespace finger_drum::chart
             result.push_back(CompiledEffectCommand{
                 command,
                 Compile(command.position),
-                rhythm::RhythmDuration{
+                command.endPosition ? Compile(*command.endPosition) - Compile(command.position) : rhythm::RhythmDuration{
                     static_cast<rhythm::RhythmDuration::rep>(std::llround(
                         command.durationMilliseconds * 1000.0))}});
         }
@@ -170,6 +170,17 @@ namespace finger_drum::chart
             result.push_back(CompileAbsolute(measurePrefixSums_[index]));
         }
         return result;
+    }
+
+    Rational MusicalTimeline::MeasureLength(const std::int64_t measure) const
+    {
+        if (measure < 0)
+        {
+            throw std::invalid_argument("A measure cannot be negative.");
+        }
+        return static_cast<std::uint64_t>(measure) < measureLengths_.size()
+            ? measureLengths_[static_cast<std::size_t>(measure)]
+            : measureLengths_.back();
     }
 
     void MusicalTimeline::BuildMeasurePrefixSums(
@@ -312,6 +323,60 @@ namespace finger_drum::chart
         return measurePrefixSums_.back() +
             measureLengths_.back() * additionalMeasures +
             position.fraction;
+    }
+
+    MusicalPosition MusicalTimeline::PositionAtWholeNotes(const Rational& beat) const
+    {
+        if (beat < Rational{}) throw std::invalid_argument("Beat cannot be negative.");
+        const auto next = std::ranges::upper_bound(measurePrefixSums_, beat);
+        if (next != measurePrefixSums_.end())
+        {
+            const auto measure = std::distance(measurePrefixSums_.begin(), next) - 1;
+            return {measure, beat - measurePrefixSums_[static_cast<std::size_t>(measure)]};
+        }
+        // Extrapolated measures use the last known signature. Binary search
+        // keeps seeking sparse/long charts exact without a per-measure loop.
+        std::int64_t low = static_cast<std::int64_t>(measureLengths_.size());
+        std::int64_t high = low + 1;
+        while (PositionToWholeNotes({high, {}}) <= beat)
+        {
+            if (high > std::numeric_limits<std::int64_t>::max() / 2)
+                throw std::overflow_error("Beat is beyond the supported measure range.");
+            high *= 2;
+        }
+        while (low + 1 < high)
+        {
+            const auto middle = low + (high - low) / 2;
+            if (PositionToWholeNotes({middle, {}}) <= beat) low = middle;
+            else high = middle;
+        }
+        return {low, beat - PositionToWholeNotes({low, {}})};
+    }
+
+    double MusicalTimeline::EffectValueAt(const EffectDocument& effects,
+        EffectCommandType type, MusicalPosition position, double defaultValue) const
+    {
+        const EffectCommand* selected = nullptr;
+        for (const auto& c : effects.commands)
+            if (c.type == type && c.position <= position &&
+                (!selected || selected->position <= c.position)) selected = &c;
+        if (!selected) return defaultValue;
+        const auto& c = *selected;
+        double amount = 1;
+        if (c.endPosition)
+        {
+            const auto begin = PositionToWholeNotes(c.position);
+            const auto length = PositionToWholeNotes(*c.endPosition) - begin;
+            if (length > Rational{}) amount = static_cast<double>(
+                (PositionToWholeNotes(position) - begin).Value() / length.Value());
+        }
+        else if (c.durationMilliseconds > 0)
+            amount = (Compile(position) - Compile(c.position)).count() / (c.durationMilliseconds * 1000);
+        amount = std::clamp(amount, 0.0, 1.0);
+        if (c.curve == AutomationCurve::Step) amount = amount >= 1 ? 1 : 0;
+        else if (c.curve == AutomationCurve::Smoothstep) amount = amount * amount * (3 - 2 * amount);
+        else if (c.curve == AutomationCurve::Exponential) amount *= amount;
+        return std::lerp(c.beginValue, c.endValue, amount);
     }
 
     long double MusicalTimeline::SecondsAt(

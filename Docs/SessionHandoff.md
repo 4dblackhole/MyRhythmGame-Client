@@ -11,7 +11,8 @@
 4. Engine 작업이면 `Dependencies/MRG-Engine/Docs/EngineOverview.md`와 해당 엔진
    기능 문서를 읽습니다.
 5. `git status -sb`, Client `origin/main`, 엔진 gitlink/HEAD/`origin/main`을
-   확인한 뒤 작업 브랜치를 만듭니다. 이 문서에 적힌 상태보다 Git이 우선합니다.
+   확인합니다. 별도 요청 없이는 브랜치를 만들지 않고 `main`에서 작업합니다.
+   이 문서에 적힌 상태보다 Git이 우선합니다.
 
 ## 프로젝트와 저장소
 
@@ -72,9 +73,12 @@ wWinMain
 - 타이틀의 Editor는 `FingerDrum.EditorSongSelect`로 이동합니다. 구현은
   `MusicSelectScene`의 Editor 구성으로 카탈로그·검색·정렬·미리듣기·난이도 탐색을
   공유하지만 기록 패널은 만들지 않으며 정보 패널이 왼쪽 빈 영역까지 넓어집니다.
-  난이도를 확정하면 빈 `EditorScene`으로 이동하며, 포커스할 UI가 없는 현재
-  단계에서는 Escape로 에디터 곡 선택 화면에 돌아갑니다. 실제 편집 UI와 파일
-  저장은 아직 구현하지 않았습니다.
+  난이도를 확정하면 Penpot `Editor UI` 기반 `EditorScene`으로 이동합니다.
+  악보·실시간 뷰에서 노트 추가/삭제, 두 번 클릭 롱노트 배치와 우클릭 변형 선택,
+  타이밍·메타데이터·이펙트 편집, 실제 음원/히트사운드 FFT 표시를 제공합니다.
+  `ChartEditor`는 유리수 박자와 누적합/정수 us 캐시를 관리하고 Ctrl+S로 원래 YMP와
+  같은 폴더·이름의 YME를 저장합니다. Escape는 미저장 변경 확인 후 돌아갑니다.
+  세부 조작과 검증 한계는 [ChartEditor.md](ChartEditor.md)를 읽습니다.
 - Lobby가 `GameplayLaunchRequest`에 music/pattern/optional YME/mode를 기록한
   뒤 gameplay Scene 전환을 요청합니다.
 - Gameplay Scene은 진입 시 동적 생성되고 ESC 또는 패턴 종료 3초 뒤 Lobby로
@@ -131,8 +135,10 @@ wWinMain
   늘이지 않고 원본 비율로 반복 배치하며 노트와 롱노트 파츠는 PNG 메타데이터로
   표시 크기를 정합니다.
 - 런타임 자산 디렉터리와 개별 공용 자산 경로는
-  `Client/App/AssetPaths.h`에서 관리합니다. 기본 스킨, 글꼴, AngelDream은
-  `FingerDrum.Assets`의 RCDATA 팩으로 EXE에 포함됩니다. 자산을 옮길 때 Scene마다
+  `Client/App/AssetPaths.h`에서 관리합니다. 기본 스킨과 글꼴은
+  `FingerDrum.Assets`의 RCDATA 팩으로 EXE에 포함됩니다. AngelDream 음원·YMM·YMP 3개는
+  Git 추적된 외부 기본 제공곡이며 빌드 시 `assets/Songs`의 누락 파일만 복사합니다.
+  곡 카탈로그는 외부 Songs만 읽습니다. 자산을 옮길 때 Scene마다
   문자열을 수정하지 말고 이 테이블과 팩 생성 규칙을 함께 갱신합니다.
 - 입력 패널 키와 판정원 간격은 Penpot `Gameplay · Sky` 좌표를 사용하고 Lane은
   오른쪽 화면 끝까지 이어집니다. 롱노트 tail/overlay는 별도로 회전하지 않고
@@ -166,6 +172,11 @@ wWinMain
   확인이 필요합니다.
 - YME automation과 실시간 effect의 확장점은 있지만 모든 지시문과 편집 UI가
   구현된 것은 아닙니다.
+- 에디터의 오디오 영역은 파형/스펙트럼 분석과 수동 시간 탐색용입니다. 음악 재생·배속,
+  Undo/Redo·다중 선택·드래그 이동·새 곡 생성은 추가하지 않았습니다.
+- YMP `[HitSounds]`에 `1: pop.wav`를 등록하고 YME `[HitSound Changes]`에
+  `4, 2/4, 1, 2`를 적으면 네 번째 마디 2/4부터 캇(ID 2)에 적용합니다.
+  동(ID 1)은 독립적이며 둘 다 변경할 때는 같은 위치에 두 줄을 둡니다.
 - 모호한 요청을 받았다고 이 항목들을 자동으로 구현하지 않습니다.
 
 ## 검증과 병합
@@ -173,18 +184,18 @@ wWinMain
 Client 변경 후 Debug/Release x64에서 다음을 모두 수행합니다.
 
 ```powershell
-msbuild MyRhythmGame-Client.sln /m /t:Build /p:Configuration=Debug /p:Platform=x64
-msbuild MyRhythmGame-Client.sln /m /t:Build /p:Configuration=Release /p:Platform=x64
+msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
+msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 bin\x64\Debug\FingerDrum.Rhythm.Tests.exe --catalog-root FingerDrum.Assets\Assets\Songs
 bin\x64\Release\FingerDrum.Rhythm.Tests.exe --catalog-root FingerDrum.Assets\Assets\Songs
 ```
 
 두 구성의 `MyRhythmGame.exe`에 `--smoke-test`, `--smoke-lobby`,
-`--smoke-gameplay`도 각각 실행합니다. 재사용 엔진 기능은 추가로
+`--smoke-gameplay`, `--smoke-editor`도 각각 실행합니다. 재사용 엔진 기능은 추가로
 `Client/Examples/ColoredCube`의 `ColoredCubeGame`과 관련 예제 route를 사용합니다.
 Mesh·Camera·렌더 변경은 `--smoke-test --example=mesh`가 기본 통합 경로입니다.
-검증 후 작업 PR을 병합하고 Client main, 엔진 gitlink, 엔진 main이 일치하는지
-확인합니다.
+검증 후 Client main을 커밋·push하고 엔진 gitlink가 엔진 main과 일치하는지
+확인합니다. 별도 작업 브랜치를 요청받았을 때만 PR을 생성·병합합니다.
 
 `Client/Assets/Songs`, `Client/Assets/Skins`의 사용자 추가 파일과 `TODOLIST.txt`는
 별도 요청 없이 stage하거나 덮어쓰지 않습니다. 배포 기본 자산은

@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <format>
 #include <iterator>
+#include <limits>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -1061,7 +1062,7 @@ void RhythmTestScene::CreateNoteVisuals()
                         const float offset = static_cast<float>(
                             (tickTime - note->Timing()).count()) /
                             static_cast<float>(ApproachDuration.count()) *
-                            TravelDistance;
+                            TravelDistance * static_cast<float>(presentation->scrollMultiplier);
                         auto& tick = mrg::visual2d::CreateSprite(
                             *layers.root,
                             {(diameter - selectedTickSize.width) * 0.5F,
@@ -1263,6 +1264,24 @@ void RhythmTestScene::InitializeAudio(const mrg::EngineServices& services)
 
     std::string hitSoundError;
     RegisterTaikoSounds(hitSoundError);
+
+    // Decode chart resources once on session entry, never on a key press.
+    // Indices resolving to the same file share one sample/channel.
+    std::map<std::filesystem::path,
+        std::vector<finger_drum::rhythm::SoundId>> chartSounds;
+    for (const auto& [id, path] : session_->HitSoundFiles())
+    {
+        chartSounds[path].push_back(id);
+    }
+    for (const auto& [path, ids] : chartSounds)
+    {
+        std::string error;
+        if (!audioRouter_.RegisterSoundAliases(ids, path, error) &&
+            hitSoundError.empty())
+        {
+            hitSoundError = ids.front() + ": " + error;
+        }
+    }
 
     std::string musicError;
     if (launchRequest_->IsValid())
@@ -1826,15 +1845,24 @@ void RhythmTestScene::UpdatePresentation(
     const finger_drum::rhythm::RhythmTime time)
 {
     UpdateAccuracyPresentation();
+    using Duration = finger_drum::rhythm::RhythmDuration;
+    // Bound conversion and time + horizon even for extremely small speeds.
+    const auto maximumHorizon = std::numeric_limits<Duration::rep>::max() / 2;
+    const auto horizon = std::min(static_cast<double>(maximumHorizon),
+        ApproachDuration.count() / session_->MinimumScrollMultiplier());
     const auto snapshot = session_->Gear().BuildSnapshot(
         time,
-        ApproachDuration,
+        Duration{static_cast<Duration::rep>(horizon)},
         MissedTravelDuration);
     HideTransientNoteVisuals();
+    bool showMeasureLines = true;
+    for (const auto& value : session_->EvaluateAutomation(time))
+        if (value.type == finger_drum::chart::EffectCommandType::MeasureLineVisible)
+            showMeasureLines = value.value >= 0.5;
     for (TimedVisual& measureLine : measureLineVisuals_)
     {
         const auto delta = measureLine.timing - time;
-        const bool visible = delta <= ApproachDuration &&
+        const bool visible = showMeasureLines && delta <= ApproachDuration &&
             delta >= -MissedTravelDuration;
         measureLine.node->SetVisible(visible);
         if (visible)
@@ -1859,12 +1887,8 @@ void RhythmTestScene::UpdatePresentation(
         const finger_drum::mode::NotePresentationInfo* presentation =
             session_->FindNotePresentation(note.noteId);
         const bool focusNote = layers.focusType != FocusNoteType::None;
-        const bool longNote = !focusNote && presentation != nullptr &&
-            presentation->hasEndTime;
-        float normalizedTravel = longNote
-            ? static_cast<float>(note.timeFromJudgement.count()) /
-                static_cast<float>(ApproachDuration.count())
-            : std::clamp(note.normalizedTravel, -0.05F, 1.0F);
+        float normalizedTravel = static_cast<float>(note.timeFromJudgement.count()) /
+            static_cast<float>(ApproachDuration.count());
         const bool missed = note.state == NoteState::Missed;
         const bool completed = note.state == NoteState::Completed;
         const bool processing = focusNote && !missed && !completed &&
@@ -1880,8 +1904,9 @@ void RhythmTestScene::UpdatePresentation(
                 (note.expireTime - time).count()) /
                 static_cast<float>(ApproachDuration.count());
         }
+        const float speed = presentation != nullptr ? static_cast<float>(presentation->scrollMultiplier) : 1.0F;
         const float localY = judgementLocalY_ +
-            normalizedTravel * TravelDistance;
+            normalizedTravel * TravelDistance * speed;
         layers.root->SetPosition({laneWidth_ * 0.5F, localY});
         const bool showLaneHead = focusNote
             ? !completed && (!processing || missed)
@@ -1900,7 +1925,7 @@ void RhythmTestScene::UpdatePresentation(
             const auto endDelta = presentation->endTime - time;
             const float endTravel = std::clamp(
                 static_cast<float>(endDelta.count()) /
-                    static_cast<float>(ApproachDuration.count()),
+                    static_cast<float>(ApproachDuration.count()) * speed,
                 -0.05F,
                 1.65F);
             const float tailLocalY =

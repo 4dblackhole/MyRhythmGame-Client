@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(FmodLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(BaseIntermediateOutputPath)FingerDrum.Assets\$(Platform)\$(Configuration)\FingerDrum.Assets.res;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;$(BaseIntermediateOutputPath)FingerDrum.Assets\$(Platform)\$(Configuration)\FingerDrum.Assets.res;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -81,6 +81,7 @@
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
     <ClInclude Include="EditorScene\EditorScene.h" />
+    <ClInclude Include="EditorScene\EditorAudioAnalysis.h" />
     <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
     <ClInclude Include="GameScene\MusicSelectScene.h" />
     <ClInclude Include="GameScene\RhythmTestScene.h" />
@@ -101,6 +102,7 @@
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
     <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
     <ClCompile Include="EditorScene\EditorScene.cpp" />
+    <ClCompile Include="EditorScene\EditorAudioAnalysis.cpp" />
     <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
     <ClCompile Include="GameScene\MusicSelectScene.cpp" />
     <ClCompile Include="GameScene\RhythmTestScene.cpp" />
@@ -138,7 +140,16 @@
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <ItemGroup>
       <UnusedExamplePng Include="Assets\Unused\*.png" />
+      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Music\Angeldream\*.*">
+        <RuntimePath>Music\Angeldream\%(Filename)%(Extension)</RuntimePath>
+      </DefaultSong>
+      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\*.ymp">
+        <RuntimePath>Pattern\angeldream\%(Filename)%(Extension)</RuntimePath>
+      </DefaultSong>
     </ItemGroup>
+    <!-- Never replace chart/audio files edited by a user in the output folder. -->
+    <Copy SourceFiles="@(DefaultSong)" DestinationFiles="@(DefaultSong->'$(OutDir)assets\Songs\%(RuntimePath)')"
+          Condition="!Exists('$(OutDir)assets\Songs\%(DefaultSong.RuntimePath)')" />
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
     <MakeDir Directories="@(None->'$(OutDir)assets\%(AssetTargetDirectory)')" />

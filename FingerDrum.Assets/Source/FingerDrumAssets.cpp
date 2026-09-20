@@ -479,11 +479,6 @@ namespace finger_drum::assets
         return RequireBuiltInRoot();
     }
 
-    std::filesystem::path BuiltInSongsRoot()
-    {
-        return RequireBuiltInRoot() / std::filesystem::path(SongsRelative);
-    }
-
     std::filesystem::path UserSongsRoot()
     {
         return ExecutableDirectory() / std::filesystem::path(SongsRelative);

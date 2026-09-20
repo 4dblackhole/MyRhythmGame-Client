@@ -1,6 +1,7 @@
 #include "FingerDrumGame.h"
 
 #include "App/AssetPaths.h"
+#include "Catalog/SongCatalog.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "EditorScene/EditorScene.h"
 #include "GameScene/FingerDrumLogoScene.h"
@@ -50,6 +51,16 @@ mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
 
 void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
 {
+    if (smokeTest_ && initialSceneId_ == finger_drum::scene_ids::Editor)
+    {
+        const auto catalog = finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
+        const auto song = std::ranges::find_if(catalog.songs, [](const auto& entry) { return !entry.patterns.empty(); });
+        if (song == catalog.songs.end()) throw std::runtime_error("Editor smoke requires an external Songs chart.");
+        launchRequest_->patternPath = song->patterns.front().patternPath;
+        launchRequest_->effectPath = song->patterns.front().effectPath;
+        launchRequest_->musicPath = song->audioPath;
+        launchRequest_->mode = song->patterns.front().pattern.mode;
+    }
     // FingerDrum's title Scene is intentionally registered separately from
     // the archived examples. Future title/menu routes stay in this Client
     // catalog instead of reviving the ColoredCube sample as a dependency.
@@ -72,7 +83,8 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
             SongSelectPurpose::Editor) ||
         !scenes.RegisterScene<EditorScene>(
             std::string(finger_drum::scene_ids::Editor),
-            mrg::scene::SceneRetention::DestroyOnExit) ||
+            mrg::scene::SceneRetention::DestroyOnExit,
+            std::ref(ScreenVisuals()), launchRequest_) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),
             // Gameplay routes keep only their factory while inactive. The

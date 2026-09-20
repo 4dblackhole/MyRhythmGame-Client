@@ -8,11 +8,6 @@
 // directory strings when the asset layout changes.
 namespace mrg_client::asset_paths
 {
-    [[nodiscard]] inline std::filesystem::path BuiltInSongs()
-    {
-        return finger_drum::assets::BuiltInSongsRoot();
-    }
-
     [[nodiscard]] inline std::filesystem::path UserSongs()
     {
         return finger_drum::assets::UserSongsRoot();

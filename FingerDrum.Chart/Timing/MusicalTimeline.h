@@ -28,6 +28,11 @@ namespace finger_drum::chart
             std::size_t divisionsPerWholeNote) const;
         [[nodiscard]] std::vector<rhythm::RhythmTime>
             CompileMeasureStarts() const;
+        [[nodiscard]] Rational MeasureLength(std::int64_t measure) const;
+        [[nodiscard]] Rational PositionToWholeNotes(MusicalPosition position) const;
+        [[nodiscard]] MusicalPosition PositionAtWholeNotes(const Rational& beat) const;
+        [[nodiscard]] double EffectValueAt(const EffectDocument& effects,
+            EffectCommandType type, MusicalPosition position, double defaultValue = 1) const;
 
     private:
         struct TempoPoint
@@ -39,8 +44,6 @@ namespace finger_drum::chart
 
         void BuildMeasurePrefixSums(const PatternDocument& pattern);
         void BuildTempoPoints();
-        [[nodiscard]] Rational PositionToWholeNotes(
-            MusicalPosition position) const;
         [[nodiscard]] long double SecondsAt(
             const Rational& position) const;
         [[nodiscard]] rhythm::RhythmTime CompileAbsolute(

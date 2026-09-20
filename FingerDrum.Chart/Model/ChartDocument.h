@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -127,6 +128,7 @@ namespace finger_drum::chart
         HighPassCutoff,
         SyncopationZone,
         Custom,
+        MeasureLineVisible,
     };
 
     enum class AutomationCurve : std::uint8_t
@@ -148,6 +150,17 @@ namespace finger_drum::chart
         AutomationCurve curve{AutomationCurve::Step};
         std::vector<std::string> arguments;
         SourceLocation source;
+        std::optional<MusicalPosition> endPosition;
+        std::string customCommand;
+    };
+
+    // YME uses one-based measure numbers on disk; positions remain zero-based.
+    struct HitSoundChange
+    {
+        MusicalPosition position;
+        std::string soundIndex;
+        int keyType{};
+        SourceLocation source;
     };
 
     struct EffectDocument
@@ -155,12 +168,14 @@ namespace finger_drum::chart
         int version{1};
         std::filesystem::path sourcePath;
         std::vector<EffectCommand> commands;
+        std::vector<HitSoundChange> hitSoundChanges;
     };
 
     struct CompiledPatternNote
     {
         PatternNote note;
         rhythm::RhythmTime timing{};
+        double scrollMultiplier{1};
     };
 
     struct CompiledEffectCommand

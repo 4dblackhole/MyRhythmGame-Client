@@ -16,7 +16,7 @@ flowchart TD
     Manager --> Logo["FingerDrumLogoScene"]
     Logo --> Lobby["MusicSelectScene · Music Select"]
     Logo --> EditorSelect["MusicSelectScene · Editor Song Select"]
-    EditorSelect --> Editor["EditorScene · empty workspace"]
+    EditorSelect --> Editor["EditorScene · ChartEditor / YMP + YME"]
     Editor --> EditorSelect
     Lobby --> Request["GameplayLaunchRequest"]
     Request --> Manager
@@ -39,8 +39,9 @@ flowchart TD
 
 기본 스킨은 실행 파일 옆 `assets/skins/Default Skin`의 같은 상대 경로 파일을
 먼저 사용하고, 파일이 없을 때만 캐시의 내장 파일로 돌아갑니다. 곡 카탈로그는
-내장 AngelDream을 항상 읽고 실행 파일 옆 `assets/songs`가 있으면 사용자 곡을
-추가합니다. 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
+실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3·YMM·YMP 3개는
+외부 파일로 배포하며 빌드는 이미 존재하는 편집본을 덮어쓰지 않습니다.
+세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 
 `SceneGameClient`는 SceneManager, 공통 AudioPlaybackManager와 화면
 ScreenVisual2DManager를 함께 소유합니다.
@@ -58,9 +59,11 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 - Logo에서 Game Start를 누르면 Lobby로 이동합니다.
 - Logo에서 Editor를 누르면 기록 패널이 없는 EditorSongSelect로 이동합니다.
   이 Scene은 Lobby의 카탈로그·미리듣기·검색·정렬·곡/난이도 탐색을 공유하며,
-  난이도를 확정하면 선택 경로를 기록하고 빈 Editor Scene으로 이동합니다.
-- Editor Scene은 아직 UI를 만들지 않으므로 포커스 가능한 요소가 없습니다.
-  Escape를 누르면 EditorSongSelect로 돌아갑니다.
+  난이도를 확정하면 선택 경로를 기록하고 Editor Scene으로 이동합니다.
+- Editor는 YMP/YME를 `ChartEditor`로 읽고 유리수 누적합과 정수 us 캐시를 만듭니다.
+  악보/실시간 뷰는 같은 모델을 편집하며 변경 시에만 캐시를 다시 계산합니다.
+  PCM/FFT 분석은 별도 worker에서 실행하고 Canvas draw packet은 Scene에서 갱신합니다.
+  Ctrl+S는 같은 폴더에 저장하며 Escape는 미저장 변경을 확인한 뒤 돌아갑니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
   `SongCatalog`가 번들된 AngelDream YMM과 YMP 3개 및 선택적 로컬 곡·패턴을
   연결해 표시합니다.

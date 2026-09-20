@@ -38,16 +38,6 @@ $sourceGroups = @(
         Source = Join-Path $assetProjectRoot 'Assets\Skins\Default Skin'
         Logical = 'assets/skins/Default Skin'
         Filter = '*'
-    },
-    @{
-        Source = Join-Path $assetProjectRoot 'Assets\Songs\Music\Angeldream'
-        Logical = 'assets/songs/Music/Angeldream'
-        Filter = '*'
-    },
-    @{
-        Source = Join-Path $assetProjectRoot 'Assets\Songs\Pattern\angeldream'
-        Logical = 'assets/songs/Pattern/angeldream'
-        Filter = '*.ymp'
     }
 )
 

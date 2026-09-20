@@ -15,7 +15,6 @@ namespace finger_drum::assets
 
     [[nodiscard]] bool BuiltInAssetsInitialized() noexcept;
     [[nodiscard]] std::filesystem::path BuiltInAssetRoot();
-    [[nodiscard]] std::filesystem::path BuiltInSongsRoot();
     [[nodiscard]] std::filesystem::path UserSongsRoot();
 
     [[nodiscard]] std::filesystem::path ResolveBuiltInAsset(

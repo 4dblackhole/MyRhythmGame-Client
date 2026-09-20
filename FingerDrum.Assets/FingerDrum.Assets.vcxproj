@@ -64,8 +64,6 @@
   <ItemGroup>
     <BuiltInAsset Include="Assets\Fonts\*.*" />
     <BuiltInAsset Include="Assets\Skins\Default Skin\**\*.*" />
-    <BuiltInAsset Include="Assets\Songs\Music\Angeldream\*.*" />
-    <BuiltInAsset Include="Assets\Songs\Pattern\angeldream\*.ymp" />
     <None Include="Assets\Fonts\*.*" />
     <None Include="Assets\Skins\Default Skin\**\*.*" />
     <None Include="Assets\Songs\Music\Angeldream\*.*" />

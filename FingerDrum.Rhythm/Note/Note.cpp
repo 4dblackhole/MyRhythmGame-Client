@@ -291,7 +291,8 @@ namespace finger_drum::rhythm
         rule_->ProcessInput(Context(), input, judgement, result);
         for (NoteEvent& event : result.events)
         {
-            if (event.type == NoteEventType::HitAccepted)
+            if (event.type == NoteEventType::HitAccepted ||
+                event.type == NoteEventType::TickAccepted)
             {
                 event.inputAction = input.action;
             }

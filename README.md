@@ -13,8 +13,9 @@
 연타 목표 횟수의 공통 문법은 [차트 문법](Docs/ChartFormats.md)을 참고하세요.
 
 타이틀의 `Editor`는 기록 패널 없이 곡·난이도 정보를 넓게 표시하는
-[에디터 곡 선택 화면](Docs/EditorSongSelect.md)으로 이동합니다. 실제 차트 편집
-workspace와 저장 기능은 후속 단계입니다.
+[에디터 곡 선택 화면](Docs/EditorSongSelect.md)으로 이동합니다. 난이도를 선택하면
+[차트 에디터](Docs/ChartEditor.md)에서 노트·타이밍·메타데이터·이펙트를 편집하고
+같은 폴더에 YMP/YME를 저장할 수 있습니다.
 
 ## 구조
 
@@ -42,6 +43,7 @@ cd MyRhythmGame-Client
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-test
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-lobby
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-gameplay
+.\bin\x64\Debug\MyRhythmGame.exe --smoke-editor
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-test --example=mesh
 ```
 
@@ -52,10 +54,11 @@ Visual2D Canvas 논리 좌표는 화면 정중앙이 원점이고 `+Y`가 위쪽
 Visual Studio 2022, MSVC v143, Windows SDK와 FMOD Studio API for Windows가
 필요합니다. FMOD SDK와 DLL은 저장소에 커밋하지 않습니다.
 
-기본 스킨, 글꼴과 AngelDream의 MP3/YMM/YMP 3개는 `FingerDrum.Assets`가 한
-RCDATA 팩으로 만들어 `MyRhythmGame.exe` 안에 링크합니다. 실행 시 버전별 로컬
-캐시에 풀며, 외부 스킨 파일은 파일별로 우선하고 누락된 항목만 내장 기본 스킨을
-사용합니다. 자세한 흐름은 [내장 자산](Docs/BuiltInAssets.md)을 참고하세요.
+기본 스킨과 글꼴은 `FingerDrum.Assets`가 RCDATA 팩으로 만들어 EXE에 링크합니다.
+외부 스킨 파일을 우선하고 누락된 항목만 내장 스킨을 사용합니다. AngelDream의
+MP3·YMM·YMP 3개는 Git에서 추적하는 외부 기본 제공곡으로, 빌드 시 실행 파일 옆
+`assets/Songs`에 없는 파일만 복사합니다. EXE에는 곡을 포함하지 않습니다.
+자세한 흐름은 [내장 자산](Docs/BuiltInAssets.md)을 참고하세요.
 
 ## 현재 실행 흐름
 

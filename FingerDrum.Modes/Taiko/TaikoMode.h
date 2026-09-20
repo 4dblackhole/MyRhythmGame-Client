@@ -105,8 +105,8 @@ namespace finger_drum::mode
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy>
             MakeTickSoundPolicy(std::string soundId);
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy>
-            MakeBalloonSoundPolicy();
+            MakeBalloonSoundPolicy(std::string soundId);
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy>
-            MakeAlternatingSoundPolicy(std::size_t hitCount);
+            MakeAlternatingSoundPolicy(std::size_t hitCount, std::string soundId);
     };
 }

@@ -22,6 +22,7 @@ namespace finger_drum::mode
         rhythm::RhythmTime endTime{};
         bool hasEndTime{};
         std::vector<rhythm::RhythmTime> tickTimes;
+        double scrollMultiplier{1};
     };
 
     struct AutomationValue
@@ -29,6 +30,12 @@ namespace finger_drum::mode
         chart::EffectCommandType type{chart::EffectCommandType::Custom};
         std::string target;
         double value{};
+    };
+
+    struct TimedSoundOverride
+    {
+        rhythm::RhythmTime time{};
+        rhythm::SoundId sound;
     };
 
     class PlaySession final
@@ -43,6 +50,11 @@ namespace finger_drum::mode
             rhythm::AudioCueRequest cue);
         void SetEffects(
             std::vector<chart::CompiledEffectCommand> effects);
+        void SetHitSoundFiles(std::map<rhythm::SoundId, std::filesystem::path> files);
+        [[nodiscard]] const std::map<rhythm::SoundId, std::filesystem::path>&
+            HitSoundFiles() const noexcept;
+        void SetSoundOverrides(rhythm::SoundId source,
+            std::vector<TimedSoundOverride> changes);
         void SetMeasureLines(
             std::vector<rhythm::RhythmTime> measureLines);
         [[nodiscard]] const std::vector<rhythm::RhythmTime>&
@@ -52,6 +64,8 @@ namespace finger_drum::mode
             NotePresentationInfo presentation);
         [[nodiscard]] const NotePresentationInfo* FindNotePresentation(
             rhythm::NoteId noteId) const noexcept;
+        void SetNoteScrollMultiplier(rhythm::NoteId noteId, double multiplier);
+        [[nodiscard]] double MinimumScrollMultiplier() const noexcept { return minimumScrollMultiplier_; }
 
         [[nodiscard]] rhythm::NoteProcessResult ProcessInput(
             rhythm::PhysicalKey physicalKey,
@@ -70,6 +84,7 @@ namespace finger_drum::mode
 
     private:
         void AccumulateAccuracy(const rhythm::NoteProcessResult& result);
+        void ResolveSoundOverrides(rhythm::NoteProcessResult& result) const;
         [[nodiscard]] static double Interpolate(
             const chart::CompiledEffectCommand& command,
             rhythm::RhythmTime time) noexcept;
@@ -80,7 +95,11 @@ namespace finger_drum::mode
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;
         std::vector<rhythm::RhythmTime> measureLines_;
+        std::map<rhythm::SoundId, std::filesystem::path> hitSoundFiles_;
+        std::map<rhythm::SoundId, std::vector<TimedSoundOverride>, std::less<>>
+            soundOverrides_;
         double accuracySum_{};
+        double minimumScrollMultiplier_{1};
         std::size_t finalizedNoteCount_{};
         std::optional<rhythm::NoteAccuracy> lastNoteAccuracy_;
     };

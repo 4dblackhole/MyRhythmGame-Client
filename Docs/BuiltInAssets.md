@@ -2,14 +2,17 @@
 
 `FingerDrum.Assets`는 배포에 필요한 기본 자산을 한 팩으로 만들고 RCDATA 101로
 `MyRhythmGame.exe`에 링크하는 전용 프로젝트입니다. 런타임 로더는 기존 PNG,
-글꼴, FMOD, YMM/YMP 파일 로더를 바꾸지 않고 실제 파일 경로를 제공합니다.
+글꼴, FMOD 파일 로더를 바꾸지 않고 실제 파일 경로를 제공합니다.
 
 ## 포함 범위
 
 - `Assets/Skins/Default Skin` 전체
 - `Assets/Fonts`의 두 글꼴과 각각의 라이선스
-- AngelDream Handshaking MP3와 YMM
-- AngelDream YMP 3개
+
+AngelDream Handshaking MP3·YMM·YMP 3개는 EXE에 넣지 않습니다.
+Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 시
+실행 파일 옆 `assets/Songs`에 복사합니다. 이미 존재하는 파일은 편집본일 수
+있으므로 덮어쓰지 않습니다. 배포할 때 이 Songs 폴더를 EXE와 함께 제공합니다.
 
 다른 곡과 사용자 스킨은 팩에 자동 포함하지 않습니다. 빌드 스크립트의 명시적인
 source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어가지 않습니다.
@@ -37,9 +40,8 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 누락된 파일만 내장 기본본으로 대체합니다. `ResolveSkinAsset`에 다른 스킨 루트를
 넘겨도 같은 파일별 fallback 규칙을 적용할 수 있습니다.
 
-곡 선택은 내장 AngelDream 카탈로그를 항상 먼저 만들고, 실행 파일 옆
-`assets/songs`가 존재하면 사용자 카탈로그를 합칩니다. 이름, 아티스트, 오디오
-파일명이 모두 같은 항목은 중복 표시하지 않습니다. 내장 글꼴은 캐시 경로에서
+곡 선택은 실행 파일 옆 `assets/Songs`만 읽습니다. 곡을 캐시에서 다시 생성하지
+않으며, YMP와 같은 폴더의 YME도 사용자가 직접 편집할 수 있습니다. 내장 글꼴은 캐시 경로에서
 직접 읽으며 라이선스도 같은 팩에 보존됩니다.
 
 ## 자산 변경

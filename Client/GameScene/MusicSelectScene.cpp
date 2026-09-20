@@ -322,55 +322,11 @@ namespace
             : DecodeDisplayText(song.music.artists.front());
     }
 
-    [[nodiscard]] bool SameSongIdentity(
-        const finger_drum::chart::SongCatalogEntry& left,
-        const finger_drum::chart::SongCatalogEntry& right)
-    {
-        return left.music.names == right.music.names &&
-            left.music.artists == right.music.artists &&
-            left.music.audioFile.filename() ==
-                right.music.audioFile.filename();
-    }
-
-    void AppendCatalog(
-        finger_drum::chart::SongCatalogLoadResult& destination,
-        finger_drum::chart::SongCatalogLoadResult source)
-    {
-        destination.discoveredMusicFiles += source.discoveredMusicFiles;
-        destination.discoveredPatternFiles += source.discoveredPatternFiles;
-        destination.diagnostics.insert(
-            destination.diagnostics.end(),
-            std::make_move_iterator(source.diagnostics.begin()),
-            std::make_move_iterator(source.diagnostics.end()));
-        for (auto& song : source.songs)
-        {
-            if (std::ranges::none_of(
-                    destination.songs,
-                    [&song](const auto& existing)
-                    {
-                        return SameSongIdentity(existing, song);
-                    }))
-            {
-                destination.songs.push_back(std::move(song));
-            }
-        }
-    }
-
     [[nodiscard]] finger_drum::chart::SongCatalogLoadResult
         LoadRuntimeCatalog()
     {
         finger_drum::chart::SongCatalog loader;
-        finger_drum::chart::SongCatalogLoadResult result =
-            loader.Load(mrg_client::asset_paths::BuiltInSongs());
-
-        const std::filesystem::path userSongs =
-            mrg_client::asset_paths::UserSongs();
-        std::error_code error;
-        if (std::filesystem::is_directory(userSongs, error) && !error)
-        {
-            AppendCatalog(result, loader.Load(userSongs));
-        }
-        return result;
+        return loader.Load(mrg_client::asset_paths::UserSongs());
     }
 
     [[nodiscard]] std::wstring PatternName(
@@ -559,6 +515,9 @@ void MusicSelectScene::Initialize(const mrg::EngineServices& services)
 
 void MusicSelectScene::BeginScene()
 {
+    // Both retained selectors must see metadata/YME saved by the editor.
+    catalog_ = LoadRuntimeCatalog();
+    RebuildVisibleSongs();
     sceneActive_ = true;
     static_cast<void>(canvasHandle_.SetVisible(true));
     SyncPreviewToFocusedSong();

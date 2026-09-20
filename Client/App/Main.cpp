@@ -97,9 +97,11 @@ int WINAPI wWinMain(
         commandLine.find(L"--smoke-lobby") != std::wstring_view::npos;
     const bool smokeGameplay =
         commandLine.find(L"--smoke-gameplay") != std::wstring_view::npos;
+    const bool smokeEditor =
+        commandLine.find(L"--smoke-editor") != std::wstring_view::npos;
     const bool rhythmDebugMode =
         commandLine.find(L"--rhythm-debug") != std::wstring_view::npos;
-    const bool smokeTest = smokeLobby || smokeGameplay || basicSmokeTest;
+    const bool smokeTest = smokeLobby || smokeGameplay || smokeEditor || basicSmokeTest;
     std::string initialScene(finger_drum::scene_ids::Logo);
     if (smokeLobby)
     {
@@ -108,6 +110,10 @@ int WINAPI wWinMain(
     else if (smokeGameplay)
     {
         initialScene = finger_drum::scene_ids::RhythmTest;
+    }
+    else if (smokeEditor)
+    {
+        initialScene = finger_drum::scene_ids::Editor;
     }
     else if (rhythmDebugMode)
     {

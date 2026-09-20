@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <stdexcept>
 #include <utility>
 
 namespace finger_drum::mode
@@ -42,6 +43,40 @@ namespace finger_drum::mode
         measureLines_ = std::move(measureLines);
     }
 
+    void PlaySession::SetHitSoundFiles(
+        std::map<rhythm::SoundId, std::filesystem::path> files)
+    {
+        hitSoundFiles_ = std::move(files);
+    }
+
+    const std::map<rhythm::SoundId, std::filesystem::path>&
+    PlaySession::HitSoundFiles() const noexcept
+    {
+        return hitSoundFiles_;
+    }
+
+    void PlaySession::SetSoundOverrides(rhythm::SoundId source,
+        std::vector<TimedSoundOverride> changes)
+    {
+        std::ranges::stable_sort(changes, {}, &TimedSoundOverride::time);
+        soundOverrides_.insert_or_assign(std::move(source), std::move(changes));
+    }
+
+    void PlaySession::ResolveSoundOverrides(rhythm::NoteProcessResult& result) const
+    {
+        // Query by each cue's timestamp, not render/update time. This also
+        // handles held ticks emitted together and backward debug seeking.
+        for (auto& cue : result.audioCues)
+        {
+            const auto found = soundOverrides_.find(cue.sound);
+            if (found == soundOverrides_.end()) continue;
+            const auto& changes = found->second;
+            const auto next = std::ranges::upper_bound(changes,
+                cue.timelineTime, {}, &TimedSoundOverride::time);
+            if (next != changes.begin()) cue.sound = std::prev(next)->sound;
+        }
+    }
+
     const std::vector<rhythm::RhythmTime>&
     PlaySession::MeasureLines() const noexcept
     {
@@ -60,6 +95,15 @@ namespace finger_drum::mode
     {
         const auto found = notePresentation_.find(noteId);
         return found == notePresentation_.end() ? nullptr : &found->second;
+    }
+
+    void PlaySession::SetNoteScrollMultiplier(rhythm::NoteId noteId, double multiplier)
+    {
+        if (!std::isfinite(multiplier) || multiplier <= 0)
+            throw std::invalid_argument("Note scroll multiplier must be positive and finite.");
+        minimumScrollMultiplier_ = std::min(minimumScrollMultiplier_, multiplier);
+        if (auto found = notePresentation_.find(noteId); found != notePresentation_.end())
+            found->second.scrollMultiplier = multiplier;
     }
 
     rhythm::NoteProcessResult PlaySession::ProcessInput(
@@ -105,6 +149,7 @@ namespace finger_drum::mode
                 result.audioCues.push_back(std::move(request));
             }
         }
+        ResolveSoundOverrides(result);
         return result;
     }
 
@@ -126,6 +171,7 @@ namespace finger_drum::mode
             uniqueActions.end());
         rhythm::NoteProcessResult result = gear_.Update(time, heldActions);
         AccumulateAccuracy(result);
+        ResolveSoundOverrides(result);
         return result;
     }
 

@@ -7,6 +7,8 @@
 #include "Taiko/TaikoMode.h"
 #include "Time/RhythmTimer.h"
 #include "Timing/MusicalTimeline.h"
+#include "Editing/ChartEditor.h"
+#include "../../Client/EditorScene/EditorAudioAnalysis.h"
 
 #include <algorithm>
 #include <array>
@@ -1064,6 +1066,19 @@ Base BPM: 120
             "All bundled and optional local YMP patterns must be associated with their songs.");
         mode::TaikoMode taiko;
         bool checkedAngelDream = false;
+        const auto analysis = editor::AnalyzeAudio(catalog.songs.front().audioPath, {});
+        Require(analysis.durationSeconds > 1 && analysis.frames.size() > 100 &&
+            std::ranges::any_of(analysis.frames, [](const auto& f) { return f.peak > 0.01F; }),
+            "The shipped MP3 must decode into real waveform/spectrum data.");
+        const auto soundsRoot = songsRoot.parent_path() / "Skins/Default Skin/HitSounds/TaikoMode";
+        if (std::filesystem::is_directory(soundsRoot))
+            for (const auto* name : {"don.wav", "kat.wav", "bigdon.wav", "bigkat.wav"})
+            {
+                const auto hit = editor::AnalyzeAudio(soundsRoot / name, {});
+                Require(!hit.frames.empty() && std::ranges::any_of(hit.frames, [](const auto& frame) {
+                    return std::ranges::any_of(frame.bands, [](float value) { return value > .1F; }); }),
+                    "Every default hit sound must produce a non-empty real FFT spectrum.");
+            }
         for (const chart::SongCatalogEntry& song : catalog.songs)
         {
             Require(std::filesystem::is_regular_file(song.audioPath),
@@ -1090,6 +1105,17 @@ Base BPM: 120
             }
             for (const chart::SongCatalogPattern& pattern : song.patterns)
             {
+                TemporaryDirectory saved("finger-drum-catalog-save");
+                auto copy = pattern.pattern;
+                copy.sourcePath = saved.Path() / pattern.patternPath.filename();
+                chart::EffectDocument effect;
+                if (pattern.effectPath) effect = chart::ChartParser{}.ParseEffectFile(*pattern.effectPath).document;
+                chart::ChartEditor editing(copy, effect);
+                editing.Save();
+                const auto reloaded = chart::ChartParser{}.ParsePatternFile(copy.sourcePath);
+                Require(reloaded.Succeeded() &&
+                    chart::ChartEditor::WritePattern(reloaded.document) == chart::ChartEditor::WritePattern(copy),
+                    "Every provided chart must save/reload without source-data loss (using a temporary copy).");
                 if (pattern.patternPath.filename().string() ==
                     "Rapbit - Saika [test].ymp")
                 {
@@ -1242,6 +1268,193 @@ Version: 1
     }
 }
 
+namespace
+{
+    void TestIndexedHitSoundChanges()
+    {
+        using namespace finger_drum;
+        chart::ChartParser parser;
+        const auto parsed = parser.ParsePattern(R"(
+Base BPM: 120
+[HitSounds]
+1: Sounds/pop.wav
+2: Sounds/kat.wav
+[Time Signature]
+--
+#measure 3/4
+1/4, #bpm 180
+)", "Songs/Pattern/test.ymp");
+        Require(parsed.Succeeded(), "Indexed hit sound table must parse.");
+        const auto effects = parser.ParseEffect(R"(
+Version: 1
+[HitSound Changes]
+4, 2/4, 1, 2
+5, 0/4, 2, 1
+5, 0/4, 2, 2
+)", "Songs/Pattern/test.yme");
+        Require(effects.Succeeded() && effects.document.hitSoundChanges.size() == 3 &&
+            effects.document.hitSoundChanges.front().position.measure == 3,
+            "Explicit YME measures must be one-based, with independently targeted key IDs.");
+        mode::TaikoMode mode;
+        auto loaded = mode.CreateSession(parsed.document, effects.document);
+        Require(loaded.Succeeded(), "Valid indexed changes must load.");
+        Require(loaded.session->HitSoundFiles().at("Chart.HitSound.1") ==
+            std::filesystem::path("Songs/Pattern/Sounds/pop.wav"),
+            "Hit sound paths must be relative to the YMP, not the working directory.");
+        chart::MusicalTimeline timeline(parsed.document);
+        const auto first = timeline.Compile({3, {2, 4}});
+        const auto second = timeline.Compile({4, {0, 4}});
+        auto sound = [&](rhythm::PhysicalKey key, rhythm::RhythmTime time)
+        {
+            const auto result = loaded.session->ProcessInput(
+                key, rhythm::InputEdge::Pressed, time);
+            Require(result.audioCues.size() == 1, "One input must produce one cue.");
+            return result.audioCues.front().sound;
+        };
+        Require(sound('D', first - rhythm::RhythmDuration{1}) == "Taiko.Kat.FreeInput",
+            "Change must not apply a microsecond early.");
+        Require(sound('D', first) == "Chart.HitSound.1" &&
+            sound('F', first) == "Taiko.Don.FreeInput",
+            "Kat-only change must apply at the exact compiled BPM/measure boundary.");
+        Require(sound('D', second) == "Chart.HitSound.2" &&
+            sound('F', second) == "Chart.HitSound.2",
+            "Two changes at one position must change both actions independently.");
+        Require(sound('D', second + rhythm::RhythmDuration{10'000'000}) == "Chart.HitSound.2",
+            "The last change must persist.");
+        loaded.session->Reset();
+        Require(sound('D', first - rhythm::RhythmDuration{1}) == "Taiko.Kat.FreeInput",
+            "Reset/backward seeking must restore earlier defaults without stale state.");
+
+        for (const std::string row : {"0, 2/4, 1, 2", "4, 2/ 4, 1, 2",
+            "4, 2/4, 1, 3", "4, 2/4, 1", "4, 2/4, , 2",
+            "4, 2/0, 1, 2", "4, -1/4, 1, 2"})
+        {
+            Require(!parser.ParseEffect("[HitSound Changes]\n" + row).Succeeded(),
+                "Malformed indexed hit sound rows must be rejected: " + row);
+        }
+        const auto unknown = parser.ParseEffect("[HitSound Changes]\n4, 2/4, 999, 2");
+        Require(!mode.CreateSession(parsed.document, unknown.document).Succeeded(),
+            "Undefined table references must fail chart loading.");
+        const auto outside = parser.ParseEffect("[HitSound Changes]\n4, 3/4, 1, 2");
+        Require(!mode.CreateSession(parsed.document, outside.document).Succeeded(),
+            "A change at or outside the measure end must be rejected.");
+        Require(!parser.ParsePattern("[HitSounds]\n1: a.wav\n1: b.wav").Succeeded(),
+            "Duplicate table entries must not be silently discarded.");
+
+        // Explicit note assignments override timed Don/Kat defaults.
+        auto pattern = parsed.document;
+        pattern.notes.push_back({{3, {2, 4}}, 2, 0, "2"});
+        auto explicitNote = mode.CreateSession(pattern, effects.document);
+        const auto noteResult = explicitNote.session->ProcessInput(
+            'D', rhythm::InputEdge::Pressed, first);
+        Require(noteResult.audioCues.size() == 1 &&
+            noteResult.audioCues.front().sound == "Chart.HitSound.2",
+            "Explicit per-note hit sound must take precedence.");
+
+        // Both big note first-hit sounds and Kat roll ticks follow Kat changes.
+        for (int type : {4, 11, 12, 13, 14})
+        {
+            pattern = parsed.document;
+            pattern.notes.push_back({{3, {2, 4}}, type, type == 4 ? 0 : 1});
+            if (type != 4) pattern.notes.push_back({{4, {1, 4}}, type, 2});
+            auto special = mode.CreateSession(pattern, effects.document);
+            Require(special.Succeeded(), "Special-note sound test must load.");
+            const auto hit = special.session->ProcessInput('D', rhythm::InputEdge::Pressed, first);
+            Require(hit.audioCues.size() == 1 && hit.audioCues.front().sound == "Chart.HitSound.1",
+                "BigKat and Kat roll inputs must use the current Kat sound.");
+        }
+    }
+
+    void TestSpecialNoteSoundOverridePriority()
+    {
+        for (const int type : {15, 16, 17})
+        {
+            chart::PatternDocument pattern;
+            pattern.hitSounds["1"] = "explicit.wav";
+            pattern.hitSounds["2"] = "timed.wav";
+            pattern.notes.push_back({{0,{}}, type, 1, "1", {"HitCount=8", "Action=Don", "TickDivision=16"}});
+            pattern.notes.push_back({{0,{1,2}}, type, 2});
+            chart::EffectDocument effects;
+            effects.hitSoundChanges.push_back({{0,{}}, "2", 1});
+            auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+            Require(loaded.Succeeded(), "Special sound priority chart must load.");
+            const auto head = loaded.session->ProcessInput('F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{});
+            Require(head.audioCues.size() == 1 && head.audioCues.front().sound == "Chart.HitSound.1",
+                "Balloon, DengDeng and Buzz explicit sounds must override timed Don defaults.");
+            if (type == 17)
+            {
+                const std::array<rhythm::PhysicalKey,1> held{'F'};
+                const auto tick = loaded.session->Update(rhythm::RhythmTime{125'000}, held);
+                Require(tick.audioCues.size() == 1 && tick.audioCues.front().sound == "Chart.HitSound.1",
+                    "Buzz body ticks must retain the explicit sound assignment.");
+            }
+        }
+    }
+
+    void TestChartEditingAndSave()
+    {
+        using namespace finger_drum;
+        chart::PatternDocument p;
+        p.baseBpm = 120; p.musicMetadataFile = "../Music/test.ymm";
+        p.makers = {"테스트"}; p.tags = {"editor"};
+        chart::ChartEditor editor(p);
+        editor.AddNote({0,{1,4}},1);
+        editor.AddNote({0,{3,4}},11,chart::MusicalPosition{1,{3,4}}, {"8"});
+        editor.SetMeasureLength(0,{2,4});
+        Require(editor.Pattern().notes[0].position == chart::MusicalPosition{0,{1,4}} &&
+            editor.Pattern().notes[1].position == chart::MusicalPosition{1,{1,4}},
+            "Only overflowing note positions must carry into later measures with exact remainders.");
+        chart::ChartEditor collapsed(p);
+        collapsed.AddNote({0,{3,4}},11,chart::MusicalPosition{1,{1,4}});
+        bool rejected = false;
+        try { collapsed.SetMeasureLength(0,{2,4}); }
+        catch (const std::invalid_argument&) { rejected = true; }
+        Require(rejected && collapsed.Timeline().MeasureLength(0) == chart::Rational{1,1} &&
+            collapsed.Pattern().notes.front().position == chart::MusicalPosition{0,{3,4}},
+            "A collapsed long-note pair must reject the whole signature edit without altering the source.");
+        editor.DeleteNote(1);
+        Require(editor.Pattern().notes.size() == 1, "Deleting a long-note head must also remove its matching tail.");
+        const auto& timeline = editor.Timeline();
+        for (const chart::Rational beat : {chart::Rational{1,3},chart::Rational{1,1},chart::Rational{1000,3}})
+            Require(timeline.PositionToWholeNotes(timeline.PositionAtWholeNotes(beat)) == beat,
+                "Prefix sum inverse must remain exact, including extrapolated measures.");
+
+        auto pattern = editor.Pattern();
+        pattern.hitSounds["1"] = "Sounds/pop.wav";
+        pattern.timing.push_back({{0,{1,4}},chart::TimingDirectiveType::Bpm,240});
+        chart::EffectDocument effects;
+        chart::EffectCommand speed;
+        speed.type = chart::EffectCommandType::ScrollSpeed;
+        speed.beginValue = 1; speed.endValue = 2; speed.curve = chart::AutomationCurve::Linear;
+        speed.endPosition = chart::MusicalPosition{1,{0,1}};
+        effects.commands.push_back(speed);
+        effects.hitSoundChanges.push_back({{1,{1,4}},"1",2});
+        editor.Replace(pattern,effects);
+        const auto revision = editor.Revision();
+        editor.Replace(pattern,effects);
+        Require(editor.Revision() == revision + 1, "Edits must invalidate dependent editor caches exactly once.");
+        Require(std::abs(editor.Notes()[0].scrollMultiplier - 1.5) < 1e-9,
+            "Region speed must interpolate by rational beat, not by elapsed seconds across a BPM change.");
+        auto serialized = chart::ChartEditor::WriteEffects(effects);
+        const auto parsedEffects = chart::ChartParser{}.ParseEffect(serialized);
+        Require(parsedEffects.Succeeded() && parsedEffects.document.commands[0].endPosition == speed.endPosition &&
+            parsedEffects.document.hitSoundChanges.size() == 1, "YME regions and indexed hit sound changes must round-trip.");
+
+        TemporaryDirectory directory("finger-drum-editor");
+        pattern.sourcePath = directory.Path() / "edited.ymp";
+        editor.Replace(pattern,effects); editor.Save();
+        auto yme = pattern.sourcePath; yme.replace_extension(".yme");
+        Require(std::filesystem::exists(yme) && !editor.Dirty(), "Save must produce adjacent YMP/YME and clear dirty state.");
+        const auto parsed = chart::ChartParser{}.ParsePatternFile(pattern.sourcePath);
+        Require(parsed.Succeeded() && parsed.document.notes.size() == pattern.notes.size() &&
+            parsed.document.makers == pattern.makers && parsed.document.hitSounds == pattern.hitSounds &&
+            chart::MusicalTimeline(parsed.document).CompileNotes(parsed.document)[0].timing == editor.Notes()[0].timing,
+            "Saving must preserve Unicode metadata, hit sound table and exact compiled note timing.");
+        editor.Save();
+        Require(!std::filesystem::exists(pattern.sourcePath.string()+".editor.bak"), "Successful save must clean its own backup.");
+    }
+}
+
 int main(const int argumentCount, char* arguments[])
 {
     try
@@ -1263,6 +1476,9 @@ int main(const int argumentCount, char* arguments[])
         TestLongNoteKeepsFirstHead();
         TestTaikoUsesOneLaneForEveryNoteType();
         TestTaikoInputBindings();
+        TestIndexedHitSoundChanges();
+        TestSpecialNoteSoundOverridePriority();
+        TestChartEditingAndSave();
         TestRationalNumberUsesExactOrderingAndArithmetic();
         TestTimingCommandWhitespaceGrammar();
         TestAbsoluteMeasurePositionsAndTempoAnchors();
