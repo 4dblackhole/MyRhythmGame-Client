@@ -4,9 +4,9 @@
 #include "Catalog/SongCatalog.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "EditorScene/EditorScene.h"
-#include "GameScene/FingerDrumLogoScene.h"
-#include "GameScene/MusicSelectScene.h"
-#include "GameScene/RhythmTestScene.h"
+#include "GameScene/FingerDrumLogoScene/FingerDrumLogoScene.h"
+#include "GameScene/MusicSelectScene/MusicSelectScene.h"
+#include "GameScene/RhythmTestScene/RhythmTestScene.h"
 
 #include <Windows.h>
 
@@ -16,16 +16,11 @@
 #include <string>
 #include <utility>
 
-FingerDrumGame::FingerDrumGame(
-    const bool smokeTest,
-    std::string initialSceneId,
-    const bool rhythmDebugMode) noexcept
-    : smokeTest_(smokeTest),
-      showPerformanceOverlay_(smokeTest),
-      rhythmDebugMode_(rhythmDebugMode),
+FingerDrumGame::FingerDrumGame(const bool smokeTest, std::string initialSceneId,
+                               const bool rhythmDebugMode) noexcept
+    : smokeTest_(smokeTest), showPerformanceOverlay_(smokeTest), rhythmDebugMode_(rhythmDebugMode),
       initialSceneId_(std::move(initialSceneId)),
-      launchRequest_(
-          std::make_shared<finger_drum::GameplayLaunchRequest>())
+      launchRequest_(std::make_shared<finger_drum::GameplayLaunchStore>())
 {
 }
 
@@ -35,13 +30,8 @@ mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
     config.windowTitle = L"FingerDrum";
     config.windowWidth = 1280;
     config.windowHeight = 720;
-    config.clearColor = {
-        240.0F / 255.0F,
-        248.0F / 255.0F,
-        1.0F,
-        1.0F};
-    config.audio.preferredBackend =
-        mrg::audio::AudioOutputBackend::Automatic;
+    config.clearColor = {240.0F / 255.0F, 248.0F / 255.0F, 1.0F, 1.0F};
+    config.audio.preferredBackend = mrg::audio::AudioOutputBackend::Automatic;
     config.audio.fallBackToWasapi = true;
     config.audio.allowNoSoundFallback = true;
     config.showWindow = !smokeTest_;
@@ -49,52 +39,42 @@ mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
     return config;
 }
 
-void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager& scenes)
+void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
 {
     if (smokeTest_ && initialSceneId_ == finger_drum::scene_ids::Editor)
     {
-        const auto catalog = finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
-        const auto song = std::ranges::find_if(catalog.songs, [](const auto& entry) { return !entry.patterns.empty(); });
-        if (song == catalog.songs.end()) throw std::runtime_error("Editor smoke requires an external Songs chart.");
-        launchRequest_->patternPath = song->patterns.front().patternPath;
-        launchRequest_->effectPath = song->patterns.front().effectPath;
-        launchRequest_->musicPath = song->audioPath;
-        launchRequest_->mode = song->patterns.front().pattern.mode;
+        const auto catalog =
+            finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
+        const auto song = std::ranges::find_if(
+            catalog.songs, [](const auto &entry) { return !entry.patterns.empty(); });
+        if (song == catalog.songs.end())
+            throw std::runtime_error("Editor smoke requires an external Songs chart.");
+        launchRequest_->Set({song->patterns.front().patternPath, song->patterns.front().effectPath,
+                             song->audioPath, song->patterns.front().pattern.mode});
     }
     // FingerDrum's title Scene is intentionally registered separately from
     // the archived examples. Future title/menu routes stay in this Client
     // catalog instead of reviving the ColoredCube sample as a dependency.
-    if (!scenes.RegisterScene<FingerDrumLogoScene>(
-            std::string(finger_drum::scene_ids::Logo),
-            mrg::scene::SceneRetention::KeepAlive,
-            std::ref(ScreenVisuals())) ||
+    if (!scenes.RegisterScene<FingerDrumLogoScene>(std::string(finger_drum::scene_ids::Logo),
+                                                   mrg::scene::SceneRetention::KeepAlive,
+                                                   std::ref(ScreenVisuals())) ||
         !scenes.RegisterScene<MusicSelectScene>(
-            std::string(finger_drum::scene_ids::Lobby),
-            mrg::scene::SceneRetention::KeepAlive,
-            std::ref(ScreenVisuals()),
-            std::ref(AudioPlayback()),
-            launchRequest_) ||
+            std::string(finger_drum::scene_ids::Lobby), mrg::scene::SceneRetention::KeepAlive,
+            std::ref(ScreenVisuals()), std::ref(AudioPlayback()), launchRequest_) ||
         !scenes.RegisterScene<MusicSelectScene>(
             std::string(finger_drum::scene_ids::EditorSongSelect),
-            mrg::scene::SceneRetention::KeepAlive,
-            std::ref(ScreenVisuals()),
-            std::ref(AudioPlayback()),
-            launchRequest_,
-            SongSelectPurpose::Editor) ||
-        !scenes.RegisterScene<EditorScene>(
-            std::string(finger_drum::scene_ids::Editor),
-            mrg::scene::SceneRetention::DestroyOnExit,
-            std::ref(ScreenVisuals()), launchRequest_) ||
+            mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),
+            std::ref(AudioPlayback()), launchRequest_, SongSelectPurpose::Editor) ||
+        !scenes.RegisterScene<EditorScene>(std::string(finger_drum::scene_ids::Editor),
+                                           mrg::scene::SceneRetention::DestroyOnExit,
+                                           std::ref(ScreenVisuals()), launchRequest_) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),
             // Gameplay routes keep only their factory while inactive. The
             // concrete mode Scene is constructed on entry and destroyed as
             // soon as it returns to Lobby.
-            mrg::scene::SceneRetention::DestroyOnExit,
-            launchRequest_,
-            std::ref(AudioPlayback()),
-            std::ref(ScreenVisuals()),
-            rhythmDebugMode_))
+            mrg::scene::SceneRetention::DestroyOnExit, launchRequest_, std::ref(AudioPlayback()),
+            std::ref(ScreenVisuals()), rhythmDebugMode_))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
     }
@@ -105,24 +85,22 @@ std::string_view FingerDrumGame::InitialSceneId() const noexcept
     return initialSceneId_;
 }
 
-void FingerDrumGame::OnClientInitialized(
-    const mrg::EngineServices& services)
+void FingerDrumGame::OnClientInitialized(const mrg::EngineServices &services)
 {
     // Performance text is Client presentation, so the game owns the font and
     // chooses F7 independently from Engine scheduling.
-    performanceFont_ = services.textRendering.LoadFontFile(
-        mrg_client::asset_paths::fonts::FingerDrum());
+    performanceFont_ =
+        services.textRendering.LoadFontFile(mrg_client::asset_paths::fonts::FingerDrum());
 }
 
-void FingerDrumGame::OnClientUpdated(const mrg::UpdateContext& context)
+void FingerDrumGame::OnClientUpdated(const mrg::UpdateContext &context)
 {
     if (context.input.WasKeyPressed(VK_F7))
     {
         showPerformanceOverlay_ = !showPerformanceOverlay_;
     }
     if (!context.performance.hasMeasurement ||
-        context.performance.measurementIndex ==
-            lastPerformanceMeasurementIndex_)
+        context.performance.measurementIndex == lastPerformanceMeasurementIndex_)
     {
         return;
     }
@@ -130,11 +108,9 @@ void FingerDrumGame::OnClientUpdated(const mrg::UpdateContext& context)
     lastPerformanceMeasurementIndex_ = context.performance.measurementIndex;
 }
 
-void FingerDrumGame::OnClientRendered(
-    const mrg::graphics::RenderContext& context)
+void FingerDrumGame::OnClientRendered(const mrg::graphics::RenderContext &context)
 {
-    if (!showPerformanceOverlay_ || performanceFont_ == nullptr ||
-        context.textRendering == nullptr)
+    if (!showPerformanceOverlay_ || performanceFont_ == nullptr || context.textRendering == nullptr)
     {
         return;
     }
@@ -142,21 +118,11 @@ void FingerDrumGame::OnClientRendered(
     constexpr float bottomMargin = 18.0F;
     constexpr float lineHeight = 26.0F;
     const float viewportHeight = static_cast<float>(context.height);
-    const float upsY = std::max(
-        viewportHeight - bottomMargin - lineHeight,
-        0.0F);
-    SubmitPerformanceLine(
-        *context.textRendering,
-        framesPerSecondText_,
-        performanceFont_,
-        std::max(upsY - lineHeight, 0.0F),
-        static_cast<float>(context.width));
-    SubmitPerformanceLine(
-        *context.textRendering,
-        updatesPerSecondText_,
-        performanceFont_,
-        upsY,
-        static_cast<float>(context.width));
+    const float upsY = std::max(viewportHeight - bottomMargin - lineHeight, 0.0F);
+    SubmitPerformanceLine(*context.textRendering, framesPerSecondText_, performanceFont_,
+                          std::max(upsY - lineHeight, 0.0F), static_cast<float>(context.width));
+    SubmitPerformanceLine(*context.textRendering, updatesPerSecondText_, performanceFont_, upsY,
+                          static_cast<float>(context.width));
 }
 
 void FingerDrumGame::OnClientShuttingDown() noexcept
@@ -164,36 +130,26 @@ void FingerDrumGame::OnClientShuttingDown() noexcept
     performanceFont_.reset();
 }
 
-void FingerDrumGame::RefreshPerformanceText(
-    const mrg::PerformanceStatistics& performance)
+void FingerDrumGame::RefreshPerformanceText(const mrg::PerformanceStatistics &performance)
 {
-    framesPerSecondText_ =
-        L"FPS  " + std::to_wstring(performance.framesPerSecond);
-    updatesPerSecondText_ =
-        L"UPS  " + std::to_wstring(performance.updatesPerSecond);
+    framesPerSecondText_ = L"FPS  " + std::to_wstring(performance.framesPerSecond);
+    updatesPerSecondText_ = L"UPS  " + std::to_wstring(performance.updatesPerSecond);
 }
 
-void FingerDrumGame::SubmitPerformanceLine(
-    mrg::graphics::TextRenderSystem& textRendering,
-    const std::wstring_view text,
-    const mrg::graphics::FontHandle& font,
-    const float layoutY,
-    const float viewportWidth)
+void FingerDrumGame::SubmitPerformanceLine(mrg::graphics::TextRenderSystem &textRendering,
+                                           const std::wstring_view text,
+                                           const mrg::graphics::FontHandle &font,
+                                           const float layoutY, const float viewportWidth)
 {
     constexpr float rightMargin = 18.0F;
     constexpr float layoutWidth = 240.0F;
     constexpr float lineHeight = 26.0F;
     mrg::graphics::TextDrawCommand command;
-    command.positionPixels = {
-        std::max(viewportWidth - rightMargin - layoutWidth, 0.0F),
-        layoutY};
-    command.layoutSizePixels = {
-        std::min(layoutWidth, std::max(viewportWidth - rightMargin, 1.0F)),
-        lineHeight};
-    command.horizontalAlignment =
-        mrg::graphics::TextHorizontalAlignment::Trailing;
-    command.verticalAlignment =
-        mrg::graphics::TextVerticalAlignment::Center;
+    command.positionPixels = {std::max(viewportWidth - rightMargin - layoutWidth, 0.0F), layoutY};
+    command.layoutSizePixels = {std::min(layoutWidth, std::max(viewportWidth - rightMargin, 1.0F)),
+                                lineHeight};
+    command.horizontalAlignment = mrg::graphics::TextHorizontalAlignment::Trailing;
+    command.verticalAlignment = mrg::graphics::TextVerticalAlignment::Center;
     command.style.font = font;
     command.style.fontSizePixels = 19.0F;
 

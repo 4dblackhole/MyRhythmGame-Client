@@ -48,7 +48,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\Dependencies\MRG-Engine\Engine\SDK;$(ProjectDir)..\FingerDrum.Rhythm;$(ProjectDir)..\FingerDrum.Chart;$(ProjectDir)..\FingerDrum.Modes;$(ProjectDir)..\FingerDrum.Assets\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\Dependencies\MRG-Engine\Engine\SDK;$(ProjectDir)..\FingerDrum.Rhythm;$(ProjectDir)..\FingerDrum.Chart;$(ProjectDir)..\FingerDrum.Modes;$(ProjectDir)..\FingerDrum.Assets\Public;$(ProjectDir)..\FingerDrum.Editor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
@@ -66,49 +66,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="Pch.h" />
-    <ClInclude Include="App\AssetPaths.h" />
-    <ClInclude Include="App\FingerDrumGame.h" />
-    <ClInclude Include="Audio\GameplayAudioRouter.h" />
-    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h" />
-    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
-    <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
-    <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
-    <ClInclude Include="EditorScene\EditorScene.h" />
-    <ClInclude Include="EditorScene\EditorAudioAnalysis.h" />
-    <ClInclude Include="GameScene\FingerDrumLogoScene.h" />
-    <ClInclude Include="GameScene\MusicSelectScene.h" />
-    <ClInclude Include="GameScene\RhythmTestScene.h" />
-    <ClInclude Include="Presentation\MarqueeTextComponent.h" />
-    <ClInclude Include="Presentation\LaneKeyBeam.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Pch.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="App\FingerDrumGame.cpp" />
-    <ClCompile Include="App\Main.cpp" />
-    <ClCompile Include="Audio\GameplayAudioRouter.cpp" />
-    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
-    <ClCompile Include="EditorScene\EditorScene.cpp" />
-    <ClCompile Include="EditorScene\EditorAudioAnalysis.cpp" />
-    <ClCompile Include="GameScene\FingerDrumLogoScene.cpp" />
-    <ClCompile Include="GameScene\MusicSelectScene.cpp" />
-    <ClCompile Include="GameScene\RhythmTestScene.cpp" />
-    <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
-    <ClCompile Include="Presentation\LaneKeyBeam.cpp" />
-  </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Unused\Sounds\pop.wav">
       <AssetTargetPath>Unused\Sounds\pop.wav</AssetTargetPath>
@@ -161,6 +118,92 @@
     <Error Condition="'$(Configuration)' == 'Debug' and !Exists('$(FmodLibraryDir)\fmodL_vc.lib')" Text="FMOD debug x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />
     <Error Condition="'$(Configuration)' == 'Release' and !Exists('$(FmodLibraryDir)\fmod_vc.lib')" Text="FMOD release x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />
   </Target>
+  <ItemGroup><ProjectReference Include="..\FingerDrum.Editor\FingerDrum.Editor.vcxproj"><Project>{A7777777-7777-4777-8777-777777777777}</Project></ProjectReference></ItemGroup>
+  <ItemGroup><ProjectReference Include="FingerDrum.ClientLogic.vcxproj"><Project>{A8888888-8888-4888-8888-888888888888}</Project></ProjectReference></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App\AssetPaths.h" />
+    <ClCompile Include="App\FingerDrumGame.cpp" />
+    <ClInclude Include="App\FingerDrumGame.h" />
+    <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="Audio\GameplayAudioRouter.cpp" />
+    <ClInclude Include="Audio\GameplayAudioRouter.h" />
+    <ClCompile Include="EditorScene\EditorScene.cpp" />
+    <ClInclude Include="EditorScene\EditorScene.h" />
+    <ClCompile Include="EditorScene\Submodules\EditorAnalysisController.cpp" />
+    <ClInclude Include="EditorScene\Submodules\EditorAnalysisController.h" />
+    <ClCompile Include="EditorScene\Submodules\EditorAudioView.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorEffectsView.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorInput.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorMetadataView.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorScoreView.cpp" />
+    <ClInclude Include="EditorScene\Submodules\EditorSupport.h" />
+    <ClCompile Include="EditorScene\Submodules\EditorTextDialog.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorTimingView.cpp" />
+    <ClInclude Include="EditorScene\Submodules\EditorTool.h" />
+    <ClCompile Include="EditorScene\Submodules\EditorView.cpp" />
+    <ClInclude Include="EditorScene\Submodules\EditorView.h" />
+    <ClInclude Include="EditorScene\Submodules\EditorVisual.h" />
+    <ClCompile Include="EditorScene\Submodules\EditorWorkspace.cpp" />
+    <ClInclude Include="EditorScene\Submodules\EditorWorkspace.h" />
+    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp" />
+    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h" />
+    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
+    <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
+    <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
+    <ClInclude Include="GameFlow\GameplayLaunchStore.h" />
+    <ClCompile Include="GameScene\FingerDrumLogoScene\FingerDrumLogoScene.cpp" />
+    <ClInclude Include="GameScene\FingerDrumLogoScene\FingerDrumLogoScene.h" />
+    <ClCompile Include="GameScene\FingerDrumLogoScene\Submodules\LogoInput.cpp" />
+    <ClCompile Include="GameScene\FingerDrumLogoScene\Submodules\LogoLayout.cpp" />
+    <ClInclude Include="GameScene\FingerDrumLogoScene\Submodules\LogoStyle.h" />
+    <ClCompile Include="GameScene\FingerDrumLogoScene\Submodules\LogoView.cpp" />
+    <ClInclude Include="GameScene\FingerDrumLogoScene\Submodules\LogoView.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\MusicSelectScene.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\MusicSelectScene.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\MusicSelectView.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\MusicSelectView.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongPreviewController.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongPreviewController.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectCards.cpp" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectInput.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionState.h" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionText.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectLayout.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectLayout.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectPanels.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectPurpose.h" />
+    <ClCompile Include="GameScene\RhythmTestScene\RhythmTestScene.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\RhythmTestScene.h" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayAudio.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayFeedback.h" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayFeedbackVisuals.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayInput.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayKeys.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayLayout.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayNoteVisuals.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPresenter.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPresenter.h" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplaySessionController.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySessionController.h" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplaySessionFactory.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySupport.h" />
+    <ClCompile Include="Pch.cpp"><PrecompiledHeader>Create</PrecompiledHeader></ClCompile>
+    <ClInclude Include="Pch.h" />
+    <ClCompile Include="Presentation\LaneKeyBeam.cpp" />
+    <ClInclude Include="Presentation\LaneKeyBeam.h" />
+    <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
+    <ClInclude Include="Presentation\MarqueeTextComponent.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

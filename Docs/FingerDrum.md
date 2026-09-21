@@ -41,8 +41,10 @@ event가 발생했을 때만 pointer hover를 선택 상태에 반영한다.
 
 ## 소스와 예제의 분리
 
-- 실제 게임: `Client/App/FingerDrumGame.*`, `Client/GameScene/FingerDrumLogoScene.*`,
-  `Client/GameScene/MusicSelectScene.*`, `Client/GameFlow/FingerDrumSceneIds.h`
+- 실제 게임: `Client/App/FingerDrumGame.*`, `Client/GameScene/FingerDrumLogoScene/`,
+  `Client/GameScene/MusicSelectScene/`, `Client/GameFlow/FingerDrumSceneIds.h`
+- 로고 UI 수정: `FingerDrumLogoScene/Submodules/LogoView`, `LogoLayout`, `LogoInput`.
+  Scene은 UI가 반환한 선택을 화면 전환으로 연결한다.
 - 보관한 기술 예제: `Client/Examples/ColoredCube/`
 - 예제 문서: `Docs/Examples/ColoredCube/`
 

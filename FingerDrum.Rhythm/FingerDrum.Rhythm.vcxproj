@@ -17,18 +17,39 @@
   <ItemDefinitionGroup><ClCompile><AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories><WarningLevel>Level4</WarningLevel><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp20</LanguageStandard><AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions></ClCompile></ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Common\RhythmTypes.h" />
-    <ClInclude Include="Time\RhythmTimer.h" />
-    <ClInclude Include="Judgement\JudgementProfile.h" />
-    <ClInclude Include="Note\Note.h" />
-    <ClInclude Include="Lane\Lane.h" />
-    <ClInclude Include="Scroll\ScrollGear.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Time\RhythmTimer.cpp" />
     <ClCompile Include="Judgement\JudgementProfile.cpp" />
-    <ClCompile Include="Note\Note.cpp" />
+    <ClInclude Include="Judgement\JudgementProfile.h" />
     <ClCompile Include="Lane\Lane.cpp" />
+    <ClInclude Include="Lane\Lane.h" />
+    <ClInclude Include="Note\Note.h" />
+    <ClCompile Include="Note\Submodules\CountedHitInputRule.cpp" />
+    <ClInclude Include="Note\Submodules\CountedHitInputRule.h" />
+    <ClCompile Include="Note\Submodules\DrumRollInputRule.cpp" />
+    <ClInclude Include="Note\Submodules\DrumRollInputRule.h" />
+    <ClCompile Include="Note\Submodules\HoldInputRule.cpp" />
+    <ClInclude Include="Note\Submodules\HoldInputRule.h" />
+    <ClInclude Include="Note\Submodules\INote.h" />
+    <ClCompile Include="Note\Submodules\INoteRule.cpp" />
+    <ClInclude Include="Note\Submodules\INoteRule.h" />
+    <ClCompile Include="Note\Submodules\NoteSoundPolicy.cpp" />
+    <ClInclude Include="Note\Submodules\NoteSoundPolicy.h" />
+    <ClCompile Include="Note\Submodules\NoteTypes.cpp" />
+    <ClInclude Include="Note\Submodules\NoteTypes.h" />
+    <ClCompile Include="Note\Submodules\RuleBasedNote.cpp" />
+    <ClInclude Include="Note\Submodules\RuleBasedNote.h" />
+    <ClInclude Include="Note\Submodules\RuleHelpers.h" />
+    <ClCompile Include="Note\Submodules\SequenceInputRule.cpp" />
+    <ClInclude Include="Note\Submodules\SequenceInputRule.h" />
+    <ClCompile Include="Note\Submodules\TapInputRule.cpp" />
+    <ClInclude Include="Note\Submodules\TapInputRule.h" />
+    <ClCompile Include="Note\Submodules\TickRollInputRule.cpp" />
+    <ClInclude Include="Note\Submodules\TickRollInputRule.h" />
+    <ClCompile Include="Note\Submodules\TimedSequenceInputRule.cpp" />
+    <ClInclude Include="Note\Submodules\TimedSequenceInputRule.h" />
     <ClCompile Include="Scroll\ScrollGear.cpp" />
+    <ClInclude Include="Scroll\ScrollGear.h" />
+    <ClCompile Include="Time\RhythmTimer.cpp" />
+    <ClInclude Include="Time\RhythmTimer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

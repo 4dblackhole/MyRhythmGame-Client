@@ -4,6 +4,12 @@
 Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성했습니다.
 일반 실행은 여전히 로고 화면에서 시작합니다.
 
+수정 시 `Client/EditorScene/EditorScene.*`는 조립 흐름만 확인합니다.
+`Submodules/EditorWorkspace`는 문서/도구/배치, `EditorView`와 각 `Editor*View.cpp`는
+화면, `EditorInput`은 좌표/입력, `EditorAnalysisController`는 worker와 marker 캐시를 맡습니다.
+PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
+문법 변경이 없으면 다른 형식 문서와 엔진 내부를 읽을 필요가 없습니다.
+
 ## 조작
 
 - 작은/큰 노트 도구를 좌클릭해 선택하고 우클릭 팝업에서 동·캇·보라 변형을 선택합니다.
@@ -44,13 +50,9 @@ Undo/Redo, 드래그 이동,
 기본 실행 동작과 배포 데이터는 바꾸지 않습니다. 리듬 테스트에는 마디 이월, 유리수 누적합
 역변환, YMP/YME 저장 왕복, 박자 기반 속도 보간, 동·캇 변경 경계 및 실제 MP3 분석을 포함합니다.
 
-## 검증 기록 (2026-09-21)
+## 이전 기능 검증의 한계
 
-- Debug/Release x64 솔루션 Rebuild 및 최종 수정 후 증분 빌드 성공.
-- 두 구성의 리듬 테스트 통과: 기본 제공 1곡/3패턴, 임시 복사본 저장/재로드,
-  MP3 및 동·캇/큰 동·큰 캇 WAV의 실제 PCM/FFT 분석 포함.
-- 두 구성에서 `--smoke-test`, `--smoke-lobby`, `--smoke-gameplay`, `--smoke-editor`
-  모두 종료 코드 0. 기본 실행의 로고 진입은 유지.
-- RCDATA 목록 69개에 Songs/MP3/YMM/YMP/YME 항목 없음. 기본 제공곡 5개 파일은 Git 추적 유지.
-- Windows 화면 캡처가 두 번 모두 `SetIsBorderRequired ... 0x80004002`로 실패해
-  실제 화면의 시각적 확인과 마우스 조작 검증은 완료하지 못함. 스모크 통과를 시각적 검증으로 대체하지 않음.
+이전 세션에서는 Windows 화면 캡처가 `SetIsBorderRequired ... 0x80004002`로 실패해
+실제 화면의 시각적 확인과 마우스 조작 검증을 완료하지 못했습니다.
+현재 자동 검증 명령은 [Verification](Verification.md), 기능별 테스트는
+[변경 영향 지도](ChangeImpactMap.md)가 기준입니다. smoke 통과를 시각적 검증으로 대체하지 않습니다.

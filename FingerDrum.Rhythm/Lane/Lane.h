@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Note/Note.h"
+#include "Note/Submodules/INote.h"
 
 #include <cstddef>
 #include <memory>
@@ -11,7 +11,7 @@ namespace finger_drum::rhythm
 {
     class Lane final
     {
-    public:
+      public:
         explicit Lane(std::size_t id = 0) noexcept;
 
         [[nodiscard]] std::size_t Id() const noexcept;
@@ -19,27 +19,23 @@ namespace finger_drum::rhythm
         void Finalize();
         void Reset() noexcept;
 
-        [[nodiscard]] NoteProcessResult ProcessInput(
-            const RhythmInputEvent& input);
-        [[nodiscard]] NoteProcessResult Update(
-            RhythmTime time,
-            std::span<const NoteAction> heldActions = {});
+        [[nodiscard]] NoteProcessResult ProcessInput(const RhythmInputEvent &input);
+        [[nodiscard]] NoteProcessResult Update(RhythmTime time,
+                                               std::span<const NoteAction> heldActions = {});
 
         [[nodiscard]] bool Empty() const noexcept;
         [[nodiscard]] std::size_t CurrentIndex() const noexcept;
-        [[nodiscard]] INote* CurrentNote() noexcept;
-        [[nodiscard]] const INote* CurrentNote() const noexcept;
-        [[nodiscard]] const std::vector<std::unique_ptr<INote>>&
-            Notes() const noexcept;
+        [[nodiscard]] INote *CurrentNote() noexcept;
+        [[nodiscard]] const INote *CurrentNote() const noexcept;
+        [[nodiscard]] const std::vector<std::unique_ptr<INote>> &Notes() const noexcept;
 
-    private:
+      private:
         friend class ScrollGear;
 
         void AdvancePastTerminalNotes() noexcept;
-        [[nodiscard]] NoteEvent MakeEarlyBadEvent(
-            const INote& note,
-            const JudgementResult& judgement,
-            RhythmTime time) const noexcept;
+        [[nodiscard]] NoteEvent MakeEarlyBadEvent(const INote &note,
+                                                  const JudgementResult &judgement,
+                                                  RhythmTime time) const noexcept;
 
         std::size_t id_{};
         std::vector<std::unique_ptr<INote>> notes_;
@@ -50,4 +46,4 @@ namespace finger_drum::rhythm
         std::size_t currentIndex_{};
         bool finalized_{};
     };
-}
+} // namespace finger_drum::rhythm

@@ -6,9 +6,8 @@
 
 namespace finger_drum
 {
-    // Lobby writes the selected chart into this small game-flow object before
-    // requesting the gameplay route. SceneManager's transient factory captures
-    // the shared object, then constructs a fresh gameplay Scene on each entry.
+    // Value snapshot for one scene entry. Shared transfer is encapsulated by
+    // GameplayLaunchStore; an active session owns its copy.
     struct GameplayLaunchRequest
     {
         std::filesystem::path patternPath;
@@ -29,4 +28,4 @@ namespace finger_drum
             mode.clear();
         }
     };
-}
+} // namespace finger_drum

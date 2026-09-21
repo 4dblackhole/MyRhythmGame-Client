@@ -5,11 +5,13 @@ This file applies to the entire repository except the independently versioned
 
 ## Session onboarding
 
-- Read `Docs/README.md` and `Docs/SessionHandoff.md` at the start of a new
-  Client session. Then read
-  `Dependencies/MRG-Engine/Docs/EngineOverview.md` for the engine feature and
-  ownership index, and `Docs/ExecutionFlow.md` for this Client's concrete
-  startup, frame, Scene, and shutdown flow.
+- Read `Docs/SessionHandoff.md` and the routing table in `Docs/README.md`.
+  Select only the feature document and source subtree needed for the request.
+  Do not read every document or the whole engine SDK for routine Client work.
+  Read `Docs/ExecutionFlow.md` for startup, transitions, or lifetime changes;
+  read engine `Docs/EngineOverview.md` only for engine API/ownership work.
+- Use `Docs/ChangeImpactMap.md` for the smallest implementation/test boundary.
+  Read declarations and direct callers before expanding the search.
 - Use `Docs/Examples/ColoredCube/EngineFeatureExamples.md` for archived
   mesh/collision/widget recipes and the Visual2D documents for Sprite, Canvas,
   input, PNG, and Z-order work.
@@ -28,10 +30,12 @@ This file applies to the entire repository except the independently versioned
 - Keep refactoring local to the code touched by the request unless the user
   explicitly asks for a broader refactor. Do not turn a focused fix into a
   repository-wide cleanup.
-- If two reasonable interpretations would materially change behavior,
-  ownership, public API, file format, or design, state the ambiguity and ask
-  before implementing. Otherwise choose the narrower interpretation and note
-  the assumption briefly.
+- If requirements are insufficient or two reasonable interpretations would
+  materially change behavior, ownership, public API, file format, or design,
+  STOP the affected implementation and ask the user a concrete question.
+  Do not implement a speculative interpretation while waiting. This applies
+  to every contributor and future session. Independent specified work may
+  continue. For immaterial details choose the smallest reversible change.
 - Suggestions and future possibilities are not implementation requirements.
   Report them separately and stop once the requested behavior and proportional
   verification are complete.
@@ -82,6 +86,13 @@ This file applies to the entire repository except the independently versioned
   lines, note layers and long-note parts under that parent instead of computing
   independent screen-space positions for each child.
 - Keep Client `.vcxproj.filters` paths synchronized with physical directories.
+- Give each Scene its own directory with `SceneName.h/.cpp` and `Submodules/`.
+  The Scene composes responsibility-owning classes through small calls; moving
+  the same giant class into several files is not sufficient. Keep the same
+  physical/filter tree for domain families such as `Note/Submodules/`.
+  Put shared contracts above leaves; never include implementation `.cpp` files.
+- Preserve umbrella headers where needed for compatibility; new leaf code
+  should include only the contracts it uses.
 - Bundle each redistributed font license beside the font asset.
 - Keep game option behavior in Client code. Compose it from engine
   `Visual2DNode` components, Canvas actions, and surface mapping rather than
@@ -118,11 +129,7 @@ This file applies to the entire repository except the independently versioned
 
 ## Verification
 
-After changes, initialize the submodule and rebuild
-`MyRhythmGame-Client.sln` in Debug and Release x64. Run the resulting
-`FingerDrum.Rhythm.Tests.exe --catalog-root FingerDrum.Assets/Assets/Songs` and
-`MyRhythmGame.exe --smoke-test`, `--smoke-lobby`, and `--smoke-gameplay` in
-both configurations.
-For reusable engine features, also run the relevant `ColoredCubeGame` route in
-`Client/Examples/ColoredCube`, such as `--smoke-test --example=mesh` for mesh,
-camera, and rendering changes.
+Use `Docs/Verification.md` for canonical commands. Code changes require
+Debug/Release x64 solution builds, logic tests and all four Client smoke routes.
+Engine changes additionally require the relevant `ColoredCubeGame` route.
+Report automated checks separately from actual visual/manual validation.

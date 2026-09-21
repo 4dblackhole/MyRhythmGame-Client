@@ -1,13 +1,16 @@
 #pragma once
-#include "GameFlow/GameplayLaunchRequest.h"
+#include "GameFlow/GameplayLaunchStore.h"
 #include "MRG_Core.h"
 #include <memory>
+
+class EditorWorkspace;
+class EditorView;
 
 class EditorScene final : public mrg::scene::GameScene
 {
   public:
     EditorScene(mrg::visual2d::ScreenVisual2DManager &visuals,
-                std::shared_ptr<finger_drum::GameplayLaunchRequest> request);
+                std::shared_ptr<finger_drum::GameplayLaunchStore> request);
     ~EditorScene() override;
     void Initialize(const mrg::EngineServices &services) override;
     void Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes) override;
@@ -16,6 +19,6 @@ class EditorScene final : public mrg::scene::GameScene
     void Shutdown() noexcept override;
 
   private:
-    struct State;
-    std::unique_ptr<State> state_;
+    std::unique_ptr<EditorWorkspace> workspace_;
+    std::unique_ptr<EditorView> view_;
 };

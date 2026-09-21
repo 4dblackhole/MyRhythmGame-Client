@@ -1,49 +1,32 @@
-# MyRhythmGame-Client 문서 안내
+# 작업별 문서 진입점
 
-신규 개발자와 새 Codex 세션은 다음 순서로 읽습니다.
+처음에는 루트 `AGENTS.md`와 [SessionHandoff](SessionHandoff.md)만 읽고,
+아래에서 요청에 해당하는 **한 행**을 고릅니다. 기능 추가도 같은 경로를 사용합니다.
+선택한 문서의 해당 절 → public 선언 → 구현 → 직접 호출부 → 관련 테스트 순서로
+읽습니다. 소유권/호출 흐름이 바뀔 때만 인접 계층으로 범위를 넓힙니다.
 
-1. 저장소 루트의 `AGENTS.md`
-2. [현재 프로젝트 인수인계 요약](SessionHandoff.md)
-3. 엔진 기능 색인 `Dependencies/MRG-Engine/Docs/EngineOverview.md`
-4. [실행 흐름과 객체 수명](ExecutionFlow.md)
-5. 작업 대상 기능 문서
+| 수정/추가할 기능 | 먼저 읽을 문서 | 코드 진입점 |
+| --- | --- | --- |
+| 노트 판정·정확도·타이머 | [판정 규칙](Gameplay/Rules.md) | `FingerDrum.Rhythm/Note`, `Judgement`, `Time` |
+| Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `FingerDrum.Modes/Taiko` |
+| YMM/YMP/YME 문법 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model` |
+| BPM·마디·유리수 위치 | [타이밍 문법](Formats/Timing.md) | `FingerDrum.Chart/Timing`, `Utility` |
+| 편집·저장·오디오 분석 | [ChartEditor](ChartEditor.md) | `Client/EditorScene`, `FingerDrum.Chart/Editing`, `FingerDrum.Editor` |
+| 곡 목록·포커스·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
+| 에디터용 곡 선택 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성 |
+| 플레이 화면·노트 이미지·키빔 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
+| 플레이 디버그 조작 | [디버깅](Gameplay/Debugging.md) | `RhythmTestScene/Submodules/GameplayInput.cpp` |
+| 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
+| Canvas·입력·클리핑 API 사용 | [Visual2DGuide](Visual2DGuide.md) | 해당 Scene의 Submodules |
+| 자산 경로·fallback·배포곡 | [BuiltInAssets](BuiltInAssets.md) | `Client/App/AssetPaths.h`, `FingerDrum.Assets` |
+| 시작·Scene 전환·종료·소유권 | [ExecutionFlow](ExecutionFlow.md) | `Client/App`, `Client/GameFlow` |
+| 엔진 API 자체 수정 | 엔진 AGENTS, EngineOverview의 해당 기능 | `Dependencies/MRG-Engine` |
+| Penpot 디자인 찾기 | [DesignReferences](DesignReferences.md) | 해당 화면 문서 |
 
-## Client 문서
+[변경 영향 지도](ChangeImpactMap.md)는 소유 파일과 테스트를,
+[검증](Verification.md)은 빌드·실행 명령을 제공합니다.
+예제 작업일 때만 [ColoredCube](Examples/ColoredCube/README.md)를 읽습니다.
 
-| 문서 | 내용 |
-| --- | --- |
-| [SessionHandoff.md](SessionHandoff.md) | 새 세션용 현재 상태, 저장소 경계, 검증 및 역할 분담 요약 |
-| [ExecutionFlow.md](ExecutionFlow.md) | 프로그램 진입, Scene 전환, 게임 루프, 종료 순서 |
-| [BuiltInAssets.md](BuiltInAssets.md) | EXE RCDATA 기본 자산 팩, 캐시 추출, 사용자 파일 fallback |
-| [FingerDrum.md](FingerDrum.md) | 로고 화면과 반응형 이미지 배치 |
-| [SongSelect.md](SongSelect.md) | Penpot 곡 선택 화면의 Visual2D 구현과 조작법 |
-| [EditorSongSelect.md](EditorSongSelect.md) | 에디터 진입용 곡·난이도 선택 화면과 현재 구현 경계 |
-| [ChartEditor.md](ChartEditor.md) | 악보·실시간 편집, 타이밍/metadata/effect, 히트사운드 표, 저장과 오디오 분석 |
-| [RhythmGameplay.md](RhythmGameplay.md) | 타이머, 판정, 노트별/누적 정확도와 Debug 상세, Lane, 차트, 모드, 사운드 제어 |
-| [ChartFormats.md](ChartFormats.md) | YMM·YMP 문법, 태고 롱노트 옵션과 YME 마디선 표기 |
-| [Visual2DGuide.md](Visual2DGuide.md) | 공통 화면 관리자, Sprite·위젯 노드, Canvas, 입력, PNG와 Z-Order |
-| [Examples/ColoredCube/README.md](Examples/ColoredCube/README.md) | 보관된 Mesh·충돌·Visual2D 예제 |
-
-재사용 가능한 Audio, Collision, Graphics, Text, Visual2D 계약은 엔진
-submodule의 `Docs`에 있습니다. 게임 규칙, Scene ID, 차트 문법, 게임별
-화면은 이 Client 저장소에 둡니다.
-
-## 코드 위치 빠른 찾기
-
-| 목적 | 위치 |
-| --- | --- |
-| 프로그램 진입과 CRT 누수 검사 | `Client/App/Main.cpp` |
-| EXE 내장 자산 생성과 fallback | `FingerDrum.Assets/` |
-| Client 설정과 Scene 등록 | `Client/App/FingerDrumGame.*` |
-| 로고 화면 | `Client/GameScene/FingerDrumLogoScene.*` |
-| Penpot 곡 선택 화면 | `Client/GameScene/MusicSelectScene.*` |
-| 에디터 곡 선택 화면 | `Client/GameScene/MusicSelectScene.*`의 `SongSelectPurpose::Editor` 구성 |
-| 에디터 작업 화면 | `Client/EditorScene/EditorScene.*` |
-| 리듬 구조 통합 테스트 Scene | `Client/GameScene/RhythmTestScene.*` |
-| 게임 재생용 오디오 라우터 | `Client/Audio/GameplayAudioRouter.*` |
-| 판정·노트·Lane·스크롤 | `FingerDrum.Rhythm/` |
-| YMM·YMP·YME와 음악 시간 변환 | `FingerDrum.Chart/` |
-| 게임모드 계약과 임시 태고 모드 | `FingerDrum.Modes/` |
-| 순수 로직 테스트 | `Tests/Rhythm/` |
-
-문서보다 현재 public signature와 생성된 `MRG_Core.h`가 최종 기준입니다.
+전체 문서/엔진 SDK/과거 채팅은 필독이 아닙니다. 계약과 이유는 기능 문서 한 곳에만
+기록하고 색인에서는 링크를 유지합니다. API 목록과 구현을 문서에 복제하지 않습니다.
+요구가 불명확하여 구현이 크게 달라지면 루트 AGENTS에 따라 멈추고 질문합니다.

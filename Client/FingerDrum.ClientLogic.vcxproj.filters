@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="EditorScene" />
+    <Filter Include="EditorScene\Submodules" />
+    <Filter Include="GameFlow" />
+    <Filter Include="GameScene" />
+    <Filter Include="GameScene\MusicSelectScene" />
+    <Filter Include="GameScene\MusicSelectScene\Submodules" />
+    <ClInclude Include="GameFlow\GameplayLaunchRequest.h"><Filter>GameFlow</Filter></ClInclude>
+    <ClInclude Include="GameFlow\GameplayLaunchStore.h"><Filter>GameFlow</Filter></ClInclude>
+    <ClInclude Include="EditorScene\Submodules\EditorTool.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionState.h"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectionState.cpp"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClCompile>
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionText.h"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup><ClCompile Include="RhythmTests.cpp" /></ItemGroup>
-  <ItemGroup><Filter Include="EditorScene" /></ItemGroup>
-  <ItemGroup><ClCompile Include="..\..\Client\EditorScene\EditorAudioAnalysis.cpp"><Filter>EditorScene</Filter></ClCompile></ItemGroup>
+  <ItemGroup>
+    <Filter Include="Submodules" />
+    <ClCompile Include="RhythmTests.cpp"></ClCompile>
+    <ClCompile Include="Submodules\AccuracyTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\ChartEditorTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\ChartParserTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\EditorAudioAnalysisTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\RhythmCoreTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\SceneStateTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\SongCatalogTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\SoundPolicyTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\TaikoModeTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClInclude Include="Submodules\TestCases.h"><Filter>Submodules</Filter></ClInclude>
+    <ClInclude Include="Submodules\TestSupport.h"><Filter>Submodules</Filter></ClInclude>
+  </ItemGroup>
 </Project>

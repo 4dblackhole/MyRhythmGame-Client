@@ -18,7 +18,7 @@ flowchart TD
     Logo --> EditorSelect["MusicSelectScene · Editor Song Select"]
     EditorSelect --> Editor["EditorScene · ChartEditor / YMP + YME"]
     Editor --> EditorSelect
-    Lobby --> Request["GameplayLaunchRequest"]
+    Lobby --> Request["GameplayLaunchStore · 진입 시 Snapshot"]
     Request --> Manager
     Manager --> Test["RhythmTestScene · transient Taiko play"]
 ```
@@ -62,17 +62,20 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
   난이도를 확정하면 선택 경로를 기록하고 Editor Scene으로 이동합니다.
 - Editor는 YMP/YME를 `ChartEditor`로 읽고 유리수 누적합과 정수 us 캐시를 만듭니다.
   악보/실시간 뷰는 같은 모델을 편집하며 변경 시에만 캐시를 다시 계산합니다.
-  PCM/FFT 분석은 별도 worker에서 실행하고 Canvas draw packet은 Scene에서 갱신합니다.
+  EditorAnalysisController가 PCM/FFT worker를, EditorView가 Canvas draw packet을 관리합니다.
   Ctrl+S는 같은 폴더에 저장하며 Escape는 미저장 변경을 확인한 뒤 돌아갑니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
-  `SongCatalog`가 번들된 AngelDream YMM과 YMP 3개 및 선택적 로컬 곡·패턴을
+  `SongCatalog`가 외부 Songs의 AngelDream YMM과 YMP 3개 및 사용자 곡·패턴을
   연결해 표시합니다.
   포커스된 곡 카드만 난이도 목록을 펼치며 좌우키는 곡, 상하키는 난이도를
   이동합니다. 하단 BACK 버튼이나 Escape로 Logo에 돌아갑니다.
-- Lobby의 GO/Enter는 선택 경로를 `GameplayLaunchRequest`에 기록한 뒤
+- Lobby의 GO/Enter는 선택 경로를 `GameplayLaunchStore::Set`으로 기록한 뒤
   RhythmTest 전환을 요청합니다. RhythmTest는 `TaikoMode`로 한 Lane 세션을
   만들고 한 개의 `RhythmTimer`로 입력, 판정, 스크롤, 음악과 히트사운드의 DSP
   예약 시각을 연결합니다.
+  플레이/에디터 생성자는 store의 Snapshot을 복사하므로 활성 세션의 경로는
+  다른 화면의 선택 변경으로 바뀌지 않습니다. 각 Scene의 Submodules 아래 Controller가
+  논리/오디오를, View/Presenter가 Canvas/노드를 소유하고 Scene은 전환을 조립합니다.
 - Logo와 Lobby는 `KeepAlive`, gameplay route는 `DestroyOnExit`입니다.
   gameplay 등록 시에는 factory만 보관하고 곡 선택 후 `ChangeScene`이 호출될
   때 해당 모드의 객체를 동적으로 생성합니다.

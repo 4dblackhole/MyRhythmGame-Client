@@ -1,5 +1,10 @@
 # Penpot 곡 선택 화면
 
+수정 진입점: `Client/GameScene/MusicSelectScene/Submodules`.
+배치는 SongSelectLayout/패널은 SongSelectPanels/카드는 SongSelectCards,
+선택 정책은 SongSelectionState, 미리듣기는 SongPreviewController를 읽습니다.
+MusicSelectScene은 View와 상태·오디오를 조립하고 View의 전환 의도를 처리합니다.
+
 `MusicSelectScene`은 Penpot `Music Select · Sky` 페이지의
 `곡 선택 화면 · Song List Focus · 1920×1080` 보드를 기준으로 구성한다.
 1920×1080 좌표에 `2/3`을 적용한 1280×720 `FixedHeight` Canvas를 사용한다.
@@ -68,7 +73,8 @@ YMM/YMP에는 chart LEVEL이 없으므로 `난이도순`은 catalog 순서를 �
 
 행에는 `SongCatalog`가 읽은 실제 제목과 아티스트만 사용한다. `GO`는 선택한
 `SongCatalogPattern`의 YMP/YME 경로, YMM이 가리키는 음악 경로와 mode를 기존
-`GameplayLaunchRequest`에 복사한 뒤 `DestroyOnExit` gameplay Scene으로 전환한다.
+`GameplayLaunchStore::Set`에 기록한 뒤 `DestroyOnExit` gameplay Scene으로 전환한다.
+진입한 Scene은 `Snapshot()`으로 독립적인 `GameplayLaunchRequest` 사본을 받는다.
 Catalog 탐색은 파일별 오류를 격리하므로 손상된 YMM/YMP/YME 또는 누락된 음원은
 진단을 남기고 해당 항목만 제외한다. `GO` 직전에도 선택 패턴을 한 번 검증하며,
 실패하면 Scene을 전환하지 않고 상세 영역에 오류를 표시한다.

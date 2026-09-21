@@ -1,26 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Common"><UniqueIdentifier>{A1111111-1111-4111-8111-111111111101}</UniqueIdentifier></Filter>
-    <Filter Include="Time"><UniqueIdentifier>{A1111111-1111-4111-8111-111111111102}</UniqueIdentifier></Filter>
-    <Filter Include="Judgement"><UniqueIdentifier>{A1111111-1111-4111-8111-111111111103}</UniqueIdentifier></Filter>
-    <Filter Include="Note"><UniqueIdentifier>{A1111111-1111-4111-8111-111111111104}</UniqueIdentifier></Filter>
-    <Filter Include="Lane"><UniqueIdentifier>{A1111111-1111-4111-8111-111111111105}</UniqueIdentifier></Filter>
-    <Filter Include="Scroll"><UniqueIdentifier>{A1111111-1111-4111-8111-111111111106}</UniqueIdentifier></Filter>
-  </ItemGroup>
-  <ItemGroup>
+    <Filter Include="Common" />
+    <Filter Include="Judgement" />
+    <Filter Include="Lane" />
+    <Filter Include="Note" />
+    <Filter Include="Note\Submodules" />
+    <Filter Include="Scroll" />
+    <Filter Include="Time" />
     <ClInclude Include="Common\RhythmTypes.h"><Filter>Common</Filter></ClInclude>
-    <ClInclude Include="Time\RhythmTimer.h"><Filter>Time</Filter></ClInclude>
-    <ClInclude Include="Judgement\JudgementProfile.h"><Filter>Judgement</Filter></ClInclude>
-    <ClInclude Include="Note\Note.h"><Filter>Note</Filter></ClInclude>
-    <ClInclude Include="Lane\Lane.h"><Filter>Lane</Filter></ClInclude>
-    <ClInclude Include="Scroll\ScrollGear.h"><Filter>Scroll</Filter></ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Time\RhythmTimer.cpp"><Filter>Time</Filter></ClCompile>
     <ClCompile Include="Judgement\JudgementProfile.cpp"><Filter>Judgement</Filter></ClCompile>
-    <ClCompile Include="Note\Note.cpp"><Filter>Note</Filter></ClCompile>
+    <ClInclude Include="Judgement\JudgementProfile.h"><Filter>Judgement</Filter></ClInclude>
     <ClCompile Include="Lane\Lane.cpp"><Filter>Lane</Filter></ClCompile>
+    <ClInclude Include="Lane\Lane.h"><Filter>Lane</Filter></ClInclude>
+    <ClInclude Include="Note\Note.h"><Filter>Note</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\CountedHitInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\CountedHitInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\DrumRollInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\DrumRollInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\HoldInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\HoldInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClInclude Include="Note\Submodules\INote.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\INoteRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\INoteRule.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\NoteSoundPolicy.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\NoteSoundPolicy.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\NoteTypes.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\NoteTypes.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\RuleBasedNote.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\RuleBasedNote.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClInclude Include="Note\Submodules\RuleHelpers.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\SequenceInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\SequenceInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\TapInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\TapInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\TickRollInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\TickRollInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
+    <ClCompile Include="Note\Submodules\TimedSequenceInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
+    <ClInclude Include="Note\Submodules\TimedSequenceInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
     <ClCompile Include="Scroll\ScrollGear.cpp"><Filter>Scroll</Filter></ClCompile>
+    <ClInclude Include="Scroll\ScrollGear.h"><Filter>Scroll</Filter></ClInclude>
+    <ClCompile Include="Time\RhythmTimer.cpp"><Filter>Time</Filter></ClCompile>
+    <ClInclude Include="Time\RhythmTimer.h"><Filter>Time</Filter></ClInclude>
   </ItemGroup>
 </Project>
