@@ -1,5 +1,6 @@
 #include "GameplayPresenter.h"
 #include "GameplaySupport.h"
+#include "Texts/GameScene/RhythmTestScene/GameplayTexts.h"
 using namespace gameplay;
 
 void GameplayPresenter::PresentAudioError(const std::string_view message)
@@ -8,8 +9,10 @@ void GameplayPresenter::PresentAudioError(const std::string_view message)
     {
         return;
     }
+    const auto &text = finger_drum::texts::Gameplay(texts_.CurrentLanguage());
     RequireComponent<mrg::visual2d::TextVisualComponent>(*audioErrorLabel_)
-        .SetText(L"AUDIO: " + Utf8ToWide(message));
+        .SetText(std::wstring(text.audioErrorPrefix) +
+                 Utf8ToWide(message, text.audioInitializationFailed));
     audioErrorLabel_->SetVisible(true);
 }
 
@@ -125,21 +128,24 @@ void GameplayPresenter::UpdateAccuracyPresentation()
     RequireComponent<mrg::visual2d::TextVisualComponent>(*accuracyIndicator_)
         .SetText(accuracy.has_value() ? std::format(L"{:.2f}%", *accuracy * 100.0) : L"--.--%");
 #if defined(_DEBUG)
-    std::wstring debug = L"Focus: none";
+    const auto &text = finger_drum::texts::Gameplay(texts_.CurrentLanguage());
+    std::wstring debug(text.focusNone);
     if (session_->Gear().LaneCount() > 0)
     {
         if (const auto *note = session_->Gear().Lanes().front()->CurrentNote())
         {
-            debug = L"Focus: " + note->DebugText();
+            debug = std::wstring(text.focusPrefix) + note->DebugText();
         }
     }
     if (const auto &last = session_->LastNoteAccuracy())
     {
-        debug += std::format(L"\nLast #{}: {}", last->noteId, last->DebugText());
+        const auto noteId = last->noteId;
+        const std::wstring details = last->DebugText();
+        debug += std::vformat(text.lastFormat, std::make_wformat_args(noteId, details));
     }
     else
     {
-        debug += L"\nLast: none";
+        debug += text.lastNone;
     }
     RequireComponent<mrg::visual2d::TextVisualComponent>(*noteDebugLabel_)
         .SetText(std::move(debug));

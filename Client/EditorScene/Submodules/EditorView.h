@@ -2,14 +2,16 @@
 #include "EditorWorkspace.h"
 #include "EditorVisual.h"
 #include "EditorSupport.h"
+#include "Texts/EditorScene/EditorTexts.h"
 #include <functional>
 #include <vector>
 
 class EditorView final
 {
   public:
-    EditorView(mrg::visual2d::ScreenVisual2DManager &manager, EditorWorkspace &state)
-        : visuals(manager), state_(state)
+    EditorView(mrg::visual2d::ScreenVisual2DManager &manager, EditorWorkspace &state,
+               finger_drum::texts::TextCatalog &texts)
+        : visuals(manager), state_(state), texts_(texts)
     {
     }
     void Initialize(const mrg::EngineServices &services);
@@ -46,8 +48,11 @@ class EditorView final
     void Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected = false);
     void Field(v::Rect r, const wchar_t *label, std::string &value);
     void Circle(float x, float y, int type, float radius);
+    [[nodiscard]] const finger_drum::texts::EditorTextSet &Texts() const noexcept;
     mrg::visual2d::ScreenVisual2DManager &visuals;
     EditorWorkspace &state_;
+    finger_drum::texts::TextCatalog &texts_;
+    std::uint64_t textRevision_{};
     mrg::visual2d::ScreenCanvasHandle canvas;
     mrg::visual2d::Visual2DNode *node{};
     EditorVisual *visual{};

@@ -32,16 +32,30 @@ void MusicSelectView::Initialize(const mrg::EngineServices &services)
     CreateSongInformationPanel();
     CreateSongBrowser();
     CreateFooter();
+    options_.Initialize(*canvas_);
+    ApplyTexts();
     UpdateResponsiveLayout();
     RebuildVisibleSongs();
 }
 
-SongSelectCommand MusicSelectView::Update(const mrg::platform::InputState &input)
+SongSelectCommand MusicSelectView::Update(const mrg::platform::InputState &input,
+                                           const double deltaSeconds)
 {
     command_ = SongSelectCommand::None;
     if (!canvas_)
         return command_;
+    if (textRevision_ != texts_.Revision())
+    {
+        ApplyTexts();
+        RebuildSongCards();
+    }
+    options_.Update(deltaSeconds);
+    const bool controlDown =
+        input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+    if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
+        options_.Toggle();
     ProcessPointer(input);
+    options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_);
     if (!ProcessActions())
         ProcessKeyboard(input);
     return command_;
@@ -66,6 +80,8 @@ void MusicSelectView::Shutdown() noexcept
     {
         inputRouter_.Reset(*canvas_);
     }
+    options_.Shutdown();
+    canvasPointer_.reset();
     difficultyButtonIds_.clear();
     songCards_.clear();
     goLabel_ = nullptr;
@@ -102,6 +118,7 @@ void MusicSelectView::Shutdown() noexcept
     recordSelector_ = nullptr;
     recordPanel_ = nullptr;
     categoryBar_ = nullptr;
+    categoryLabel_ = nullptr;
     background_ = nullptr;
     board_ = nullptr;
     canvas_ = nullptr;

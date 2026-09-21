@@ -203,6 +203,20 @@
     <ClInclude Include="Presentation\LaneKeyBeam.h" />
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
     <ClInclude Include="Presentation\MarqueeTextComponent.h" />
+    <ClCompile Include="Presentation\OptionsPanel.cpp" />
+    <ClInclude Include="Presentation\OptionsPanel.h" />
+    <ClCompile Include="Texts\EditorScene\EditorTexts.cpp" />
+    <ClInclude Include="Texts\EditorScene\EditorTexts.h" />
+    <ClCompile Include="Texts\GameScene\FingerDrumLogoScene\LogoTexts.cpp" />
+    <ClInclude Include="Texts\GameScene\FingerDrumLogoScene\LogoTexts.h" />
+    <ClCompile Include="Texts\GameScene\MusicSelectScene\MusicSelectTexts.cpp" />
+    <ClInclude Include="Texts\GameScene\MusicSelectScene\MusicSelectTexts.h" />
+    <ClCompile Include="Texts\GameScene\RhythmTestScene\GameplayTexts.cpp" />
+    <ClInclude Include="Texts\GameScene\RhythmTestScene\GameplayTexts.h" />
+    <ClCompile Include="Texts\Options\OptionTexts.cpp" />
+    <ClInclude Include="Texts\Options\OptionTexts.h" />
+    <ClCompile Include="Texts\TextCatalog.cpp" />
+    <ClInclude Include="Texts\TextCatalog.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

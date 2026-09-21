@@ -2,6 +2,7 @@
 #include "MRG_Core.h"
 #include "Editing/ChartEditor.h"
 #include "Parsing/ChartParser.h"
+#include "Texts/EditorScene/EditorTexts.h"
 #include <Windows.h>
 #include <cmath>
 #include <stdexcept>
@@ -87,5 +88,7 @@ namespace editor_ui
 
 namespace editor_ui
 {
-    std::optional<std::string> EditText(const std::wstring &, const std::string &);
+    std::optional<std::string> EditText(
+        const std::wstring &, const std::string &,
+        const finger_drum::texts::EditorTextSet &);
 }

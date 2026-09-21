@@ -1,6 +1,7 @@
 #pragma once
 #include "GameFlow/GameplayLaunchStore.h"
 #include "MRG_Core.h"
+#include "Texts/TextCatalog.h"
 #include <memory>
 
 class EditorWorkspace;
@@ -10,7 +11,8 @@ class EditorScene final : public mrg::scene::GameScene
 {
   public:
     EditorScene(mrg::visual2d::ScreenVisual2DManager &visuals,
-                std::shared_ptr<finger_drum::GameplayLaunchStore> request);
+                std::shared_ptr<finger_drum::GameplayLaunchStore> request,
+                finger_drum::texts::TextCatalog &texts);
     ~EditorScene() override;
     void Initialize(const mrg::EngineServices &services) override;
     void Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes) override;

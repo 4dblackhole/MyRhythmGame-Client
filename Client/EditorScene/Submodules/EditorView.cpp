@@ -17,13 +17,13 @@ void EditorView::Initialize(const mrg::EngineServices &services)
 
 void EditorView::Build()
 {
+    const auto &text = Texts();
     controls.clear();
     visual->packets.clear();
     Box({0, 0, 1920, 1080}, Background);
-    static constexpr const wchar_t *tabs[]{L"패턴", L"박자표", L"메타데이터", L"이펙트"};
     for (int i = 0; i < 4; ++i)
         Button(
-            {i * 220.0F, 0, 220, 60}, tabs[i],
+            {i * 220.0F, 0, 220, 60}, std::wstring(text.tabs[i]),
             [this, i] {
                 state_.tab = i;
                 state_.listOffset = 0;
@@ -40,9 +40,11 @@ void EditorView::Build()
     else
         DrawEffects();
     Button(
-        {1740, 1035, 150, 36}, state_.editor->Dirty() ? L"저장 *" : L"저장",
+        {1740, 1035, 150, 36},
+        std::wstring(state_.editor->Dirty() ? text.saveDirty : text.save),
         [this] { state_.Save(); }, true);
     Text({24, 1040, 1690, 32}, Wide(state_.status), 16);
+    textRevision_ = texts_.Revision();
     state_.rebuild = false;
 }
 
@@ -62,8 +64,14 @@ void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
     p.bounds = {r.x - 960, 540 - r.y - r.height, r.width, r.height};
     p.color = color;
     p.text = std::move(text);
+    p.font = texts_.CurrentProfile().font;
     p.fontSize = size;
     visual->packets.push_back(std::move(p));
+}
+
+const finger_drum::texts::EditorTextSet &EditorView::Texts() const noexcept
+{
+    return finger_drum::texts::Editor(texts_.CurrentLanguage());
 }
 
 void EditorView::Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected)
@@ -78,7 +86,7 @@ void EditorView::Field(v::Rect r, const wchar_t *label, std::string &value)
 {
     Text({r.x, r.y - 28, r.width, 24}, label, 17);
     Button(r, Wide(value), [this, label, &value] {
-        if (auto edited = EditText(label, value))
+        if (auto edited = EditText(label, value, Texts()))
         {
             value = *edited;
             state_.rebuild = true;

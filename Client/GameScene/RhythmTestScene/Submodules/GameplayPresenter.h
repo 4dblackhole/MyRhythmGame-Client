@@ -3,14 +3,16 @@
 #include "Mode/PlayGameMode.h"
 #include "Presentation/LaneKeyBeam.h"
 #include "GameplayFeedback.h"
+#include "Texts/TextCatalog.h"
 #include <array>
 #include <unordered_map>
 
 class GameplayPresenter final
 {
   public:
-    explicit GameplayPresenter(mrg::visual2d::ScreenVisual2DManager &visuals)
-        : screenVisuals_(visuals)
+    GameplayPresenter(mrg::visual2d::ScreenVisual2DManager &visuals,
+                      finger_drum::texts::TextCatalog &texts)
+        : screenVisuals_(visuals), texts_(texts)
     {
     }
     void Initialize(const mrg::EngineServices &services,
@@ -87,6 +89,7 @@ class GameplayPresenter final
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
     mrg::visual2d::ScreenVisual2DManager &screenVisuals_;
+    finger_drum::texts::TextCatalog &texts_;
     mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas *canvas_{};
     const finger_drum::mode::PlaySession *session_{};

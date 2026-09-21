@@ -115,7 +115,9 @@ namespace gameplay
         return mrg_client::asset_paths::default_skin::TaikoHitSound(file);
     }
 
-    [[nodiscard]] inline std::wstring Utf8ToWide(const std::string_view value)
+    [[nodiscard]] inline std::wstring Utf8ToWide(
+        const std::string_view value,
+        const std::wstring_view invalidText = L"Audio initialization failed.")
     {
         if (value.empty())
         {
@@ -125,7 +127,7 @@ namespace gameplay
                                                static_cast<int>(value.size()), nullptr, 0);
         if (length <= 0)
         {
-            return L"Audio initialization failed.";
+            return std::wstring(invalidText);
         }
         std::wstring result(static_cast<std::size_t>(length), L'\0');
         MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value.data(),

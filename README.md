@@ -15,7 +15,7 @@
 
 | 위치 | 책임 |
 | --- | --- |
-| `Client/` | 실행 파일, Scene 조립, 화면·오디오 연결; ClientLogic는 선택 상태 로직 |
+| `Client/` | 실행 파일, Scene 조립, 화면·오디오 연결; `Texts`는 문구·언어별 글꼴 소유 |
 | `FingerDrum.Rhythm/` | 판정, 노트 규칙, Lane, 스크롤, 타이머 |
 | `FingerDrum.Chart/` | YMM/YMP/YME 파싱, 타이밍 컴파일, 편집·저장 |
 | `FingerDrum.Modes/` | PlaySession과 Taiko 노트 생성·사운드 정책 |
@@ -42,4 +42,5 @@ msbuild MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
 일반 실행은 로고 → 플레이/에디터 곡 선택으로 시작합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는
 [실행 흐름](Docs/ExecutionFlow.md), 외부 파일 우선 및 내장 fallback/배포곡 정책은
-[자산](Docs/BuiltInAssets.md)에서 관리합니다.
+[자산](Docs/BuiltInAssets.md), 한국어/영어와 옵션 패널은
+[텍스트 관리](Docs/TextManagement.md)에서 관리합니다.

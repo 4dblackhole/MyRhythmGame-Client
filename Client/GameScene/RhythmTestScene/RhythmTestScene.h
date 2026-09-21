@@ -1,6 +1,7 @@
 #pragma once
 #include "MRG_Core.h"
 #include "GameFlow/GameplayLaunchStore.h"
+#include "Texts/TextCatalog.h"
 #include <memory>
 
 class GameplaySessionController;
@@ -11,7 +12,8 @@ class RhythmTestScene final : public mrg::scene::GameScene
     explicit RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest,
                              mrg::audio::AudioPlaybackManager &playback,
                              mrg::visual2d::ScreenVisual2DManager &screenVisuals,
-                             bool debugMode = false);
+                             bool debugMode,
+                             finger_drum::texts::TextCatalog &texts);
 
     ~RhythmTestScene() override;
 

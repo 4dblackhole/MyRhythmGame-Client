@@ -12,10 +12,11 @@ using namespace song_select;
 MusicSelectScene::MusicSelectScene(mrg::visual2d::ScreenVisual2DManager &visuals,
                                    mrg::audio::AudioPlaybackManager &playback,
                                    std::shared_ptr<finger_drum::GameplayLaunchStore> request,
-                                   SongSelectPurpose purpose)
+                                   SongSelectPurpose purpose,
+                                   finger_drum::texts::TextCatalog &texts)
     : launchRequest_(std::move(request)), purpose_(purpose),
       selection_(std::make_unique<SongSelectionState>()),
-      view_(std::make_unique<MusicSelectView>(visuals, *selection_, purpose)),
+      view_(std::make_unique<MusicSelectView>(visuals, *selection_, purpose, texts)),
       preview_(std::make_unique<SongPreviewController>(playback))
 {
 }
@@ -28,9 +29,11 @@ void MusicSelectScene::Initialize(const mrg::EngineServices &services)
     selection_->catalog_ =
         finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
     if (selection_->catalog_.songs.empty() && !selection_->catalog_.diagnostics.empty())
-        selection_->launchError_ =
-            L"CATALOG ERROR: " +
-            DecodeDisplayText(selection_->catalog_.diagnostics.front().message);
+    {
+        selection_->SetLaunchError(
+            SongSelectionState::LaunchErrorKind::Catalog,
+            selection_->catalog_.diagnostics.front().message);
+    }
     preview_->Initialize(services.audio);
     view_->Initialize(services);
 }
@@ -52,7 +55,7 @@ void MusicSelectScene::EndScene() noexcept
 void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
 {
     preview_->UpdatePreviewAudio(context.deltaSeconds);
-    const auto command = view_->Update(context.input);
+    const auto command = view_->Update(context.input, context.deltaSeconds);
     preview_->SyncPreviewToFocusedSong(*selection_, active_);
     if (command == SongSelectCommand::Back)
     {
@@ -93,7 +96,7 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
 
     if (purpose_ == SongSelectPurpose::Editor)
     {
-        selection_->launchError_.clear();
+        selection_->ClearLaunchError();
         launchRequest_->Set(
             {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode});
         if (!scenes.ChangeScene(finger_drum::scene_ids::Editor))
@@ -105,7 +108,8 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
 
     if (!pattern.pattern.mode.empty() && pattern.pattern.mode != "Taiko")
     {
-        selection_->launchError_ = L"UNSUPPORTED MODE: " + DecodeDisplayText(pattern.pattern.mode);
+        selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::UnsupportedMode,
+                                   pattern.pattern.mode);
         view_->RefreshSelectionPresentation();
         return false;
     }
@@ -116,23 +120,23 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
             finger_drum::mode::TaikoMode{}.LoadSession(pattern.patternPath, pattern.effectPath);
         if (!validation.Succeeded())
         {
-            selection_->launchError_ =
-                L"PATTERN ERROR: " +
-                DecodeDisplayText(validation.diagnostics.empty()
-                                      ? std::string_view{"Unknown chart error."}
-                                      : std::string_view{validation.diagnostics.front().message});
+            selection_->SetLaunchError(
+                SongSelectionState::LaunchErrorKind::Pattern,
+                validation.diagnostics.empty() ? std::string{}
+                                               : validation.diagnostics.front().message);
             view_->RefreshSelectionPresentation();
             return false;
         }
     }
     catch (const std::exception &exception)
     {
-        selection_->launchError_ = L"PATTERN ERROR: " + DecodeDisplayText(exception.what());
+        selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::Pattern,
+                                   exception.what());
         view_->RefreshSelectionPresentation();
         return false;
     }
 
-    selection_->launchError_.clear();
+    selection_->ClearLaunchError();
     launchRequest_->Set(
         {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode});
     if (!scenes.ChangeScene(finger_drum::scene_ids::RhythmTest))

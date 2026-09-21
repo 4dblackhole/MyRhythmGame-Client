@@ -17,6 +17,7 @@
 | 플레이 화면·노트 이미지·키빔 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
 | 플레이 디버그 조작 | [디버깅](Gameplay/Debugging.md) | `RhythmTestScene/Submodules/GameplayInput.cpp` |
 | 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
+| 문구·언어·글꼴·옵션 패널 | [TextManagement](TextManagement.md) | `Client/Texts`, `Client/Presentation/OptionsPanel.*` |
 | Canvas·입력·클리핑 API 사용 | [Visual2DGuide](Visual2DGuide.md) | 해당 Scene의 Submodules |
 | 자산 경로·fallback·배포곡 | [BuiltInAssets](BuiltInAssets.md) | `Client/App/AssetPaths.h`, `FingerDrum.Assets` |
 | 시작·Scene 전환·종료·소유권 | [ExecutionFlow](ExecutionFlow.md) | `Client/App`, `Client/GameFlow` |

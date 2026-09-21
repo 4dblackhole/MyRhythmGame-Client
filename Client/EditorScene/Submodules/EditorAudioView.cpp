@@ -5,6 +5,7 @@ using namespace editor_ui;
 
 void EditorView::DrawAudio()
 {
+    const auto &text = Texts();
     try
     {
         state_.analysis.CacheAudioMarkers(*state_.editor);
@@ -15,7 +16,7 @@ void EditorView::DrawAudio()
         state_.status = error.what();
     }
     Box({112, 806, 1784, 250}, Paper);
-    Text({132, 813, 400, 28}, L"오디오 분석 / 히트사운드", 22);
+    Text({132, 813, 400, 28}, std::wstring(text.audioAnalysis), 22);
     Box({205, 845, 1399, 60}, {.07F, .15F, .20F, 1}, 4);
     Box({205, 915, 1399, 68}, {.07F, .15F, .20F, 1}, 4);
     const double begin = state_.timeMs / 1000.0 - state_.audioWindow * .25;
@@ -90,15 +91,16 @@ void EditorView::DrawAudio()
         state_.audioWindow = std::min(120.0, state_.audioWindow * 2);
         state_.rebuild = true;
     });
-    Button({1620, 845, 260, 42}, L"현재 시간 (ms)", [this] {
-        if (auto s = EditText(L"현재 시간 (ms)", std::to_string(state_.timeMs)))
+    Button({1620, 845, 260, 42}, std::wstring(text.currentTime), [this] {
+        if (auto s = EditText(std::wstring(Texts().currentTime), std::to_string(state_.timeMs),
+                              Texts()))
         {
             state_.timeMs = Number(*s);
             state_.rebuild = true;
         }
     });
     Text({1620, 903, 260, 40}, Wide(std::to_string(state_.timeMs)), 20);
-    Text({205, 995, 1500, 38}, L"마우스 휠: 마디 이동 · ← / →: 1ms · Ctrl+S: 저장", 18);
+    Text({205, 995, 1500, 38}, std::wstring(text.audioHelp), 18);
     if (state_.analysis.Running())
-        Text({620, 813, 850, 28}, L"오디오 분석 중…", 18, Blue);
+        Text({620, 813, 850, 28}, std::wstring(text.analyzingAudio), 18, Blue);
 }

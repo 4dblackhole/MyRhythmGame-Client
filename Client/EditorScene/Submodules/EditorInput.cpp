@@ -48,6 +48,11 @@ bool EditorView::Update(const mrg::UpdateContext &context)
 {
     bool leave = false;
     const auto &input = context.input;
+    if (textRevision_ != texts_.Revision())
+    {
+        textRevision_ = texts_.Revision();
+        state_.rebuild = true;
+    }
     try
     {
         if (input.WasKeyPressed(VK_ESCAPE))
@@ -59,11 +64,13 @@ bool EditorView::Update(const mrg::UpdateContext &context)
                 state_.rebuild = true;
             }
             else if (!state_.editor->Dirty() ||
-                     MessageBoxW(GetActiveWindow(), L"저장하지 않은 변경을 버리고 나가시겠습니까?",
-                                 L"FingerDrum Editor", MB_YESNO | MB_ICONQUESTION) == IDYES)
+                     MessageBoxW(GetActiveWindow(), Texts().discardChanges.data(),
+                                 Texts().editorTitle.data(), MB_YESNO | MB_ICONQUESTION) == IDYES)
                 leave = true;
         }
-        if (input.IsKeyDown(VK_CONTROL) && input.WasKeyPressed('S'))
+        const bool controlDown =
+            input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+        if (controlDown && input.WasKeyPressed('S'))
             state_.Save();
         if (input.WasKeyPressed(VK_LEFT))
         {

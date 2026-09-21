@@ -5,11 +5,12 @@
 #include <stdexcept>
 
 EditorScene::EditorScene(mrg::visual2d::ScreenVisual2DManager &visuals,
-                         std::shared_ptr<finger_drum::GameplayLaunchStore> request)
+                         std::shared_ptr<finger_drum::GameplayLaunchStore> request,
+                         finger_drum::texts::TextCatalog &texts)
     : workspace_(std::make_unique<EditorWorkspace>(
           request ? request->Snapshot()
                   : throw std::invalid_argument("Editor requires a launch store."))),
-      view_(std::make_unique<EditorView>(visuals, *workspace_))
+      view_(std::make_unique<EditorView>(visuals, *workspace_, texts))
 {
 }
 EditorScene::~EditorScene() = default;

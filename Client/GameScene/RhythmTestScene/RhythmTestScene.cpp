@@ -6,13 +6,14 @@
 
 RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStore> request,
                                  mrg::audio::AudioPlaybackManager &playback,
-                                 mrg::visual2d::ScreenVisual2DManager &visuals, bool debug)
+                                 mrg::visual2d::ScreenVisual2DManager &visuals, bool debug,
+                                 finger_drum::texts::TextCatalog &texts)
     : controller_(
           std::make_unique<GameplaySessionController>(
               request ? request->Snapshot()
                       : throw std::invalid_argument("Gameplay requires a launch store."),
               playback, debug)),
-      view_(std::make_unique<GameplayPresenter>(visuals))
+      view_(std::make_unique<GameplayPresenter>(visuals, texts))
 {
 }
 RhythmTestScene::~RhythmTestScene() = default;

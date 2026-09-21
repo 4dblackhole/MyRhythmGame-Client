@@ -44,7 +44,9 @@ flowchart TD
 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 
 `SceneGameClient`는 SceneManager, 공통 AudioPlaybackManager와 화면
-ScreenVisual2DManager를 함께 소유합니다.
+ScreenVisual2DManager를 함께 소유합니다. `FingerDrumGame`은 여기에 Client 소유
+`TextCatalog`를 두고 Scene factory를 통해 View/Presenter에 전달합니다. 이 객체의
+현재 언어와 글꼴 profile은 KeepAlive/DestroyOnExit Scene 전환과 관계없이 유지됩니다.
 
 엔진 루프에서 예외가 발생하면 GPU 대기를 최선으로 시도한 뒤 Client를 먼저
 Shutdown하고, 그 다음 Audio와 renderer 지역 객체를 정리합니다. 따라서 Scene이
@@ -57,6 +59,8 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 ## Scene 흐름
 
 - Logo에서 Game Start를 누르면 Lobby로 이동합니다.
+- Logo의 옵션 버튼 또는 Logo/Lobby의 `Ctrl+O`는 공통 왼쪽 옵션 패널을 열며,
+  언어 변경은 `TextCatalog` revision을 통해 활성 화면과 이후 Scene에 반영됩니다.
 - Logo에서 Editor를 누르면 기록 패널이 없는 EditorSongSelect로 이동합니다.
   이 Scene은 Lobby의 카탈로그·미리듣기·검색·정렬·곡/난이도 탐색을 공유하며,
   난이도를 확정하면 선택 경로를 기록하고 Editor Scene으로 이동합니다.

@@ -3,6 +3,7 @@
 #include "MRG_Core.h"
 
 #include "GameFlow/GameplayLaunchStore.h"
+#include "Texts/TextCatalog.h"
 
 #include <cstdint>
 #include <memory>
@@ -38,6 +39,7 @@ class FingerDrumGame final : public mrg::scene::SceneGameClient
     bool rhythmDebugMode_{};
     std::string initialSceneId_;
     std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest_;
+    finger_drum::texts::TextCatalog texts_;
     mrg::graphics::FontHandle performanceFont_;
     std::uint64_t lastPerformanceMeasurementIndex_{};
     std::wstring framesPerSecondText_{L"FPS: measuring..."};

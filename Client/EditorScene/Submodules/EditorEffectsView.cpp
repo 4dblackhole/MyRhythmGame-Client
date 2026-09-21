@@ -5,34 +5,49 @@ using namespace editor_ui;
 
 void EditorView::DrawEffects()
 {
-    Text({136, 105, 1000, 40}, L"이펙트", 28);
+    const auto &labels = Texts();
+    Text({136, 105, 1000, 40}, std::wstring(labels.effectsTitle), 28);
     Box({132, 173, 1728, 310}, White, 12);
     Box({132, 503, 1728, 365}, White, 12);
-    Text({156, 190, 1650, 38}, L"시작 마디 / 박자      종류           값 / 참조 인덱스", 22);
+    Text({156, 190, 1650, 38}, std::wstring(labels.effectsColumns), 22);
     const auto &e = state_.editor->Effects();
     const auto total = e.commands.size() + e.hitSoundChanges.size();
-    static constexpr const wchar_t *names[]{L"볼륨",        L"마디선",    L"노트 속도",
-                                            L"스크롤 속도", L"동 사운드", L"캇 사운드"};
+    const auto commandTypeText = [&labels](const chart::EffectCommandType type) {
+        switch (type)
+        {
+        case chart::EffectCommandType::BusVolume:
+            return std::wstring(labels.effectTypes[0]);
+        case chart::EffectCommandType::MeasureLineVisible:
+            return std::wstring(labels.effectTypes[1]);
+        case chart::EffectCommandType::NoteSpeed:
+            return std::wstring(labels.effectTypes[2]);
+        case chart::EffectCommandType::ScrollSpeed:
+            return std::wstring(labels.effectTypes[3]);
+        default:
+            return std::to_wstring(static_cast<int>(type));
+        }
+    };
     for (std::size_t i = state_.listOffset; i < total && i < state_.listOffset + 4; ++i)
     {
         const float y = 245 + static_cast<float>(i - state_.listOffset) * 48;
-        std::wstring text;
+        std::wstring rowText;
         if (i < e.commands.size())
         {
             const auto &c = e.commands[i];
-            text = std::to_wstring(c.position.measure + 1) + L" / " +
-                   Wide(Fraction(c.position.fraction)) + L"    " +
-                   std::to_wstring(static_cast<int>(c.type)) + L"    " +
-                   std::to_wstring(c.beginValue) + L" → " + std::to_wstring(c.endValue);
+            rowText = std::to_wstring(c.position.measure + 1) + L" / " +
+                      Wide(Fraction(c.position.fraction)) + L"    " +
+                      commandTypeText(c.type) + L"    " +
+                      std::to_wstring(c.beginValue) + L" → " + std::to_wstring(c.endValue);
         }
         else
         {
             const auto &c = e.hitSoundChanges[i - e.commands.size()];
-            text = std::to_wstring(c.position.measure + 1) + L" / " +
-                   Wide(Fraction(c.position.fraction)) +
-                   (c.keyType == 1 ? L"    동    " : L"    캇    ") + Wide(c.soundIndex);
+            rowText = std::to_wstring(c.position.measure + 1) + L" / " +
+                      Wide(Fraction(c.position.fraction)) + L"    " +
+                      std::wstring(c.keyType == 1 ? labels.don : labels.kat) + L"    " +
+                      Wide(c.soundIndex);
         }
-        Button({156, y, 1430, 40}, text, [this, i] {
+        Button({156, y, 1430, 40}, rowText, [this, i] {
             const auto &effects = state_.editor->Effects();
             state_.effectFields[2].clear();
             state_.effectFields[3].clear();
@@ -72,7 +87,7 @@ void EditorView::DrawEffects()
             }
             state_.rebuild = true;
         });
-        Button({1620, y, 195, 40}, L"삭제", [this, i] {
+        Button({1620, y, 195, 40}, std::wstring(labels.remove), [this, i] {
             auto effects = state_.editor->Effects();
             if (i < effects.commands.size())
                 effects.commands.erase(effects.commands.begin() + i);
@@ -83,26 +98,25 @@ void EditorView::DrawEffects()
             state_.rebuild = true;
         });
     }
-    Field({156, 595, 188, 42}, L"시작 마디", state_.effectFields[0]);
-    Field({370, 595, 188, 42}, L"시작 박자", state_.effectFields[1]);
-    Field({584, 595, 188, 42}, L"끝 마디 (선택)", state_.effectFields[2]);
-    Field({798, 595, 188, 42}, L"끝 박자 (선택)", state_.effectFields[3]);
-    Button({1036, 595, 789, 42}, names[state_.effectType], [this] {
+    Field({156, 595, 188, 42}, labels.startMeasure.data(), state_.effectFields[0]);
+    Field({370, 595, 188, 42}, labels.startBeat.data(), state_.effectFields[1]);
+    Field({584, 595, 188, 42}, labels.endMeasureOptional.data(), state_.effectFields[2]);
+    Field({798, 595, 188, 42}, labels.endBeatOptional.data(), state_.effectFields[3]);
+    Button({1036, 595, 789, 42}, std::wstring(labels.effectTypes[state_.effectType]), [this] {
         state_.effectType = (state_.effectType + 1) % 6;
         state_.rebuild = true;
     });
     Field({156, 718, 319, 42},
-          state_.effectType >= 4 ? L"히트사운드 인덱스" : L"시작 값 (마디선 0/1)",
+          state_.effectType >= 4 ? labels.hitSoundIndex.data() : labels.startValue.data(),
           state_.effectFields[4]);
-    Field({500, 718, 319, 42}, L"끝 값", state_.effectFields[5]);
-    static constexpr const wchar_t *curves[]{L"Step", L"Linear", L"Smoothstep", L"Exponential"};
-    Button({844, 718, 360, 42}, curves[state_.curve], [this] {
+    Field({500, 718, 319, 42}, labels.endValue.data(), state_.effectFields[5]);
+    Button({844, 718, 360, 42}, std::wstring(labels.curves[state_.curve]), [this] {
         state_.curve = (state_.curve + 1) % 4;
         state_.rebuild = true;
     });
-    Field({1230, 718, 245, 42}, L"오디오 버스", state_.effectFields[6]);
+    Field({1230, 718, 245, 42}, labels.audioBus.data(), state_.effectFields[6]);
     Button(
-        {1508, 718, 317, 42}, L"추가 / 같은 위치 수정",
+        {1508, 718, 317, 42}, std::wstring(labels.addOrUpdateEffect),
         [this] {
             auto effects = state_.editor->Effects();
             const auto p = Position(state_.effectFields[0], state_.effectFields[1]);
@@ -141,8 +155,5 @@ void EditorView::DrawEffects()
             state_.rebuild = true;
         },
         true);
-    Text({156, 800, 1620, 50},
-         L"동·캇은 독립 설정입니다. 둘 다 변경하려면 같은 위치에 각각 추가하세요. 변경 값은 다음 "
-         L"지시까지 유지합니다.",
-         18);
+    Text({156, 800, 1620, 50}, std::wstring(labels.effectsHelp), 18);
 }

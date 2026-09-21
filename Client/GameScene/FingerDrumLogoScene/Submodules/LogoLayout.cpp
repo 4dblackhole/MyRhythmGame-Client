@@ -1,6 +1,7 @@
 #include "LogoView.h"
 #include "LogoStyle.h"
 #include "App/AssetPaths.h"
+#include "Texts/GameScene/FingerDrumLogoScene/LogoTexts.h"
 using namespace logo_ui;
 
 void LogoView::CreateLogoStrip()
@@ -28,6 +29,7 @@ void LogoView::CreateLogoStrip()
 
 void LogoView::CreateMenu()
 {
+    const auto &text = finger_drum::texts::Logo(texts_.CurrentLanguage());
     auto &menu = canvas_->CreateNode(mrg::visual2d::Anchor::Center, "FingerDrum.Menu");
     menu.SetPivot({0.5F, 0.5F});
     menu.SetSize(MenuSize);
@@ -35,22 +37,22 @@ void LogoView::CreateMenu()
     menu.SetZIndex(10);
     auto &gameStart = mrg::visual2d::CreateButton(
         menu, {ButtonLeft, MenuSize.height - ButtonHeight, ButtonWidth, ButtonHeight},
-        L"Game Start", "FingerDrum.GameStart");
+        std::wstring(text.menu[GameStartIndex]), "FingerDrum.GameStart");
     auto &editor = mrg::visual2d::CreateButton(menu,
                                                {ButtonLeft,
                                                 MenuSize.height - ButtonVerticalStep - ButtonHeight,
                                                 ButtonWidth, ButtonHeight},
-                                               L"Editor", "FingerDrum.Editor");
+                                               std::wstring(text.menu[EditorIndex]), "FingerDrum.Editor");
     auto &option = mrg::visual2d::CreateButton(
         menu,
         {ButtonLeft, MenuSize.height - ButtonVerticalStep * 2.0F - ButtonHeight, ButtonWidth,
          ButtonHeight},
-        L"Option", "FingerDrum.Option");
+        std::wstring(text.menu[OptionIndex]), "FingerDrum.Option");
     auto &exit = mrg::visual2d::CreateButton(
         menu,
         {ButtonLeft, MenuSize.height - ButtonVerticalStep * 3.0F - ButtonHeight, ButtonWidth,
          ButtonHeight},
-        L"Exit", "FingerDrum.Exit");
+        std::wstring(text.menu[ExitIndex]), "FingerDrum.Exit");
     menuButtons_ = {&gameStart, &editor, &option, &exit};
     menuButtonIds_ = {gameStart.Id(), editor.Id(), option.Id(), exit.Id()};
 
@@ -69,6 +71,20 @@ void LogoView::CreateMenu()
     selectionCursor_ = &cursor;
 
     SetSelectedMenuItem(GameStartIndex);
+}
+
+void LogoView::ApplyTexts()
+{
+    const auto &text = finger_drum::texts::Logo(texts_.CurrentLanguage());
+    for (std::size_t index = 0; index < menuButtons_.size(); ++index)
+    {
+        auto &component =
+            RequireComponent<mrg::visual2d::TextVisualComponent>(*menuButtons_[index]);
+        component.SetText(std::wstring(text.menu[index]));
+        texts_.ApplyFont(component);
+    }
+    options_.RefreshTexts();
+    textRevision_ = texts_.Revision();
 }
 
 void LogoView::UpdateLogoStripLayout()

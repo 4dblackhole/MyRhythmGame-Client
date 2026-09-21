@@ -21,6 +21,13 @@
     <Filter Include="GameScene\RhythmTestScene" />
     <Filter Include="GameScene\RhythmTestScene\Submodules" />
     <Filter Include="Presentation" />
+    <Filter Include="Texts" />
+    <Filter Include="Texts\EditorScene" />
+    <Filter Include="Texts\GameScene" />
+    <Filter Include="Texts\GameScene\FingerDrumLogoScene" />
+    <Filter Include="Texts\GameScene\MusicSelectScene" />
+    <Filter Include="Texts\GameScene\RhythmTestScene" />
+    <Filter Include="Texts\Options" />
     <ClInclude Include="App\AssetPaths.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\FingerDrumGame.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\FingerDrumGame.h"><Filter>App</Filter></ClInclude>
@@ -103,6 +110,20 @@
     <ClInclude Include="Presentation\LaneKeyBeam.h"><Filter>Presentation</Filter></ClInclude>
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp"><Filter>Presentation</Filter></ClCompile>
     <ClInclude Include="Presentation\MarqueeTextComponent.h"><Filter>Presentation</Filter></ClInclude>
+    <ClCompile Include="Presentation\OptionsPanel.cpp"><Filter>Presentation</Filter></ClCompile>
+    <ClInclude Include="Presentation\OptionsPanel.h"><Filter>Presentation</Filter></ClInclude>
+    <ClCompile Include="Texts\EditorScene\EditorTexts.cpp"><Filter>Texts\EditorScene</Filter></ClCompile>
+    <ClInclude Include="Texts\EditorScene\EditorTexts.h"><Filter>Texts\EditorScene</Filter></ClInclude>
+    <ClCompile Include="Texts\GameScene\FingerDrumLogoScene\LogoTexts.cpp"><Filter>Texts\GameScene\FingerDrumLogoScene</Filter></ClCompile>
+    <ClInclude Include="Texts\GameScene\FingerDrumLogoScene\LogoTexts.h"><Filter>Texts\GameScene\FingerDrumLogoScene</Filter></ClInclude>
+    <ClCompile Include="Texts\GameScene\MusicSelectScene\MusicSelectTexts.cpp"><Filter>Texts\GameScene\MusicSelectScene</Filter></ClCompile>
+    <ClInclude Include="Texts\GameScene\MusicSelectScene\MusicSelectTexts.h"><Filter>Texts\GameScene\MusicSelectScene</Filter></ClInclude>
+    <ClCompile Include="Texts\GameScene\RhythmTestScene\GameplayTexts.cpp"><Filter>Texts\GameScene\RhythmTestScene</Filter></ClCompile>
+    <ClInclude Include="Texts\GameScene\RhythmTestScene\GameplayTexts.h"><Filter>Texts\GameScene\RhythmTestScene</Filter></ClInclude>
+    <ClCompile Include="Texts\Options\OptionTexts.cpp"><Filter>Texts\Options</Filter></ClCompile>
+    <ClInclude Include="Texts\Options\OptionTexts.h"><Filter>Texts\Options</Filter></ClInclude>
+    <ClCompile Include="Texts\TextCatalog.cpp"><Filter>Texts</Filter></ClCompile>
+    <ClInclude Include="Texts\TextCatalog.h"><Filter>Texts</Filter></ClInclude>
 <None Include="Assets\Unused\Sounds\pop.wav"><Filter>Assets\Unused\Sounds</Filter></None>
   </ItemGroup>
 </Project>

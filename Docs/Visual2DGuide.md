@@ -122,6 +122,17 @@ sprite.AddComponent<mrg::visual2d::PointerReceiverComponent>(
 수 있다. `CustomCollider2DComponent`에는 삼각형, 알파 마스크 같은 게임 전용
 판정 전략을 전달할 수 있다.
 
+`TextVisualComponent::SetFont`와 `ComboBoxBehaviorComponent::SetFont`에는
+backend-neutral `TextFont`를 전달합니다. `Default`는 renderer 기본 글꼴,
+`System`은 설치된 글꼴 family, `File`은 실행 파일 기준 글꼴 경로를 뜻합니다.
+게임의 언어별 선택은 `Client/Texts/TextCatalog.*`에서 관리합니다.
+
+```cpp
+text.SetFont({mrg::visual2d::TextFontSource::System, L"Segoe UI"});
+combo.SetFont({mrg::visual2d::TextFontSource::File,
+               L"assets/fonts/MyFont-Regular.ttf"});
+```
+
 ## 위젯 팩토리
 
 Button이나 ComboBox도 별도 Node 파생형이 아니다. 팩토리는 자주 쓰는 컴포넌트

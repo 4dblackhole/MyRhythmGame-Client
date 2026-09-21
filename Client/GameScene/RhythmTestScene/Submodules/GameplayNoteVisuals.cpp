@@ -224,6 +224,7 @@ void GameplayPresenter::CreateNoteVisuals()
                                                 L"", "RemainingHits");
                 auto &text =
                     RequireComponent<mrg::visual2d::TextVisualComponent>(*layers.counterText);
+                texts_.ApplyFont(text);
                 text.SetFontSize(22.0F);
                 text.SetTextColor({1.0F, 1.0F, 1.0F, 1.0F});
                 text.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);

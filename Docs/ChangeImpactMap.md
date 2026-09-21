@@ -10,6 +10,8 @@
 | 곡 카드/난이도 모양 | 같은 폴더 `SongSelectCards.cpp` | MusicSelectView.h; lobby/editor selector |
 | 곡/난이도 이동·검색·정렬 | 같은 폴더 `SongSelectionState.*`, 입력 연결은 SongSelectInput.cpp | SceneStateTests.cpp |
 | 곡 미리듣기 | 같은 폴더 `SongPreviewController.*` | AudioPlayback 공개 계약, lobby smoke |
+| 문구·언어·글꼴 | `Client/Texts/TextCatalog.*`, 해당 화면의 `Texts/**/<화면>*Texts.*` | TextManagement; 해당 화면 smoke |
+| 로고/곡 선택 옵션 패널 | `Client/Presentation/OptionsPanel.*` | LogoView/MusicSelectView 입력 연결; logo/lobby smoke |
 | Scene 전환/선택 전달 | Scene 주 파일, `Client/GameFlow/GameplayLaunchStore.h` | SceneStateTests; ExecutionFlow |
 | 플레이 Clock·pause·reset·입력 | `RhythmTestScene/Submodules/GameplaySessionController.*`, GameplayInput.cpp | RhythmCoreTests; gameplay smoke |
 | 노트 이미지·롱노트 | 같은 폴더 `GameplayNoteVisuals.cpp` | GameplayPresenter.h, NoteVisualKind; gameplay smoke |
@@ -47,6 +49,9 @@ Client/EditorScene/
     EditorWorkspace.*         문서와 편집 상태
     EditorView.*              UI 조립과 표시
     EditorAnalysisController.* worker 수명과 결과
+Client/Texts/
+  TextCatalog.*                  공유 언어 상태와 언어별 글꼴
+  <사용 위치>/                  화면별 한국어·영어 문구 표
 FingerDrum.Rhythm/Note/
   Note.h                      기존 호출부 호환 facade
   Submodules/

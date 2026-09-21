@@ -6,7 +6,7 @@ using namespace song_select;
 
 void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
 {
-    const std::optional<mrg::visual2d::Point> canvasPointer =
+    canvasPointer_ =
         input.IsMouseInsideWindow()
             ? mrg::visual2d::MapScreenPointer(
                   {static_cast<float>(input.MousePositionX()),
@@ -14,8 +14,8 @@ void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
                   {static_cast<float>(width_), static_cast<float>(height_)}, *canvas_)
             : std::nullopt;
     mrg::visual2d::PointerInput pointer{};
-    pointer.available = canvasPointer.has_value();
-    pointer.position = canvasPointer.value_or(mrg::visual2d::Point{});
+    pointer.available = canvasPointer_.has_value();
+    pointer.position = canvasPointer_.value_or(mrg::visual2d::Point{});
     pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
     pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
     pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
@@ -23,8 +23,8 @@ void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
     pointer.timestampTicks = LatestPointerTimestamp(input);
     inputRouter_.Process(*canvas_, pointer);
 
-    if (canvasPointer.has_value() && songViewport_ != nullptr &&
-        songViewport_->BoundsInCanvas().Contains(*canvasPointer) &&
+    if (!options_.IsVisible() && canvasPointer_.has_value() && songViewport_ != nullptr &&
+        songViewport_->BoundsInCanvas().Contains(*canvasPointer_) &&
         std::abs(input.MouseWheelDelta()) > 0.0F)
     {
         scrollOffset_ -= input.MouseWheelDelta() * layout::ScrollStep;
@@ -36,6 +36,16 @@ bool MusicSelectView::ProcessActions()
 {
     for (const mrg::visual2d::Action &action : canvas_->TakeActions())
     {
+        if (options_.ProcessAction(action))
+        {
+            ApplyTexts();
+            RebuildSongCards();
+            return true;
+        }
+        if (options_.IsVisible())
+        {
+            continue;
+        }
         if (action.type == mrg::visual2d::ActionType::SelectionChanged &&
             action.source == sortSelectorId_)
         {
@@ -56,6 +66,11 @@ bool MusicSelectView::ProcessActions()
         if (action.source == goButtonId_)
         {
             command_ = SongSelectCommand::Launch;
+            return true;
+        }
+        if (action.source == optionButtonId_)
+        {
+            options_.Toggle();
             return true;
         }
         if (action.source == searchFieldId_)
@@ -91,6 +106,10 @@ bool MusicSelectView::ProcessActions()
 
 bool MusicSelectView::ProcessKeyboard(const mrg::platform::InputState &input)
 {
+    if (options_.IsVisible())
+    {
+        return false;
+    }
     if (input.WasKeyPressed(VK_ESCAPE))
     {
         if (searchFocused_)
@@ -102,7 +121,9 @@ bool MusicSelectView::ProcessKeyboard(const mrg::platform::InputState &input)
         command_ = SongSelectCommand::Back;
         return true;
     }
-    if (input.IsKeyDown(VK_CONTROL) && input.WasKeyPressed(static_cast<std::uint16_t>('F')))
+    const bool controlDown =
+        input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+    if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('F')))
     {
         searchFocused_ = true;
         RefreshSearchPresentation();

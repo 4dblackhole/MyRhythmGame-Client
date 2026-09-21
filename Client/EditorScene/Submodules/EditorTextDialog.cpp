@@ -5,6 +5,7 @@ namespace editor_ui
     struct EditDialog
     {
         std::wstring title, value;
+        std::wstring ok, cancel;
         HWND edit{};
         bool accepted{};
     };
@@ -23,10 +24,12 @@ namespace editor_ui
                                              ES_AUTOVSCROLL | WS_VSCROLL,
                                          12, 12, r.right - 24, r.bottom - 65, dialog,
                                          reinterpret_cast<HMENU>(100), nullptr, nullptr);
-            CreateWindowW(L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
+            CreateWindowW(L"BUTTON", data->ok.c_str(),
+                          WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
                           r.right - 195, r.bottom - 42, 85, 30, dialog,
                           reinterpret_cast<HMENU>(IDOK), nullptr, nullptr);
-            CreateWindowW(L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | WS_TABSTOP, r.right - 100,
+            CreateWindowW(L"BUTTON", data->cancel.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+                          r.right - 100,
                           r.bottom - 42, 85, 30, dialog, reinterpret_cast<HMENU>(IDCANCEL), nullptr,
                           nullptr);
             SendMessageW(data->edit, WM_SETFONT,
@@ -49,7 +52,9 @@ namespace editor_ui
         }
         return FALSE;
     }
-    std::optional<std::string> EditText(const std::wstring &title, const std::string &value)
+    std::optional<std::string> EditText(
+        const std::wstring &title, const std::string &value,
+        const finger_drum::texts::EditorTextSet &texts)
     {
         struct Template
         {
@@ -59,7 +64,7 @@ namespace editor_ui
         layout.dialog.style = WS_POPUP | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME | DS_CENTER;
         layout.dialog.cx = 360;
         layout.dialog.cy = 190;
-        EditDialog data{title, Wide(value)};
+        EditDialog data{title, Wide(value), std::wstring(texts.ok), std::wstring(texts.cancel)};
         if (DialogBoxIndirectParamW(GetModuleHandleW(nullptr), &layout.dialog, GetActiveWindow(),
                                     EditProcedure, reinterpret_cast<LPARAM>(&data)) == -1)
             throw std::runtime_error("Could not open the text input dialog.");

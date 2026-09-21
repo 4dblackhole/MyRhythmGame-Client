@@ -103,7 +103,7 @@ void SongSelectionState::SelectVisibleSong(const std::size_t visiblePosition)
     }
     focusedSongPosition_ = visiblePosition;
     selectedPatternIndex_ = 0;
-    launchError_.clear();
+    ClearLaunchError();
 }
 
 void SongSelectionState::SelectPattern(std::size_t index)
@@ -114,5 +114,17 @@ void SongSelectionState::SelectPattern(std::size_t index)
     if (index >= patterns.size())
         return;
     selectedPatternIndex_ = index;
-    launchError_.clear();
+    ClearLaunchError();
+}
+
+void SongSelectionState::SetLaunchError(const LaunchErrorKind kind, std::string detail)
+{
+    launchErrorKind_ = kind;
+    launchErrorDetail_ = std::move(detail);
+}
+
+void SongSelectionState::ClearLaunchError() noexcept
+{
+    launchErrorKind_ = LaunchErrorKind::None;
+    launchErrorDetail_.clear();
 }

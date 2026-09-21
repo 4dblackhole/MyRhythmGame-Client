@@ -1,7 +1,9 @@
 #pragma once
 #include "MRG_Core.h"
+#include "Presentation/OptionsPanel.h"
 #include "SongSelectionState.h"
 #include "SongSelectPurpose.h"
+#include "Texts/TextCatalog.h"
 #include <vector>
 
 enum class SongSelectCommand
@@ -14,8 +16,9 @@ class MusicSelectView final
 {
   public:
     MusicSelectView(mrg::visual2d::ScreenVisual2DManager &visuals, SongSelectionState &state,
-                    SongSelectPurpose purpose)
-        : selection_(state), purpose_(purpose), screenVisuals_(visuals)
+                    SongSelectPurpose purpose, finger_drum::texts::TextCatalog &texts)
+        : selection_(state), purpose_(purpose), screenVisuals_(visuals), texts_(texts),
+          options_(texts)
     {
     }
     void SetVisible(bool visible)
@@ -23,7 +26,7 @@ class MusicSelectView final
         static_cast<void>(canvasHandle_.SetVisible(visible));
     }
     void Initialize(const mrg::EngineServices &services);
-    SongSelectCommand Update(const mrg::platform::InputState &input);
+    SongSelectCommand Update(const mrg::platform::InputState &input, double deltaSeconds);
     void OnResize(const std::uint32_t width, const std::uint32_t height);
     void Shutdown() noexcept;
     void RebuildVisibleSongs();
@@ -46,6 +49,7 @@ class MusicSelectView final
     void CreateSongInformationPanel();
     void CreateSongBrowser();
     void CreateFooter();
+    void ApplyTexts();
     void UpdateResponsiveLayout();
     void UpdateRecordPanelLayout();
     void UpdateSongInformationLayout();
@@ -89,6 +93,9 @@ class MusicSelectView final
     SongSelectPurpose purpose_;
     SongSelectCommand command_{};
     mrg::visual2d::ScreenVisual2DManager &screenVisuals_;
+    finger_drum::texts::TextCatalog &texts_;
+    finger_drum::presentation::OptionsPanel options_;
+    std::uint64_t textRevision_{};
     std::vector<SongCard> songCards_;
     std::vector<std::pair<mrg::visual2d::NodeId, std::size_t>> difficultyButtonIds_;
     float scrollOffset_{};
@@ -100,9 +107,11 @@ class MusicSelectView final
     mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas *canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;
+    std::optional<mrg::visual2d::Point> canvasPointer_;
     mrg::visual2d::Visual2DNode *board_{};
     mrg::visual2d::Visual2DNode *background_{};
     mrg::visual2d::Visual2DNode *categoryBar_{};
+    mrg::visual2d::Visual2DNode *categoryLabel_{};
     mrg::visual2d::Visual2DNode *recordPanel_{};
     mrg::visual2d::Visual2DNode *recordSelector_{};
     mrg::visual2d::Visual2DNode *emptyRecordMessage_{};

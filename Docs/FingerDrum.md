@@ -27,12 +27,19 @@
 - `Game Start`: YMM/YMP catalog를 표시하는 `MusicSelectScene`으로 이동한다.
 - `Editor`: 같은 catalog 탐색을 사용하는 에디터 곡 선택 Scene으로 이동한다.
   기록 패널은 생성하지 않고 곡·난이도 정보 패널이 그 영역까지 차지한다.
+- `Option`: 왼쪽 옵션 패널을 열고 닫는다.
 - `Exit`: `SceneManager::Quit`을 요청해 게임을 정상 종료한다.
 - 마우스 이동: hover한 버튼으로 삼각형 선택 커서가 이동한다.
 - 마우스 왼쪽 클릭: 해당 버튼을 실행한다.
 - `↑`/`↓` 또는 `W`/`S`: 선택 커서를 이동한다.
 - `Enter` 또는 `Space`: 현재 선택한 버튼을 실행한다.
+- `Ctrl+O`: 옵션 패널을 연다. 다시 누르면 0.2초 슬라이드로 닫힌다.
 - `F7`: 모든 FingerDrum Scene 위 우측 하단 FPS/UPS 표시를 토글한다.
+
+옵션 패널은 16:9 논리 폭의 1/4인 320 단위, 화면 전체 높이 720 단위다.
+휠이나 가운데 버튼 드래그, 빈 영역 왼쪽 버튼 드래그로 스크롤하며 현재는
+한국어/영어 언어 선택기만 제공한다. 문구와 글꼴 소유권은
+[문구·언어·글꼴 관리](TextManagement.md)에 설명한다.
 
 커서 기본 자산은 `FingerDrum.Assets/Assets/Skins/Default Skin/TitleImage/Menu/SelectionCursor.png`이며
 투명 PNG다.

@@ -5,7 +5,7 @@ using namespace logo_ui;
 
 void LogoView::ProcessPointer(const mrg::platform::InputState &input)
 {
-    const std::optional<mrg::visual2d::Point> canvasPointer =
+    canvasPointer_ =
         input.IsMouseInsideWindow()
             ? mrg::visual2d::MapScreenPointer(
                   {static_cast<float>(input.MousePositionX()),
@@ -14,8 +14,8 @@ void LogoView::ProcessPointer(const mrg::platform::InputState &input)
             : std::nullopt;
 
     mrg::visual2d::PointerInput pointer{};
-    pointer.available = canvasPointer.has_value();
-    pointer.position = canvasPointer.value_or(mrg::visual2d::Point{});
+    pointer.available = canvasPointer_.has_value();
+    pointer.position = canvasPointer_.value_or(mrg::visual2d::Point{});
     pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
     pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
     pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
@@ -69,6 +69,15 @@ bool LogoView::ApplyMenuActions()
 {
     for (const mrg::visual2d::Action &action : canvas_->TakeActions())
     {
+        if (options_.ProcessAction(action))
+        {
+            ApplyTexts();
+            return true;
+        }
+        if (options_.IsVisible())
+        {
+            continue;
+        }
         if (action.type != mrg::visual2d::ActionType::Clicked)
         {
             continue;
@@ -108,6 +117,11 @@ void LogoView::SetSelectedMenuItem(const std::size_t index)
 
 void LogoView::ActivateMenuItem(std::size_t index)
 {
+    if (index == OptionIndex)
+    {
+        options_.Toggle();
+        return;
+    }
     command_ = index;
 }
 

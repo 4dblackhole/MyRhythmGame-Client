@@ -19,29 +19,28 @@ namespace editor_tools
         int id;
         finger_drum::mode::TaikoNoteType note;
         Group group;
-        const wchar_t *label;
         finger_drum::mode::TaikoAction buzzAction{finger_drum::mode::TaikoAction::Don};
     };
-    constexpr Tool Define(finger_drum::mode::TaikoNoteType type, Group group, const wchar_t *label)
+    constexpr Tool Define(finger_drum::mode::TaikoNoteType type, Group group)
     {
-        return {static_cast<int>(type), type, group, label};
+        return {static_cast<int>(type), type, group};
     }
     using Type = finger_drum::mode::TaikoNoteType;
     // 18 identifies an editor tool only. Both Buzz tools serialize persisted ID 17.
     inline constexpr std::array Tools{
-        Define(Type::Don, Group::Small, L"동"),
-        Define(Type::Kat, Group::Small, L"캇"),
-        Define(Type::BigDon, Group::Big, L"큰 동"),
-        Define(Type::BigKat, Group::Big, L"큰 캇"),
-        Define(Type::Purple, Group::Big, L"보라노트"),
-        Define(Type::Roll, Group::Roll, L"Roll"),
-        Define(Type::TickRoll, Group::Roll, L"TickRoll"),
-        Define(Type::BigRoll, Group::Roll, L"BigRoll"),
-        Define(Type::BigTickRoll, Group::Roll, L"BigTickRoll"),
-        Define(Type::Balloon, Group::Focus, L"Balloon"),
-        Define(Type::DengDeng, Group::Focus, L"DengDeng"),
-        Define(Type::Buzz, Group::Roll, L"Don Buzz"),
-        Tool{18, Type::Buzz, Group::Roll, L"Kat Buzz", finger_drum::mode::TaikoAction::Kat},
+        Define(Type::Don, Group::Small),
+        Define(Type::Kat, Group::Small),
+        Define(Type::BigDon, Group::Big),
+        Define(Type::BigKat, Group::Big),
+        Define(Type::Purple, Group::Big),
+        Define(Type::Roll, Group::Roll),
+        Define(Type::TickRoll, Group::Roll),
+        Define(Type::BigRoll, Group::Roll),
+        Define(Type::BigTickRoll, Group::Roll),
+        Define(Type::Balloon, Group::Focus),
+        Define(Type::DengDeng, Group::Focus),
+        Define(Type::Buzz, Group::Roll),
+        Tool{18, Type::Buzz, Group::Roll, finger_drum::mode::TaikoAction::Kat},
     };
     constexpr const Tool *Find(int id) noexcept
     {

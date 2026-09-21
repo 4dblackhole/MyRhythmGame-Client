@@ -1,57 +1,64 @@
 #include "MusicSelectView.h"
 #include "SongSelectLayout.h"
 #include "SongSelectionText.h"
+#include "Texts/GameScene/MusicSelectScene/MusicSelectTexts.h"
 
 using namespace song_select;
 
 void MusicSelectView::CreateCategoryBar()
 {
+    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
     auto &bar = AddBorderedPanel(*board_, layout::CategoryBar, PanelWhite, BorderBlue, 3.0F, 20.0F,
                                  "Categories");
     categoryBar_ = &bar;
     auto &all = AddPanel(bar, layout::AllCategory, AccentBlue, "AllCategory", 19.0F);
-    AddLabel(all, {0.0F, 0.0F, 86.0F, 38.0F}, L"ALL", 13.0F, PureWhite, "AllCategoryText",
-             mrg::visual2d::TextAlignment::Center);
+    categoryLabel_ = &AddLabel(
+        all, {0.0F, 0.0F, 86.0F, 38.0F}, std::wstring(text.all), 13.0F, PureWhite,
+        "AllCategoryText", mrg::visual2d::TextAlignment::Center);
 }
 
 void MusicSelectView::CreateRecordPanel()
 {
+    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
     auto &panel = AddBorderedPanel(*board_, layout::RecordPanel, PanelWhite, BorderBlue, 3.0F,
                                    24.0F, "RecordPanel");
     recordPanel_ = &panel;
     auto &selector = mrg::visual2d::CreateComboBox(
         panel, ScaleTopLeftBounds(layout::RecordSelector, panel.NodeSize().height),
-        {L"PERSONAL RECORD"}, "RecordSelector");
+        {std::wstring(text.personalRecord)}, "RecordSelector");
     recordSelector_ = &selector;
     recordSelectorId_ = selector.Id();
     ApplySpriteStyle(selector, PaleBlue, PaleBlue);
     SetCornerRadius(selector, 10.0F);
     auto &recordBehavior = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(selector);
     recordBehavior.SetFontSize(CanvasFontSize(10.0F));
+    texts_.ApplyFont(recordBehavior);
     recordBehavior.SetTextColor(DeepBlue);
     recordBehavior.SetSelectedTextColor(PureWhite);
     recordBehavior.SetPopupBackgroundColor(PureWhite);
-    emptyRecordMessage_ = &AddLabel(panel, layout::EmptyRecordMessage, L"NO RECORDS", 28.0F,
-                                    DeepBlue, "NoRecords", mrg::visual2d::TextAlignment::Center);
+    emptyRecordMessage_ = &AddLabel(
+        panel, layout::EmptyRecordMessage, std::wstring(text.noRecords), 28.0F, DeepBlue,
+        "NoRecords", mrg::visual2d::TextAlignment::Center);
 }
 
 void MusicSelectView::CreateSongInformationPanel()
 {
+    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
     auto &panel = AddBorderedPanel(*board_, layout::InformationPanel, PanelWhite, BorderBlue, 3.0F,
                                    24.0F, "SongInformation");
     informationPanel_ = &panel;
     auto &preview = AddPanel(panel, layout::Preview, {0.765F, 0.906F, 0.980F, 1.0F},
                              "BackgroundPreview", 12.0F);
     preview_ = &preview;
-    previewTitle_ = &AddLabel(preview, layout::PreviewTitle, L"BACKGROUND PREVIEW", 13.0F,
+    previewTitle_ = &AddLabel(preview, layout::PreviewTitle, std::wstring(text.backgroundPreview), 13.0F,
                               MutedBlue, "PreviewTitle", mrg::visual2d::TextAlignment::Center);
-    previewEmpty_ = &AddLabel(preview, layout::PreviewEmpty, L"NO IMAGE", 10.0F, SoftTextBlue,
+    previewEmpty_ = &AddLabel(preview, layout::PreviewEmpty, std::wstring(text.noImage), 10.0F, SoftTextBlue,
                               "PreviewEmpty", mrg::visual2d::TextAlignment::Center);
 
-    selectedSongLabel_ = &AddLabel(panel, layout::SelectedSong, L"NO SONG SELECTED", 28.0F,
+    selectedSongLabel_ = &AddLabel(panel, layout::SelectedSong, std::wstring(text.noSongSelected), 28.0F,
                                    DeepBlue, "SelectedSong");
     selectedSongLabel_->AddComponent<finger_drum::presentation::MarqueeTextComponent>(
-        L"NO SONG SELECTED", 24, 0.28);
+        std::wstring(text.noSongSelected), 24, 0.28);
     selectedArtistLabel_ =
         &AddLabel(panel, layout::SelectedArtist, L"", 16.0F, MutedBlue, "SelectedArtist");
     selectedArtistLabel_->AddComponent<finger_drum::presentation::MarqueeTextComponent>(L"", 34,
@@ -60,9 +67,9 @@ void MusicSelectView::CreateSongInformationPanel()
     auto &information = AddBorderedPanel(panel, layout::DifficultyInformation, PaleBlue, PaleBorder,
                                          1.0F, 12.0F, "DifficultyInformation");
     difficultyInformation_ = &information;
-    difficultyHeading_ = &AddLabel(information, layout::DifficultyHeading, L"DIFFICULTY", 9.0F,
+    difficultyHeading_ = &AddLabel(information, layout::DifficultyHeading, std::wstring(text.difficulty), 9.0F,
                                    SoftTextBlue, "DifficultyHeading");
-    creatorHeading_ = &AddLabel(information, layout::CreatorHeading, L"CREATOR", 9.0F, SoftTextBlue,
+    creatorHeading_ = &AddLabel(information, layout::CreatorHeading, std::wstring(text.creator), 9.0F, SoftTextBlue,
                                 "CreatorHeading");
     selectedPatternLabel_ = &AddLabel(information, layout::SelectedDifficulty, L"—", 18.0F,
                                       AccentBlue, "SelectedDifficulty");
@@ -71,18 +78,20 @@ void MusicSelectView::CreateSongInformationPanel()
     informationDivider_ =
         &AddPanel(information, layout::InformationDivider, PaleBorder, "InformationDivider");
     selectedDetailsLabel_ =
-        &AddLabel(information, layout::SelectedDetails, L"LEVEL —   BPM —   NOTES —   MODE —", 9.0F,
+        &AddLabel(information, layout::SelectedDetails, std::wstring(text.emptyDetails), 9.0F,
                   MutedBlue, "SelectedDetails", mrg::visual2d::TextAlignment::Center);
 }
 
 void MusicSelectView::CreateSongBrowser()
 {
+    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
     auto &panel = AddBorderedPanel(*board_, layout::BrowserPanel, PanelWhite, BorderBlue, 3.0F,
                                    24.0F, "SongBrowser");
     browserPanel_ = &panel;
 
     auto &search = mrg::visual2d::CreateButton(
-        panel, ScaleTopLeftBounds(layout::SearchField, panel.NodeSize().height), L"SEARCH SONGS",
+        panel, ScaleTopLeftBounds(layout::SearchField, panel.NodeSize().height),
+        std::wstring(text.searchSongs),
         "SearchField");
     searchField_ = &search;
     searchFieldId_ = search.Id();
@@ -90,15 +99,17 @@ void MusicSelectView::CreateSongBrowser()
     SetCornerRadius(search, 12.0F);
     auto &searchText = RequireComponent<mrg::visual2d::TextVisualComponent>(search);
     searchText.SetFontSize(CanvasFontSize(11.0F));
+    texts_.ApplyFont(searchText);
     searchText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Leading);
     searchText.SetContentBounds(
         ScaleTopLeftBounds({14.0F, 0.0F, 340.0F, 54.0F}, search.NodeSize().height));
-    searchCountLabel_ = &AddLabel(search, layout::SearchCount, L"0 SONGS", 9.0F, SoftTextBlue,
+    searchCountLabel_ = &AddLabel(search, layout::SearchCount, L"", 9.0F, SoftTextBlue,
                                   "SearchCount", mrg::visual2d::TextAlignment::Trailing);
 
     auto &sort = mrg::visual2d::CreateComboBox(
         panel, ScaleTopLeftBounds(layout::SortSelector, panel.NodeSize().height),
-        {L"난이도순", L"곡 이름순", L"아티스트 이름순"}, "SortSelector");
+        {std::wstring(text.sortModes[0]), std::wstring(text.sortModes[1]),
+         std::wstring(text.sortModes[2])}, "SortSelector");
     sortSelector_ = &sort;
     sortSelectorId_ = sort.Id();
     sort.SetZIndex(10);
@@ -108,6 +119,7 @@ void MusicSelectView::CreateSongBrowser()
     sortBehavior.SetItemHeight(38.0F * DesignToCanvasScale);
     sortBehavior.SetMaxVisibleItems(3);
     sortBehavior.SetFontSize(CanvasFontSize(12.0F));
+    texts_.ApplyFont(sortBehavior);
     sortBehavior.SetTextColor(DeepBlue);
     sortBehavior.SetSelectedTextColor(PureWhite);
     sortBehavior.SetPopupBackgroundColor(PureWhite);
@@ -127,17 +139,21 @@ void MusicSelectView::CreateSongBrowser()
         &AddPanel(viewport, layout::ScrollbarTrack, AccentBlue, "ScrollbarHandle", 3.0F);
     scrollbarHandle_->SetZIndex(3);
 
-    browserHint_ = &AddLabel(panel, layout::BrowserHint,
-                             L"← / →  MOVE SONG     ↑ / ↓  DIFFICULTY     ENTER  GO", 9.0F,
+    browserHint_ = &AddLabel(panel, layout::BrowserHint, std::wstring(text.browserHint), 9.0F,
                              SoftTextBlue, "BrowserHint", mrg::visual2d::TextAlignment::Center);
 }
 
 void MusicSelectView::CreateFooter()
 {
+    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
     auto &option = AddBorderedPanel(*board_, layout::OptionButton, PureWhite, BorderBlue, 3.0F,
                                     12.0F, "OptionSelect");
     optionButton_ = &option;
-    optionLabel_ = &AddLabel(option, {0.0F, 0.0F, 696.0F, 60.0F}, L"OPTION SELECT", 14.0F,
+    option.AddComponent<mrg::visual2d::RectangleCollider2DComponent>();
+    option.AddComponent<mrg::visual2d::PointerReceiverComponent>();
+    option.AddComponent<mrg::visual2d::ButtonBehaviorComponent>();
+    optionLabel_ = &AddLabel(option, {0.0F, 0.0F, 696.0F, 60.0F},
+                             std::wstring(text.optionSelect), 14.0F,
                              MutedBlue, "OptionLabel", mrg::visual2d::TextAlignment::Center);
     optionButtonId_ = option.Id();
 
@@ -162,12 +178,13 @@ void MusicSelectView::CreateFooter()
         return {button.Id(), &button, &fill, &label};
     };
     const EdgeButtonNodes back =
-        createEdgeButton(layout::BackButton, layout::BackLabel, L"BACK", "Back");
+        createEdgeButton(layout::BackButton, layout::BackLabel, std::wstring(text.back), "Back");
     backButtonId_ = back.id;
     backButton_ = back.button;
     backFill_ = back.fill;
     backLabel_ = back.label;
-    const EdgeButtonNodes go = createEdgeButton(layout::GoButton, layout::GoLabel, L"GO", "Go");
+    const EdgeButtonNodes go =
+        createEdgeButton(layout::GoButton, layout::GoLabel, std::wstring(text.go), "Go");
     goButtonId_ = go.id;
     goButton_ = go.button;
     goFill_ = go.fill;
@@ -211,7 +228,58 @@ mrg::visual2d::Visual2DNode &MusicSelectView::AddLabel(
         std::move(name));
     auto &textComponent = RequireComponent<mrg::visual2d::TextVisualComponent>(label);
     textComponent.SetFontSize(CanvasFontSize(penpotFontSize));
+    texts_.ApplyFont(textComponent);
     textComponent.SetTextColor(color);
     textComponent.SetHorizontalAlignment(alignment);
     return label;
+}
+
+void MusicSelectView::ApplyTexts()
+{
+    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto setLabel = [this](mrg::visual2d::Visual2DNode *node,
+                                 const std::wstring_view value) {
+        if (node == nullptr)
+            return;
+        auto &component = RequireComponent<mrg::visual2d::TextVisualComponent>(*node);
+        component.SetText(std::wstring(value));
+        texts_.ApplyFont(component);
+    };
+
+    setLabel(categoryLabel_, text.all);
+    setLabel(emptyRecordMessage_, text.noRecords);
+    setLabel(previewTitle_, text.backgroundPreview);
+    setLabel(previewEmpty_, text.noImage);
+    setLabel(difficultyHeading_, text.difficulty);
+    setLabel(creatorHeading_, text.creator);
+    setLabel(browserHint_, text.browserHint);
+    setLabel(optionLabel_, text.optionSelect);
+    setLabel(backLabel_, text.back);
+    setLabel(goLabel_, text.go);
+
+    if (recordSelector_ != nullptr)
+    {
+        auto &combo =
+            RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*recordSelector_);
+        combo.SetItems({std::wstring(text.personalRecord)});
+        texts_.ApplyFont(combo);
+    }
+    if (sortSelector_ != nullptr)
+    {
+        auto &combo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*sortSelector_);
+        const std::size_t selected = combo.SelectedIndex();
+        combo.SetItems({std::wstring(text.sortModes[0]), std::wstring(text.sortModes[1]),
+                        std::wstring(text.sortModes[2])});
+        combo.SetSelectedIndex(selected);
+        texts_.ApplyFont(combo);
+    }
+    if (searchField_ != nullptr)
+    {
+        texts_.ApplyFont(
+            RequireComponent<mrg::visual2d::TextVisualComponent>(*searchField_));
+    }
+    options_.RefreshTexts();
+    RefreshSelectionPresentation();
+    RefreshSearchPresentation();
+    textRevision_ = texts_.Revision();
 }

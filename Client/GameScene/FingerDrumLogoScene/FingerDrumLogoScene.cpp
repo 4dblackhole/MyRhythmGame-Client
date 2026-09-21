@@ -3,8 +3,9 @@
 #include "GameFlow/FingerDrumSceneIds.h"
 #include <stdexcept>
 
-FingerDrumLogoScene::FingerDrumLogoScene(mrg::visual2d::ScreenVisual2DManager &visuals)
-    : view_(std::make_unique<LogoView>(visuals))
+FingerDrumLogoScene::FingerDrumLogoScene(mrg::visual2d::ScreenVisual2DManager &visuals,
+                                         finger_drum::texts::TextCatalog &texts)
+    : view_(std::make_unique<LogoView>(visuals, texts))
 {
 }
 FingerDrumLogoScene::~FingerDrumLogoScene() = default;
@@ -23,7 +24,7 @@ void FingerDrumLogoScene::EndScene() noexcept
 void FingerDrumLogoScene::Update(const mrg::UpdateContext &context,
                                  mrg::scene::SceneManager &scenes)
 {
-    const auto selected = view_->Update(context.input);
+    const auto selected = view_->Update(context.input, context.deltaSeconds);
     if (!selected)
         return;
     const auto index = *selected;

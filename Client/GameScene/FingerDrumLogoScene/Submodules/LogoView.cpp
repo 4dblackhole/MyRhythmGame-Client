@@ -1,10 +1,12 @@
 #include "LogoView.h"
 #include "LogoStyle.h"
 #include "App/AssetPaths.h"
+#include "Texts/GameScene/FingerDrumLogoScene/LogoTexts.h"
 using namespace logo_ui;
 
-LogoView::LogoView(mrg::visual2d::ScreenVisual2DManager &screenVisuals) noexcept
-    : screenVisuals_(screenVisuals)
+LogoView::LogoView(mrg::visual2d::ScreenVisual2DManager &screenVisuals,
+                   finger_drum::texts::TextCatalog &texts) noexcept
+    : screenVisuals_(screenVisuals), texts_(texts), options_(texts)
 {
 }
 
@@ -25,11 +27,17 @@ void LogoView::Initialize(const mrg::EngineServices &services)
 
     CreateLogoStrip();
     CreateMenu();
+    options_.Initialize(*canvas_);
+    ApplyTexts();
     UpdateLogoStripLayout();
 }
 
 void LogoView::BeginScene()
 {
+    if (textRevision_ != texts_.Revision())
+    {
+        ApplyTexts();
+    }
     static_cast<void>(canvasHandle_.SetVisible(true));
 }
 
@@ -38,14 +46,25 @@ void LogoView::EndScene() noexcept
     static_cast<void>(canvasHandle_.SetVisible(false));
 }
 
-std::optional<std::size_t> LogoView::Update(const mrg::platform::InputState &input)
+std::optional<std::size_t> LogoView::Update(const mrg::platform::InputState &input,
+                                            const double deltaSeconds)
 {
     command_.reset();
     if (!canvas_)
         return command_;
+    if (textRevision_ != texts_.Revision())
+        ApplyTexts();
+    options_.Update(deltaSeconds);
+    const bool controlDown =
+        input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+    if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
+        options_.Toggle();
     ProcessPointer(input);
-    UpdateSelectionFromPointer(input);
-    if (!ApplyMenuActions())
+    options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_);
+    const bool handled = ApplyMenuActions();
+    if (!options_.IsVisible())
+        UpdateSelectionFromPointer(input);
+    if (!handled && !options_.IsVisible())
         HandleKeyboard(input);
     return command_;
 }
@@ -70,6 +89,8 @@ void LogoView::Shutdown() noexcept
         inputRouter_.Reset(*canvas_);
     }
 
+    options_.Shutdown();
+    canvasPointer_.reset();
     // Nodes are owned by the Canvas. Clear observers before its tree is
     // destroyed so this Scene never retains dangling node pointers.
     selectionCursor_ = nullptr;

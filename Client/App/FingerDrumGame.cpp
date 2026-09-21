@@ -57,24 +57,27 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
     // catalog instead of reviving the ColoredCube sample as a dependency.
     if (!scenes.RegisterScene<FingerDrumLogoScene>(std::string(finger_drum::scene_ids::Logo),
                                                    mrg::scene::SceneRetention::KeepAlive,
-                                                   std::ref(ScreenVisuals())) ||
+                                                   std::ref(ScreenVisuals()), std::ref(texts_)) ||
         !scenes.RegisterScene<MusicSelectScene>(
             std::string(finger_drum::scene_ids::Lobby), mrg::scene::SceneRetention::KeepAlive,
-            std::ref(ScreenVisuals()), std::ref(AudioPlayback()), launchRequest_) ||
+            std::ref(ScreenVisuals()), std::ref(AudioPlayback()), launchRequest_,
+            SongSelectPurpose::Gameplay, std::ref(texts_)) ||
         !scenes.RegisterScene<MusicSelectScene>(
             std::string(finger_drum::scene_ids::EditorSongSelect),
             mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),
-            std::ref(AudioPlayback()), launchRequest_, SongSelectPurpose::Editor) ||
+            std::ref(AudioPlayback()), launchRequest_, SongSelectPurpose::Editor,
+            std::ref(texts_)) ||
         !scenes.RegisterScene<EditorScene>(std::string(finger_drum::scene_ids::Editor),
                                            mrg::scene::SceneRetention::DestroyOnExit,
-                                           std::ref(ScreenVisuals()), launchRequest_) ||
+                                           std::ref(ScreenVisuals()), launchRequest_,
+                                           std::ref(texts_)) ||
         !scenes.RegisterScene<RhythmTestScene>(
             std::string(finger_drum::scene_ids::RhythmTest),
             // Gameplay routes keep only their factory while inactive. The
             // concrete mode Scene is constructed on entry and destroyed as
             // soon as it returns to Lobby.
             mrg::scene::SceneRetention::DestroyOnExit, launchRequest_, std::ref(AudioPlayback()),
-            std::ref(ScreenVisuals()), rhythmDebugMode_))
+            std::ref(ScreenVisuals()), rhythmDebugMode_, std::ref(texts_)))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MRG_Core.h"
+#include "Texts/TextCatalog.h"
 
 #include <array>
 #include <cstddef>
@@ -14,7 +15,8 @@ class LogoView;
 class FingerDrumLogoScene final : public mrg::scene::GameScene
 {
   public:
-    explicit FingerDrumLogoScene(mrg::visual2d::ScreenVisual2DManager &screenVisuals);
+    FingerDrumLogoScene(mrg::visual2d::ScreenVisual2DManager &screenVisuals,
+                        finger_drum::texts::TextCatalog &texts);
 
     ~FingerDrumLogoScene() override;
     void Initialize(const mrg::EngineServices &services) override;

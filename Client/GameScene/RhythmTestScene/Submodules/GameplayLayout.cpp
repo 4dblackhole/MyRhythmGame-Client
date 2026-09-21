@@ -18,6 +18,7 @@ void GameplayPresenter::CreatePresentation()
     audioErrorLabel_->SetZIndex(20);
     audioErrorLabel_->SetVisible(false);
     auto &audioErrorText = RequireComponent<mrg::visual2d::TextVisualComponent>(*audioErrorLabel_);
+    texts_.ApplyFont(audioErrorText);
     audioErrorText.SetFontSize(16.0F);
     audioErrorText.SetTextColor({0.78F, 0.06F, 0.08F, 1.0F});
     audioErrorText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
@@ -44,6 +45,7 @@ void GameplayPresenter::CreatePresentation()
                                     L"--.--%", "Hud.Accuracy");
     accuracyIndicator_->SetZIndex(5);
     auto &accuracyText = RequireComponent<mrg::visual2d::TextVisualComponent>(*accuracyIndicator_);
+    texts_.ApplyFont(accuracyText);
     accuracyText.SetFontSize(32.0F);
     accuracyText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
     accuracyText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Trailing);
@@ -54,6 +56,7 @@ void GameplayPresenter::CreatePresentation()
         L"", "Debug.NoteState");
     noteDebugLabel_->SetZIndex(30);
     auto &debugText = RequireComponent<mrg::visual2d::TextVisualComponent>(*noteDebugLabel_);
+    texts_.ApplyFont(debugText);
     debugText.SetFontSize(16.0F);
     debugText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
 #endif

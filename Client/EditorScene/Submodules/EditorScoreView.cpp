@@ -6,32 +6,33 @@ using namespace editor_ui;
 
 void EditorView::DrawScore()
 {
+    const auto &text = Texts();
     DrawTools();
     DrawChartContent();
     if (state_.pending)
-        Text({180, 740, 1550, 32}, L"롱노트 끝 위치를 클릭하세요 · 도구 변경/Escape: 취소", 22,
-             Blue);
+        Text({180, 740, 1550, 32}, std::wstring(text.finishLongNote), 22, Blue);
     DrawAudio();
     DrawVariantMenu();
 }
 
 void EditorView::DrawTools()
 {
+    const auto &text = Texts();
     Button(
-        {112, 76, 180, 32}, L"전체 악보 뷰",
+        {112, 76, 180, 32}, std::wstring(text.overview),
         [this] {
             state_.realtime = false;
             state_.rebuild = true;
         },
         !state_.realtime);
     Button(
-        {292, 76, 180, 32}, L"실시간 뷰",
+        {292, 76, 180, 32}, std::wstring(text.realtime),
         [this] {
             state_.realtime = true;
             state_.rebuild = true;
         },
         state_.realtime);
-    Text({1080, 12, 160, 32}, L"박자 디바이더", 18);
+    Text({1080, 12, 160, 32}, std::wstring(text.beatDivider), 18);
     for (int i = 0; i < 6; ++i)
     {
         const int d = 4 << i;
@@ -43,8 +44,9 @@ void EditorView::DrawTools()
             },
             state_.division == d);
     }
-    Button({1740, 8, 150, 40}, L"직접 입력", [this] {
-        if (auto s = EditText(L"박자 분할 (1/N)", std::to_string(state_.division)))
+    Button({1740, 8, 150, 40}, std::wstring(text.directInput), [this] {
+        if (auto s = EditText(std::wstring(Texts().beatDivisionDialog),
+                              std::to_string(state_.division), Texts()))
         {
             const auto d = Integer(*s);
             if (d < 1 || d > 1024)
@@ -54,19 +56,19 @@ void EditorView::DrawTools()
         }
     });
     Box({24, 76, 70, 918}, Paper, 18);
-    Text({38, 86, 55, 25}, L"도구", 16);
-    const std::array<std::wstring, 7> names{L"선택",
-                                            state_.smallTool == 2 ? L"캇" : L"동",
-                                            state_.bigTool == 5   ? L"보라노트"
-                                            : state_.bigTool == 4 ? L"큰 캇"
-                                                                  : L"큰 동",
-                                            state_.rollTool >= 17 ? L"버즈"
-                                            : state_.rollTool == 12 || state_.rollTool == 14
-                                                ? L"틱롤"
-                                                : L"롤노트",
-                                            state_.focusTool == 16 ? L"뎅뎅" : L"풍선",
-                                            L"BPM",
-                                            L"마디"};
+    Text({38, 86, 55, 25}, std::wstring(text.tools), 16);
+    const auto toolName = [&text](const int id) -> std::wstring {
+        for (std::size_t index = 0; index < editor_tools::Tools.size(); ++index)
+        {
+            if (editor_tools::Tools[index].id == id)
+                return std::wstring(text.toolVariants[index]);
+        }
+        return {};
+    };
+    const std::array<std::wstring, 7> names{
+        std::wstring(text.toolGroups[0]), toolName(state_.smallTool), toolName(state_.bigTool),
+        toolName(state_.rollTool), toolName(state_.focusTool), std::wstring(text.toolGroups[5]),
+        std::wstring(text.toolGroups[6])};
     const std::array<int, 7> ids{
         0, state_.smallTool, state_.bigTool, state_.rollTool, state_.focusTool, -2, -3};
     for (std::size_t i = 0; i < ids.size(); ++i)
@@ -235,15 +237,17 @@ void EditorView::DrawVariantMenu()
     if (state_.popup >= 0)
     {
         std::vector<std::pair<std::wstring, int>> choices;
-        for (const auto &tool : editor_tools::Tools)
+        const auto &text = Texts();
+        for (std::size_t toolIndex = 0; toolIndex < editor_tools::Tools.size(); ++toolIndex)
         {
+            const auto &tool = editor_tools::Tools[toolIndex];
             using Group = editor_tools::Group;
             const bool matches = state_.popup == 1 ? tool.group == Group::Small
                                  : state_.popup == 2
                                      ? tool.group == Group::Big
                                      : tool.group == Group::Roll || tool.group == Group::Focus;
             if (matches)
-                choices.emplace_back(tool.label, tool.id);
+                choices.emplace_back(text.toolVariants[toolIndex], tool.id);
         }
         for (std::size_t i = 0; i < choices.size(); ++i)
             Button({105, 200 + static_cast<float>(i) * 40, 220, 38}, choices[i].first,
