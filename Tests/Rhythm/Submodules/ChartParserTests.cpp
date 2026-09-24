@@ -80,6 +80,33 @@ Base BPM: 140
                 "must accumulate from the previous anchor.");
     }
 
+    void TestScrollBeatCoordinatesAcrossTempoAndDelay()
+    {
+        chart::PatternDocument pattern;
+        pattern.baseBpm = 180.0;
+        pattern.timing.push_back({{0, {1, 2}}, chart::TimingDirectiveType::Bpm, 90.0});
+        pattern.timing.push_back({{0, {3, 4}}, chart::TimingDirectiveType::DelayMilliseconds,
+                                  500.0});
+        const chart::MusicalTimeline timeline(pattern);
+        const auto beatAt = [&timeline](const chart::Rational fraction)
+        {
+            return timeline.WholeNotesAtTime(timeline.Compile({0, fraction}));
+        };
+        constexpr long double tolerance = 0.000001L;
+        Require(std::abs((beatAt({1, 4}) - beatAt({3, 16})) - 0.0625L) < tolerance &&
+                    std::abs((beatAt({9, 16}) - beatAt({1, 2})) - 0.0625L) < tolerance,
+                "Sixteenth-note scroll distance must be constant across BPM changes.");
+        const auto delayedBeatTime = timeline.Compile({0, {3, 4}});
+        Require(std::abs(timeline.WholeNotesAtTime(delayedBeatTime -
+                         rhythm::RhythmDuration{250'000}) - 0.75L) < tolerance &&
+                    std::abs(timeline.WholeNotesAtTime(delayedBeatTime) - 0.75L) < tolerance,
+                "A positive chart delay must hold scroll position until its beat is reached.");
+        Require(timeline.TimeAtWholeNotes(0.5625L) == timeline.Compile({0, {9, 16}}) &&
+                    std::abs(timeline.WholeNotesAtTime(
+                        timeline.TimeAtWholeNotes(-0.25L)) + 0.25L) < tolerance,
+                "Scroll coordinates must map to chart time and pre-roll time.");
+    }
+
     void TestYmpSystemBreaksAdvanceAndRemainAvailable()
     {
         constexpr std::string_view Pattern = R"(

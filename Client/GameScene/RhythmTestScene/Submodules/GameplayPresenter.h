@@ -30,6 +30,7 @@ class GameplayPresenter final
     void ApplyFeedback(const GameplayFeedback &feedback);
     void PresentAudioError(const std::string_view message);
     void UpdatePresentation(const finger_drum::rhythm::RhythmTime time);
+    [[nodiscard]] finger_drum::rhythm::RhythmTime InitialTimelineTime() const;
     void UpdateInputPresentation(const mrg::platform::InputState &input, const double deltaSeconds);
 
   private:
@@ -43,6 +44,7 @@ class GameplayPresenter final
     struct TimedVisual
     {
         finger_drum::rhythm::RhythmTime timing{};
+        long double beat{};
         mrg::visual2d::Visual2DNode *node{};
     };
 
@@ -60,6 +62,8 @@ class GameplayPresenter final
         mrg::visual2d::Visual2DNode *counter{};
         mrg::visual2d::Visual2DNode *counterText{};
         std::vector<TimedVisual> ticks;
+        long double beat{};
+        long double endBeat{};
         FocusNoteType focusType{FocusNoteType::None};
         mrg::visual2d::Size processingSize{};
         mrg::visual2d::Size successSize{};
@@ -126,5 +130,6 @@ class GameplayPresenter final
     float laneTileLength_{42.0F};
     float judgementLocalY_{76.0F};
     float noteTravelDistance_{1.0F};
+    float pixelsPerWholeNote_{1.0F};
     mrg::visual2d::Size inputPanelSize_{152.0F, 152.0F};
 };

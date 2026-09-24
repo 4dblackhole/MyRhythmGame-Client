@@ -22,7 +22,8 @@ class GameplaySessionController final
         Shutdown();
     }
     void InitializeSession();
-    void Start(const mrg::EngineServices &services);
+    void Start(const mrg::EngineServices &services,
+               finger_drum::rhythm::RhythmTime initialTime);
     void Update(const mrg::UpdateContext &context);
     void Shutdown() noexcept;
     const finger_drum::mode::PlaySession &Session() const
@@ -69,6 +70,7 @@ class GameplaySessionController final
     finger_drum::audio::GameplayAudioRouter audioRouter_;
     std::vector<GameplayFeedback> feedback_;
     finger_drum::rhythm::RhythmTime time_{};
+    finger_drum::rhythm::RhythmTime initialTime_{-2'000'000};
     std::string initializationError_;
     double completedElapsedSeconds_{};
     double debugSpeedMillisecondsPerSecond_{1000.0};

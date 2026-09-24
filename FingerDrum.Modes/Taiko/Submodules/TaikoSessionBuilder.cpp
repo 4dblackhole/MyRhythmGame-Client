@@ -148,6 +148,7 @@ namespace finger_drum::mode
             Cue(finger_drum::mode::taiko_sound::KatFreeInput, "UserInputFeedback"));
         session->SetEffects(timeline.CompileEffects(effects));
         session->SetMeasureLines(timeline.CompileMeasureStarts());
+        session->SetTimeline(std::move(timeline));
         session->Gear().Finalize();
         result.session = std::move(session);
         return result;

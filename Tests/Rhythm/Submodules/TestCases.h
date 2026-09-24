@@ -24,6 +24,7 @@ namespace finger_drum::tests
     void TestRationalNumberUsesExactOrderingAndArithmetic();
     void TestTimingCommandWhitespaceGrammar();
     void TestAbsoluteMeasurePositionsAndTempoAnchors();
+    void TestScrollBeatCoordinatesAcrossTempoAndDelay();
     void TestYmpSystemBreaksAdvanceAndRemainAvailable();
     void TestOutOfMeasureEntriesAreIgnored();
     void TestSongCatalog(const std::filesystem::path &songsRoot);

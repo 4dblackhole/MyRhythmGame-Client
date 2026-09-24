@@ -21,7 +21,7 @@ void RhythmTestScene::Initialize(const mrg::EngineServices &services)
 {
     controller_->InitializeSession();
     view_->Initialize(services, controller_->Session());
-    controller_->Start(services);
+    controller_->Start(services, view_->InitialTimelineTime());
     view_->PresentAudioError(controller_->AudioError());
 }
 void RhythmTestScene::BeginScene()

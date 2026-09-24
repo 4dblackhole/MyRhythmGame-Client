@@ -4,9 +4,8 @@ using namespace gameplay;
 
 void GameplaySessionController::StartTimeline(const mrg::audio::AudioClockSnapshot &clock)
 {
-    constexpr finger_drum::rhythm::RhythmTime LeadIn{-2'000'000};
-    timer_.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, LeadIn);
-    timer_.AnchorDspClock(LeadIn, clock.dspClock, clock.sampleRate);
+    timer_.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, initialTime_);
+    timer_.AnchorDspClock(initialTime_, clock.dspClock, clock.sampleRate);
     if (debugMode_ && ReferenceTimeDebug)
     {
         timer_.Pause(clock.performanceCounterTicks);

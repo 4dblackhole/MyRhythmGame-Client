@@ -11,7 +11,7 @@ void GameplayPresenter::CreateMeasureLineVisuals()
         SetColor(line, {0.78F, 0.85F, 0.90F, 0.72F});
         line.SetZIndex(1);
         line.SetVisible(false);
-        measureLineVisuals_.push_back({timing, &line});
+        measureLineVisuals_.push_back({timing, session_->Timeline().WholeNotesAtTime(timing), &line});
     }
 }
 
@@ -49,6 +49,7 @@ void GameplayPresenter::CreateNoteVisuals()
         screenVisuals_.RegisterImage(InGameSkinAssetPath(L"HitCounterCloud.png"));
 
     const auto noteSize = ScaledImageSize(screenVisuals_, noteImage);
+    pixelsPerWholeNote_ = noteSize.width * 16.0F * SixteenthSpacingInHeadDiameters;
     const auto bigNoteSize = ScaledImageSize(screenVisuals_, bigNoteImage);
     const auto bodySize = ScaledImageSize(screenVisuals_, bodyImage);
     const auto tailSize = ScaledImageSize(screenVisuals_, tailImage);
@@ -103,6 +104,9 @@ void GameplayPresenter::CreateNoteVisuals()
             layers.root->SetZIndex(3);
             layers.root->SetVisible(false);
             layers.diameter = diameter;
+            layers.beat = session_->Timeline().WholeNotesAtTime(note->Timing());
+            if (presentation != nullptr && presentation->hasEndTime)
+                layers.endBeat = session_->Timeline().WholeNotesAtTime(presentation->endTime);
 
             // Body and tail are Ambient-colored and sit behind the circular
             // head. The white head overlay is a separate untinted draw packet.
@@ -165,7 +169,8 @@ void GameplayPresenter::CreateNoteVisuals()
                              selectedTickSize.width, selectedTickSize.height},
                             selectedTickImage, "LongNote.Tick");
                         tick.SetZIndex(4);
-                        layers.ticks.push_back({tickTime, &tick});
+                        layers.ticks.push_back(
+                            {tickTime, session_->Timeline().WholeNotesAtTime(tickTime), &tick});
                     }
                 }
             }
@@ -261,12 +266,14 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
 {
     UpdateAccuracyPresentation();
     using Duration = finger_drum::rhythm::RhythmDuration;
-    // Bound conversion and time + horizon even for extremely small speeds.
-    const auto maximumHorizon = std::numeric_limits<Duration::rep>::max() / 2;
-    const auto horizon = std::min(static_cast<double>(maximumHorizon),
-                                  ApproachDuration.count() / session_->MinimumScrollMultiplier());
+    const auto &timeline = session_->Timeline();
+    const long double currentBeat = timeline.WholeNotesAtTime(time);
+    const long double visibleBeats = static_cast<long double>(noteTravelDistance_) /
+        (static_cast<long double>(pixelsPerWholeNote_) * session_->MinimumScrollMultiplier());
+    const auto lastVisibleTime = timeline.TimeAtWholeNotes(currentBeat + visibleBeats);
+    const auto horizon = std::max(lastVisibleTime - time, Duration{1});
     const auto snapshot = session_->Gear().BuildSnapshot(
-        time, Duration{static_cast<Duration::rep>(horizon)}, MissedTravelDuration);
+        time, horizon, MissedTravelDuration);
     HideTransientNoteVisuals();
     bool showMeasureLines = true;
     for (const auto &value : session_->EvaluateAutomation(time))
@@ -275,15 +282,14 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
     for (TimedVisual &measureLine : measureLineVisuals_)
     {
         const auto delta = measureLine.timing - time;
-        const bool visible =
-            showMeasureLines && delta <= ApproachDuration && delta >= -MissedTravelDuration;
+        const float localY = judgementLocalY_ +
+            static_cast<float>(measureLine.beat - currentBeat) * pixelsPerWholeNote_;
+        const bool visible = showMeasureLines && delta >= -MissedTravelDuration &&
+            localY <= judgementLocalY_ + noteTravelDistance_ &&
+            localY >= judgementLocalY_ - noteTravelDistance_;
         measureLine.node->SetVisible(visible);
         if (visible)
         {
-            const float localY = judgementLocalY_ +
-                                 static_cast<float>(delta.count()) /
-                                     static_cast<float>(ApproachDuration.count()) *
-                                     noteTravelDistance_;
             measureLine.node->SetBounds({0.0F, localY, laneWidth_, 4.0F});
         }
     }
@@ -300,24 +306,23 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         const finger_drum::mode::NotePresentationInfo *presentation =
             session_->FindNotePresentation(note.noteId);
         const bool focusNote = layers.focusType != FocusNoteType::None;
-        float normalizedTravel = static_cast<float>(note.timeFromJudgement.count()) /
-                                 static_cast<float>(ApproachDuration.count());
+        long double targetBeat = layers.beat;
         const bool missed = note.state == NoteState::Missed;
         const bool completed = note.state == NoteState::Completed;
         const bool processing = focusNote && !missed && !completed && time >= note.timing &&
                                 note.progress.has_value() && note.progress->accepted > 0;
         if (focusNote && time >= note.timing && !missed)
         {
-            normalizedTravel = 0.0F;
+            targetBeat = currentBeat;
         }
         else if (focusNote && missed)
         {
-            normalizedTravel = static_cast<float>((note.expireTime - time).count()) /
-                               static_cast<float>(ApproachDuration.count());
+            targetBeat = timeline.WholeNotesAtTime(note.expireTime);
         }
         const float speed =
             presentation != nullptr ? static_cast<float>(presentation->scrollMultiplier) : 1.0F;
-        const float localY = judgementLocalY_ + normalizedTravel * noteTravelDistance_ * speed;
+        const float localY = judgementLocalY_ +
+            static_cast<float>(targetBeat - currentBeat) * pixelsPerWholeNote_ * speed;
         layers.root->SetPosition({laneWidth_ * 0.5F, localY});
         const bool showLaneHead =
             focusNote ? !completed && (!processing || missed) : !completed && !missed;
@@ -332,12 +337,10 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         if (presentation != nullptr && presentation->hasEndTime && layers.body != nullptr &&
             layers.tail != nullptr)
         {
-            const auto endDelta = presentation->endTime - time;
-            const float endTravel =
-                std::clamp(static_cast<float>(endDelta.count()) /
-                               static_cast<float>(ApproachDuration.count()) * speed,
-                           -0.05F, 1.65F);
-            const float tailLocalY = judgementLocalY_ + endTravel * noteTravelDistance_;
+            const float tailTravel = std::clamp(
+                static_cast<float>(layers.endBeat - currentBeat) * pixelsPerWholeNote_ * speed,
+                -0.05F * noteTravelDistance_, 1.65F * noteTravelDistance_);
+            const float tailLocalY = judgementLocalY_ + tailTravel;
             const float length = std::max(tailLocalY - localY, 1.0F);
             const float bodyX = (layers.diameter - layers.bodyWidth) * 0.5F;
             layers.body->SetBounds({bodyX, layers.diameter * 0.5F, layers.bodyWidth, length});

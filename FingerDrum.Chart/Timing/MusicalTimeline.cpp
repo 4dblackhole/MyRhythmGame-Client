@@ -37,6 +37,7 @@ namespace finger_drum::chart
                 return left.position < right.position;
             });
         BuildTempoPoints();
+        BuildScrollPoints();
     }
 
     rhythm::RhythmTime MusicalTimeline::Compile(
@@ -353,6 +354,60 @@ namespace finger_drum::chart
         return {low, beat - PositionToWholeNotes({low, {}})};
     }
 
+    long double MusicalTimeline::WholeNotesAtTime(const rhythm::RhythmTime time) const noexcept
+    {
+        const long double microseconds = static_cast<long double>(time.count());
+        const auto secondsToBeats = [](const long double delta, const double bpm)
+        {
+            return delta * static_cast<long double>(bpm) / 240'000'000.0L;
+        };
+        const ScrollPoint& first = scrollPoints_.front();
+        if (microseconds < first.timeAfterMicroseconds)
+        {
+            return microseconds < first.timeBeforeMicroseconds
+                ? first.beat + secondsToBeats(microseconds - first.timeBeforeMicroseconds, first.bpm)
+                : first.beat;
+        }
+
+        auto next = scrollTimesMonotonic_
+            ? std::ranges::upper_bound(scrollPoints_, microseconds, {},
+                                       &ScrollPoint::timeAfterMicroseconds)
+            : scrollPoints_.begin();
+        if (!scrollTimesMonotonic_)
+        {
+            // A negative delay can overlap earlier chart time. Choose the
+            // latest reached chart anchor without assuming sorted timestamps.
+            for (auto point = scrollPoints_.begin(); point != scrollPoints_.end(); ++point)
+                if (point->timeAfterMicroseconds <= microseconds) next = std::next(point);
+        }
+        const ScrollPoint& current = *std::prev(next);
+        if (next != scrollPoints_.end() && microseconds >= next->timeBeforeMicroseconds)
+            return next->beat;
+        return current.beat + secondsToBeats(
+            microseconds - current.timeAfterMicroseconds, current.bpm);
+    }
+
+    rhythm::RhythmTime MusicalTimeline::TimeAtWholeNotes(const long double beat) const
+    {
+        if (!std::isfinite(beat))
+            throw std::invalid_argument("Scroll beat must be finite.");
+        const ScrollPoint& first = scrollPoints_.front();
+        const ScrollPoint* point = &first;
+        if (beat > first.beat)
+        {
+            const auto next = std::ranges::upper_bound(scrollPoints_, beat, {}, &ScrollPoint::beat);
+            point = &*std::prev(next);
+        }
+        const long double origin = beat < first.beat
+            ? first.timeBeforeMicroseconds : point->timeAfterMicroseconds;
+        const long double value = origin + (beat - point->beat) *
+            240'000'000.0L / static_cast<long double>(point->bpm);
+        if (value < static_cast<long double>(std::numeric_limits<rhythm::RhythmTime::rep>::min()) ||
+            value > static_cast<long double>(std::numeric_limits<rhythm::RhythmTime::rep>::max()))
+            throw std::overflow_error("Scroll time exceeds the supported range.");
+        return rhythm::RhythmTime{static_cast<rhythm::RhythmTime::rep>(std::llround(value))};
+    }
+
     double MusicalTimeline::EffectValueAt(const EffectDocument& effects,
         EffectCommandType type, MusicalPosition position, double defaultValue) const
     {
@@ -392,6 +447,38 @@ namespace finger_drum::chart
         return point.seconds + (position - point.position).Value() *
             SecondsPerWholeNoteAtBpmOne /
             static_cast<long double>(point.bpm);
+    }
+
+    void MusicalTimeline::BuildScrollPoints()
+    {
+        std::map<Rational, long double> delays;
+        delays[Rational{0, 1}] = 0.0L;
+        for (const TempoPoint& point : tempoPoints_)
+            delays[point.position] += 0.0L;
+        for (const TimingDirective& directive : directives_)
+            if (directive.type == TimingDirectiveType::DelayMilliseconds)
+            {
+                if (!std::isfinite(directive.value))
+                    throw std::invalid_argument("A delay must be finite.");
+                delays[PositionToWholeNotes(directive.position)] +=
+                    static_cast<long double>(directive.value) * 1'000.0L;
+            }
+
+        long double accumulatedDelay = 0.0L;
+        for (const auto& [position, delay] : delays)
+        {
+            const long double before = SecondsAt(position) * 1'000'000.0L +
+                accumulatedDelay + static_cast<long double>(offsetMilliseconds_) * 1'000.0L;
+            accumulatedDelay += delay;
+            const auto nextTempo = std::ranges::upper_bound(
+                tempoPoints_, position, {}, &TempoPoint::position);
+            const TempoPoint& tempo = *std::prev(nextTempo);
+            scrollPoints_.push_back({position.Value(), before, before + delay, tempo.bpm});
+            if (scrollPoints_.size() > 1 &&
+                scrollPoints_.back().timeAfterMicroseconds <
+                    scrollPoints_[scrollPoints_.size() - 2].timeAfterMicroseconds)
+                scrollTimesMonotonic_ = false;
+        }
     }
 
     rhythm::RhythmTime MusicalTimeline::CompileAbsolute(

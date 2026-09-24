@@ -31,6 +31,8 @@ namespace finger_drum::chart
         [[nodiscard]] Rational MeasureLength(std::int64_t measure) const;
         [[nodiscard]] Rational PositionToWholeNotes(MusicalPosition position) const;
         [[nodiscard]] MusicalPosition PositionAtWholeNotes(const Rational& beat) const;
+        [[nodiscard]] long double WholeNotesAtTime(rhythm::RhythmTime time) const noexcept;
+        [[nodiscard]] rhythm::RhythmTime TimeAtWholeNotes(long double beat) const;
         [[nodiscard]] double EffectValueAt(const EffectDocument& effects,
             EffectCommandType type, MusicalPosition position, double defaultValue = 1) const;
 
@@ -41,9 +43,17 @@ namespace finger_drum::chart
             long double seconds{};
             double bpm{120.0};
         };
+        struct ScrollPoint
+        {
+            long double beat{};
+            long double timeBeforeMicroseconds{};
+            long double timeAfterMicroseconds{};
+            double bpm{120.0};
+        };
 
         void BuildMeasurePrefixSums(const PatternDocument& pattern);
         void BuildTempoPoints();
+        void BuildScrollPoints();
         [[nodiscard]] long double SecondsAt(
             const Rational& position) const;
         [[nodiscard]] rhythm::RhythmTime CompileAbsolute(
@@ -57,5 +67,7 @@ namespace finger_drum::chart
         std::vector<Rational> measureLengths_;
         std::vector<Rational> measurePrefixSums_;
         std::vector<TempoPoint> tempoPoints_;
+        std::vector<ScrollPoint> scrollPoints_;
+        bool scrollTimesMonotonic_{true};
     };
 }

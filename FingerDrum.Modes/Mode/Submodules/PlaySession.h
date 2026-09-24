@@ -8,6 +8,8 @@ namespace finger_drum::mode
       public:
         rhythm::ScrollGear &Gear() noexcept;
         [[nodiscard]] const rhythm::ScrollGear &Gear() const noexcept;
+        void SetTimeline(chart::MusicalTimeline timeline);
+        [[nodiscard]] const chart::MusicalTimeline &Timeline() const;
         void SetInputMapping(std::map<rhythm::PhysicalKey, rhythm::NoteAction> mapping);
         void SetFreeInputCue(rhythm::NoteAction action, rhythm::AudioCueRequest cue);
         void SetEffects(std::vector<chart::CompiledEffectCommand> effects);
@@ -45,6 +47,7 @@ namespace finger_drum::mode
                                                 rhythm::RhythmTime time) noexcept;
 
         rhythm::ScrollGear gear_;
+        std::optional<chart::MusicalTimeline> timeline_;
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping_;
         std::map<rhythm::NoteAction, rhythm::AudioCueRequest> freeInputCues_;
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;

@@ -18,6 +18,18 @@ namespace finger_drum::mode
         return gear_;
     }
 
+    void PlaySession::SetTimeline(chart::MusicalTimeline timeline)
+    {
+        timeline_.emplace(std::move(timeline));
+    }
+
+    const chart::MusicalTimeline &PlaySession::Timeline() const
+    {
+        if (!timeline_)
+            throw std::logic_error("A play session has no musical timeline.");
+        return *timeline_;
+    }
+
     void PlaySession::SetInputMapping(std::map<rhythm::PhysicalKey, rhythm::NoteAction> mapping)
     {
         inputMapping_ = std::move(mapping);

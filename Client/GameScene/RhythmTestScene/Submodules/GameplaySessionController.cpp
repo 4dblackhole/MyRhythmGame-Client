@@ -7,8 +7,10 @@ void GameplaySessionController::InitializeSession()
     PrepareDebugLaunchRequest();
     session_ = CreateSession();
 }
-void GameplaySessionController::Start(const mrg::EngineServices &services)
+void GameplaySessionController::Start(const mrg::EngineServices &services,
+                                      const finger_drum::rhythm::RhythmTime initialTime)
 {
+    initialTime_ = initialTime;
     InitializeAudio(services);
     StartTimeline(services.audio.CaptureClockSnapshot());
     if (!debugMode_)

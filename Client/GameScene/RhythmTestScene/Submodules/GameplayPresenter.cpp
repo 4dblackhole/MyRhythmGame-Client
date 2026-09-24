@@ -28,6 +28,14 @@ void GameplayPresenter::OnResize(const std::uint32_t width, const std::uint32_t 
     }
 }
 
+finger_drum::rhythm::RhythmTime GameplayPresenter::InitialTimelineTime() const
+{
+    const long double visibleBeats = static_cast<long double>(noteTravelDistance_) /
+        (static_cast<long double>(pixelsPerWholeNote_) * session_->MinimumScrollMultiplier());
+    return std::min(finger_drum::rhythm::RhythmTime{-2'000'000},
+                    session_->Timeline().TimeAtWholeNotes(-visibleBeats));
+}
+
 void GameplayPresenter::Shutdown() noexcept
 {
     keyBeam_.Shutdown();
@@ -46,6 +54,7 @@ void GameplayPresenter::Shutdown() noexcept
     inputPanel_ = nullptr;
     laneRoot_ = nullptr;
     noteTravelDistance_ = 1.0F;
+    pixelsPerWholeNote_ = 1.0F;
     laneTiles_.clear();
     laneImage_ = {};
     strongKeyLightImage_ = {};

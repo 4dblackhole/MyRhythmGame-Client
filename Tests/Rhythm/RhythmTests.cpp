@@ -34,6 +34,7 @@ int main(const int argumentCount, char *arguments[])
         TestRationalNumberUsesExactOrderingAndArithmetic();
         TestTimingCommandWhitespaceGrammar();
         TestAbsoluteMeasurePositionsAndTempoAnchors();
+        TestScrollBeatCoordinatesAcrossTempoAndDelay();
         TestYmpSystemBreaksAdvanceAndRemainAvailable();
         TestOutOfMeasureEntriesAreIgnored();
         TestLegacyParsingAndMicroseconds();
