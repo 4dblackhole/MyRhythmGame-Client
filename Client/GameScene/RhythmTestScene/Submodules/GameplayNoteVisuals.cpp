@@ -158,14 +158,10 @@ void GameplayPresenter::CreateNoteVisuals()
                         {
                             continue;
                         }
-                        const float offset =
-                            static_cast<float>((tickTime - note->Timing()).count()) /
-                            static_cast<float>(ApproachDuration.count()) * TravelDistance *
-                            static_cast<float>(presentation->scrollMultiplier);
                         auto &tick = mrg::visual2d::CreateSprite(
                             *layers.root,
                             {(diameter - selectedTickSize.width) * 0.5F,
-                             diameter * 0.5F + offset - selectedTickSize.height * 0.5F,
+                             diameter * 0.5F - selectedTickSize.height * 0.5F,
                              selectedTickSize.width, selectedTickSize.height},
                             selectedTickImage, "LongNote.Tick");
                         tick.SetZIndex(4);
@@ -286,7 +282,8 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         {
             const float localY = judgementLocalY_ +
                                  static_cast<float>(delta.count()) /
-                                     static_cast<float>(ApproachDuration.count()) * TravelDistance;
+                                     static_cast<float>(ApproachDuration.count()) *
+                                     noteTravelDistance_;
             measureLine.node->SetBounds({0.0F, localY, laneWidth_, 4.0F});
         }
     }
@@ -320,7 +317,7 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         }
         const float speed =
             presentation != nullptr ? static_cast<float>(presentation->scrollMultiplier) : 1.0F;
-        const float localY = judgementLocalY_ + normalizedTravel * TravelDistance * speed;
+        const float localY = judgementLocalY_ + normalizedTravel * noteTravelDistance_ * speed;
         layers.root->SetPosition({laneWidth_ * 0.5F, localY});
         const bool showLaneHead =
             focusNote ? !completed && (!processing || missed) : !completed && !missed;
@@ -340,7 +337,7 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
                 std::clamp(static_cast<float>(endDelta.count()) /
                                static_cast<float>(ApproachDuration.count()) * speed,
                            -0.05F, 1.65F);
-            const float tailLocalY = judgementLocalY_ + endTravel * TravelDistance;
+            const float tailLocalY = judgementLocalY_ + endTravel * noteTravelDistance_;
             const float length = std::max(tailLocalY - localY, 1.0F);
             const float bodyX = (layers.diameter - layers.bodyWidth) * 0.5F;
             layers.body->SetBounds({bodyX, layers.diameter * 0.5F, layers.bodyWidth, length});

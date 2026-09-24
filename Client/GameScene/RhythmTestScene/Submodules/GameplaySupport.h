@@ -64,7 +64,6 @@ namespace gameplay
     constexpr float GearRightMargin = 0.0F;
     constexpr float LaneCenterY = 0.0F;
     constexpr double KeyPressFlashDurationSeconds = 0.1;
-    constexpr float TravelDistance = 920.0F;
     constexpr finger_drum::rhythm::RhythmDuration ApproachDuration{900'000};
     constexpr finger_drum::rhythm::RhythmDuration MissedTravelDuration{220'000};
     constexpr finger_drum::rhythm::RhythmDuration FocusSuccessDuration{200'000};

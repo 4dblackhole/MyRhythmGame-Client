@@ -77,6 +77,7 @@ class GameplayPresenter final
     void CreateKeyIndicators(mrg::visual2d::Visual2DNode &inputPanel);
     void CreateNoteVisuals();
     void UpdatePresentationLayout();
+    void UpdateNoteTravelLayout();
     void HideTransientNoteVisuals();
     void PresentFocusCounter(NoteVisualLayers &layers,
                              const finger_drum::rhythm::NoteProgress &progress,
@@ -124,5 +125,6 @@ class GameplayPresenter final
     float laneWidth_{152.0F};
     float laneTileLength_{42.0F};
     float judgementLocalY_{76.0F};
+    float noteTravelDistance_{1.0F};
     mrg::visual2d::Size inputPanelSize_{152.0F, 152.0F};
 };

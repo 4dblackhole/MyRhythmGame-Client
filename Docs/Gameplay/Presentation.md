@@ -27,6 +27,11 @@ ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 Balloon/D
 Lane 위·아래까지의 거리가 같습니다. Lane과 ScrollGear 표면은 오른쪽 논리 화면
 끝까지 이어지고 마지막 `Lane.png` 타일만 UV로 잘립니다.
 
+노트가 처음 표시되는 위치는 고정 픽셀 거리가 아니라 현재 Canvas 논리 폭으로
+정해지는 Lane 길이와 가장 큰 노트 head의 반지름에서 계산합니다. Taiko의 회전된
+Lane에서는 head 전체가 화면 오른쪽 경계 밖에 있을 때부터 왼쪽 판정점으로
+이동합니다. 창 크기가 바뀌면 노트 이동 거리와 롱노트 tick 간격을 함께 갱신합니다.
+
 노트와 플레이 HUD의 배포 기본본은
 `FingerDrum.Assets/Assets/Skins/Default Skin/InGame`의 PNG입니다. 실행 파일 옆
 스킨에서 누락된 파일만 이 내장 기본본으로 대체합니다.

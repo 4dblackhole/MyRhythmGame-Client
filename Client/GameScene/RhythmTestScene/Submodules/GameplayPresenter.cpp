@@ -15,6 +15,7 @@ void GameplayPresenter::Initialize(const mrg::EngineServices &services,
         throw std::runtime_error("Failed to create the gameplay screen Canvas.");
     CreatePresentation();
     CreateNoteVisuals();
+    UpdateNoteTravelLayout();
 }
 
 void GameplayPresenter::OnResize(const std::uint32_t width, const std::uint32_t height)
@@ -44,6 +45,7 @@ void GameplayPresenter::Shutdown() noexcept
     inputPresentationRoot_ = nullptr;
     inputPanel_ = nullptr;
     laneRoot_ = nullptr;
+    noteTravelDistance_ = 1.0F;
     laneTiles_.clear();
     laneImage_ = {};
     strongKeyLightImage_ = {};

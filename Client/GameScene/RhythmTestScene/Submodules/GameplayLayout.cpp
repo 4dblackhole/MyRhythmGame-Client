@@ -249,10 +249,60 @@ void GameplayPresenter::UpdatePresentationLayout()
         laneRoot_->SetPosition(
             {-logicalWidth * 0.5F + laneScreenLeft + laneLength * 0.5F, LaneCenterY});
         UpdateLaneSurfaceLayout(laneLength);
+        UpdateNoteTravelLayout();
     }
     if (inputPresentationRoot_ != nullptr)
     {
         inputPresentationRoot_->SetPosition(
             {-logicalWidth * 0.5F + GearMargin, LaneCenterY - inputPanelSize_.height * 0.5F});
+    }
+}
+
+void GameplayPresenter::UpdateNoteTravelLayout()
+{
+    if (laneRoot_ == nullptr || session_ == nullptr)
+    {
+        return;
+    }
+
+    float largestHeadRadius = 0.0F;
+    for (const auto &[id, layers] : noteVisuals_)
+    {
+        static_cast<void>(id);
+        largestHeadRadius = std::max(largestHeadRadius, layers.diameter * 0.5F);
+    }
+    // The local +Y lane end meets the screen's right edge after the Taiko
+    // rotation. Keep the entire largest head beyond that edge at spawn time.
+    noteTravelDistance_ = std::max(
+        laneRoot_->NodeSize().height - judgementLocalY_ + largestHeadRadius + 1.0F, 1.0F);
+
+    // Tick offsets are authored relative to their head and must follow the
+    // same distance whenever a resize changes the lane length.
+    for (const auto &lane : session_->Gear().Lanes())
+    {
+        for (const auto &note : lane->Notes())
+        {
+            const auto found = noteVisuals_.find(note->Id());
+            if (found == noteVisuals_.end())
+            {
+                continue;
+            }
+            const NoteVisualLayers &layers = found->second;
+            const auto *presentation = session_->FindNotePresentation(note->Id());
+            const float speed = presentation == nullptr
+                                    ? 1.0F
+                                    : static_cast<float>(presentation->scrollMultiplier);
+            for (const TimedVisual &tick : layers.ticks)
+            {
+                const auto bounds = tick.node->Bounds();
+                const float offset = static_cast<float>((tick.timing - note->Timing()).count()) /
+                                     static_cast<float>(ApproachDuration.count()) *
+                                     noteTravelDistance_ * speed;
+                tick.node->SetBounds(
+                    {(layers.diameter - bounds.width) * 0.5F,
+                     layers.diameter * 0.5F + offset - bounds.height * 0.5F,
+                     bounds.width, bounds.height});
+            }
+        }
     }
 }
