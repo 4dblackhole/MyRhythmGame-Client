@@ -39,10 +39,11 @@ flowchart TD
 
 ## 시작 순서
 
-`Client/App/Main.cpp`의 `wWinMain`이 유일한 프로그램 진입점이다. 일반 실행은
-`FingerDrumGame`을 선택하지만 `--example=mesh`, `--example=collision`,
+`Client/App/Main.cpp`의 `wWinMain`이 유일한 프로그램 진입점이다. Debug에서는
+일반 실행에 `FingerDrumGame`을 선택하지만 `--example=mesh`, `--example=collision`,
 `--example=widgets` 중 하나가 있으면 `ColoredCubeGame`과 해당 초기 Scene을
-선택한다. 여기에 `--smoke-test`를 함께 주면 창을 숨기고 세 번 렌더링한 뒤
+선택한다. Release에는 예제 경로가 없다. Debug에서 `--smoke-test`를 함께 주면
+창을 숨기고 세 번 렌더링한 뒤
 종료하도록 Client 설정만 바뀐다.
 
 ```text

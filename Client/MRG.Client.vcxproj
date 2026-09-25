@@ -91,7 +91,6 @@
   </ItemGroup>
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <ItemGroup>
-      <UnusedExamplePng Include="Assets\Unused\*.png" />
       <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Music\Angeldream\*.*">
         <RuntimeDirectory>Music\Angeldream</RuntimeDirectory>
       </DefaultSong>
@@ -104,8 +103,6 @@
           Condition="!Exists('$(OutDir)assets\Songs\%(DefaultSong.RuntimeDirectory)\%(DefaultSong.Filename)%(DefaultSong.Extension)')" />
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
-    <MakeDir Directories="$(OutDir)assets\Unused" />
-    <Copy SourceFiles="@(UnusedExamplePng)" DestinationFolder="$(OutDir)assets\Unused" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(Configuration)' == 'Debug' and !Exists('$(FmodLibraryDir)\fmodL_vc.lib')" Text="FMOD debug x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />
@@ -140,19 +137,19 @@
     <ClInclude Include="EditorScene\Submodules\EditorVisual.h" />
     <ClCompile Include="EditorScene\Submodules\EditorWorkspace.cpp" />
     <ClInclude Include="EditorScene\Submodules\EditorWorkspace.h" />
-    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp" />
-    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h" />
-    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" />
+    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
     <ClInclude Include="GameFlow\GameplayLaunchStore.h" />

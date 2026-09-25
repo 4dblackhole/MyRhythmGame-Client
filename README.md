@@ -37,9 +37,12 @@ Visual Studio 2022 / MSVC v143 / Windows SDK / FMOD Studio API for Windows가
 git clone --recurse-submodules https://github.com/4dblackhole/MyRhythmGame-Client.git
 cd MyRhythmGame-Client
 msbuild MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
+msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 ```
 
 일반 실행은 로고 → 플레이/에디터 곡 선택으로 시작합니다.
+Release는 ColoredCube 기술 예제를 포함하지 않습니다. 배포할 때는 깨끗한 폴더에
+`MyRhythmGame.exe`, `fmod.dll`, 제공할 `assets/Songs`만 복사합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는
 [실행 흐름](Docs/ExecutionFlow.md), 외부 파일 우선 및 내장 fallback/배포곡 정책은
 [자산](Docs/BuiltInAssets.md)에서 설명합니다. 스킨은 실행 파일 옆

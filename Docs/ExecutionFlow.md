@@ -7,7 +7,7 @@
 flowchart TD
     Entry["Client/App/Main.cpp\nwWinMain"] --> Assets["RCDATA asset pack 확인 · cache 준비"]
     Assets --> Skin["저장된 스킨 폴더 선택 복원"]
-    Skin --> Route{"recognized --example?"}
+    Skin --> Route{"Debug의 --example?"}
     Route -->|"no"| Game["FingerDrumGame"]
     Route -->|"yes"| Example["ColoredCubeGame · engine example"]
     Game --> Run["mrg::Run"]
@@ -31,9 +31,9 @@ flowchart TD
    유효한 캐시가 있으면 다시 기록하지 않습니다.
 2. `%LOCALAPPDATA%/FingerDrum/skin-set.txt`의 선택을 복원합니다. 저장된 스킨
    폴더가 없으면 `Default Skin`을 사용합니다.
-3. 일반 실행과 FingerDrum smoke는
-   `FingerDrumGame`을 생성하고, 인식된 `--example=mesh|collision|widgets` 경로는
-   재사용 엔진 검증용 `ColoredCubeGame`을 생성합니다.
+3. 일반 실행과 FingerDrum smoke는 `FingerDrumGame`을 생성합니다. Debug에서만
+   `--example=mesh|collision|widgets` 경로가 재사용 엔진 검증용
+   `ColoredCubeGame`을 생성합니다. Release에는 예제 Scene을 컴파일하지 않습니다.
 4. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다.
 5. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest route를 등록합니다.
@@ -42,7 +42,7 @@ flowchart TD
 
 스킨은 실행 파일 옆 `assets/skins/<선택한 스킨 폴더>`의 같은 상대 경로 파일을
 먼저 사용하고, 파일이 없을 때만 캐시의 내장 파일로 돌아갑니다. 곡 카탈로그는
-실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3·YMM·YMP 3개는
+실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3 1개·YMM 1개·YMP 3개는
 외부 파일로 배포하며 빌드는 이미 존재하는 편집본을 덮어쓰지 않습니다.
 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 

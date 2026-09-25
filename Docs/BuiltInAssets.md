@@ -9,10 +9,17 @@
 - `Assets/Skins/Default Skin` 전체
 - `Assets/Fonts`의 두 글꼴과 각각의 라이선스
 
-AngelDream Handshaking MP3·YMM·YMP 3개는 EXE에 넣지 않습니다.
+AngelDream Handshaking MP3 1개·YMM 1개·YMP 3개는 EXE에 넣지 않습니다.
 Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 시
 실행 파일 옆 `assets/Songs`에 복사합니다. 이미 존재하는 파일은 편집본일 수
 있으므로 덮어쓰지 않습니다. 배포할 때 이 Songs 폴더를 EXE와 함께 제공합니다.
+
+Release 배포 폴더에는 `MyRhythmGame.exe`와 같은 위치의 `fmod.dll`이 필요합니다.
+기본 곡을 제공할 때는 위의 `assets/Songs` 트리를 함께 넣습니다. 로고·기본 스킨·
+글꼴만 필요하면 Songs 없이도 시작할 수 있으나 곡 목록은 비어 있습니다.
+`Client/Assets/Unused`의 예제 PNG는 어떤 구성에서도 복사하거나 로드하지 않습니다.
+기존 빌드 출력에 남아 있는 파일까지 빌드가 삭제하지는 않으므로 배포 파일은
+깨끗한 폴더에 필요한 파일만 복사해서 만듭니다.
 
 다른 곡과 사용자 스킨은 팩에 자동 포함하지 않습니다. 빌드 스크립트의 명시적인
 source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어가지 않습니다.

@@ -234,10 +234,8 @@ void ColoredCubeScene::Initialize(const mrg::EngineServices& services)
     // Each PNG remains an independently sized GPU Texture2D.  TextureSet is a
     // contiguous array of SRV descriptors, not a same-size Texture2DArray.
     const std::array texturePaths{
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::unused_examples::WhiteCubeTexture),
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::unused_examples::BlackCubeTexture)};
+        mrg_client::asset_paths::skin::widget::First(),
+        mrg_client::asset_paths::skin::title::SelectionCursor()};
     const mrg::graphics::TextureSetHandle textures =
         services.meshRendering.Textures().LoadTextureSet(texturePaths);
 

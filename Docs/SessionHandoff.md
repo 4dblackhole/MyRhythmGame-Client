@@ -14,7 +14,7 @@
 - 커밋과 동기화 상태는 Git이 기준입니다. 문서에 고정 SHA를 복제하지 않습니다.
 - C++20 / MSVC v143 / Windows / D3D12. Client의 엔진 경계는 `MRG_Core.h` 하나입니다.
 - 판정/차트/모드/편집 분석은 엔진 비종속 프로젝트입니다. Scene은 수명주기와 조립을 맡습니다.
-- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3·YMM·YMP 3개는 외부 `assets/Songs`입니다.
+- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP 3개는 외부 `assets/Songs`입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
 ## 현재 범위와 주의점
@@ -30,14 +30,18 @@
 - 선택한 스킨 이름은 `%LOCALAPPDATA%/FingerDrum/skin-set.txt`에 유지하며,
   각 파일이 없을 때 내장 기본 스킨으로 대체합니다. 풍선 완료음 `pop.wav`도
   `Default Skin/HitSounds/TaikoMode`에 포함됩니다.
+- ColoredCube 기술 예제는 Debug에서만 컴파일합니다. `Client/Assets/Unused`는
+  어떤 구성에서도 로드·복사하지 않으며 원본은 보존합니다.
 
 ## 마무리
 
-이번 스킨 선택과 pop.wav 이동 후 Debug/Release x64 전체 재빌드,
-로직·카탈로그(1곡/3패턴), 각 구성의 4개 Client smoke와 widgets smoke,
-프로젝트/필터/의존성 검사를 통과했습니다. pop.wav의 내장 캐시 추출본은
-원본과 SHA-256이 같습니다. 이번 변경의 옵션 클릭·이미지 전환·소리 재생은
-실제 화면/청음으로 확인하지 않았습니다.
+이번 배포 구성 정리 후 Debug/Release x64 전체 재빌드, 로직·카탈로그
+(1곡/3패턴), 각 구성의 4개 Client smoke, Debug의 mesh/collision/widgets smoke,
+프로젝트/필터/의존성 검사를 통과했습니다. MSBuild 평가에서 예제 cpp는
+Debug 6개·Release 0개였고, EXE·fmod.dll·기본 Songs만 복사한 깨끗한 폴더의
+4개 smoke도 통과했습니다. Songs가 없는 EXE·DLL 폴더의 로고·곡 선택 smoke도
+통과했습니다. 예제 큐브 텍스처를 다른 크기의 내장 스킨 PNG로
+바꾼 뒤 Debug 증분 빌드도 통과했습니다. 실제 화면/청음 확인은 하지 않았습니다.
 
 [Verification](Verification.md)에 따라 검증하고 실제 결과만 보고합니다.
 smoke 통과는 픽셀/마우스 수동 검증을 뜻하지 않습니다.

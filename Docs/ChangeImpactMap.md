@@ -13,6 +13,7 @@
 | 문구·언어·글꼴 | `Client/Texts/TextCatalog.*`, 해당 화면의 `Texts/**/<화면>*Texts.*` | TextManagement; 해당 화면 smoke |
 | 로고/곡 선택 옵션 패널 | `Client/Presentation/OptionsPanel.*` | LogoView/MusicSelectView 입력 연결; logo/lobby smoke |
 | 스킨 선택·경로·내장 기본본 | `Client/App/SkinSetSelection.*`, `AssetPaths.h` | `FingerDrumAssets.h`, BuiltInAssets; logo/gameplay/editor smoke |
+| 배포 빌드·예제 제외·Unused 자산 | `Client/MRG.Client.vcxproj`, `Client/App/Main.cpp` | BuiltInAssets; Debug 예제/Release smoke, CheckArchitecture |
 | Scene 전환/선택 전달 | Scene 주 파일, `Client/GameFlow/GameplayLaunchStore.h` | SceneStateTests; ExecutionFlow |
 | 플레이 Clock·pause·reset·입력 | `RhythmTestScene/Submodules/GameplaySessionController.*`, GameplayInput.cpp | RhythmCoreTests; gameplay smoke |
 | 노트 이미지·롱노트 | 같은 폴더 `GameplayNoteVisuals.cpp` | GameplayPresenter.h, NoteVisualKind; gameplay smoke |

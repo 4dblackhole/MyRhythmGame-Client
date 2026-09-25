@@ -19,8 +19,9 @@ msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platfo
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-editor
 ```
 
-재사용 엔진 변경은 ColoredCubeGame의 관련 `--example=mesh|collision|widgets`
-route와 엔진 자체 테스트도 실행합니다. 예: `--smoke-test --example=mesh`.
+재사용 엔진 변경은 Debug 빌드의 ColoredCubeGame 관련
+`--example=mesh|collision|widgets` route와 엔진 자체 테스트도 실행합니다.
+예: `--smoke-test --example=mesh`. Release에는 이 예제 route가 없습니다.
 프로젝트/필터/include 경계는 `Scripts/CheckArchitecture.ps1`로 검사합니다.
 키빔 표시는 [별도 회귀 테스트](../Tests/Presentation/README.md)로 검사할 수 있습니다.
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.

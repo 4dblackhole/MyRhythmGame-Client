@@ -8,8 +8,10 @@
 
 #include "App/FingerDrumGame.h"
 #include "App/SkinSetSelection.h"
+#ifdef _DEBUG
 #include "Examples/ColoredCube/App/ColoredCubeGame.h"
 #include "Examples/ColoredCube/GameFlow/SceneIds.h"
+#endif
 #include "FingerDrumAssets.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 
@@ -37,6 +39,7 @@ namespace
 #endif
     }
 
+#ifdef _DEBUG
     [[nodiscard]] std::optional<std::string> SelectEngineExampleScene(
         const std::wstring_view commandLine)
     {
@@ -57,6 +60,7 @@ namespace
         }
         return std::nullopt;
     }
+#endif
 }
 
 int WINAPI wWinMain(
@@ -93,6 +97,7 @@ int WINAPI wWinMain(
     const std::wstring_view commandLine = GetCommandLineW();
     const bool basicSmokeTest =
         commandLine.find(L"--smoke-test") != std::wstring_view::npos;
+#ifdef _DEBUG
     if (std::optional<std::string> exampleScene =
             SelectEngineExampleScene(commandLine))
     {
@@ -104,6 +109,7 @@ int WINAPI wWinMain(
             showPerformanceOverlay,
             std::move(*exampleScene)));
     }
+#endif
 
     const bool smokeLobby =
         commandLine.find(L"--smoke-lobby") != std::wstring_view::npos;

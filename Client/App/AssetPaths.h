@@ -102,11 +102,4 @@ namespace mrg_client::asset_paths
         }
     }
 
-    namespace unused_examples
-    {
-        inline constexpr wchar_t WhiteCubeTexture[] =
-            L"assets\\Unused\\awhc.png";
-        inline constexpr wchar_t BlackCubeTexture[] =
-            L"assets\\Unused\\bwhc.png";
-    }
 }
