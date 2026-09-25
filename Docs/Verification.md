@@ -19,6 +19,18 @@ msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platfo
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-editor
 ```
 
+PowerShell에서 Windows GUI 실행 파일을 직접 호출하면 `$LASTEXITCODE`가 비어
+있을 수 있습니다. 종료 코드를 판정할 때는 다음처럼 실행하고 `Debug`를
+`Release`로 바꿔 같은 경로를 반복합니다.
+
+```powershell
+$exe = (Resolve-Path .\bin\x64\Debug\MyRhythmGame.exe).Path
+foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke-editor') {
+    $process = Start-Process -FilePath $exe -ArgumentList $route -WorkingDirectory (Split-Path $exe) -WindowStyle Hidden -Wait -PassThru
+    if ($process.ExitCode -ne 0) { throw "$route failed: $($process.ExitCode)" }
+}
+```
+
 재사용 엔진 변경은 Debug 빌드의 ColoredCubeGame 관련
 `--example=mesh|collision|widgets` route와 엔진 자체 테스트도 실행합니다.
 예: `--smoke-test --example=mesh`. Release에는 이 예제 route가 없습니다.
