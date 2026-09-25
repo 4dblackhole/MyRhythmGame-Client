@@ -27,6 +27,7 @@ void LogoView::Initialize(const mrg::EngineServices &services)
 
     CreateLogoStrip();
     CreateMenu();
+    skinRevision_ = mrg_client::SkinSetSelection::Instance().Revision();
     options_.Initialize(*canvas_);
     ApplyTexts();
     UpdateLogoStripLayout();
@@ -34,6 +35,7 @@ void LogoView::Initialize(const mrg::EngineServices &services)
 
 void LogoView::BeginScene()
 {
+    RefreshSkinImages();
     if (textRevision_ != texts_.Revision())
     {
         ApplyTexts();
@@ -52,6 +54,7 @@ std::optional<std::size_t> LogoView::Update(const mrg::platform::InputState &inp
     command_.reset();
     if (!canvas_)
         return command_;
+    RefreshSkinImages();
     if (textRevision_ != texts_.Revision())
         ApplyTexts();
     options_.Update(deltaSeconds);

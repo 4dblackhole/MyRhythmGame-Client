@@ -106,13 +106,13 @@ namespace gameplay
     [[nodiscard]] inline std::filesystem::path InGameSkinAssetPath(
         const std::filesystem::path &file)
     {
-        return mrg_client::asset_paths::default_skin::InGame(file);
+        return mrg_client::asset_paths::skin::InGame(file);
     }
 
     [[nodiscard]] inline std::filesystem::path TaikoHitSoundAssetPath(
         const std::filesystem::path &file)
     {
-        return mrg_client::asset_paths::default_skin::TaikoHitSound(file);
+        return mrg_client::asset_paths::skin::TaikoHitSound(file);
     }
 
     [[nodiscard]] inline std::wstring Utf8ToWide(

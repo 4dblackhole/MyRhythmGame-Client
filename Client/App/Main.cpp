@@ -7,6 +7,7 @@
 #endif
 
 #include "App/FingerDrumGame.h"
+#include "App/SkinSetSelection.h"
 #include "Examples/ColoredCube/App/ColoredCubeGame.h"
 #include "Examples/ColoredCube/GameFlow/SceneIds.h"
 #include "FingerDrumAssets.h"
@@ -15,6 +16,7 @@
 #include <Windows.h>
 
 #include <cstdlib>
+#include <exception>
 #include <memory>
 #include <optional>
 #include <string>
@@ -73,6 +75,16 @@ int WINAPI wWinMain(
             assetError.c_str(),
             "FingerDrum built-in asset error",
             MB_OK | MB_ICONERROR);
+        return EXIT_FAILURE;
+    }
+    try
+    {
+        mrg_client::SkinSetSelection::Instance().Initialize();
+    }
+    catch (const std::exception &error)
+    {
+        MessageBoxA(nullptr, error.what(), "FingerDrum skin settings error",
+                    MB_OK | MB_ICONERROR);
         return EXIT_FAILURE;
     }
 

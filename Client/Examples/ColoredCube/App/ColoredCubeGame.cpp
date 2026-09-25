@@ -98,8 +98,7 @@ void ColoredCubeGame::BeginAudioPlaybackSmokeCheck(
 {
     std::string error;
     std::shared_ptr<mrg::audio::AudioClip> clip = services.audio.LoadSound(
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::unused_examples::PopSound),
+        mrg_client::asset_paths::skin::TaikoHitSound(L"pop.wav"),
         mrg::audio::AudioLoadMode::Sample,
         error);
     if (clip == nullptr)

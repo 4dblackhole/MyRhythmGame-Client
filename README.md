@@ -42,5 +42,7 @@ msbuild MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
 일반 실행은 로고 → 플레이/에디터 곡 선택으로 시작합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는
 [실행 흐름](Docs/ExecutionFlow.md), 외부 파일 우선 및 내장 fallback/배포곡 정책은
-[자산](Docs/BuiltInAssets.md), 한국어/영어와 옵션 패널은
+[자산](Docs/BuiltInAssets.md)에서 설명합니다. 스킨은 실행 파일 옆
+`assets/skins`의 폴더를 옵션 패널에서 선택하며 다음 실행에도 유지됩니다.
+한국어/영어와 옵션 패널은
 [텍스트 관리](Docs/TextManagement.md)에서 관리합니다.

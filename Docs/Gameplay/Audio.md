@@ -13,6 +13,9 @@ Sample을 다시 요청하면 새 Channel을 만들지 않고 기존 Channel의 
 Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system은 `mrg::Run`이
 소유하는 AudioSystem 하나가 관리합니다.
 
+풍선 완료 cue는 선택한 스킨의 `HitSounds/TaikoMode/pop.wav`를 사용하며 파일이
+없으면 내장 기본 스킨의 같은 파일로 대체합니다.
+
 ## 상태 기반 히트사운드
 
 노트 규칙은 직접 FMOD를 호출하지 않습니다. 상태 전이인 `NoteEvent`를 만들고

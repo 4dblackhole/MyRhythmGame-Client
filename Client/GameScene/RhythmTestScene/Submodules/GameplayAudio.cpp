@@ -78,8 +78,7 @@ void GameplaySessionController::RegisterTaikoSounds(std::string &errorMessage)
     }
     std::string balloonError;
     if (!audioRouter_.RegisterSound(finger_drum::mode::taiko_sound::BalloonPop,
-                                    mrg::platform::ResolveExecutableRelativePath(
-                                        mrg_client::asset_paths::unused_examples::PopSound),
+                                    TaikoHitSoundAssetPath(L"pop.wav"),
                                     mrg::audio::AudioLoadMode::Sample, balloonError) &&
         firstError.empty())
     {

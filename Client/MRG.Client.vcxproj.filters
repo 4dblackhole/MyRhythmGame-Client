@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="App" />
-    <Filter Include="Assets\Unused\Sounds" />
     <Filter Include="Audio" />
     <Filter Include="EditorScene" />
     <Filter Include="EditorScene\Submodules" />
@@ -29,6 +28,8 @@
     <Filter Include="Texts\GameScene\RhythmTestScene" />
     <Filter Include="Texts\Options" />
     <ClInclude Include="App\AssetPaths.h"><Filter>App</Filter></ClInclude>
+    <ClCompile Include="App\SkinSetSelection.cpp"><Filter>App</Filter></ClCompile>
+    <ClInclude Include="App\SkinSetSelection.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\FingerDrumGame.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\FingerDrumGame.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\Main.cpp"><Filter>App</Filter></ClCompile>
@@ -124,6 +125,5 @@
     <ClInclude Include="Texts\Options\OptionTexts.h"><Filter>Texts\Options</Filter></ClInclude>
     <ClCompile Include="Texts\TextCatalog.cpp"><Filter>Texts</Filter></ClCompile>
     <ClInclude Include="Texts\TextCatalog.h"><Filter>Texts</Filter></ClInclude>
-<None Include="Assets\Unused\Sounds\pop.wav"><Filter>Assets\Unused\Sounds</Filter></None>
   </ItemGroup>
 </Project>

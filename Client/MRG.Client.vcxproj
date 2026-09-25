@@ -67,11 +67,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="Assets\Unused\Sounds\pop.wav">
-      <AssetTargetPath>Unused\Sounds\pop.wav</AssetTargetPath>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Dependencies\MRG-Engine\Engine\SDK\MRG.Core.vcxproj">
       <Project>{78888888-8888-4888-8888-888888888888}</Project>
     </ProjectReference>
@@ -98,20 +93,18 @@
     <ItemGroup>
       <UnusedExamplePng Include="Assets\Unused\*.png" />
       <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Music\Angeldream\*.*">
-        <RuntimePath>Music\Angeldream\%(Filename)%(Extension)</RuntimePath>
+        <RuntimeDirectory>Music\Angeldream</RuntimeDirectory>
       </DefaultSong>
       <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\*.ymp">
-        <RuntimePath>Pattern\angeldream\%(Filename)%(Extension)</RuntimePath>
+        <RuntimeDirectory>Pattern\angeldream</RuntimeDirectory>
       </DefaultSong>
     </ItemGroup>
     <!-- Never replace chart/audio files edited by a user in the output folder. -->
-    <Copy SourceFiles="@(DefaultSong)" DestinationFiles="@(DefaultSong->'$(OutDir)assets\Songs\%(RuntimePath)')"
-          Condition="!Exists('$(OutDir)assets\Songs\%(DefaultSong.RuntimePath)')" />
+    <Copy SourceFiles="@(DefaultSong)" DestinationFiles="@(DefaultSong->'$(OutDir)assets\Songs\%(RuntimeDirectory)\%(Filename)%(Extension)')"
+          Condition="!Exists('$(OutDir)assets\Songs\%(DefaultSong.RuntimeDirectory)\%(DefaultSong.Filename)%(DefaultSong.Extension)')" />
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
-    <MakeDir Directories="@(None->'$(OutDir)assets\%(AssetTargetDirectory)')" />
     <MakeDir Directories="$(OutDir)assets\Unused" />
-    <Copy SourceFiles="@(None)" DestinationFiles="@(None->'$(OutDir)assets\%(AssetTargetPath)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(UnusedExamplePng)" DestinationFolder="$(OutDir)assets\Unused" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">
@@ -122,6 +115,8 @@
   <ItemGroup><ProjectReference Include="FingerDrum.ClientLogic.vcxproj"><Project>{A8888888-8888-4888-8888-888888888888}</Project></ProjectReference></ItemGroup>
   <ItemGroup>
     <ClInclude Include="App\AssetPaths.h" />
+    <ClCompile Include="App\SkinSetSelection.cpp" />
+    <ClInclude Include="App\SkinSetSelection.h" />
     <ClCompile Include="App\FingerDrumGame.cpp" />
     <ClInclude Include="App\FingerDrumGame.h" />
     <ClCompile Include="App\Main.cpp" />

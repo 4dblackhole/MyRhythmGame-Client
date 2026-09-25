@@ -89,7 +89,7 @@ wWinMain --smoke-test --example=mesh
                │  ├─ 같은 mesh/material을 무작위 Transform의 MeshInstance 네 개에 연결
                │  ├─ 옵션 Canvas용 render target과 CurvedRectangleShape를 생성
                │  ├─ 현재 FMOD output의 driver snapshot과 DSP buffer 길이로 오디오 패널을 구성
-               │  └─ assets/Unused/Sounds/pop.wav를 Client 소유 AudioClip으로 생성
+               │  └─ 선택한 스킨의 HitSounds/TaikoMode/pop.wav를 Client 소유 AudioClip으로 생성
                ├─ ColoredCubeScene::BeginScene
                └─ ColoredCubeScene::OnResize
 ```

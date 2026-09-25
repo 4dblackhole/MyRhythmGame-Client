@@ -693,10 +693,10 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     // intercepting its controls.
     const mrg::visual2d::ImageHandle audioPanelBase =
         services.visual2DRendering.LoadImage(
-            mrg_client::asset_paths::default_skin::widget::Second());
+            mrg_client::asset_paths::skin::widget::Second());
     const mrg::visual2d::ImageHandle audioPanelHighlight =
         services.visual2DRendering.LoadImage(
-            mrg_client::asset_paths::default_skin::widget::First());
+            mrg_client::asset_paths::skin::widget::First());
     const mrg::visual2d::VisualStyle titleStyle = MakeStaticStyle(
         {0.035F, 0.105F, 0.235F, 0.92F});
     const mrg::visual2d::VisualStyle sectionLabelStyle = MakeStaticStyle(
@@ -898,7 +898,7 @@ void ColoredCubeScene::InitializeAudioOptionsUi(
     if (!ReloadPopSound(errorMessage))
     {
         throw std::runtime_error(
-            "Failed to load assets/Unused/Sounds/pop.wav: " + errorMessage);
+            "Failed to load the skin pop.wav: " + errorMessage);
     }
 }
 
@@ -1229,8 +1229,7 @@ bool ColoredCubeScene::ReloadPopSound(std::string& errorMessage)
     }
 
     popSound_ = audioSystem_->LoadSound(
-        mrg::platform::ResolveExecutableRelativePath(
-            mrg_client::asset_paths::unused_examples::PopSound),
+        mrg_client::asset_paths::skin::TaikoHitSound(L"pop.wav"),
         errorMessage);
     return popSound_ != nullptr;
 }

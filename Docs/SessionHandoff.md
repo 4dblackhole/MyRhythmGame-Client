@@ -26,16 +26,18 @@
 - Scene 전용 폴더와 `Submodules`, Note 계약/규칙 트리를 사용합니다.
   파일 추가 시 프로젝트와 Visual Studio 필터도 같은 트리로 등록합니다.
 - 고정 문구와 언어별 글꼴은 `Client/Texts`의 사용 위치별 표가 소유합니다.
-  로고와 곡 선택은 공통 `OptionsPanel`에서 한국어/영어를 바꿉니다.
+  로고와 곡 선택은 공통 `OptionsPanel`에서 한국어/영어와 스킨 폴더를 바꿉니다.
+- 선택한 스킨 이름은 `%LOCALAPPDATA%/FingerDrum/skin-set.txt`에 유지하며,
+  각 파일이 없을 때 내장 기본 스킨으로 대체합니다. 풍선 완료음 `pop.wav`도
+  `Default Skin/HitSounds/TaikoMode`에 포함됩니다.
 
 ## 마무리
 
-텍스트 표와 옵션 패널 변경 후 Client와 엔진의 Debug/Release x64 전체 재빌드,
-엔진 테스트, 로직·카탈로그(1곡/3패턴), 각 구성의 4개 Client smoke와 widgets
-smoke, 키빔 회귀 테스트, 프로젝트/필터/의존성 검사를 통과했습니다.
-실제 실행 화면에서 로고·곡 선택의 옵션 버튼과 Ctrl+O, 한국어/영어 즉시 전환,
-320x720 패널 배치, 휠·가운데 버튼 드래그·빈 영역 왼쪽 버튼 드래그 스크롤을
-확인했습니다. 0.2초 슬라이드 값과 동작은 확인했지만 시간을 계측하지는 않았습니다.
+이번 스킨 선택과 pop.wav 이동 후 Debug/Release x64 전체 재빌드,
+로직·카탈로그(1곡/3패턴), 각 구성의 4개 Client smoke와 widgets smoke,
+프로젝트/필터/의존성 검사를 통과했습니다. pop.wav의 내장 캐시 추출본은
+원본과 SHA-256이 같습니다. 이번 변경의 옵션 클릭·이미지 전환·소리 재생은
+실제 화면/청음으로 확인하지 않았습니다.
 
 [Verification](Verification.md)에 따라 검증하고 실제 결과만 보고합니다.
 smoke 통과는 픽셀/마우스 수동 검증을 뜻하지 않습니다.

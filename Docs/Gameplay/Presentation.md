@@ -48,7 +48,8 @@ Lane에서는 head 전체가 화면 오른쪽 경계 밖에 있을 때부터 왼
 롱노트는 서로 다른 body와 tail을 사용하고 Buzz tick은 마름모 자산을 사용합니다.
 tail과 tail overlay는 별도로 회전하지 않고, 둥근 면이 위를 향하는 원본 방향
 그대로 Lane 부모의 회전만 상속합니다.
-기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`입니다.
+기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`이며 풍선 완료음은
+같은 `HitSounds/TaikoMode` 폴더의 `pop.wav`입니다.
 음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
 Raw Input으로 발생한 히트사운드는 입력 timestamp를 판정에만 사용하고 즉시
 재생합니다. 따라서 QPC와 장치 DSP clock의 장시간 미세 드리프트가 실시간 입력음을

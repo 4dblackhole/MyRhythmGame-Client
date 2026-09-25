@@ -28,7 +28,7 @@ bool EditorAnalysisController::Update(const chart::ChartEditor &document,
                                                                       {"Kat", L"kat.wav"},
                                                                       {"BigDon", L"bigdon.wav"},
                                                                       {"BigKat", L"bigkat.wav"}}})
-            files[id] = mrg_client::asset_paths::default_skin::TaikoHitSound(file);
+            files[id] = mrg_client::asset_paths::skin::TaikoHitSound(file);
         for (const auto &[id, path] : editor->Pattern().hitSounds)
             files["Table." + id] = editor->Pattern().sourcePath.parent_path() / path;
         if (files != analysisFiles)

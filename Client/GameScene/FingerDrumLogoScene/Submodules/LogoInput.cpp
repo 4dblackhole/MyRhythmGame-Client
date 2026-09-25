@@ -71,6 +71,7 @@ bool LogoView::ApplyMenuActions()
     {
         if (options_.ProcessAction(action))
         {
+            RefreshSkinImages();
             ApplyTexts();
             return true;
         }

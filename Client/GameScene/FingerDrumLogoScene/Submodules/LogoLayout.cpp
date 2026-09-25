@@ -15,15 +15,15 @@ void LogoView::CreateLogoStrip()
     // favoring either edge of the composition.
     leftFade_ = &mrg::visual2d::CreateSprite(
         strip, {0.0F, 0.0F, 1.0F, 1.0F},
-        screenVisuals_.RegisterImage(mrg_client::asset_paths::default_skin::title::LeftFade()),
+        screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::LeftFade()),
         "FingerDrum.LeftFade");
     centerLogo_ = &mrg::visual2d::CreateSprite(
         strip, {0.0F, 0.0F, 1.0F, 1.0F},
-        screenVisuals_.RegisterImage(mrg_client::asset_paths::default_skin::title::Center()),
+        screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::Center()),
         "FingerDrum.CenterLogo");
     rightFade_ = &mrg::visual2d::CreateSprite(
         strip, {0.0F, 0.0F, 1.0F, 1.0F},
-        screenVisuals_.RegisterImage(mrg_client::asset_paths::default_skin::title::RightFade()),
+        screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::RightFade()),
         "FingerDrum.RightFade");
 }
 
@@ -62,7 +62,7 @@ void LogoView::CreateMenu()
     }
 
     const mrg::visual2d::ImageHandle cursorImage = screenVisuals_.RegisterImage(
-        mrg_client::asset_paths::default_skin::title::SelectionCursor());
+        mrg_client::asset_paths::skin::title::SelectionCursor());
     auto &cursor =
         mrg::visual2d::CreateSprite(menu, {0.0F, 0.0F, CursorSize.width, CursorSize.height},
                                     cursorImage, "FingerDrum.SelectionCursor");
@@ -71,6 +71,23 @@ void LogoView::CreateMenu()
     selectionCursor_ = &cursor;
 
     SetSelectedMenuItem(GameStartIndex);
+}
+
+void LogoView::RefreshSkinImages()
+{
+    const auto revision = mrg_client::SkinSetSelection::Instance().Revision();
+    if (revision == skinRevision_ || leftFade_ == nullptr || centerLogo_ == nullptr ||
+        rightFade_ == nullptr || selectionCursor_ == nullptr)
+        return;
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*leftFade_).SetImage(
+        screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::LeftFade()));
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*centerLogo_).SetImage(
+        screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::Center()));
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*rightFade_).SetImage(
+        screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::RightFade()));
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*selectionCursor_).SetImage(
+        screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::SelectionCursor()));
+    skinRevision_ = revision;
 }
 
 void LogoView::ApplyTexts()

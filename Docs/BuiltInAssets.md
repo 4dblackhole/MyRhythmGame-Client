@@ -33,12 +33,19 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 
 스킨 파일 하나를 요청할 때의 순서는 다음과 같습니다.
 
-1. 실행 파일 옆 `assets/skins/Default Skin/<relative path>`
+1. 실행 파일 옆 `assets/skins/<선택한 스킨 폴더>/<relative path>`
 2. EXE에서 추출한 내장 `Default Skin/<relative path>`
 
 따라서 외부 스킨 디렉터리에 일부 파일만 있어도 존재하는 파일은 그대로 사용하고
-누락된 파일만 내장 기본본으로 대체합니다. `ResolveSkinAsset`에 다른 스킨 루트를
-넘겨도 같은 파일별 fallback 규칙을 적용할 수 있습니다.
+누락된 파일만 내장 기본본으로 대체합니다. 옵션 패널의 스킨 목록은 실행 파일 옆
+`assets/skins`의 하위 폴더를 읽으며 `Default Skin`은 외부 폴더가 없어도 표시합니다.
+선택한 폴더 이름은 `%LOCALAPPDATA%/FingerDrum/skin-set.txt`에 UTF-8로 저장되어
+다음 실행 때 복원됩니다. 폴더가 사라지면 내장 기본 스킨을 선택합니다.
+스킨 전환 후 로고 이미지는 즉시 다시 읽고, 플레이/에디터 자산은 해당 화면에
+진입할 때 선택된 스킨에서 읽습니다.
+
+풍선 완료 효과음은 `HitSounds/TaikoMode/pop.wav`입니다. 다른 스킨에서 이 파일을
+제공하면 해당 파일을 사용하고, 없으면 내장 기본 스킨의 소리로 대체합니다.
 
 곡 선택은 실행 파일 옆 `assets/Songs`만 읽습니다. 곡을 캐시에서 다시 생성하지
 않으며, YMP와 같은 폴더의 YME도 사용자가 직접 편집할 수 있습니다. 내장 글꼴은 캐시 경로에서
@@ -52,4 +59,4 @@ source group을 함께 갱신합니다. Scene에는 물리 경로를 새로 하�
 `Client/App/AssetPaths.h` 또는 `FingerDrumAssets.h`의 resolver를 사용합니다.
 
 현재 캐시는 새 팩마다 새 hash 디렉터리를 만들며 이전 버전 디렉터리를 자동으로
-삭제하지 않습니다. 사용자 곡·스킨 선택 UI 자체는 이 자산 팩의 책임이 아닙니다.
+삭제하지 않습니다. 사용자 곡과 스킨 선택 UI는 Client의 책임입니다.

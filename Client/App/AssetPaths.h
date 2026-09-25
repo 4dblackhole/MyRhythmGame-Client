@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FingerDrumAssets.h"
+#include "App/SkinSetSelection.h"
 
 #include <filesystem>
 
@@ -28,33 +29,33 @@ namespace mrg_client::asset_paths
         }
     }
 
-    namespace default_skin
+    namespace skin
     {
         [[nodiscard]] inline std::filesystem::path InGame(
             const std::filesystem::path& file)
         {
-            return finger_drum::assets::ResolveDefaultSkinAsset(
+            return SkinSetSelection::Instance().Resolve(
                 std::filesystem::path(L"InGame") / file);
         }
 
         [[nodiscard]] inline std::filesystem::path JudgeImage(
             const std::filesystem::path& file)
         {
-            return finger_drum::assets::ResolveDefaultSkinAsset(
+            return SkinSetSelection::Instance().Resolve(
                 std::filesystem::path(L"JudgeImage") / file);
         }
 
         [[nodiscard]] inline std::filesystem::path NumberImage(
             const std::filesystem::path& file)
         {
-            return finger_drum::assets::ResolveDefaultSkinAsset(
+            return SkinSetSelection::Instance().Resolve(
                 std::filesystem::path(L"NumberImage") / file);
         }
 
         [[nodiscard]] inline std::filesystem::path TaikoHitSound(
             const std::filesystem::path& file)
         {
-            return finger_drum::assets::ResolveDefaultSkinAsset(
+            return SkinSetSelection::Instance().Resolve(
                 std::filesystem::path(L"HitSounds\\TaikoMode") / file);
         }
 
@@ -62,25 +63,25 @@ namespace mrg_client::asset_paths
         {
             [[nodiscard]] inline std::filesystem::path LeftFade()
             {
-                return finger_drum::assets::ResolveDefaultSkinAsset(
+                return SkinSetSelection::Instance().Resolve(
                     L"TitleImage\\Logo\\LeftFade.png");
             }
 
             [[nodiscard]] inline std::filesystem::path Center()
             {
-                return finger_drum::assets::ResolveDefaultSkinAsset(
+                return SkinSetSelection::Instance().Resolve(
                     L"TitleImage\\Logo\\Center.png");
             }
 
             [[nodiscard]] inline std::filesystem::path RightFade()
             {
-                return finger_drum::assets::ResolveDefaultSkinAsset(
+                return SkinSetSelection::Instance().Resolve(
                     L"TitleImage\\Logo\\RightFade.png");
             }
 
             [[nodiscard]] inline std::filesystem::path SelectionCursor()
             {
-                return finger_drum::assets::ResolveDefaultSkinAsset(
+                return SkinSetSelection::Instance().Resolve(
                     L"TitleImage\\Menu\\SelectionCursor.png");
             }
         }
@@ -89,13 +90,13 @@ namespace mrg_client::asset_paths
         {
             [[nodiscard]] inline std::filesystem::path First()
             {
-                return finger_drum::assets::ResolveDefaultSkinAsset(
+                return SkinSetSelection::Instance().Resolve(
                     L"TitleImage\\Widget\\Widget1.png");
             }
 
             [[nodiscard]] inline std::filesystem::path Second()
             {
-                return finger_drum::assets::ResolveDefaultSkinAsset(
+                return SkinSetSelection::Instance().Resolve(
                     L"TitleImage\\Widget\\Widget2.png");
             }
         }
@@ -107,7 +108,5 @@ namespace mrg_client::asset_paths
             L"assets\\Unused\\awhc.png";
         inline constexpr wchar_t BlackCubeTexture[] =
             L"assets\\Unused\\bwhc.png";
-        inline constexpr wchar_t PopSound[] =
-            L"assets\\Unused\\Sounds\\pop.wav";
     }
 }

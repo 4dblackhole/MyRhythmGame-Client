@@ -33,6 +33,7 @@ class LogoView final
     void CreateMenu();
     void ApplyTexts();
     void UpdateLogoStripLayout();
+    void RefreshSkinImages();
     void ProcessPointer(const mrg::platform::InputState &input);
     void UpdateSelectionFromPointer(const mrg::platform::InputState &input);
     void HandleKeyboard(const mrg::platform::InputState &input);
@@ -49,6 +50,7 @@ class LogoView final
     finger_drum::texts::TextCatalog &texts_;
     finger_drum::presentation::OptionsPanel options_;
     std::uint64_t textRevision_{};
+    std::uint64_t skinRevision_{};
     mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas *canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;

@@ -34,6 +34,24 @@ namespace finger_drum::presentation
             style.normal = style.hovered = style.pressed = style.disabled = color;
             RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetStyle(style);
         }
+
+        void ConfigureCombo(mrg::visual2d::Visual2DNode &node, const std::size_t visibleItems)
+        {
+            node.SetZIndex(10);
+            mrg::visual2d::VisualStyle style{};
+            style.normal = FieldColor;
+            style.hovered = FieldHoverColor;
+            style.pressed = {0.22F, 0.56F, 0.88F, 1.0F};
+            style.disabled = {0.62F, 0.70F, 0.78F, 0.55F};
+            RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetStyle(style);
+            auto &combo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(node);
+            combo.SetMaxVisibleItems(visibleItems);
+            combo.SetItemHeight(42.0F);
+            combo.SetFontSize(19.0F);
+            combo.SetTextColor(HeadingColor);
+            combo.SetSelectedTextColor({1.0F, 1.0F, 1.0F, 1.0F});
+            combo.SetPopupBackgroundColor(PanelColor);
+        }
     } // namespace
 
     void OptionsPanel::Initialize(mrg::visual2d::Visual2DCanvas &canvas)
@@ -63,6 +81,14 @@ namespace finger_drum::presentation
         content_->SetSize({PanelWidth, ContentHeight});
         content_->SetPosition({0.0F, ContentViewportHeight - ContentHeight});
 
+        CreateLanguageControls();
+        CreateSkinControls();
+        RefreshTexts();
+        panel_->SetVisible(false);
+    }
+
+    void OptionsPanel::CreateLanguageControls()
+    {
         languageLabel_ = &mrg::visual2d::CreateLabel(
             *content_, {24.0F, ContentHeight - 38.0F, PanelWidth - 48.0F, 28.0F}, L"",
             "Options.Language.Label");
@@ -80,29 +106,40 @@ namespace finger_drum::presentation
             *content_, {24.0F, ContentHeight - 96.0F, PanelWidth - 48.0F, 46.0F},
             std::move(languageNames), "Options.Language.Combo");
         languageComboId_ = languageCombo_->Id();
-        languageCombo_->SetZIndex(10);
-        mrg::visual2d::VisualStyle comboStyle{};
-        comboStyle.normal = FieldColor;
-        comboStyle.hovered = FieldHoverColor;
-        comboStyle.pressed = {0.22F, 0.56F, 0.88F, 1.0F};
-        comboStyle.disabled = {0.62F, 0.70F, 0.78F, 0.55F};
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(*languageCombo_)
-            .SetStyle(comboStyle);
-        auto &combo =
-            RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*languageCombo_);
-        combo.SetMaxVisibleItems(2);
-        combo.SetItemHeight(42.0F);
-        combo.SetFontSize(19.0F);
-        combo.SetTextColor(HeadingColor);
-        combo.SetSelectedTextColor({1.0F, 1.0F, 1.0F, 1.0F});
-        combo.SetPopupBackgroundColor(PanelColor);
+        ConfigureCombo(*languageCombo_, 2);
+    }
 
-        RefreshTexts();
-        panel_->SetVisible(false);
+    void OptionsPanel::CreateSkinControls()
+    {
+        skinLabel_ = &mrg::visual2d::CreateLabel(
+            *content_, {24.0F, ContentHeight - 174.0F, PanelWidth - 48.0F, 28.0F}, L"",
+            "Options.Skin.Label");
+        auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*skinLabel_);
+        label.SetFontSize(18.0F);
+        label.SetTextColor(LabelColor);
+
+        skinNames_ = mrg_client::SkinSetSelection::Instance().AvailableNames();
+        skinCombo_ = &mrg::visual2d::CreateComboBox(
+            *content_, {24.0F, ContentHeight - 232.0F, PanelWidth - 48.0F, 46.0F},
+            skinNames_, "Options.Skin.Combo");
+        skinComboId_ = skinCombo_->Id();
+        ConfigureCombo(*skinCombo_, 4);
+
+        skinStatus_ = &mrg::visual2d::CreateLabel(
+            *content_, {24.0F, ContentHeight - 274.0F, PanelWidth - 48.0F, 34.0F}, L"",
+            "Options.Skin.Status");
+        auto &status = RequireComponent<mrg::visual2d::TextVisualComponent>(*skinStatus_);
+        status.SetFontSize(14.0F);
+        status.SetTextColor({0.75F, 0.17F, 0.21F, 1.0F});
+        skinStatus_->SetVisible(false);
     }
 
     void OptionsPanel::Shutdown() noexcept
     {
+        skinNames_.clear();
+        skinCombo_ = nullptr;
+        skinStatus_ = nullptr;
+        skinLabel_ = nullptr;
         languageCombo_ = nullptr;
         content_ = nullptr;
         languageLabel_ = nullptr;
@@ -110,11 +147,13 @@ namespace finger_drum::presentation
         panel_ = nullptr;
         panelId_ = {};
         languageComboId_ = {};
+        skinComboId_ = {};
         previousDragPoint_.reset();
         animationProgress_ = 0.0F;
         scrollOffset_ = 0.0F;
         targetOpen_ = false;
         dragging_ = false;
+        skinSaveFailed_ = false;
     }
 
     void OptionsPanel::Toggle()
@@ -124,6 +163,7 @@ namespace finger_drum::presentation
             return;
         }
         targetOpen_ = !targetOpen_;
+        if (targetOpen_) RefreshSkinSets();
         panel_->SetVisible(true);
         dragging_ = false;
         previousDragPoint_.reset();
@@ -192,19 +232,37 @@ namespace finger_drum::presentation
 
     bool OptionsPanel::ProcessAction(const mrg::visual2d::Action &action)
     {
-        if (action.type != mrg::visual2d::ActionType::SelectionChanged ||
-            action.source != languageComboId_)
+        if (action.type != mrg::visual2d::ActionType::SelectionChanged)
         {
             return false;
         }
-        const auto languages = texts_.Languages();
-        if (action.selectedIndex >= languages.size())
+        if (action.source == languageComboId_)
         {
-            return false;
+            const auto languages = texts_.Languages();
+            if (action.selectedIndex >= languages.size()) return false;
+            texts_.SetLanguage(languages[action.selectedIndex].language);
+            RefreshTexts();
+            return true;
         }
-        texts_.SetLanguage(languages[action.selectedIndex].language);
+        if (action.source == skinComboId_)
+        {
+            if (action.selectedIndex >= skinNames_.size()) return false;
+            std::string error;
+            skinSaveFailed_ = !mrg_client::SkinSetSelection::Instance().Select(
+                skinNames_[action.selectedIndex], error);
+            RefreshTexts();
+            return true;
+        }
+        return false;
+    }
+
+    void OptionsPanel::RefreshSkinSets()
+    {
+        skinNames_ = mrg_client::SkinSetSelection::Instance().AvailableNames();
+        if (skinCombo_ == nullptr) return;
+        auto &combo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*skinCombo_);
+        combo.SetItems(skinNames_);
         RefreshTexts();
-        return true;
     }
 
     void OptionsPanel::RefreshTexts()
@@ -220,6 +278,13 @@ namespace finger_drum::presentation
         auto &language = RequireComponent<mrg::visual2d::TextVisualComponent>(*languageLabel_);
         language.SetText(std::wstring(text.language));
         texts_.ApplyFont(language);
+        auto &skin = RequireComponent<mrg::visual2d::TextVisualComponent>(*skinLabel_);
+        skin.SetText(std::wstring(text.skin));
+        texts_.ApplyFont(skin);
+        auto &status = RequireComponent<mrg::visual2d::TextVisualComponent>(*skinStatus_);
+        status.SetText(std::wstring(text.skinSaveError));
+        texts_.ApplyFont(status);
+        skinStatus_->SetVisible(skinSaveFailed_);
         auto &combo =
             RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*languageCombo_);
         texts_.ApplyFont(combo);
@@ -232,6 +297,13 @@ namespace finger_drum::presentation
                 break;
             }
         }
+        auto &skinCombo =
+            RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*skinCombo_);
+        texts_.ApplyFont(skinCombo);
+        const auto selected = std::ranges::find(
+            skinNames_, mrg_client::SkinSetSelection::Instance().CurrentName());
+        if (selected != skinNames_.end())
+            skinCombo.SetSelectedIndex(static_cast<std::size_t>(selected - skinNames_.begin()));
     }
 
     bool OptionsPanel::IsVisible() const noexcept
