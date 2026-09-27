@@ -43,6 +43,7 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
 화면 비율이 좁아져도 Penpot 작업영역이 잘리지 않게 동일 비율로 축소합니다.
 `EditorAudioAnalysis`는 Media Foundation으로 실제 음악/히트사운드 PCM을 디코딩하고
 512-point Hann FFT를 계산합니다. 작업 스레드는 Scene/renderer에 접근하지 않습니다.
+YMP의 `Music metadata`는 Songs 루트 기준으로 해석한 뒤 YMM이 가리키는 음원을 분석합니다.
 음악은 청색, 예상 노트 시작과 TickRoll/Buzz 틱의 히트사운드 스펙트럼은 황색으로 겹쳐 그립니다.
 틱은 모두 정확히 처리한 경우를 표시하며, 동·캇 자유 선택인 TickRoll은 동을 기준으로 합니다. 자유 연타의
 실제 타격 시점/풍선 파열 시점은 편집 단계에서 결정되지 않으므로 임의로 생성하지 않습니다.

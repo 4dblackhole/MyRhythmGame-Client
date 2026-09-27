@@ -11,6 +11,13 @@ namespace finger_drum::tests
             analysis.durationSeconds > 1 && analysis.frames.size() > 100 &&
                 std::ranges::any_of(analysis.frames, [](const auto &f) { return f.peak > 0.01F; }),
             "The shipped MP3 must decode into real waveform/spectrum data.");
+        Require(
+            std::ranges::any_of(analysis.frames, [](const auto &frame) {
+                return std::ranges::any_of(frame.bands, [](const float level) {
+                    return level > .06F;
+                });
+            }),
+            "The shipped MP3 must produce visible music spectrum bands.");
         const auto soundsRoot = songsRoot.parent_path() / "Skins/Default Skin/HitSounds/TaikoMode";
         if (std::filesystem::is_directory(soundsRoot))
             for (const auto *name : {"don.wav", "kat.wav", "bigdon.wav", "bigkat.wav"})

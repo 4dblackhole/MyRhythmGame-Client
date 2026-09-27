@@ -16,8 +16,9 @@ bool EditorAnalysisController::Update(const chart::ChartEditor &document,
     if (analysisDirty)
     {
         analysisDirty = false;
+        // YMP metadata references are relative to Songs, not the YMP folder.
         const auto metadataPath =
-            editor->Pattern().sourcePath.parent_path() / editor->Pattern().musicMetadataFile;
+            mrg_client::asset_paths::UserSongs() / editor->Pattern().musicMetadataFile;
         const auto music = chart::ChartParser{}.ParseMusicFile(metadataPath);
         if (!music.Succeeded())
             throw std::runtime_error("Audio analysis: the selected YMM could not be parsed.");
