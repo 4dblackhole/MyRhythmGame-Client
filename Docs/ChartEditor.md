@@ -17,6 +17,8 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
 - 악보 또는 실시간 레인 좌클릭으로 추가, 노트 우클릭으로 삭제합니다. 롱노트는 두 번
   클릭합니다. 도구를 바꾸거나 Escape를 누르면 미완성 배치를 취소합니다.
 - 선택 도구 클릭은 현재 시간을 변경합니다. 휠은 악보 마디를 이동하고 좌우키는 1ms 이동합니다.
+- 악보 화면의 박자 디바이더는 슬라이더로 1/1부터 1/16까지 정수 분모 눈금을 선택합니다.
+  1/17부터 1/1024까지는 직접 입력을 사용합니다. 현재 값은 슬라이더 왼쪽에 표시됩니다.
 - 실시간 뷰는 현재 시간과 컴파일한 노트 시각/배율로 위치를 표시합니다.
 - 박자표에서 마디/위치/BPM과 마디 길이를 편집합니다. 마디 밖으로 넘친 노트는 초과분을
   다음 마디로 이월합니다. 마디 밖 BPM/이펙트가 생기는 변경은 데이터 손실 대신 오류를 표시합니다.
@@ -35,6 +37,7 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
 재생성합니다. 화면 좌표를 위한 부동소수점은 렌더링/마우스 스냅 경계에서만 사용합니다.
 
 `EditorScene`은 ScreenVisual2DManager의 Canvas에 draw packet component를 등록합니다.
+박자 디바이더는 같은 Canvas의 엔진 `CreateSlider`와 `Visual2DInputRouter`를 사용합니다.
 화면 비율이 좁아져도 Penpot 작업영역이 잘리지 않게 동일 비율로 축소합니다.
 `EditorAudioAnalysis`는 Media Foundation으로 실제 음악/히트사운드 PCM을 디코딩하고
 512-point Hann FFT를 계산합니다. 작업 스레드는 Scene/renderer에 접근하지 않습니다.

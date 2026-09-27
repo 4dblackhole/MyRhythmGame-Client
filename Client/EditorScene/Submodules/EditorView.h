@@ -25,8 +25,11 @@ class EditorView final
     void Shutdown() noexcept
     {
         controls.clear();
+        if (canvas.Get())
+            divisionSliderInput_.Reset(*canvas.Get());
         canvas.Reset();
         node = nullptr;
+        divisionSliderNode_ = nullptr;
         visual = nullptr;
     }
     void Build();
@@ -36,6 +39,8 @@ class EditorView final
   private:
     void DrawScore();
     void DrawTools();
+    void UpdateDivisionSlider(const mrg::UpdateContext &context);
+    void SyncDivisionSlider() noexcept;
     void DrawChartContent();
     void DrawVariantMenu();
     void EditScore(v::Point point, bool erase);
@@ -55,7 +60,10 @@ class EditorView final
     std::uint64_t textRevision_{};
     mrg::visual2d::ScreenCanvasHandle canvas;
     mrg::visual2d::Visual2DNode *node{};
+    mrg::visual2d::Visual2DNode *divisionSliderNode_{};
+    mrg::visual2d::Visual2DInputRouter divisionSliderInput_;
     EditorVisual *visual{};
+    static constexpr v::Rect DivisionSliderRect{1240, 6, 480, 26};
     std::vector<Control> controls;
     std::vector<NoteHit> noteHits;
     std::vector<std::pair<float, finger_drum::chart::MusicalPosition>> realtimeGrid;

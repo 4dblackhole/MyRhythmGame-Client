@@ -32,17 +32,15 @@ void EditorView::DrawTools()
             state_.rebuild = true;
         },
         state_.realtime);
-    Text({1080, 12, 160, 32}, std::wstring(text.beatDivider), 18);
-    for (int i = 0; i < 6; ++i)
+    Text({1080, 5, 150, 24}, std::wstring(text.beatDivider), 17);
+    Text({1080, 29, 150, 26}, L"1/" + std::to_wstring(state_.division), 18, Blue);
+    for (int d = 1; d <= 16; ++d)
     {
-        const int d = 4 << i;
-        Button(
-            {1240.0F + i * 80, 8, 72, 40}, L"1/" + std::to_wstring(d),
-            [this, d] {
-                state_.division = d;
-                state_.rebuild = true;
-            },
-            state_.division == d);
+        const float x = DivisionSliderRect.x + 8 +
+                        (DivisionSliderRect.width - 16) * (d - 1) / 15.0F;
+        Box({x - 1, 32, 2, 5}, Ink);
+        Text({x - 19, 38, 38, 18}, L"1/" + std::to_wstring(d), 12,
+             state_.division == d ? Blue : Ink);
     }
     Button({1740, 8, 150, 40}, std::wstring(text.directInput), [this] {
         if (auto s = EditText(std::wstring(Texts().beatDivisionDialog),

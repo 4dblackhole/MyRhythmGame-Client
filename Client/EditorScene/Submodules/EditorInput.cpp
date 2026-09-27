@@ -44,6 +44,47 @@ void EditorView::EditScore(v::Point point, bool erase)
     state_.PlaceNote(p);
 }
 
+void EditorView::UpdateDivisionSlider(const mrg::UpdateContext &context)
+{
+    if (state_.tab != 0)
+        return;
+
+    const auto &input = context.input;
+    v::PointerInput pointer{};
+    const auto mapped = v::MapScreenPointer(
+        {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
+        {static_cast<float>(width), static_cast<float>(height)}, *canvas.Get());
+    pointer.available = input.IsMouseInsideWindow() && mapped.has_value();
+    pointer.position = mapped.value_or(v::Point{
+        static_cast<float>(input.MousePositionX()) / canvas.Get()->PixelScale() -
+            canvas.Get()->LogicalSize().width * .5F,
+        canvas.Get()->LogicalSize().height * .5F -
+            static_cast<float>(input.MousePositionY()) / canvas.Get()->PixelScale()});
+    pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
+    pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
+    pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
+    divisionSliderInput_.Process(*canvas.Get(), pointer);
+
+    bool changed = false;
+    for (const auto &action : canvas.Get()->TakeActions())
+        changed |= action.source == divisionSliderNode_->Id() &&
+                   action.type == v::ActionType::ValueChanged;
+    // A direct-input value above 16 can share the slider's end position.
+    if (pointer.leftButtonPressed && divisionSliderInput_.CapturedNode() == divisionSliderNode_->Id())
+        changed = true;
+    if (changed)
+    {
+        const float value = divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
+        const int division = std::clamp(1 + static_cast<int>(std::lround(value * 15)), 1, 16);
+        if (state_.division != division)
+        {
+            state_.division = division;
+            state_.rebuild = true;
+        }
+        SyncDivisionSlider();
+    }
+}
+
 bool EditorView::Update(const mrg::UpdateContext &context)
 {
     bool leave = false;
@@ -95,6 +136,7 @@ bool EditorView::Update(const mrg::UpdateContext &context)
         const float scale = std::max(.001F, std::min(width / 1920.0F, height / 1080.0F));
         const v::Point point{(input.MousePositionX() - width * .5F) / scale + 960,
                              (input.MousePositionY() - height * .5F) / scale + 540};
+        UpdateDivisionSlider(context);
         if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Right) && state_.tab == 0)
         {
             if (point.x >= 24 && point.x < 94 && point.y >= 202 && point.y < 522)
@@ -106,7 +148,8 @@ bool EditorView::Update(const mrg::UpdateContext &context)
             else
                 EditScore(point, true);
         }
-        if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Left))
+        if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Left) &&
+            divisionSliderInput_.CapturedNode() != divisionSliderNode_->Id())
         {
             auto found = std::find_if(controls.rbegin(), controls.rend(),
                                       [point](const Control &c) { return c.rect.Contains(point); });

@@ -11,6 +11,17 @@ void EditorView::Initialize(const mrg::EngineServices &services)
     static_cast<void>(canvas.SetVisible(true));
     node = &canvas.Get()->CreateNode(v::Anchor::Center, "Editor");
     visual = &node->AddComponent<EditorVisual>();
+    divisionSliderNode_ = &v::CreateSlider(
+        *node,
+        {DivisionSliderRect.x - 960, 540 - DivisionSliderRect.y - DivisionSliderRect.height,
+         DivisionSliderRect.width, DivisionSliderRect.height},
+        (state_.division - 1) / 15.0F, "Beat division");
+    v::VisualStyle sliderStyle{};
+    sliderStyle.normal.alpha = 0;
+    sliderStyle.hovered.alpha = 0;
+    sliderStyle.pressed.alpha = 0;
+    sliderStyle.disabled.alpha = 0;
+    divisionSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
     ReloadSize();
     Build();
 }
@@ -39,6 +50,15 @@ void EditorView::Build()
         DrawMetadata();
     else
         DrawEffects();
+    const bool showDivisionSlider = state_.tab == 0;
+    if (divisionSliderNode_->IsVisible() != showDivisionSlider)
+    {
+        if (!showDivisionSlider)
+            divisionSliderInput_.Reset(*canvas.Get());
+        divisionSliderNode_->SetVisible(showDivisionSlider);
+        divisionSliderInput_.InvalidateHitTest();
+    }
+    SyncDivisionSlider();
     Button(
         {1740, 1035, 150, 36},
         std::wstring(state_.editor->Dirty() ? text.saveDirty : text.save),
@@ -108,5 +128,12 @@ void EditorView::ReloadSize()
 {
     const float scale = std::min(1.0F, canvas.Get()->LogicalSize().width / 1920.0F);
     node->Transform().SetScale(scale, scale, 1);
+    divisionSliderInput_.InvalidateHitTest();
     state_.rebuild = true;
+}
+
+void EditorView::SyncDivisionSlider() noexcept
+{
+    divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue(
+        (std::min(state_.division, 16) - 1) / 15.0F);
 }
