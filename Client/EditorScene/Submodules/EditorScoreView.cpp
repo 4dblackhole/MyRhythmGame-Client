@@ -159,11 +159,21 @@ void EditorView::DrawChartContent()
     }
     else
     {
-        // The realtime view projects the same cached note times around the
-        // selected time. A long note uses its head's speed for both endpoints.
+        // Match the gameplay lane's beat-based spacing: a sixteenth note spans
+        // 85% of the normal head diameter at scroll 1x.
         Box({164, 351, 1684, 228}, {.055F, .060F, .12F, 1});
         Box({230, 351, 3, 228}, White);
-        constexpr double pixelsPerMs = .30;
+        constexpr float normalHeadRadius = 36.0F;
+        constexpr float pixelsPerWholeNote = normalHeadRadius * 2.0F * 16.0F * .85F;
+        const auto currentTime = finger_drum::rhythm::RhythmTime{
+            static_cast<finger_drum::rhythm::RhythmTime::rep>(
+                std::llround(state_.timeMs * 1000.0))};
+        const long double currentBeat = timeline.WholeNotesAtTime(currentTime);
+        const auto xAtBeat = [currentBeat, pixelsPerWholeNote](const long double beat,
+                                                                const double speed) {
+            return 230.0F + static_cast<float>(beat - currentBeat) *
+                                pixelsPerWholeNote * static_cast<float>(speed);
+        };
         const auto currentMeasure = MeasureNearTime(timeline, state_.timeMs);
         const auto gridBegin = std::max<std::int64_t>(0, currentMeasure - 1);
         for (std::int64_t m = gridBegin; m < currentMeasure + 32; ++m)
@@ -177,9 +187,7 @@ void EditorView::DrawChartContent()
                                                           chart::EffectCommandType::NoteSpeed, p) *
                                    timeline.EffectValueAt(state_.editor->Effects(),
                                                           chart::EffectCommandType::ScrollSpeed, p);
-                const float x = 230 + static_cast<float>(
-                                          (timeline.Compile(p).count() / 1000.0 - state_.timeMs) *
-                                          pixelsPerMs * speed);
+                const float x = xAtBeat(timeline.WholeNotesAtTime(timeline.Compile(p)), speed);
                 if (x < 164 || x > 1848)
                     continue;
                 if (i != 0 ||
@@ -195,8 +203,7 @@ void EditorView::DrawChartContent()
         for (const auto &n : state_.editor->Notes())
         {
             const auto speed = n.note.actionType == 2 && headX ? headSpeed : n.scrollMultiplier;
-            const float x = 230 + static_cast<float>((n.timing.count() / 1000.0 - state_.timeMs) *
-                                                     pixelsPerMs * speed);
+            const float x = xAtBeat(timeline.WholeNotesAtTime(n.timing), speed);
             if (n.note.actionType == 1)
             {
                 headX = x;
@@ -212,17 +219,15 @@ void EditorView::DrawChartContent()
             if (x < 200 || x > 1810)
                 continue;
             Circle(x, 465, n.note.keyType,
-                   (n.note.keyType >= 3 && n.note.keyType <= 5) ? 52.0F : 36.0F);
+                   (n.note.keyType >= 3 && n.note.keyType <= 5) ? 52.0F : normalHeadRadius);
             noteHits.push_back({{x, 465}, n.note.sourceOrder});
         }
         for (const auto &t : state_.editor->Pattern().timing)
         {
             if (t.type != chart::TimingDirectiveType::Bpm)
                 continue;
-            const float x =
-                230 +
-                static_cast<float>((timeline.Compile(t.position).count() / 1000.0 - state_.timeMs) *
-                                   pixelsPerMs);
+            const float x = xAtBeat(
+                timeline.WholeNotesAtTime(timeline.Compile(t.position)), 1.0);
             if (x >= 164 && x <= 1710)
                 Text({x, 320, 140, 28}, L"BPM " + std::to_wstring(static_cast<int>(t.value)), 18,
                      Blue);
