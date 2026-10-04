@@ -79,3 +79,12 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   화면을 보며 키를 누르는 확인은 수행하지 못했습니다. 위 실제 엔진 replay는
   숨겨진 창에서 PlaySession에 시각 지정 입력을 전달하는 자동 검사입니다.
   실제 Raw Input, 픽셀 배치·청음·마우스 조작의 수동 검증을 뜻하지 않습니다.
+
+## 2026-10-04 에디터 실시간 뷰 마디선 두께
+
+- `TaikoEditorMode::DrawChart`의 실시간 마디선 두께를 기준 좌표 2에서 3으로 조정.
+- Debug/Release x64 전체 Rebuild, 두 구성 로직·카탈로그 테스트와
+  smoke-test/lobby/gameplay/editor 종료 코드 0.
+- 두 구성 기존 EditorAudioViewTests/EditorModeTests 통과.
+- 프로젝트/필터/의존성/엔진 경계와 git diff --check 통과.
+- 실제 화면에서의 가독성·마우스 조작은 수동 확인하지 않음.

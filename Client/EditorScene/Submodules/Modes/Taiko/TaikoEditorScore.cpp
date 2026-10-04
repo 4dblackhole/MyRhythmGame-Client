@@ -115,7 +115,7 @@ void TaikoEditorMode::DrawChart(IEditorModeCanvas &canvas, EditorWorkspace &stat
                     continue;
                 if (i != 0 || timeline.EffectValueAt(state.editor->Effects(),
                                                      chart::EffectCommandType::MeasureLineVisible, p) >= .5)
-                    canvas.Box({x, 361, i == 0 ? 2.0F : 1.0F, 202}, {.3F, .34F, .42F, i == 0 ? 1.0F : .45F});
+                    canvas.Box({x, 361, i == 0 ? 3.0F : 1.0F, 202}, {.3F, .34F, .42F, i == 0 ? 1.0F : .45F});
                 realtimeGrid_.push_back({x, p});
             }
         }
