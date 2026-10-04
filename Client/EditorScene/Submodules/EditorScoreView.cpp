@@ -11,7 +11,7 @@ void EditorView::DrawScore()
     DrawChartContent();
     if (state_.pending)
         Text({180, 740, 1550, 32}, std::wstring(text.finishLongNote), 22, Blue);
-    DrawAudio();
+    DrawTimeline();
     DrawVariantMenu();
 }
 

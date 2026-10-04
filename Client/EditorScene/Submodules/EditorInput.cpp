@@ -47,9 +47,9 @@ void EditorView::EditScore(v::Point point, bool erase)
     state_.PlaceNote(p);
 }
 
-void EditorView::UpdateDivisionSlider(const mrg::UpdateContext &context)
+void EditorView::UpdateSliders(const mrg::UpdateContext &context)
 {
-    if (state_.tab != 0)
+    if (state_.tab != 0 && state_.tab != 4)
         return;
 
     const auto &input = context.input;
@@ -66,15 +66,22 @@ void EditorView::UpdateDivisionSlider(const mrg::UpdateContext &context)
     pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
     pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
     pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
-    divisionSliderInput_.Process(*canvas.Get(), pointer);
+    sliderInput_.Process(*canvas.Get(), pointer);
 
     bool changed = false;
+    bool timeChanged = false;
     for (const auto &action : canvas.Get()->TakeActions())
+    {
         changed |= action.source == divisionSliderNode_->Id() &&
                    action.type == v::ActionType::ValueChanged;
+        timeChanged |= action.source == timelineSliderNode_->Id() &&
+                       action.type == v::ActionType::ValueChanged;
+    }
     // A direct-input value above 16 can share the slider's end position.
-    if (pointer.leftButtonPressed && divisionSliderInput_.CapturedNode() == divisionSliderNode_->Id())
+    if (pointer.leftButtonPressed && sliderInput_.CapturedNode() == divisionSliderNode_->Id())
         changed = true;
+    if (pointer.leftButtonPressed && sliderInput_.CapturedNode() == timelineSliderNode_->Id())
+        timeChanged = true;
     if (changed)
     {
         const float value = divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
@@ -85,6 +92,13 @@ void EditorView::UpdateDivisionSlider(const mrg::UpdateContext &context)
             state_.rebuild = true;
         }
         SyncDivisionSlider();
+    }
+    if (timeChanged)
+    {
+        const auto [begin, end] = state_.TimelineRangeMilliseconds();
+        const float value = timelineSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
+        state_.timeMs = std::round(std::lerp(begin, end, static_cast<double>(value)));
+        state_.rebuild = true;
     }
 }
 
@@ -131,7 +145,7 @@ bool EditorView::Update(const mrg::UpdateContext &context)
             const int delta = input.MouseWheelDelta() > 0 ? -1 : 1;
             if (state_.tab == 0)
                 state_.firstMeasure = std::max<std::int64_t>(0, state_.firstMeasure + delta * 4);
-            else
+            else if (state_.tab != 4)
                 state_.listOffset = static_cast<std::size_t>(std::max<std::int64_t>(
                     0, static_cast<std::int64_t>(state_.listOffset) + delta));
             state_.rebuild = true;
@@ -139,7 +153,7 @@ bool EditorView::Update(const mrg::UpdateContext &context)
         const float scale = std::max(.001F, std::min(width / 1920.0F, height / 1080.0F));
         const v::Point point{(input.MousePositionX() - width * .5F) / scale + 960,
                              (input.MousePositionY() - height * .5F) / scale + 540};
-        UpdateDivisionSlider(context);
+        UpdateSliders(context);
         if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Right) && state_.tab == 0)
         {
             if (point.x >= 24 && point.x < 94 && point.y >= 202 && point.y < 522)
@@ -152,7 +166,8 @@ bool EditorView::Update(const mrg::UpdateContext &context)
                 EditScore(point, true);
         }
         if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Left) &&
-            divisionSliderInput_.CapturedNode() != divisionSliderNode_->Id())
+            sliderInput_.CapturedNode() != divisionSliderNode_->Id() &&
+            sliderInput_.CapturedNode() != timelineSliderNode_->Id())
         {
             auto found = std::find_if(controls.rbegin(), controls.rend(),
                                       [point](const Control &c) { return c.rect.Contains(point); });

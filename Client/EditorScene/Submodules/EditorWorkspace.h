@@ -2,6 +2,7 @@
 #include "EditorAnalysisController.h"
 #include <array>
 #include <memory>
+#include <utility>
 
 class EditorWorkspace final
 {
@@ -15,6 +16,7 @@ class EditorWorkspace final
     void SelectTool(int value);
     void Save();
     void PlaceNote(finger_drum::chart::MusicalPosition position);
+    [[nodiscard]] std::pair<double, double> TimelineRangeMilliseconds() const;
     finger_drum::GameplayLaunchRequest request;
     std::unique_ptr<finger_drum::chart::ChartEditor> editor;
     EditorAnalysisController analysis;

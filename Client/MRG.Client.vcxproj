@@ -124,6 +124,7 @@
     <ClCompile Include="EditorScene\Submodules\EditorAnalysisController.cpp" />
     <ClInclude Include="EditorScene\Submodules\EditorAnalysisController.h" />
     <ClCompile Include="EditorScene\Submodules\EditorAudioView.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorTimelineView.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorEffectsView.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorInput.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorMetadataView.cpp" />

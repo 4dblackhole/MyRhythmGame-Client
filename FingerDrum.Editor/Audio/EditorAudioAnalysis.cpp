@@ -38,7 +38,7 @@ namespace finger_drum::editor
                 CoUninitialize();
             }
         };
-        constexpr std::size_t Window = 512;
+        constexpr std::size_t Window = 2048;
         constexpr DWORD AudioStream = static_cast<DWORD>(MF_SOURCE_READER_FIRST_AUDIO_STREAM);
         constexpr DWORD AllStreams = static_cast<DWORD>(MF_SOURCE_READER_ALL_STREAMS);
         void FFT(std::array<std::complex<float>, Window> &values)
@@ -69,96 +69,155 @@ namespace finger_drum::editor
                 }
             }
         }
-    } // namespace
-    AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, std::stop_token stop)
-    {
-        MediaRuntime runtime;
-        using Microsoft::WRL::ComPtr;
-        ComPtr<IMFSourceReader> reader;
-        Check(MFCreateSourceReaderFromURL(path.c_str(), nullptr, &reader));
-        Check(reader->SetStreamSelection(AllStreams, FALSE));
-        Check(reader->SetStreamSelection(AudioStream, TRUE));
-        ComPtr<IMFMediaType> type;
-        Check(MFCreateMediaType(&type));
-        Check(type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio));
-        Check(type->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_Float));
-        Check(reader->SetCurrentMediaType(AudioStream, nullptr, type.Get()));
-        type.Reset();
-        Check(reader->GetCurrentMediaType(AudioStream, &type));
-        const auto channels = MFGetAttributeUINT32(type.Get(), MF_MT_AUDIO_NUM_CHANNELS, 0);
-        const auto rate = MFGetAttributeUINT32(type.Get(), MF_MT_AUDIO_SAMPLES_PER_SECOND, 0);
-        if (!channels || !rate)
-            throw std::runtime_error("Audio analysis returned an invalid PCM format.");
-        std::vector<float> mono;
-        while (!stop.stop_requested())
+        struct DecodedAudio
         {
-            DWORD flags{};
-            ComPtr<IMFSample> sample;
-            Check(reader->ReadSample(AudioStream, 0, nullptr, &flags, nullptr, &sample));
-            if (flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
-                throw std::runtime_error(
-                    "Changing PCM formats are not supported by the editor analyzer.");
-            if (sample)
+            UINT32 channels{}, rate{};
+            std::vector<float> samples;
+        };
+
+        DecodedAudio DecodeAudio(const std::filesystem::path &path, const std::stop_token stop)
+        {
+            using Microsoft::WRL::ComPtr;
+            ComPtr<IMFSourceReader> reader;
+            Check(MFCreateSourceReaderFromURL(path.c_str(), nullptr, &reader));
+            Check(reader->SetStreamSelection(AllStreams, FALSE));
+            Check(reader->SetStreamSelection(AudioStream, TRUE));
+            ComPtr<IMFMediaType> type;
+            Check(MFCreateMediaType(&type));
+            Check(type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio));
+            Check(type->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_Float));
+            Check(reader->SetCurrentMediaType(AudioStream, nullptr, type.Get()));
+            type.Reset();
+            Check(reader->GetCurrentMediaType(AudioStream, &type));
+            const auto channels = MFGetAttributeUINT32(type.Get(), MF_MT_AUDIO_NUM_CHANNELS, 0);
+            const auto rate = MFGetAttributeUINT32(type.Get(), MF_MT_AUDIO_SAMPLES_PER_SECOND, 0);
+            if (!channels || !rate)
+                throw std::runtime_error("Audio analysis returned an invalid PCM format.");
+            DecodedAudio decoded{channels, rate, {}};
+            while (!stop.stop_requested())
             {
-                ComPtr<IMFMediaBuffer> buffer;
-                Check(sample->ConvertToContiguousBuffer(&buffer));
-                DWORD size{};
-                Check(buffer->GetCurrentLength(&size));
-                const std::size_t count = size / (sizeof(float) * channels), oldSize = mono.size();
-                if (oldSize + count > static_cast<std::size_t>(rate) * 60 * 60 * 2)
-                    throw std::runtime_error("Audio exceeds the two-hour editor analysis limit.");
-                mono.resize(oldSize + count);
-                BYTE *data{};
-                Check(buffer->Lock(&data, nullptr, nullptr));
-                const auto *samples = reinterpret_cast<const float *>(data);
-                for (std::size_t i = 0; i < count; ++i)
+                DWORD flags{};
+                ComPtr<IMFSample> sample;
+                Check(reader->ReadSample(AudioStream, 0, nullptr, &flags, nullptr, &sample));
+                if (flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
+                    throw std::runtime_error(
+                        "Changing PCM formats are not supported by the editor analyzer.");
+                if (sample)
                 {
-                    float sum = 0;
-                    for (UINT32 c = 0; c < channels; ++c)
-                        sum += samples[i * channels + c];
-                    mono[oldSize + i] = sum / static_cast<float>(channels);
+                    ComPtr<IMFMediaBuffer> buffer;
+                    Check(sample->ConvertToContiguousBuffer(&buffer));
+                    DWORD size{};
+                    Check(buffer->GetCurrentLength(&size));
+                    const std::size_t count = size / (sizeof(float) * channels),
+                                      oldSize = decoded.samples.size() / channels;
+                    if (oldSize + count > static_cast<std::size_t>(rate) * 60 * 60 * 2)
+                        throw std::runtime_error(
+                            "Audio exceeds the two-hour editor analysis limit.");
+                    BYTE *data{};
+                    Check(buffer->Lock(&data, nullptr, nullptr));
+                    const auto *samples = reinterpret_cast<const float *>(data);
+                    decoded.samples.insert(decoded.samples.end(), samples,
+                                           samples + count * channels);
+                    Check(buffer->Unlock());
                 }
-                Check(buffer->Unlock());
+                if (flags & MF_SOURCE_READERF_ENDOFSTREAM)
+                    break;
             }
-            if (flags & MF_SOURCE_READERF_ENDOFSTREAM)
-                break;
+            return decoded;
         }
-        if (stop.stop_requested())
-            return {};
-        AudioAnalysis result;
-        const auto hop = std::max<std::size_t>(1, rate / 100);
-        result.secondsPerFrame = static_cast<double>(hop) / rate;
-        result.durationSeconds = static_cast<double>(mono.size()) / rate;
-        result.frames.reserve((mono.size() + hop - 1) / hop);
-        for (std::size_t start = 0; start < mono.size() && !stop.stop_requested(); start += hop)
+
+        SpectrumFrame AnalyzeFrame(const DecodedAudio &audio, const std::size_t start,
+                                   const std::size_t hop, const std::array<float, Window> &hann,
+                                   const float windowSum,
+                                   const std::array<std::size_t, SpectrumBandCount + 1> &bins)
         {
-            std::array<std::complex<float>, Window> values{};
             SpectrumFrame frame;
-            for (std::size_t i = 0; i < Window; ++i)
+            const auto sampleCount = audio.samples.size() / audio.channels;
+            frame.minimum = 1;
+            frame.maximum = -1;
+            for (std::size_t sample = start; sample < std::min(start + hop, sampleCount); ++sample)
+                for (UINT32 channel = 0; channel < audio.channels; ++channel)
+                {
+                    const float value = audio.samples[sample * audio.channels + channel];
+                    frame.minimum = std::min(frame.minimum, value);
+                    frame.maximum = std::max(frame.maximum, value);
+                    frame.peak = std::max(frame.peak, std::abs(value));
+                }
+
+            // Average channel power, rather than summing their amplitudes:
+            // opposite stereo phases must not cancel the visible spectrum.
+            std::array<float, Window / 2 + 1> power{};
+            for (UINT32 channel = 0; channel < audio.channels; ++channel)
             {
-                const float sample = start + i < mono.size() ? mono[start + i] : 0;
-                values[i] = sample * (.5F - .5F * std::cos(2 * std::numbers::pi_v<float> *
-                                                           static_cast<float>(i) /
-                                                           static_cast<float>(Window - 1)));
+                std::array<std::complex<float>, Window> values{};
+                for (std::size_t i = 0; i < Window; ++i)
+                {
+                    const auto sample = static_cast<std::int64_t>(start) +
+                                        static_cast<std::int64_t>(i) -
+                                        static_cast<std::int64_t>(Window / 2);
+                    if (sample >= 0 && static_cast<std::size_t>(sample) < sampleCount)
+                        values[i] =
+                            audio.samples[static_cast<std::size_t>(sample) * audio.channels +
+                                          channel] *
+                            hann[i];
+                }
+                FFT(values);
+                for (std::size_t bin = 1; bin < power.size(); ++bin)
+                    power[bin] += std::norm(values[bin]);
             }
-            for (std::size_t i = start; i < std::min(start + hop, mono.size()); ++i)
-                frame.peak = std::max(frame.peak, std::abs(mono[i]));
-            FFT(values);
+            const float normalization =
+                4.0F / (windowSum * windowSum * static_cast<float>(audio.channels));
             for (std::size_t band = 0; band < frame.bands.size(); ++band)
             {
-                const auto first =
-                    static_cast<std::size_t>(std::pow(256.0, static_cast<double>(band) / 24));
-                const auto last = std::min<std::size_t>(
-                    256, std::max(first + 1, static_cast<std::size_t>(std::pow(
-                                                 256.0, static_cast<double>(band + 1) / 24))));
-                float amplitude = 0;
-                for (auto bin = first; bin < last; ++bin)
-                    amplitude = std::max(amplitude, std::abs(values[bin]) / 128);
+                float maximumPower = 0;
+                const auto last = std::min(power.size(), std::max(bins[band] + 1, bins[band + 1]));
+                for (auto bin = bins[band]; bin < last; ++bin)
+                    maximumPower = std::max(maximumPower, power[bin]);
+                const float db = 10 * std::log10(std::max(maximumPower * normalization, 1e-12F));
                 frame.bands[band] =
-                    std::clamp((20 * std::log10(std::max(amplitude, 1e-6F)) + 80) / 80, 0.0F, 1.0F);
+                    std::clamp((db - SpectrumFloorDb) / -SpectrumFloorDb, 0.0F, 1.0F);
             }
-            result.frames.push_back(frame);
+            return frame;
         }
+    } // namespace
+
+    AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, const std::stop_token stop)
+    {
+        MediaRuntime runtime;
+        const auto audio = DecodeAudio(path, stop);
+        if (stop.stop_requested())
+            return {};
+
+        // Frequency metadata stays with the data so files with different
+        // sample rates share an accurate Hz axis in the editor.
+        AudioAnalysis result;
+        result.sampleRate = audio.rate;
+        result.maximumFrequencyHz = std::min(20'000.0, audio.rate * .5);
+        result.minimumFrequencyHz = std::min(20.0, result.maximumFrequencyHz * .5);
+        const auto hop = std::max<std::size_t>(1, audio.rate / 100);
+        const auto count = audio.samples.size() / audio.channels;
+        result.secondsPerFrame = static_cast<double>(hop) / audio.rate;
+        result.durationSeconds = static_cast<double>(count) / audio.rate;
+        result.frames.reserve((count + hop - 1) / hop);
+        std::array<float, Window> hann{};
+        float windowSum = 0;
+        for (std::size_t i = 0; i < Window; ++i)
+        {
+            hann[i] = .5F - .5F * std::cos(2 * std::numbers::pi_v<float> * static_cast<float>(i) /
+                                           static_cast<float>(Window - 1));
+            windowSum += hann[i];
+        }
+        std::array<std::size_t, SpectrumBandCount + 1> bins{};
+        for (std::size_t band = 0; band < bins.size(); ++band)
+        {
+            const double frequency = result.minimumFrequencyHz *
+                                     std::pow(result.maximumFrequencyHz / result.minimumFrequencyHz,
+                                              static_cast<double>(band) / SpectrumBandCount);
+            bins[band] = std::clamp(static_cast<std::size_t>(frequency * Window / audio.rate),
+                                    std::size_t{1}, Window / 2);
+        }
+        for (std::size_t start = 0; start < count && !stop.stop_requested(); start += hop)
+            result.frames.push_back(AnalyzeFrame(audio, start, hop, hann, windowSum, bins));
         return result;
     }
 } // namespace finger_drum::editor

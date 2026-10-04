@@ -16,6 +16,13 @@ Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system
 풍선 완료 cue는 선택한 스킨의 `HitSounds/TaikoMode/pop.wav`를 사용하며 파일이
 없으면 내장 기본 스킨의 같은 파일로 대체합니다.
 
+일반 플레이의 음악은 `Music.Track` cue의 timelineTime=0으로 미리 예약하며,
+`RhythmTimer::ToDspClock`과 FMOD `setDelay`로 mixer sample clock에 연결합니다.
+Pattern Offset은 노트 시각에 더하고 음악 시작 시각은 옮기지 않습니다.
+플레이 타이머는 항상 최소 −2000ms에서 시작하며 첫 박자와 노트 이동 거리에 따라
+더 이른 시각에서 시작할 수 있습니다. 0ms 이전의 pause/resume 경로는 기존 음악의
+DSP 예약 시각을 재설정하지 않으므로 이 경우의 동기화는 보완이 필요합니다.
+
 ## 상태 기반 히트사운드
 
 노트 규칙은 직접 FMOD를 호출하지 않습니다. 상태 전이인 `NoteEvent`를 만들고

@@ -9,7 +9,7 @@ namespace finger_drum::texts
 {
     struct EditorTextSet
     {
-        std::array<std::wstring_view, 4> tabs;
+        std::array<std::wstring_view, 5> tabs;
         std::wstring_view save;
         std::wstring_view saveDirty;
 
@@ -65,6 +65,10 @@ namespace finger_drum::texts
         std::wstring_view currentTime;
         std::wstring_view audioHelp;
         std::wstring_view analyzingAudio;
+        std::wstring_view timeline;
+        std::wstring_view waveform;
+        std::wstring_view musicSpectrum;
+        std::wstring_view hitSoundSpectrum;
 
         std::wstring_view discardChanges;
         std::wstring_view editorTitle;

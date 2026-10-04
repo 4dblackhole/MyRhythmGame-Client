@@ -26,10 +26,11 @@ class EditorView final
     {
         controls.clear();
         if (canvas.Get())
-            divisionSliderInput_.Reset(*canvas.Get());
+            sliderInput_.Reset(*canvas.Get());
         canvas.Reset();
         node = nullptr;
         divisionSliderNode_ = nullptr;
+        timelineSliderNode_ = nullptr;
         visual = nullptr;
     }
     void Build();
@@ -39,7 +40,7 @@ class EditorView final
   private:
     void DrawScore();
     void DrawTools();
-    void UpdateDivisionSlider(const mrg::UpdateContext &context);
+    void UpdateSliders(const mrg::UpdateContext &context);
     void SyncDivisionSlider() noexcept;
     void DrawChartContent();
     void DrawVariantMenu();
@@ -48,6 +49,13 @@ class EditorView final
     void DrawMetadata();
     void DrawEffects();
     void DrawAudio();
+    void DrawAudioWaveform(const std::vector<finger_drum::editor::SpectrumFrame> &columns);
+    void DrawAudioTimeRuler(double begin);
+    void DrawAudioSpectrum(v::Rect rect,
+                           const std::vector<finger_drum::editor::SpectrumFrame> &columns,
+                           double minimumHz, double maximumHz);
+    void DrawTimeline();
+    void SyncTimelineSlider();
     void Box(v::Rect r, v::Color color, float radius = 0);
     void Text(v::Rect r, std::wstring text, float size = 20, v::Color color = editor_ui::Ink);
     void Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected = false);
@@ -61,9 +69,11 @@ class EditorView final
     mrg::visual2d::ScreenCanvasHandle canvas;
     mrg::visual2d::Visual2DNode *node{};
     mrg::visual2d::Visual2DNode *divisionSliderNode_{};
-    mrg::visual2d::Visual2DInputRouter divisionSliderInput_;
+    mrg::visual2d::Visual2DNode *timelineSliderNode_{};
+    mrg::visual2d::Visual2DInputRouter sliderInput_;
     EditorVisual *visual{};
     static constexpr v::Rect DivisionSliderRect{1240, 6, 480, 26};
+    static constexpr v::Rect TimelineSliderRect{205, 915, 1645, 44};
     std::vector<Control> controls;
     std::vector<NoteHit> noteHits;
     std::vector<std::pair<float, finger_drum::chart::MusicalPosition>> realtimeGrid;

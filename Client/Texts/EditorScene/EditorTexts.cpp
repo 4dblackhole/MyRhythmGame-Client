@@ -5,7 +5,7 @@ namespace finger_drum::texts
     const EditorTextSet &Editor(const Language language) noexcept
     {
         static constexpr EditorTextSet Korean{
-            {L"패턴", L"박자표", L"메타데이터", L"이펙트"},
+            {L"패턴", L"박자표", L"메타데이터", L"이펙트", L"오디오"},
             L"저장", L"저장 *",
             L"롱노트 끝 위치를 클릭하세요 · 도구 변경/Escape: 취소",
             L"전체 악보 뷰", L"실시간 뷰", L"박자 디바이더", L"직접 입력",
@@ -29,10 +29,11 @@ namespace finger_drum::texts
             L"동", L"캇",
             L"오디오 분석 / 히트사운드", L"현재 시간 (ms)",
             L"마우스 휠: 마디 이동 · ← / →: 1ms · Ctrl+S: 저장", L"오디오 분석 중…",
+            L"타임라인", L"음악 파형", L"음악 FFT 스펙트로그램", L"예상 히트사운드 FFT 스펙트로그램",
             L"저장하지 않은 변경을 버리고 나가시겠습니까?", L"FingerDrum 에디터", L"확인", L"취소"};
 
         static constexpr EditorTextSet English{
-            {L"PATTERN", L"TIMING", L"METADATA", L"EFFECTS"},
+            {L"PATTERN", L"TIMING", L"METADATA", L"EFFECTS", L"AUDIO"},
             L"SAVE", L"SAVE *",
             L"Click the long-note end · Change tool/Escape: cancel",
             L"SCORE VIEW", L"REALTIME VIEW", L"BEAT DIVIDER", L"DIRECT INPUT",
@@ -57,6 +58,7 @@ namespace finger_drum::texts
             L"Don", L"Kat",
             L"AUDIO ANALYSIS / HIT SOUNDS", L"CURRENT TIME (ms)",
             L"Mouse wheel: move measures · ← / →: 1 ms · Ctrl+S: save", L"ANALYZING AUDIO…",
+            L"TIMELINE", L"MUSIC WAVEFORM", L"MUSIC FFT SPECTROGRAM", L"EXPECTED HIT-SOUND FFT SPECTROGRAM",
             L"Discard unsaved changes and leave?", L"FingerDrum Editor", L"OK", L"Cancel"};
         return language == Language::Korean ? Korean : English;
     }

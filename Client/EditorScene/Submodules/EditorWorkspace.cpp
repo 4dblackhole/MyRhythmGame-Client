@@ -20,6 +20,21 @@ void EditorWorkspace::UpdateAnalysis()
         rebuild = true;
 }
 
+std::pair<double, double> EditorWorkspace::TimelineRangeMilliseconds() const
+{
+    double begin = 0, end = 1;
+    for (const auto &note : editor->Notes())
+    {
+        const double milliseconds = note.timing.count() / 1000.0;
+        begin = std::min(begin, milliseconds);
+        end = std::max(end, milliseconds);
+    }
+    if (const auto music = analysis.Data().sounds.find("Music");
+        music != analysis.Data().sounds.end())
+        end = std::max(end, music->second.durationSeconds * 1000.0);
+    return {begin, end};
+}
+
 void EditorWorkspace::SelectTool(int value)
 {
     tool = value;

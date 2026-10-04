@@ -23,7 +23,7 @@
 | 에디터 도구/배치 취소 | `Client/EditorScene/Submodules/EditorWorkspace.*`, EditorTool.h | ChartEditorTests, SceneStateTests |
 | 에디터 화면/입력 | 같은 폴더 `EditorView.h`, EditorScoreView.cpp / EditorInput.cpp | Workspace.h, editor smoke |
 | BPM·metadata·effect UI | 같은 폴더 `EditorTimingView`, `EditorMetadataView`, `EditorEffectsView` | ChartEditor의 Replace 계약, 저장 왕복 |
-| 스펙트럼 화면/worker | EditorAudioView / EditorAnalysisController | `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests |
+| 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | EditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드 정책 | 같은 폴더 TaikoSoundPolicy.cpp / TaikoSoundIds.h | NoteSoundPolicy.h; SoundPolicyTests |

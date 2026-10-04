@@ -22,6 +22,12 @@ void EditorView::Initialize(const mrg::EngineServices &services)
     sliderStyle.pressed.alpha = 0;
     sliderStyle.disabled.alpha = 0;
     divisionSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
+    timelineSliderNode_ = &v::CreateSlider(
+        *node,
+        {TimelineSliderRect.x - 960, 540 - TimelineSliderRect.y - TimelineSliderRect.height,
+         TimelineSliderRect.width, TimelineSliderRect.height},
+        0, "Editor timeline");
+    timelineSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
     ReloadSize();
     Build();
 }
@@ -32,9 +38,9 @@ void EditorView::Build()
     controls.clear();
     visual->packets.clear();
     Box({0, 0, 1920, 1080}, Background);
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < static_cast<int>(text.tabs.size()); ++i)
         Button(
-            {i * 220.0F, 0, 220, 60}, std::wstring(text.tabs[i]),
+            {i * 200.0F, 0, 200, 60}, std::wstring(text.tabs[i]),
             [this, i] {
                 state_.tab = i;
                 state_.listOffset = 0;
@@ -48,17 +54,28 @@ void EditorView::Build()
         DrawTiming();
     else if (state_.tab == 2)
         DrawMetadata();
-    else
+    else if (state_.tab == 3)
         DrawEffects();
+    else
+        DrawAudio();
     const bool showDivisionSlider = state_.tab == 0;
     if (divisionSliderNode_->IsVisible() != showDivisionSlider)
     {
         if (!showDivisionSlider)
-            divisionSliderInput_.Reset(*canvas.Get());
+            sliderInput_.Reset(*canvas.Get());
         divisionSliderNode_->SetVisible(showDivisionSlider);
-        divisionSliderInput_.InvalidateHitTest();
+        sliderInput_.InvalidateHitTest();
+    }
+    const bool showTimelineSlider = state_.tab == 0 || state_.tab == 4;
+    if (timelineSliderNode_->IsVisible() != showTimelineSlider)
+    {
+        if (!showTimelineSlider)
+            sliderInput_.Reset(*canvas.Get());
+        timelineSliderNode_->SetVisible(showTimelineSlider);
+        sliderInput_.InvalidateHitTest();
     }
     SyncDivisionSlider();
+    SyncTimelineSlider();
     Button(
         {1740, 1035, 150, 36},
         std::wstring(state_.editor->Dirty() ? text.saveDirty : text.save),
@@ -128,7 +145,7 @@ void EditorView::ReloadSize()
 {
     const float scale = std::min(1.0F, canvas.Get()->LogicalSize().width / 1920.0F);
     node->Transform().SetScale(scale, scale, 1);
-    divisionSliderInput_.InvalidateHitTest();
+    sliderInput_.InvalidateHitTest();
     state_.rebuild = true;
 }
 

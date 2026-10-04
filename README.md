@@ -41,6 +41,8 @@ msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platfo
 ```
 
 일반 실행은 로고 → 플레이/에디터 곡 선택으로 시작합니다.
+에디터의 오디오 탭은 음악 파형·음악 FFT·예상 히트사운드 FFT를 별도로 표시하며,
+패턴/오디오 탭의 하단 타임라인을 드래그해 현재 편집 시각을 탐색합니다.
 Release는 ColoredCube 기술 예제를 포함하지 않습니다. 배포할 때는 깨끗한 폴더에
 `MyRhythmGame.exe`, `fmod.dll`, 제공할 `assets/Songs`만 복사합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는

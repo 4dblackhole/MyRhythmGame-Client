@@ -36,6 +36,7 @@ foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke
 예: `--smoke-test --example=mesh`. Release에는 이 예제 route가 없습니다.
 프로젝트/필터/include 경계는 `Scripts/CheckArchitecture.ps1`로 검사합니다.
 키빔 표시는 [별도 회귀 테스트](../Tests/Presentation/README.md)로 검사할 수 있습니다.
+오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.
 
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
