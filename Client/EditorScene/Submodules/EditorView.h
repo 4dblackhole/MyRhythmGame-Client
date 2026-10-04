@@ -38,9 +38,20 @@ class EditorView final : public IEditorModeCanvas
     bool Update(const mrg::UpdateContext &context);
 
   private:
+    void BuildContent();
+    void DrawNavigation();
+    void DrawFooter();
+    void DrawTimeInput(v::Rect);
+    void DrawEffectRows();
+    void DrawEffectFields();
+    std::wstring EffectLabel(const EditorEffectSelection &) const;
+    void SelectEffectRow(std::size_t);
+    void CycleEffectType();
     void DrawScore();
     void DrawTools();
     void UpdateSliders(const mrg::UpdateContext &context);
+    bool UpdateKeyboard(const mrg::platform::InputState &);
+    void UpdatePointer(const mrg::UpdateContext &);
     void SyncDivisionSlider() noexcept;
     void DrawTiming();
     void DrawEffects();
@@ -66,6 +77,7 @@ class EditorView final : public IEditorModeCanvas
     mrg::visual2d::Visual2DNode *timelineSliderNode_{};
     mrg::visual2d::Visual2DInputRouter sliderInput_;
     EditorVisual *visual{};
+    bool buildFailed_{};
     static constexpr v::Rect DivisionSliderRect{1240, 6, 480, 26};
     static constexpr v::Rect TimelineSliderRect{205, 915, 1645, 44};
     std::vector<Control> controls;

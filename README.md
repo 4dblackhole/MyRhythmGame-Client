@@ -30,6 +30,8 @@ Scene마다 전용 폴더와 `Submodules/`를 둡니다. Scene은 작은 호출�
 에디터는 공통 화면과 `IEditorMode`의 도구/노트 표시/입력 정책,
 `IEditorDocument`의 파일 형식별 편집·저장을 분리합니다. 현재 구현은 Taiko와
 YMP/YME이며 새 모드 연결 경계는 [에디터 구조](Docs/ChartEditor.md)에 있습니다.
+모드는 제한된 편집 context를 통해 문서를 수정하고, 비동기 분석은 별도의 읽기 전용
+오디오 계약을 사용합니다. Taiko 옵션·사운드 해석은 플레이와 에디터가 공유합니다.
 
 ## 빌드·실행
 

@@ -27,7 +27,25 @@
     <Filter Include="Texts\GameScene\MusicSelectScene" />
     <Filter Include="Texts\GameScene\RhythmTestScene" />
     <Filter Include="Texts\Options" />
+    <ClInclude Include="EditorScene\Submodules\EditorValueParsing.h">
+      <Filter>EditorScene\Submodules</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorScene\Submodules\Modes\IEditorAudioSource.h">
+      <Filter>EditorScene\Submodules\Modes</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorScene\Submodules\Modes\IEditorContext.h">
+      <Filter>EditorScene\Submodules\Modes</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorScene\Submodules\EditorTime.h">
+      <Filter>EditorScene\Submodules</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorScene\Submodules\EditorForms.h">
+      <Filter>EditorScene\Submodules</Filter>
+    </ClInclude>
     <ClInclude Include="App\AssetPaths.h"><Filter>App</Filter></ClInclude>
+    <ClCompile Include="EditorScene\Submodules\EditorForms.cpp">
+      <Filter>EditorScene\Submodules</Filter>
+    </ClCompile>
     <ClCompile Include="App\SkinSetSelection.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\SkinSetSelection.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\FingerDrumGame.cpp"><Filter>App</Filter></ClCompile>

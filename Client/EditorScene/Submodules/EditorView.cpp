@@ -15,7 +15,7 @@ void EditorView::Initialize(const mrg::EngineServices &services)
         &v::CreateSlider(*node,
                          {DivisionSliderRect.x - 960, 540 - DivisionSliderRect.y - DivisionSliderRect.height,
                           DivisionSliderRect.width, DivisionSliderRect.height},
-                         (state_.division - 1) / 15.0F, "Beat division");
+                         (state_.Score().division - 1) / 15.0F, "Beat division");
     v::VisualStyle sliderStyle{};
     sliderStyle.normal.alpha = 0;
     sliderStyle.hovered.alpha = 0;
@@ -32,33 +32,23 @@ void EditorView::Initialize(const mrg::EngineServices &services)
     Build();
 }
 
-void EditorView::Build()
+void EditorView::BuildContent()
 {
-    const auto &text = Texts();
     controls.clear();
     visual->packets.clear();
     Box({0, 0, 1920, 1080}, Background);
-    for (int i = 0; i < static_cast<int>(text.tabs.size()); ++i)
-        Button(
-            {i * 200.0F, 0, 200, 60}, std::wstring(text.tabs[i]),
-            [this, i] {
-                state_.tab = i;
-                state_.listOffset = 0;
-                state_.mode->CloseToolMenu();
-                state_.rebuild = true;
-            },
-            state_.tab == i);
-    if (state_.tab == 0)
+    DrawNavigation();
+    if (state_.Tab() == EditorTab::Pattern)
         DrawScore();
-    else if (state_.tab == 1)
+    else if (state_.Tab() == EditorTab::Timing)
         DrawTiming();
-    else if (state_.tab == 2)
-        state_.mode->DrawMetadata(*this, state_, texts_.CurrentLanguage());
-    else if (state_.tab == 3)
+    else if (state_.Tab() == EditorTab::Metadata)
+        state_.Mode().DrawMetadata(*this, state_, texts_.CurrentLanguage());
+    else if (state_.Tab() == EditorTab::Effects)
         DrawEffects();
     else
         DrawAudio();
-    const bool showDivisionSlider = state_.tab == 0;
+    const bool showDivisionSlider = state_.Tab() == EditorTab::Pattern;
     if (divisionSliderNode_->IsVisible() != showDivisionSlider)
     {
         if (!showDivisionSlider)
@@ -66,7 +56,7 @@ void EditorView::Build()
         divisionSliderNode_->SetVisible(showDivisionSlider);
         sliderInput_.InvalidateHitTest();
     }
-    const bool showTimelineSlider = state_.tab == 0 || state_.tab == 4;
+    const bool showTimelineSlider = state_.Tab() == EditorTab::Pattern || state_.Tab() == EditorTab::Audio;
     if (timelineSliderNode_->IsVisible() != showTimelineSlider)
     {
         if (!showTimelineSlider)
@@ -76,12 +66,9 @@ void EditorView::Build()
     }
     SyncDivisionSlider();
     SyncTimelineSlider();
-    Button(
-        {1740, 1035, 150, 36}, std::wstring(state_.editor->Dirty() ? text.saveDirty : text.save),
-        [this] { state_.Save(); }, true);
-    Text({24, 1040, 1690, 32}, Wide(state_.status), 16);
+    DrawFooter();
     textRevision_ = texts_.Revision();
-    state_.rebuild = false;
+    state_.FinishBuild();
 }
 
 void EditorView::Box(v::Rect r, v::Color color, float radius)
@@ -124,7 +111,7 @@ void EditorView::Field(v::Rect r, const wchar_t *label, std::string &value)
         if (auto edited = EditText(label, value, Texts()))
         {
             value = *edited;
-            state_.rebuild = true;
+            state_.RequestRebuild();
         }
     });
 }
@@ -134,11 +121,57 @@ void EditorView::ReloadSize()
     const float scale = std::min(1.0F, canvas.Get()->LogicalSize().width / 1920.0F);
     node->Transform().SetScale(scale, scale, 1);
     sliderInput_.InvalidateHitTest();
-    state_.rebuild = true;
+    state_.RequestRebuild();
 }
 
 void EditorView::SyncDivisionSlider() noexcept
 {
-    divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue((std::min(state_.division, 16) - 1) /
-                                                                              15.0F);
+    divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue(
+        (std::min(state_.Score().division, 16) - 1) / 15.0F);
+}
+
+void EditorView::DrawNavigation()
+{
+    const auto &text = Texts();
+    for (int i = 0; i < static_cast<int>(text.tabs.size()); ++i)
+        Button(
+            {i * 200.0F, 0, 200, 60}, std::wstring(text.tabs[i]),
+            [this, i] { state_.SelectTab(static_cast<EditorTab>(i)); }, static_cast<int>(state_.Tab()) == i);
+}
+
+void EditorView::DrawFooter()
+{
+    const auto &text = Texts();
+    Button(
+        {1740, 1035, 150, 36}, std::wstring(state_.Document().Dirty() ? text.saveDirty : text.save),
+        [this] { state_.Save(); }, true);
+    Text({24, 1040, 1690, 32}, Wide(state_.Status()), 16);
+}
+
+void EditorView::Build()
+{
+    try
+    {
+        BuildContent();
+        buildFailed_ = false;
+    }
+    catch (const std::exception &error)
+    {
+        // Drop partial packets and their callbacks. Keep navigation and time
+        // correction available, with no automatic retry until the next action.
+        state_.SetStatus(error.what());
+        buildFailed_ = true;
+        controls.clear();
+        visual->packets.clear();
+        sliderInput_.Reset(*canvas.Get());
+        divisionSliderNode_->SetVisible(false);
+        timelineSliderNode_->SetVisible(false);
+        sliderInput_.InvalidateHitTest();
+        Box({0, 0, 1920, 1080}, Background);
+        DrawNavigation();
+        DrawTimeInput({1600, 887, 280, 32});
+        DrawFooter();
+        state_.FinishBuild();
+        textRevision_ = texts_.Revision();
+    }
 }

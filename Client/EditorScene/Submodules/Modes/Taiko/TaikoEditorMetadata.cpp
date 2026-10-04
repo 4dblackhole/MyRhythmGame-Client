@@ -1,12 +1,11 @@
 #include "../../EditorSupport.h"
-#include "../../EditorWorkspace.h"
 #include "TaikoEditorMode.h"
 #include <algorithm>
 using namespace editor_ui;
 
 #include <sstream>
 
-void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, EditorWorkspace &state,
+void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &state,
                                    finger_drum::texts::Language language)
 {
     const auto &text = finger_drum::texts::Editor(language);
@@ -19,15 +18,14 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, EditorWorkspace &s
         canvas.Button({520, y, 1295, 44}, Wide(value), [&state, language, title, value, apply] {
             if (auto edited = EditText(title, value, finger_drum::texts::Editor(language)))
             {
-                auto p = state.editor->Pattern();
+                auto p = state.Document().Pattern();
                 apply(p, *edited);
-                state.editor->Replace(p, state.editor->Effects());
-                state.analysis.Invalidate();
-                state.rebuild = true;
+                state.Replace(p, state.Document().Effects());
+                state.RequestRebuild();
             }
         });
     };
-    const auto &p = state.editor->Pattern();
+    const auto &p = state.Document().Pattern();
     metadata(225, text.ymmRelativePath.data(), Utf8(p.musicMetadataFile.wstring()),
              [](auto &d, const auto &value) { d.musicMetadataFile = std::filesystem::path(Wide(value)); });
     metadata(305, text.patternName.data(), p.name, [](auto &d, const auto &value) { d.name = value; });

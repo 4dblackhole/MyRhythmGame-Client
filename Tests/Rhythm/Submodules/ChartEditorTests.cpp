@@ -34,11 +34,9 @@ namespace finger_drum::tests
                 "A collapsed long-note pair must reject the whole signature edit without altering "
                 "the source.");
         editor.DeleteNote(1);
-        Require(editor.Pattern().notes.size() == 1,
-                "Deleting a long-note head must also remove its matching tail.");
+        Require(editor.Pattern().notes.size() == 1, "Deleting a long-note head must also remove its matching tail.");
         const auto &timeline = editor.Timeline();
-        for (const chart::Rational beat :
-             {chart::Rational{1, 3}, chart::Rational{1, 1}, chart::Rational{1000, 3}})
+        for (const chart::Rational beat : {chart::Rational{1, 3}, chart::Rational{1, 1}, chart::Rational{1000, 3}})
             Require(timeline.PositionToWholeNotes(timeline.PositionAtWholeNotes(beat)) == beat,
                     "Prefix sum inverse must remain exact, including extrapolated measures.");
 
@@ -57,15 +55,34 @@ namespace finger_drum::tests
         editor.Replace(pattern, effects);
         const auto revision = editor.Revision();
         editor.Replace(pattern, effects);
-        Require(editor.Revision() == revision + 1,
-                "Edits must invalidate dependent editor caches exactly once.");
+        Require(editor.Revision() == revision + 1, "Edits must invalidate dependent editor caches exactly once.");
         Require(std::abs(editor.Notes()[0].scrollMultiplier - 1.5) < 1e-9,
                 "Region speed must interpolate by rational beat, not by elapsed seconds across a "
                 "BPM change.");
+        const auto beforeRevision = editor.Revision();
+        const auto beforeDirty = editor.Dirty();
+        const auto beforePattern = chart::ChartEditor::WritePattern(editor.Pattern());
+        const auto beforeEffects = chart::ChartEditor::WriteEffects(editor.Effects());
+        const auto beforeTime = editor.Notes().front().timing;
+        auto invalidEffects = effects;
+        invalidEffects.commands.front().beginValue = 0;
+        bool invalidRejected = false;
+        try
+        {
+            editor.Replace(pattern, invalidEffects);
+        }
+        catch (const std::invalid_argument &)
+        {
+            invalidRejected = true;
+        }
+        Require(invalidRejected && editor.Revision() == beforeRevision && editor.Dirty() == beforeDirty &&
+                    chart::ChartEditor::WritePattern(editor.Pattern()) == beforePattern &&
+                    chart::ChartEditor::WriteEffects(editor.Effects()) == beforeEffects &&
+                    editor.Notes().front().timing == beforeTime && editor.Notes().front().scrollMultiplier == 1.5,
+                "Failed candidate validation must preserve document, revision, dirty state and compiled caches.");
         auto serialized = chart::ChartEditor::WriteEffects(effects);
         const auto parsedEffects = chart::ChartParser{}.ParseEffect(serialized);
-        Require(parsedEffects.Succeeded() &&
-                    parsedEffects.document.commands[0].endPosition == speed.endPosition &&
+        Require(parsedEffects.Succeeded() && parsedEffects.document.commands[0].endPosition == speed.endPosition &&
                     parsedEffects.document.hitSoundChanges.size() == 1,
                 "YME regions and indexed hit sound changes must round-trip.");
 
@@ -78,14 +95,12 @@ namespace finger_drum::tests
         Require(std::filesystem::exists(yme) && !editor.Dirty(),
                 "Save must produce adjacent YMP/YME and clear dirty state.");
         const auto parsed = chart::ChartParser{}.ParsePatternFile(pattern.sourcePath);
-        Require(
-            parsed.Succeeded() && parsed.document.notes.size() == pattern.notes.size() &&
-                parsed.document.makers == pattern.makers &&
-                parsed.document.hitSounds == pattern.hitSounds &&
-                chart::MusicalTimeline(parsed.document).CompileNotes(parsed.document)[0].timing ==
-                    editor.Notes()[0].timing,
-            "Saving must preserve Unicode metadata, hit sound table and exact compiled note "
-            "timing.");
+        Require(parsed.Succeeded() && parsed.document.notes.size() == pattern.notes.size() &&
+                    parsed.document.makers == pattern.makers && parsed.document.hitSounds == pattern.hitSounds &&
+                    chart::MusicalTimeline(parsed.document).CompileNotes(parsed.document)[0].timing ==
+                        editor.Notes()[0].timing,
+                "Saving must preserve Unicode metadata, hit sound table and exact compiled note "
+                "timing.");
         editor.Save();
         Require(!std::filesystem::exists(pattern.sourcePath.string() + ".editor.bak"),
                 "Successful save must clean its own backup.");

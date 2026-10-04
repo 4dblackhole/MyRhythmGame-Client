@@ -1,6 +1,5 @@
 #include "TaikoEditorMode.h"
 #include "../../EditorSupport.h"
-#include "../../EditorWorkspace.h"
 #include "TaikoEditorTool.h"
 #include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
 #include <algorithm>
@@ -64,22 +63,20 @@ void TaikoEditorMode::SelectTool(int value)
     popup_ = -1;
 }
 
-void TaikoEditorMode::PlaceNote(EditorWorkspace &state, chart::MusicalPosition p)
+void TaikoEditorMode::PlaceNote(IEditorContext &state, chart::MusicalPosition p)
 {
     // Placing the first realtime endpoint must not pan the second-click grid.
-    if (!state.realtime || tool_ == 0)
-        state.timeMs = state.editor->Timeline().Compile(p).count() / 1000.0;
+    if (!state.Score().realtime || tool_ == 0)
+        state.Seek(state.Document().Timeline().Compile(p).count() / 1000.0);
     if (tool_ == 0)
     {
-        state.rebuild = true;
+        state.RequestRebuild();
         return;
     }
     if (tool_ < 0)
     {
-        state.timingFields[0] = std::to_string(p.measure + 1);
-        state.timingFields[1] = Fraction(p.fraction);
-        state.tab = 1;
-        state.rebuild = true;
+        state.SelectTimingPosition(p);
+        state.RequestRebuild();
         return;
     }
     const auto *selected = editor_tools::Find(tool_);
@@ -92,12 +89,11 @@ void TaikoEditorMode::PlaceNote(EditorWorkspace &state, chart::MusicalPosition p
             pending_ = p;
         else
         {
-            state.editor->AddNote(std::min(*pending_, p), noteId, std::max(*pending_, p),
-                                  editor_tools::ExtraData(*selected));
+            state.AddNote(std::min(*pending_, p), noteId, std::max(*pending_, p), editor_tools::ExtraData(*selected));
             pending_.reset();
         }
     }
     else
-        state.editor->AddNote(p, noteId);
-    state.rebuild = true;
+        state.AddNote(p, noteId);
+    state.RequestRebuild();
 }

@@ -3,6 +3,7 @@
 #include "Editing/ChartEditor.h"
 #include "EditorModeTests.h"
 #include "EditorScene/Submodules/EditorView.h"
+#include "EditorScene/Submodules/Modes/EditorModeFactory.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -63,13 +64,12 @@ int main()
         std::string assetError;
         Check(finger_drum::assets::InitializeBuiltInAssets(assetError), assetError.c_str());
         namespace chart = finger_drum::chart;
-        EditorWorkspace range(finger_drum::GameplayLaunchRequest{});
         chart::PatternDocument pattern;
         pattern.baseBpm = 120;
         pattern.patternOffsetMilliseconds = -500;
-        range.editor = std::make_unique<chart::ChartEditor>(pattern);
-        range.editor->AddNote({0, {}}, 1);
-        range.editor->AddNote({1, {}}, 2);
+        EditorWorkspace range(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        range.AddNote({0, {}}, 1);
+        range.AddNote({1, {}}, 2);
         Check(range.TimelineRangeMilliseconds() == std::pair{-500.0, 1500.0},
               "Timeline must include negative notes and the last note.");
 
@@ -81,14 +81,14 @@ int main()
         state.Initialize();
         state.UpdateAnalysis();
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{120};
-        while (state.analysis.Running() && std::chrono::steady_clock::now() < deadline)
+        while (state.Analysis().Running() && std::chrono::steady_clock::now() < deadline)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds{10});
             state.UpdateAnalysis();
         }
-        Check(!state.analysis.Running() && state.analysis.Data().errors.empty(), "Audio worker failed");
+        Check(!state.Analysis().Running() && state.Analysis().Data().errors.empty(), "Audio worker failed");
         const auto [begin, end] = state.TimelineRangeMilliseconds();
-        Check(end >= state.analysis.Data().sounds.at("Music").durationSeconds * 1000,
+        Check(end >= state.Analysis().Data().sounds.at("Music").durationSeconds * 1000,
               "Timeline must include the entire music file.");
 
         RecordingRenderer renderer;
@@ -107,8 +107,8 @@ int main()
         Check(hasText(L"타임라인") && !hasText(L"음악 FFT 스펙트로그램"),
               "Pattern tab must show the timeline without the audio analysis "
               "tracks.");
-        state.timeMs = state.editor->Notes().front().timing.count() / 1000.0 + 1000;
-        state.tab = 4;
+        state.Seek(state.Document().Notes().front().timing.count() / 1000.0 + 1000);
+        state.SelectTab(EditorTab::Audio);
         view.Build();
         visuals.Render({});
         Check(hasText(L"음악 파형") && hasText(L"음악 FFT 스펙트로그램") &&
@@ -138,15 +138,15 @@ int main()
         pointerRouter.Process(*canvas, pointer);
         mrg::platform::InputState input;
         Check(!view.Update({0, 0, 1, input, audio, {}}), "Unexpected scene exit");
-        Check(std::abs(state.timeMs - (begin + end) * .5) <= 1,
+        Check(std::abs(state.TimeMilliseconds() - (begin + end) * .5) <= 1,
               "Slider action must seek the editor time to its track position.");
         pointer.leftButtonDown = pointer.leftButtonPressed = false;
         pointer.leftButtonReleased = true;
         pointerRouter.Process(*canvas, pointer);
-        state.tab = 2;
+        state.SelectTab(EditorTab::Metadata);
         view.Build();
         Check(!slider->IsVisible(), "Metadata tab must hide the slider");
-        state.tab = 4;
+        state.SelectTab(EditorTab::Audio);
         texts.SetLanguage(finger_drum::texts::Language::English);
         view.Build();
         visuals.Render({});

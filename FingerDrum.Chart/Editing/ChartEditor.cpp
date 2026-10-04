@@ -42,9 +42,8 @@ void WriteFile(const std::filesystem::path &path, const std::string &text)
     file.close();
 }
 
-void Validate(const PatternDocument &pattern, const EffectDocument &effects)
+void Validate(const PatternDocument &pattern, const EffectDocument &effects, const MusicalTimeline &timeline)
 {
-    MusicalTimeline timeline(pattern);
     const auto validPosition = [&timeline](MusicalPosition p) {
         return p.measure >= 0 && p.fraction >= Rational{} && p.fraction < timeline.MeasureLength(p.measure);
     };
@@ -76,16 +75,15 @@ void Validate(const PatternDocument &pattern, const EffectDocument &effects)
 ChartEditor::ChartEditor(PatternDocument pattern, EffectDocument effects)
     : pattern_(std::move(pattern)), effects_(std::move(effects)), timeline_(pattern_)
 {
-    Validate(pattern_, effects_);
-    Rebuild();
+    Validate(pattern_, effects_, timeline_);
+    CompileNoteCache();
 }
 
-void ChartEditor::Rebuild()
+void ChartEditor::CompileNoteCache()
 {
     std::ranges::stable_sort(pattern_.notes, {}, &PatternNote::position);
     for (std::size_t i = 0; i < pattern_.notes.size(); ++i)
         pattern_.notes[i].sourceOrder = i;
-    timeline_ = MusicalTimeline(pattern_);
     notes_ = timeline_.CompileNotes(pattern_);
     for (auto &note : notes_)
     {
@@ -98,7 +96,6 @@ void ChartEditor::Rebuild()
 
 void ChartEditor::Replace(PatternDocument pattern, EffectDocument effects)
 {
-    Validate(pattern, effects);
     // Construct caches before publishing the edit, preserving the old chart on error.
     ChartEditor replacement(std::move(pattern), std::move(effects));
     replacement.dirty_ = true;

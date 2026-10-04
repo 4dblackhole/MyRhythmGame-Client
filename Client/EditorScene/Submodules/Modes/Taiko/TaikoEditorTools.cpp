@@ -1,13 +1,11 @@
 #include "../../EditorSupport.h"
-#include "../../EditorWorkspace.h"
 #include "TaikoEditorMode.h"
 #include "TaikoEditorTool.h"
 #include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
 #include <algorithm>
 using namespace editor_ui;
 
-void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, EditorWorkspace &state,
-                                finger_drum::texts::Language language)
+void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, IEditorContext &state, finger_drum::texts::Language language)
 {
     const auto &text = finger_drum::texts::TaikoEditor(language);
     canvas.Box({24, 76, 70, 918}, Paper, 18);
@@ -39,7 +37,7 @@ void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, EditorWorkspace &stat
     }
 }
 
-void TaikoEditorMode::DrawToolMenu(IEditorModeCanvas &canvas, EditorWorkspace &state,
+void TaikoEditorMode::DrawToolMenu(IEditorModeCanvas &canvas, IEditorContext &state,
                                    finger_drum::texts::Language language)
 {
     if (popup_ >= 0)

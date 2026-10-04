@@ -28,6 +28,9 @@
 - 에디터는 `IEditorMode`와 `IEditorDocument`로 도구/표시/입력과 파일 편집/저장을
   교체합니다. 현재 구현은 Taiko + YMP/YME이며 BMS/7키는 아직 미구현입니다.
   확장 경계는 [ChartEditor](ChartEditor.md)의 모드/파일 형식 절에서 확인합니다.
+- 모드는 Workspace 전체 대신 `IEditorContext`를 참조합니다. 문서 수정/시간 이동은
+  Workspace 명령으로 연결하고, 분석은 `IEditorAudioSource` 조회만 사용합니다.
+  Taiko 옵션/사운드 예측은 플레이의 공통 규칙을 사용합니다.
 - AngelDream `All Notes Verification`은 전 노트 및 밀집 Don/Kat Buzz를 재현합니다.
   채보 위치와 +50ms GOOD 입력의 틱 기대값은 [Gameplay Debugging](Gameplay/Debugging.md)을 참고합니다.
 - 고정 문구와 언어별 글꼴은 `Client/Texts`의 사용 위치별 표가 소유합니다.

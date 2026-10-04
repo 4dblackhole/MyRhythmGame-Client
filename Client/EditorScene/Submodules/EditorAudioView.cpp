@@ -171,18 +171,18 @@ void EditorView::DrawAudio()
     const auto &text = Texts();
     try
     {
-        state_.analysis.CacheAudioMarkers(*state_.editor, *state_.mode);
+        state_.Analysis().CacheAudioMarkers(state_.Document(), state_.Mode());
     }
     catch (const std::exception &error)
     {
-        state_.analysis.ClearMarkers(state_.editor->Revision());
-        state_.status = error.what();
+        state_.Analysis().ClearMarkers(state_.Document().Revision());
+        state_.SetStatus(error.what());
     }
 
     // Pool each source into the same visible time and frequency grid.
-    const double begin = state_.timeMs / 1000.0 - state_.audioWindow * .25;
+    const double begin = state_.TimeMilliseconds() / 1000.0 - state_.audioWindow * .25;
     double minimumHz = 20, maximumHz = 20'000, longestSound = 0;
-    const auto &sounds = state_.analysis.Data().sounds;
+    const auto &sounds = state_.Analysis().Data().sounds;
     if (!sounds.empty())
     {
         maximumHz = 0;
@@ -198,7 +198,7 @@ void EditorView::DrawAudio()
     std::vector<SpectrumFrame> musicColumns(Columns), hitColumns(Columns);
     if (const auto music = sounds.find("Music"); music != sounds.end())
         AccumulateColumns(musicColumns, music->second, 0, begin, state_.audioWindow, minimumHz, maximumHz);
-    const auto &markers = state_.analysis.Markers();
+    const auto &markers = state_.Analysis().Markers();
     for (auto marker = std::ranges::lower_bound(markers, begin - longestSound, {}, &AudioMarker::seconds);
          marker != markers.end() && marker->seconds <= begin + state_.audioWindow; ++marker)
         if (const auto sound = sounds.find(marker->sound); sound != sounds.end())
@@ -216,14 +216,14 @@ void EditorView::DrawAudio()
     DrawAudioTimeRuler(begin);
     Button({1620, 85, 54, 32}, L"+", [this] {
         state_.audioWindow = std::max(.25, state_.audioWindow / 2);
-        state_.rebuild = true;
+        state_.RequestRebuild();
     });
     Button({1684, 85, 54, 32}, L"−", [this] {
         state_.audioWindow = std::min(120.0, state_.audioWindow * 2);
-        state_.rebuild = true;
+        state_.RequestRebuild();
     });
     Text({1748, 88, 140, 24}, Decimal(state_.audioWindow, 2) + L" s", 16);
-    if (state_.analysis.Running())
+    if (state_.Analysis().Running())
         Text({570, 90, 700, 28}, std::wstring(text.analyzingAudio), 18, Blue);
     DrawTimeline();
 }

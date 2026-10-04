@@ -28,9 +28,13 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
   Base BPM으로 고정하며, Base BPM에서 16분음표 간격은 일반 노트 지름의 85%입니다.
   노트별 스크롤 배율도 반영합니다. 실시간 뷰의 마디선은 기준 좌표 두께 3,
   박자 분할 보조선은 두께 1로 표시합니다.
+  입력 검사도 그리기와 같은 레인 사각형을 사용하며 레인 밖 클릭은 추가·삭제하지 않습니다.
 - 패턴 탭의 기존 오디오 분석 영역은 긴 타임라인 슬라이더입니다. 트랙을 클릭하거나
   손잡이를 드래그해 현재 편집 시각을 ms 단위로 바꾸며 실시간 뷰와 공유합니다.
   범위는 음원 전체 길이와 차트 노트 시각을 포함하고 음수 노트 시각도 탐색합니다.
+  직접 입력·좌우키·슬라이더·선택 도구의 시간 이동은 같은 `Seek` 검증을 사용합니다.
+  리듬 clock의 정수 us 또는 기존 마디 탐색 범위를 벗어나는 입력은 이전 시간을 보존합니다.
+  화면 구성 중 오류는 상태 메시지로 표시하며 탭 이동·시간 수정·저장으로 복구할 수 있습니다.
 - 오디오 탭은 음악 파형, 음악 FFT 스펙트로그램, 예상 히트사운드 FFT 스펙트로그램의
   세 영역을 같은 시간축으로 표시합니다. 하단 타임라인/현재 시간 입력으로 탐색하며,
   +/− 버튼은 현재 시각을 기준으로 보이는 시간 범위를 확대/축소합니다.
@@ -55,10 +59,18 @@ EditorScene
       Modes/Taiko/TaikoEditorMode
     IEditorDocument             공통 편집용 데이터와 파일 형식별 수정/저장
       ChartEditor               현재 YMP/YME 구현
-    EditorAnalysisController    모드가 제공한 파일/marker의 비동기 분석
+    EditorAnalysisController    IEditorAudioSource의 파일/marker 비동기 분석
   EditorView                    공통 탭/박자 디바이더/타임라인/FFT 화면
     IEditorModeCanvas           모드에 제공하는 Box/Text/Button 그리기 계약
 ```
+
+Workspace가 문서/모드/worker를 단독 소유합니다. 모드는 `IEditorContext`의 읽기 전용
+문서와 읽기 전용 악보 설정을 받고 Replace/AddNote/DeleteNote/Seek 등의 명령만 전달합니다.
+다른 모드·진입 요청·분석 worker·공통 탭의 내부 재구축 플래그를 참조하지 않습니다.
+문서 수정 성공 후 Workspace가 분석 갱신과 화면 재구축을 연결합니다. worker는
+해석된 파일 목록이 바뀐 경우에만 재시작하고 marker는 문서 identity/revision으로 캐시합니다.
+오디오 조회는 `IEditorAudioSource`로 분리되어 분석 코드가 UI 모드 계약에 의존하지 않습니다.
+디바이더·표시 모드·첫 마디 변경도 Workspace 명령이 검증/재구축 요청을 함께 처리합니다.
 
 `EditorModeFactory`가 진입 요청의 `mode`에 맞는 객체를 생성합니다. 현재 등록된
 모드는 Taiko 하나이고 빈 모드 ID는 기존처럼 Taiko입니다. 미지원 ID 또는
@@ -67,7 +79,9 @@ Taiko로 열었는데 다른 모드가 기록된 문서는 오류로 거부하�
 
 Taiko의 도구 ID/그룹/선택 상태, 미완성 롱노트, 팝업, 노트 색/모양,
 악보/실시간 레인, 노트 hit-test/스냅/마디 스크롤, YMP 메타데이터 편집과
-동·캇/틱 사운드 정책은 `Modes/Taiko/`가 소유합니다. 도구 문구와 동·캇 이펙트
+오디오 파일 해석은 `Modes/Taiko/`가 소유합니다. 플레이와 공유하는 옵션 해석·기본
+사운드 ID·예상 cue 생성은 `FingerDrum.Modes/Taiko/Submodules/`에 있습니다.
+도구 문구와 동·캇 이펙트
 문구는 `Client/Texts/EditorScene/Taiko/`에 있습니다. 공통 화면에는 Taiko
 노트 enum/숫자 의미나 도구 개수/그룹을 넣지 않습니다. 이펙트의 공통 자동화
 편집 UI는 유지하고 사운드 대상 목록/표시는 모드에서 받습니다.
@@ -77,9 +91,11 @@ Taiko의 도구 ID/그룹/선택 상태, 미완성 롱노트, 팝업, 노트 색
 `DrawChart`에서 만든 좌표를 해당 모드의 `EditScore`가 해석합니다.
 `OpenDocument`는 파일 형식에 맞는 `IEditorDocument`를 반환합니다.
 UI 그리기는 전달받은 Canvas를 해당 호출에서만 사용하고, Button 콜백은
-활성 Workspace/모드의 수명 안에서 실행됩니다. 모드가 Scene 전환을 호출하지 않습니다.
+활성 편집 context/모드의 수명 안에서 실행됩니다. 모드가 Scene 전환을 호출하지 않습니다.
 `AudioFiles`의 `Music` 키는 음악 파형/FFT용이며 나머지 키는
 `AudioMarker.sound`와 대응하는 히트사운드입니다. 파일 목록은 worker에 복사합니다.
+조회 과정은 진입 요청을 변경하지 않습니다. Taiko cue ID는 플레이와 동일하며
+사용자 표의 사운드는 `Chart.HitSound.<index>`로 구분합니다.
 
 `IEditorDocument`의 Pattern/Effects/Notes/Timeline은 **편집용 공통 표현**입니다.
 새 파일 형식은 adapter가 원본의 추가 필드/지시문을 보관하고,
@@ -100,6 +116,11 @@ BMS 파싱·저장, 7키/스크래치 배치와 전용 도구는 아직 구현�
 엔진 비종속 편집 상태와 YMP/YME 저장을 소유합니다.
 노트 위치·마디 길이는 Rational이며 수정할 때만 MusicalTimeline의 누적합과 정수 us 캐시를
 재생성합니다. 화면 좌표를 위한 부동소수점은 렌더링/마우스 스냅 경계에서만 사용합니다.
+`ChartEditor`는 후보 문서의 timeline을 한 번 생성해 검증과 노트 캐시 생성에 공유한 뒤
+성공한 후보만 교체합니다. 실패 시 문서·revision·dirty·시간/속도 캐시를 보존합니다.
+박자/이펙트 입력은 이름 있는 `EditorTimingForm`/`EditorEffectForm`으로 관리합니다.
+이펙트 선택은 자동화 종류 또는 모드의 사운드 키를 저장하므로 사운드 목록의 순서와
+개수에 의존하지 않습니다. 지원 자동화의 순환·표시·버스 입력은 한 정의 표를 사용합니다.
 
 `EditorScene`은 ScreenVisual2DManager의 Canvas에 draw packet component를 등록합니다.
 박자 디바이더는 같은 Canvas의 엔진 `CreateSlider`와 `Visual2DInputRouter`를 사용합니다.
@@ -117,6 +138,9 @@ YMP의 `Music metadata`는 Songs 루트 기준으로 해석한 뒤 YMM이 가리
 겹치는 히트사운드도 구간별 최대 강도로 표시하며 실제 믹스된 오디오의 FFT는 아닙니다.
 틱은 모두 정확히 처리한 경우를 표시하며, 동·캇 자유 선택인 TickRoll은 동을 기준으로 합니다. 자유 연타의
 실제 타격 시점/풍선 파열 시점은 편집 단계에서 결정되지 않으므로 임의로 생성하지 않습니다.
+`Action = Kat`, `TickDivision = 64`처럼 이름/값 주변 공백과 대소문자는 플레이와
+같은 규칙으로 해석합니다. Purple은 같은 이상적 판정 시각의 Don·Kat 두 cue를 표시합니다.
+명시적 노트 사운드가 시각별 동·캇 변경보다 우선하며 변경은 컴파일된 cue 시각을 사용합니다.
 
 현재 오디오 영역은 분석과 수동 시간 탐색용이며 음악 재생·배속 컨트롤은 제공하지 않습니다.
 Undo/Redo, 드래그 이동,
@@ -132,6 +156,8 @@ Undo/Redo, 드래그 이동,
 히트사운드, 악보 스냅/삭제/취소를 검사합니다. 테스트에만 존재하는 다른 모드와
 문서 adapter로 도구/세로 그리기/좌표/메타데이터/사운드 대상/저장/marker 캐시가
 공통 화면에 연결되는지도 검사합니다. 이 테스트 모드는 게임에 등록하거나 배포하지 않습니다.
+추가 회귀는 실시간 레인 네 방향의 외부 클릭, 공간 포함 Buzz 옵션과 Purple/시각별
+사운드의 플레이 일치, 잘못된 시간 입력 보존, 효과 수정 취소 및 화면 구성 오류 복구를 검사합니다.
 
 ## 이전 기능 검증의 한계
 

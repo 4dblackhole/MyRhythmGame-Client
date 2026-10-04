@@ -88,3 +88,25 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 두 구성 기존 EditorAudioViewTests/EditorModeTests 통과.
 - 프로젝트/필터/의존성/엔진 경계와 git diff --check 통과.
 - 실제 화면에서의 가독성·마우스 조작은 수동 확인하지 않음.
+
+## 2026-10-04 에디터 리뷰 수정과 편집 경계 정리
+
+- 실시간 레인의 공유 사각형으로 그리기/추가/삭제의 가로·세로 경계를 검사.
+  네 방향 레인 밖 클릭은 문서를 변경하지 않고 내부 추가/삭제는 유지됩니다.
+- Taiko 옵션 파서를 플레이/예측에서 공유. `Action = Kat`, `TickDivision = 64`의
+  예측은 Kat head + body 31개로 플레이의 시각/사운드와 일치합니다.
+  Purple의 Don/Kat 두 cue, 시각별 변경과 명시적 사운드 우선순위도 검사했습니다.
+- NaN/무한대/clock 범위 및 1e12ms 마디 탐색 초과 입력은 이전 시간을 보존합니다.
+  강제로 화면 구성 예외를 발생시켜 상태 메시지, 부분 버튼 제거, 자동 재시도 중지와
+  탭 이동 후 복구를 검사했습니다.
+- `IEditorContext`/`IEditorAudioSource`로 편집과 worker 조회를 분리했습니다.
+  Workspace 수정 명령, 읽기 전용 문서/악보 설정, 이름 있는 입력 초안과
+  typed 이펙트 선택을 사용합니다. 후보 검증 실패의 revision/dirty/캐시 보존도 검사했습니다.
+- Debug/Release x64 전체 Rebuild 성공. 두 구성 로직·카탈로그(1곡/4패턴),
+  EditorAudioViewTests/EditorModeTests 성공; 각 구성 smoke-test/lobby/gameplay/editor 종료 코드 0.
+- 두 구성 D3D12/FMOD 전체 노트 replay 성공: 각각 1,557프레임,
+  19개 노트 완료, 85.1694% 정확도. Buzz 63개 로직 경계 조건도 통과했습니다.
+  이 replay는 숨겨진 창과 시각 지정 입력을 사용하는 자동 검증입니다.
+- 8개 프로젝트의 소스/필터/의존성/엔진 경계, git diff --check 통과.
+  엔진·사용자 곡/스킨·파일 형식은 변경하지 않았습니다.
+- 수동 확인: 실제 화면의 픽셀 배치·마우스/키보드 조작·청취는 수행하지 않았습니다.

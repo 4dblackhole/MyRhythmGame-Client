@@ -1,13 +1,12 @@
 #pragma once
-#include "Editing/IEditorDocument.h"
 #include "GameFlow/GameplayLaunchRequest.h"
+#include "IEditorAudioSource.h"
+#include "IEditorContext.h"
 #include "MRG_Core.h"
 #include "Texts/TextCatalog.h"
 #include <functional>
 #include <map>
 #include <memory>
-
-class EditorWorkspace;
 
 // Drawing primitives supplied by the common view. A mode owns its layout,
 // tool palette and hit testing; it never retains this per-build drawing target.
@@ -21,11 +20,6 @@ class IEditorModeCanvas
     virtual void Button(mrg::visual2d::Rect, std::wstring, std::function<void()>, bool selected = false) = 0;
 };
 
-struct AudioMarker
-{
-    double seconds{};
-    std::string sound;
-};
 struct EditorSoundChoice
 {
     int keyType{};
@@ -33,7 +27,7 @@ struct EditorSoundChoice
     std::wstring effectLabel;
 };
 
-class IEditorMode
+class IEditorMode : public IEditorAudioSource
 {
   public:
     virtual ~IEditorMode() = default;
@@ -41,20 +35,17 @@ class IEditorMode
     virtual std::unique_ptr<finger_drum::chart::IEditorDocument> OpenDocument(
         const finger_drum::GameplayLaunchRequest &) const = 0;
     virtual void SelectTool(int) = 0;
-    virtual void PlaceNote(EditorWorkspace &, finger_drum::chart::MusicalPosition) = 0;
+    virtual void PlaceNote(IEditorContext &, finger_drum::chart::MusicalPosition) = 0;
     virtual bool HasPendingPlacement() const noexcept = 0;
     virtual bool CancelInteraction() noexcept = 0;
     virtual void CloseToolMenu() noexcept = 0;
     virtual bool OpenToolMenu(mrg::visual2d::Point) = 0;
-    virtual void DrawTools(IEditorModeCanvas &, EditorWorkspace &, finger_drum::texts::Language) = 0;
-    virtual void DrawChart(IEditorModeCanvas &, EditorWorkspace &) = 0;
-    virtual void DrawToolMenu(IEditorModeCanvas &, EditorWorkspace &, finger_drum::texts::Language) = 0;
-    virtual void EditScore(EditorWorkspace &, mrg::visual2d::Point, bool erase) = 0;
-    virtual void ScrollScore(EditorWorkspace &, int direction) = 0;
-    virtual void DrawMetadata(IEditorModeCanvas &, EditorWorkspace &, finger_drum::texts::Language) = 0;
+    virtual void DrawTools(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
+    virtual void DrawChart(IEditorModeCanvas &, IEditorContext &) = 0;
+    virtual void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
+    virtual void EditScore(IEditorContext &, mrg::visual2d::Point, bool erase) = 0;
+    virtual void ScrollScore(IEditorContext &, int direction) = 0;
+    virtual void DrawMetadata(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
     virtual std::vector<EditorSoundChoice> SoundChoices(finger_drum::texts::Language) const = 0;
     virtual std::wstring_view SoundEffectHelp(finger_drum::texts::Language) const = 0;
-    virtual std::map<std::string, std::filesystem::path> AudioFiles(const finger_drum::chart::IEditorDocument &,
-                                                                    finger_drum::GameplayLaunchRequest &) const = 0;
-    virtual std::vector<AudioMarker> AudioMarkers(const finger_drum::chart::IEditorDocument &) const = 0;
 };

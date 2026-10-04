@@ -13,7 +13,11 @@
     <ProjectReference Include="..\FingerDrum.Chart\FingerDrum.Chart.vcxproj"><Project>{A2222222-2222-4222-8222-222222222222}</Project></ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Taiko\Submodules\TaikoAudioPreview.cpp" />
     <ClCompile Include="Mode\PlayGameMode.cpp" />
+    <ClInclude Include="Taiko\Submodules\TaikoAudioPreview.h" />
+    <ClInclude Include="Taiko\Submodules\TaikoChartAudio.h" />
+    <ClInclude Include="Taiko\Submodules\TaikoNoteOptions.h" />
     <ClInclude Include="Mode\PlayGameMode.h" />
     <ClInclude Include="Mode\Submodules\NoteVisualKind.h" />
     <ClCompile Include="Mode\Submodules\PlaySession.cpp" />

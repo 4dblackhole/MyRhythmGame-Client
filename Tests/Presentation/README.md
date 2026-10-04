@@ -44,6 +44,9 @@ and Canvas cleanup. `EditorModeTests.cpp` also checks Taiko tool placement, snap
 deletion/cancellation and expected cues, then injects a test-only alternative mode
 and document adapter to verify different tools/layout/coordinates/metadata/sound
 targets, Save dispatch and marker revision caching through the common editor.
+It also covers realtime lane boundaries, spaced/case-insensitive Buzz options,
+Purple and timed/explicit sound agreement with play, invalid seek preservation,
+effect/timing commands, failed edit rollback and drawing failure recovery.
 The object list comes from the Client project so removed/stale objects are not linked.
 It records rendering commands without initializing a GPU or
 audio device; it does not replace visual inspection or mouse testing in the app.

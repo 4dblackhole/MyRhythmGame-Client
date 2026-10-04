@@ -23,11 +23,11 @@
 | 에디터 모드 추가/파일 교체 | `Client/EditorScene/Submodules/Modes/IEditorMode.h`, EditorModeFactory; `FingerDrum.Chart/Editing/IEditorDocument.h` | ChartEditor의 교체 경계; EditorModeTests, editor smoke |
 | 에디터 도구/배치 취소 | `Modes/Taiko/TaikoEditorMode.*`, TaikoEditorTool.h / TaikoEditorTools.cpp | ChartEditorTests, SceneStateTests, EditorModeTests |
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
-| BPM·metadata·effect UI | 공통 EditorTimingView / EditorEffectsView, `Modes/Taiko/TaikoEditorMetadata` | IEditorDocument의 Replace 계약, 저장 왕복 |
+| BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace, 저장 왕복 |
 | 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
-| 노트 사운드 정책 | 같은 폴더 TaikoSoundPolicy.cpp / TaikoSoundIds.h | NoteSoundPolicy.h; SoundPolicyTests |
+| 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |
 | 문법 추가 | `FingerDrum.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
 | BPM/마디 시간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | Formats/Timing; ChartParser/ChartEditorTests |
 
@@ -52,8 +52,12 @@ Client/EditorScene/
     EditorWorkspace.*         문서/모드 수명과 공통 편집 상태
     EditorView.*              공통 UI 조립과 표시
     EditorAnalysisController.* worker 수명과 결과
+    EditorForms.*              이름 있는 박자/이펙트 초안과 후보 생성
+    EditorTime.h               정수 us 범위 및 마디 탐색 검증
     Modes/
       IEditorMode.h           모드별 도구/그리기/좌표/사운드 계약
+      IEditorContext.h        모드용 문서 조회/편집 명령 경계
+      IEditorAudioSource.h    worker용 읽기 전용 파일/marker 계약
       EditorModeFactory.*     진입 시 지원 모드 선택
       Taiko/                  Taiko 전용 상태와 구현
 Client/Texts/

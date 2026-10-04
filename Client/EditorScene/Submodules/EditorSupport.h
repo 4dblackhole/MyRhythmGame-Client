@@ -1,7 +1,7 @@
 #pragma once
 #include "Editing/IEditorDocument.h"
+#include "EditorValueParsing.h"
 #include "MRG_Core.h"
-#include "Parsing/ChartParser.h"
 #include "Texts/EditorScene/EditorTexts.h"
 #include <Windows.h>
 #include <cmath>
@@ -32,54 +32,11 @@ namespace editor_ui
             WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), s.data(), n, nullptr, nullptr);
         return s;
     }
-    inline std::string Fraction(chart::Rational beat)
-    {
-        return std::to_string(beat.Numerator()) + "/" + std::to_string(beat.Denominator());
-    }
-    inline double Number(const std::string &value)
-    {
-        std::size_t used{};
-        const double result = std::stod(value, &used);
-        if (used != value.size() || !std::isfinite(result))
-            throw std::invalid_argument("Invalid number.");
-        return result;
-    }
-    inline std::int64_t Integer(const std::string &value)
-    {
-        std::size_t used{};
-        const auto result = std::stoll(value, &used);
-        if (used != value.size())
-            throw std::invalid_argument("Invalid integer.");
-        return result;
-    }
-    inline chart::MusicalPosition Position(const std::string &measure, const std::string &fraction)
-    {
-        chart::MusicalPosition result;
-        if (!chart::TryParseMusicalPosition(fraction, Integer(measure) - 1, result))
-            throw std::invalid_argument("Use a one-based measure and N/D without internal spaces.");
-        return result;
-    }
-    inline std::int64_t MeasureNearTime(const chart::MusicalTimeline &timeline, double milliseconds)
-    {
-        // Seek through cached prefix sums/tempo anchors, not from measure zero.
-        std::int64_t low = 0, high = 1;
-        const auto at = [&](std::int64_t measure) { return timeline.Compile({measure, {}}).count() / 1000.0; };
-        while (at(high) <= milliseconds)
-        {
-            if (high > 1'000'000)
-                throw std::invalid_argument("Editor time is beyond the supported measure range.");
-            high *= 2;
-        }
-        while (low + 1 < high)
-        {
-            const auto middle = low + (high - low) / 2;
-            if (at(middle) <= milliseconds)
-                low = middle;
-            else
-                high = middle;
-        }
-        return low;
-    }
+    using editor_values::Fraction;
+    using editor_values::Integer;
+    using editor_values::Number;
+    using editor_values::Position;
+
 } // namespace editor_ui
 
 namespace editor_ui

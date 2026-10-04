@@ -1,14 +1,13 @@
 #include "EditorAnalysisController.h"
-#include "EditorSupport.h"
 #include <algorithm>
 #include <array>
-using namespace editor_ui;
+namespace chart = finger_drum::chart;
 
-bool EditorAnalysisController::Update(const chart::IEditorDocument &document, const IEditorMode &mode,
-                                      finger_drum::GameplayLaunchRequest &request, std::string &status)
+bool EditorAnalysisController::Update(const chart::IEditorDocument &document, const IEditorAudioSource &mode,
+                                      const finger_drum::GameplayLaunchRequest &request, std::string &status)
 {
     bool changed = false;
-    // Asset resolution/worker restart happens only after metadata changes.
+    // Edits request source resolution; restart only if resolved paths changed.
     // Ordinary update ticks only poll the asynchronous result.
     if (analysisDirty)
     {
@@ -50,7 +49,7 @@ bool EditorAnalysisController::Update(const chart::IEditorDocument &document, co
     return changed;
 }
 
-void EditorAnalysisController::CacheAudioMarkers(const chart::IEditorDocument &document, const IEditorMode &mode)
+void EditorAnalysisController::CacheAudioMarkers(const chart::IEditorDocument &document, const IEditorAudioSource &mode)
 {
     if (audioMarkerDocument == &document && audioMarkerMode == &mode && audioMarkerRevision == document.Revision())
         return;

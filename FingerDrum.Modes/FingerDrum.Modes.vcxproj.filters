@@ -5,7 +5,19 @@
     <Filter Include="Mode\Submodules" />
     <Filter Include="Taiko" />
     <Filter Include="Taiko\Submodules" />
+    <ClCompile Include="Taiko\Submodules\TaikoAudioPreview.cpp">
+      <Filter>Taiko\Submodules</Filter>
+    </ClCompile>
     <ClCompile Include="Mode\PlayGameMode.cpp"><Filter>Mode</Filter></ClCompile>
+    <ClInclude Include="Taiko\Submodules\TaikoAudioPreview.h">
+      <Filter>Taiko\Submodules</Filter>
+    </ClInclude>
+    <ClInclude Include="Taiko\Submodules\TaikoChartAudio.h">
+      <Filter>Taiko\Submodules</Filter>
+    </ClInclude>
+    <ClInclude Include="Taiko\Submodules\TaikoNoteOptions.h">
+      <Filter>Taiko\Submodules</Filter>
+    </ClInclude>
     <ClInclude Include="Mode\PlayGameMode.h"><Filter>Mode</Filter></ClInclude>
     <ClInclude Include="Mode\Submodules\NoteVisualKind.h"><Filter>Mode\Submodules</Filter></ClInclude>
     <ClCompile Include="Mode\Submodules\PlaySession.cpp"><Filter>Mode\Submodules</Filter></ClCompile>

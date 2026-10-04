@@ -47,7 +47,7 @@ namespace finger_drum::chart
         [[nodiscard]] static std::string WriteEffects(const EffectDocument &effects);
 
       private:
-        void Rebuild();
+        void CompileNoteCache();
         PatternDocument pattern_;
         EffectDocument effects_;
         MusicalTimeline timeline_;

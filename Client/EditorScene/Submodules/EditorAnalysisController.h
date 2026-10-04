@@ -1,7 +1,7 @@
 #pragma once
 #include "Audio/EditorAudioAnalysis.h"
 #include "GameFlow/GameplayLaunchRequest.h"
-#include "Modes/IEditorMode.h"
+#include "Modes/IEditorAudioSource.h"
 #include <future>
 #include <map>
 #include <string>
@@ -25,9 +25,9 @@ class EditorAnalysisController final
     {
         analysisStop.request_stop();
     }
-    bool Update(const finger_drum::chart::IEditorDocument &, const IEditorMode &, finger_drum::GameplayLaunchRequest &,
-                std::string &status);
-    void CacheAudioMarkers(const finger_drum::chart::IEditorDocument &, const IEditorMode &);
+    bool Update(const finger_drum::chart::IEditorDocument &, const IEditorAudioSource &,
+                const finger_drum::GameplayLaunchRequest &, std::string &status);
+    void CacheAudioMarkers(const finger_drum::chart::IEditorDocument &, const IEditorAudioSource &);
     const AnalysisBatch &Data() const noexcept
     {
         return analysis;
@@ -57,5 +57,5 @@ class EditorAnalysisController final
     std::vector<AudioMarker> audioMarkers;
     std::uint64_t audioMarkerRevision{};
     const finger_drum::chart::IEditorDocument *audioMarkerDocument{};
-    const IEditorMode *audioMarkerMode{};
+    const IEditorAudioSource *audioMarkerMode{};
 };
