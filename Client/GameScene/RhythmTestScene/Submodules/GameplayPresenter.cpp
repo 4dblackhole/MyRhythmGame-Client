@@ -30,10 +30,28 @@ void GameplayPresenter::OnResize(const std::uint32_t width, const std::uint32_t 
 
 finger_drum::rhythm::RhythmTime GameplayPresenter::InitialTimelineTime() const
 {
-    const long double visibleBeats = static_cast<long double>(noteTravelDistance_) /
-        (static_cast<long double>(pixelsPerWholeNote_) * session_->MinimumScrollMultiplier());
     return std::min(finger_drum::rhythm::RhythmTime{-2'000'000},
-                    session_->Timeline().TimeAtWholeNotes(-visibleBeats));
+                    session_->Timeline().Compile({0, {}}) - VisibleTravelDuration());
+}
+
+float GameplayPresenter::TravelPixels(const finger_drum::rhythm::RhythmDuration duration,
+                                      const float multiplier) const noexcept
+{
+    constexpr long double MicrosecondsPerWholeNoteAtBpmOne = 240'000'000.0L;
+    return static_cast<float>(static_cast<long double>(duration.count()) *
+                              session_->Timeline().BaseBpm() / MicrosecondsPerWholeNoteAtBpmOne *
+                              pixelsPerWholeNote_ * multiplier);
+}
+
+finger_drum::rhythm::RhythmDuration GameplayPresenter::VisibleTravelDuration() const
+{
+    constexpr long double MicrosecondsPerWholeNoteAtBpmOne = 240'000'000.0L;
+    const long double microseconds =
+        static_cast<long double>(noteTravelDistance_) * MicrosecondsPerWholeNoteAtBpmOne /
+        (static_cast<long double>(pixelsPerWholeNote_) * session_->Timeline().BaseBpm() *
+         session_->MinimumScrollMultiplier());
+    return finger_drum::rhythm::RhythmDuration{
+        static_cast<finger_drum::rhythm::RhythmDuration::rep>(std::ceil(microseconds))};
 }
 
 void GameplayPresenter::Shutdown() noexcept

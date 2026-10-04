@@ -35,11 +35,14 @@ void EditorView::EditScore(v::Point point, bool erase)
             return;
         p.measure = state_.firstMeasure + row * 4 + col;
         const auto length = state_.editor->Timeline().MeasureLength(p.measure);
+        const int subdivisionsPerWholeNote = state_.division * 4;
         const auto tick = static_cast<std::int64_t>(
-            std::llround((point.x - 205 - col * 401) / 401.0 * length.Value() * state_.division));
-        p.fraction = chart::Rational{tick, state_.division};
+            std::llround((point.x - 205 - col * 401) / 401.0 * length.Value() *
+                         subdivisionsPerWholeNote));
+        p.fraction = chart::Rational{tick, subdivisionsPerWholeNote};
         if (p.fraction >= length)
-            p.fraction = chart::Rational{std::max<std::int64_t>(0, tick - 1), state_.division};
+            p.fraction = chart::Rational{std::max<std::int64_t>(0, tick - 1),
+                                         subdivisionsPerWholeNote};
     }
     state_.PlaceNote(p);
 }

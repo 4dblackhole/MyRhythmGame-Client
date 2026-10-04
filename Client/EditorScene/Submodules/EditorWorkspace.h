@@ -19,7 +19,7 @@ class EditorWorkspace final
     std::unique_ptr<finger_drum::chart::ChartEditor> editor;
     EditorAnalysisController analysis;
     std::optional<finger_drum::chart::MusicalPosition> pending;
-    int tab{}, tool{1}, popup{-1}, division{16};
+    int tab{}, tool{1}, popup{-1}, division{4};
     int smallTool{1}, bigTool{3}, rollTool{11}, focusTool{15};
     std::int64_t firstMeasure{};
     bool realtime{}, rebuild{true};

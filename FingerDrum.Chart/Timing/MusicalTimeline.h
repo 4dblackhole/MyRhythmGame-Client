@@ -33,6 +33,7 @@ namespace finger_drum::chart
         [[nodiscard]] MusicalPosition PositionAtWholeNotes(const Rational& beat) const;
         [[nodiscard]] long double WholeNotesAtTime(rhythm::RhythmTime time) const noexcept;
         [[nodiscard]] rhythm::RhythmTime TimeAtWholeNotes(long double beat) const;
+        [[nodiscard]] double BaseBpm() const noexcept { return baseBpm_; }
         [[nodiscard]] double EffectValueAt(const EffectDocument& effects,
             EffectCommandType type, MusicalPosition position, double defaultValue = 1) const;
 

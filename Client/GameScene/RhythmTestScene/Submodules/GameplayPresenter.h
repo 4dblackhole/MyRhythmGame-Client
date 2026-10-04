@@ -44,7 +44,6 @@ class GameplayPresenter final
     struct TimedVisual
     {
         finger_drum::rhythm::RhythmTime timing{};
-        long double beat{};
         mrg::visual2d::Visual2DNode *node{};
     };
 
@@ -62,8 +61,8 @@ class GameplayPresenter final
         mrg::visual2d::Visual2DNode *counter{};
         mrg::visual2d::Visual2DNode *counterText{};
         std::vector<TimedVisual> ticks;
-        long double beat{};
-        long double endBeat{};
+        finger_drum::rhythm::RhythmTime timing{};
+        finger_drum::rhythm::RhythmTime endTime{};
         FocusNoteType focusType{FocusNoteType::None};
         mrg::visual2d::Size processingSize{};
         mrg::visual2d::Size successSize{};
@@ -82,6 +81,9 @@ class GameplayPresenter final
     void CreateNoteVisuals();
     void UpdatePresentationLayout();
     void UpdateNoteTravelLayout();
+    [[nodiscard]] float TravelPixels(finger_drum::rhythm::RhythmDuration duration,
+                                     float multiplier = 1.0F) const noexcept;
+    [[nodiscard]] finger_drum::rhythm::RhythmDuration VisibleTravelDuration() const;
     void HideTransientNoteVisuals();
     void PresentFocusCounter(NoteVisualLayers &layers,
                              const finger_drum::rhythm::NoteProgress &progress,
