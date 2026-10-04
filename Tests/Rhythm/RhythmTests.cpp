@@ -24,6 +24,7 @@ int main(const int argumentCount, char *arguments[])
         TestPurpleNoteBothOrders();
         TestCountedLongNoteAccuracyAndSyntax();
         TestTickAndHoldAccuracy();
+        TestDenseBuzzLateGoodHead();
         TestMusicalSubdivisionTicksFollowTempo();
         TestLongNoteKeepsFirstHead();
         TestTaikoUsesOneLaneForEveryNoteType();
@@ -43,6 +44,7 @@ int main(const int argumentCount, char *arguments[])
         if (argumentCount == 3 && std::string_view(arguments[1]) == "--catalog-root")
         {
             TestSongCatalog(std::filesystem::path(arguments[2]));
+            TestAngelDreamAllNotesReplay(std::filesystem::path(arguments[2]));
             TestEditorAudioAnalysis(std::filesystem::path(arguments[2]));
         }
         std::cout << "FingerDrum rhythm tests passed.\n";

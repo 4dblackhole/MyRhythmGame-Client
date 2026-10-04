@@ -4,6 +4,7 @@
     <Filter Include="Submodules" />
     <ClCompile Include="RhythmTests.cpp"></ClCompile>
     <ClCompile Include="Submodules\AccuracyTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\BuzzReplayTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\ChartEditorTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\ChartParserTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\EditorAudioAnalysisTests.cpp"><Filter>Submodules</Filter></ClCompile>
@@ -13,6 +14,7 @@
     <ClCompile Include="Submodules\SoundPolicyTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\TaikoModeTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClInclude Include="Submodules\TestCases.h"><Filter>Submodules</Filter></ClInclude>
+    <ClInclude Include="Submodules\AllNotesReplay.h"><Filter>Submodules</Filter></ClInclude>
     <ClInclude Include="Submodules\TestSupport.h"><Filter>Submodules</Filter></ClInclude>
   </ItemGroup>
 </Project>

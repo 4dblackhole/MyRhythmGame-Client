@@ -39,6 +39,8 @@ foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
 에디터 모드/문서 계약 변경도 같은 실행 파일에 연결된 EditorModeTests를 두 구성에서 실행합니다.
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.
+전체 노트/Buzz 회귀는 `--catalog-root` 로직 테스트와
+[All-notes actual gameplay replay](../Tests/Presentation/README.md)를 두 구성에서 실행합니다.
 
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
@@ -54,3 +56,26 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 8개 프로젝트의 소스/필터, 의존성 순환, 엔진 경계와 git diff --check 통과.
 - 실제 화면 배치·마우스 조작·청취는 수동 확인하지 않음. 테스트용 모드는
   게임에 등록하지 않았고 BMS/7키 실제 채보 지원을 검증한 것은 아님.
+
+## 2026-10-04 AngelDream 전체 노트/Buzz 검증
+
+- 기본 Songs에 `angeldream [all notes test].ymp` 추가. 기존 음원/YMM을 참조하며
+  12종 노트 ID와 Don/Kat Buzz 변형, 총 19개 논리 노트를 사용합니다.
+- Debug/Release x64 솔루션 전체 Rebuild 성공. 두 구성 로직·카탈로그 테스트 성공
+  (제공곡 1곡/4패턴), 각 구성의 smoke-test/lobby/gameplay/editor 종료 코드 0.
+- 두 구성에서 GOOD 경계(-54.5/0/+50/+54.5/+54.501ms), 틱 시각 ±1µs,
+  Don/Kat, 분할 64/256/1024, 작은 프레임/한 번의 갱신 등 63개 조건 통과.
+  틱 시각/인덱스, 누락·중복·소급 성공 없음, 실패 틱의 TickSound 없음과
+  정확도 1회 확정을 검사합니다.
+- 두 구성에서 실제 YMP의 전체 세션 replay 성공. +50ms Buzz의 실패/성공 틱은
+  2/29, 9/118, 38/473개이며 헤드/몸통 점수까지 검증합니다.
+- 두 구성의 별도 D3D12/실제 오디오 실행에서 QPC 타이머와 DSP 음악 예약,
+  기존 GameplayPresenter/GameplayAudioRouter로 전체 채보 진행 성공.
+  최종 Debug 1,550프레임, Release 1,553프레임을 렌더링했으며 오디오 오류 없음.
+  의도적인 늦은 GOOD 입력/틱 실패가 포함된 세션 정확도는 85.1694%입니다.
+- 프로젝트/필터/의존성/엔진 경계 검사(8개 프로젝트), git diff --check 통과.
+  판정 규칙과 엔진 코드는 변경하지 않았습니다.
+- 수동 확인: 게임 실행 후 네이티브 화면 캡처가 재시도 포함 두 번 시간 초과하여
+  화면을 보며 키를 누르는 확인은 수행하지 못했습니다. 위 실제 엔진 replay는
+  숨겨진 창에서 PlaySession에 시각 지정 입력을 전달하는 자동 검사입니다.
+  실제 Raw Input, 픽셀 배치·청음·마우스 조작의 수동 검증을 뜻하지 않습니다.

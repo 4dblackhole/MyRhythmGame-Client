@@ -42,7 +42,7 @@ flowchart TD
 
 스킨은 실행 파일 옆 `assets/skins/<선택한 스킨 폴더>`의 같은 상대 경로 파일을
 먼저 사용하고, 파일이 없을 때만 캐시의 내장 파일로 돌아갑니다. 곡 카탈로그는
-실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3 1개·YMM 1개·YMP 3개는
+실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3 1개·YMM 1개·YMP 4개는
 외부 파일로 배포하며 빌드는 이미 존재하는 편집본을 덮어쓰지 않습니다.
 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 
@@ -77,7 +77,7 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
   모드와 문서는 Workspace와 함께 파기되고 worker는 복사한 파일 경로만 참조합니다.
   Ctrl+S는 같은 폴더에 저장하며 Escape는 미저장 변경을 확인한 뒤 돌아갑니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
-  `SongCatalog`가 외부 Songs의 AngelDream YMM과 YMP 3개 및 사용자 곡·패턴을
+  `SongCatalog`가 외부 Songs의 AngelDream YMM과 YMP 4개 및 사용자 곡·패턴을
   연결해 표시합니다.
   포커스된 곡 카드만 난이도 목록을 펼치며 좌우키는 곡, 상하키는 난이도를
   이동합니다. 하단 BACK 버튼이나 Escape로 Logo에 돌아갑니다.

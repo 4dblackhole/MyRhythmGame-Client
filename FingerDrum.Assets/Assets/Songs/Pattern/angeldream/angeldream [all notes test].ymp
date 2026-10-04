@@ -1,0 +1,85 @@
+Version: 1
+[Metadata]
+Music metadata: Music/Angeldream/angel dream hand shaking.ymm
+Pattern Name: All Notes Verification
+Tags: test,all-notes,buzz-dense
+Pattern Offset: 104
+Base BPM: 180
+
+[Difficulty]
+Mode: Taiko
+JudgeLevel: 50
+
+[HitSounds]
+
+[Time Signature]
+
+[Pattern]
+// Two empty measures leave time to prepare.
+--
+--
+// Don, Kat, BigDon, BigKat
+0/4,1,0
+1/4,2,0
+2/4,3,0
+3/4,4,0
+--
+// Purple
+0/4,5,0
+--
+// Roll
+0/4,11,1,,HitCount=4
+2/4,11,2
+--
+// BigRoll
+0/4,13,1,,HitCount=4
+2/4,13,2
+--
+// TickRoll
+0/4,12,1,,TickDivision=16
+2/4,12,2
+--
+// BigTickRoll
+0/4,14,1,,TickDivision=16
+2/4,14,2
+--
+// Balloon
+0/4,15,1,,HitCount=4
+2/4,15,2
+--
+// DengDeng
+0/4,16,1,,HitCount=4
+2/4,16,2
+--
+// Don Buzz
+0/4,17,1,,Action=Don,TickDivision=16
+2/4,17,2
+--
+// Kat Buzz
+0/4,17,1,,Action=Kat,TickDivision=16
+2/4,17,2
+--
+// Dense Don Buzz: TickDivision=64. Press the head +50 ms late.
+0/4,17,1,,Action=Don,TickDivision=64
+2/4,17,2
+--
+// Dense Kat Buzz: TickDivision=64. Press the head +50 ms late.
+0/4,17,1,,Action=Kat,TickDivision=64
+2/4,17,2
+--
+// Dense Don Buzz: TickDivision=256. Press the head +50 ms late.
+0/4,17,1,,Action=Don,TickDivision=256
+2/4,17,2
+--
+// Dense Kat Buzz: TickDivision=256. Press the head +50 ms late.
+0/4,17,1,,Action=Kat,TickDivision=256
+2/4,17,2
+--
+// Dense Don Buzz: TickDivision=1024. Press the head +50 ms late.
+0/4,17,1,,Action=Don,TickDivision=1024
+2/4,17,2
+--
+// Dense Kat Buzz: TickDivision=1024. Press the head +50 ms late.
+0/4,17,1,,Action=Kat,TickDivision=1024
+2/4,17,2
+--

@@ -9,7 +9,7 @@
 - `Assets/Skins/Default Skin` 전체
 - `Assets/Fonts`의 두 글꼴과 각각의 라이선스
 
-AngelDream Handshaking MP3 1개·YMM 1개·YMP 3개는 EXE에 넣지 않습니다.
+AngelDream Handshaking MP3 1개·YMM 1개·YMP 4개는 EXE에 넣지 않습니다.
 Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 시
 실행 파일 옆 `assets/Songs`에 복사합니다. 이미 존재하는 파일은 편집본일 수
 있으므로 덮어쓰지 않습니다. 배포할 때 이 Songs 폴더를 EXE와 함께 제공합니다.

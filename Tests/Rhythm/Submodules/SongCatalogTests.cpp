@@ -20,7 +20,7 @@ namespace finger_drum::tests
         Require(catalog.discoveredMusicFiles >= 1 &&
                     catalog.songs.size() == catalog.discoveredMusicFiles,
                 "Every discovered YMM music entry must appear in SONG LIST.");
-        Require(catalog.discoveredPatternFiles >= 3 &&
+        Require(catalog.discoveredPatternFiles >= 4 &&
                     catalog.PatternCount() == catalog.discoveredPatternFiles,
                 "All bundled and optional local YMP patterns must be associated with their songs.");
         mode::TaikoMode taiko;
@@ -32,7 +32,8 @@ namespace finger_drum::tests
             if (song.metadataPath.filename() == "angel dream hand shaking.ymm")
             {
                 constexpr std::array RequiredPatterns{"angeldream [measure test].ymp",
-                                                      "angeldream [test].ymp", "angeldream.ymp"};
+                                                      "angeldream [test].ymp", "angeldream.ymp",
+                                                      "angeldream [all notes test].ymp"};
                 for (const std::string_view required : RequiredPatterns)
                 {
                     Require(

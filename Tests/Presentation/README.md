@@ -47,3 +47,27 @@ targets, Save dispatch and marker revision caching through the common editor.
 The object list comes from the Client project so removed/stale objects are not linked.
 It records rendering commands without initializing a GPU or
 audio device; it does not replace visual inspection or mouse testing in the app.
+
+## All-notes actual gameplay replay
+
+After a full solution build, run from the repository root in an x64 Visual Studio
+developer PowerShell with `FMOD_ROOT` set to the installed SDK:
+
+```powershell
+./Tests/Presentation/RunAllNotesGameplayTests.ps1 -Configuration Debug
+./Tests/Presentation/RunAllNotesGameplayTests.ps1 -Configuration Release
+```
+
+This standalone test loads the deployed AngelDream `All Notes Verification` YMP
+and its actual MP3. It runs the engine for the entire chart using a QPC rhythm
+timer, DSP-scheduled music, the production GameplayPresenter and audio router,
+D3D12 rendering and a real audio backend (no NoSound fallback). Normal notes
+receive perfect scripted inputs; dense Don/Kat Buzz heads receive +50ms GOOD
+inputs. All 19 logical notes, exact-once ordered ticks and final accuracy must
+match the logic replay. Skin aliases share samples as in production. This test
+has no game autoplay route and does not change options or user songs/skins.
+
+The window is hidden and input timestamps are supplied directly to PlaySession.
+This verifies real rendering/audio execution, not pixel appearance, hearing,
+physical keyboard Raw Input or mouse interaction. The test requires Songs beside
+its executable; it fails when the all-notes chart or music is absent.

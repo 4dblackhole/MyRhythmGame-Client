@@ -22,6 +22,7 @@
   <ItemGroup>
     <ClCompile Include="RhythmTests.cpp" />
     <ClCompile Include="Submodules\AccuracyTests.cpp" />
+    <ClCompile Include="Submodules\BuzzReplayTests.cpp" />
     <ClCompile Include="Submodules\ChartEditorTests.cpp" />
     <ClCompile Include="Submodules\ChartParserTests.cpp" />
     <ClCompile Include="Submodules\EditorAudioAnalysisTests.cpp" />
@@ -31,6 +32,7 @@
     <ClCompile Include="Submodules\SoundPolicyTests.cpp" />
     <ClCompile Include="Submodules\TaikoModeTests.cpp" />
     <ClInclude Include="Submodules\TestCases.h" />
+    <ClInclude Include="Submodules\AllNotesReplay.h" />
     <ClInclude Include="Submodules\TestSupport.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

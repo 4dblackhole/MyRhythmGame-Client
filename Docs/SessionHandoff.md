@@ -14,7 +14,7 @@
 - 커밋과 동기화 상태는 Git이 기준입니다. 문서에 고정 SHA를 복제하지 않습니다.
 - C++20 / MSVC v143 / Windows / D3D12. Client의 엔진 경계는 `MRG_Core.h` 하나입니다.
 - 판정/차트/모드/편집 분석은 엔진 비종속 프로젝트입니다. Scene은 수명주기와 조립을 맡습니다.
-- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP 3개는 외부 `assets/Songs`입니다.
+- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP 4개는 외부 `assets/Songs`입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
 ## 현재 범위와 주의점
@@ -28,6 +28,8 @@
 - 에디터는 `IEditorMode`와 `IEditorDocument`로 도구/표시/입력과 파일 편집/저장을
   교체합니다. 현재 구현은 Taiko + YMP/YME이며 BMS/7키는 아직 미구현입니다.
   확장 경계는 [ChartEditor](ChartEditor.md)의 모드/파일 형식 절에서 확인합니다.
+- AngelDream `All Notes Verification`은 전 노트 및 밀집 Don/Kat Buzz를 재현합니다.
+  채보 위치와 +50ms GOOD 입력의 틱 기대값은 [Gameplay Debugging](Gameplay/Debugging.md)을 참고합니다.
 - 고정 문구와 언어별 글꼴은 `Client/Texts`의 사용 위치별 표가 소유합니다.
   로고와 곡 선택은 공통 `OptionsPanel`에서 한국어/영어와 스킨 폴더를 바꿉니다.
 - 선택한 스킨 이름은 `%LOCALAPPDATA%/FingerDrum/skin-set.txt`에 유지하며,

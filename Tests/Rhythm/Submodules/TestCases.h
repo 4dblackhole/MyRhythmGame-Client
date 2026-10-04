@@ -17,6 +17,8 @@ namespace finger_drum::tests
     void TestPurpleNoteBothOrders();
     void TestCountedLongNoteAccuracyAndSyntax();
     void TestTickAndHoldAccuracy();
+    void TestDenseBuzzLateGoodHead();
+    void TestAngelDreamAllNotesReplay(const std::filesystem::path &songsRoot);
     void TestMusicalSubdivisionTicksFollowTempo();
     void TestLongNoteKeepsFirstHead();
     void TestTaikoUsesOneLaneForEveryNoteType();
