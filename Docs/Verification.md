@@ -37,8 +37,20 @@ foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke
 프로젝트/필터/include 경계는 `Scripts/CheckArchitecture.ps1`로 검사합니다.
 키빔 표시는 [별도 회귀 테스트](../Tests/Presentation/README.md)로 검사할 수 있습니다.
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
+에디터 모드/문서 계약 변경도 같은 실행 파일에 연결된 EditorModeTests를 두 구성에서 실행합니다.
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.
 
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
+
+## 2026-10-04 에디터 모드/문서 책임 분리 검증
+
+- Debug/Release x64 솔루션 전체 Rebuild 성공.
+- 두 구성의 로직·카탈로그 테스트 성공(실제 제공곡 1곡/3패턴).
+- 두 구성의 smoke-test, smoke-lobby, smoke-gameplay, smoke-editor 종료 코드 0.
+- 두 구성의 EditorAudioViewTests/EditorModeTests 성공. 실제 음원 FFT/타임라인,
+  Taiko 도구·롱노트·버즈·사운드·스냅·삭제·취소와 다른 모드/문서 adapter 연결을 검사.
+- 8개 프로젝트의 소스/필터, 의존성 순환, 엔진 경계와 git diff --check 통과.
+- 실제 화면 배치·마우스 조작·청취는 수동 확인하지 않음. 테스트용 모드는
+  게임에 등록하지 않았고 BMS/7키 실제 채보 지원을 검증한 것은 아님.

@@ -127,12 +127,10 @@
     <ClCompile Include="EditorScene\Submodules\EditorTimelineView.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorEffectsView.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorInput.cpp" />
-    <ClCompile Include="EditorScene\Submodules\EditorMetadataView.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorScoreView.cpp" />
     <ClInclude Include="EditorScene\Submodules\EditorSupport.h" />
     <ClCompile Include="EditorScene\Submodules\EditorTextDialog.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorTimingView.cpp" />
-    <ClInclude Include="EditorScene\Submodules\EditorTool.h" />
     <ClCompile Include="EditorScene\Submodules\EditorView.cpp" />
     <ClInclude Include="EditorScene\Submodules\EditorView.h" />
     <ClInclude Include="EditorScene\Submodules\EditorVisual.h" />
@@ -211,6 +209,18 @@
     <ClCompile Include="Texts\TextCatalog.cpp" />
     <ClInclude Include="Texts\TextCatalog.h" />
   </ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\EditorModeFactory.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\EditorModeFactory.h" /></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\IEditorMode.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorAudio.cpp" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorMetadata.cpp" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorMode.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorMode.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorScore.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorTool.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorTools.cpp" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Texts\EditorScene\Taiko\TaikoEditorTexts.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="Texts\EditorScene\Taiko\TaikoEditorTexts.h" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

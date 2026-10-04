@@ -11,7 +11,8 @@ Client/Texts/
   GameScene/FingerDrumLogoScene/        로고 화면
   GameScene/MusicSelectScene/           플레이/에디터 곡 선택
   GameScene/RhythmTestScene/            플레이 화면
-  EditorScene/                          에디터 화면
+  EditorScene/                          공통 에디터 화면
+    Taiko/TaikoEditorTexts.*            Taiko 도구/동·캇 이펙트 문구
 ```
 
 물리 폴더와 `MRG.Client.vcxproj.filters`의 `Texts` 트리는 같습니다. 문구는 사용

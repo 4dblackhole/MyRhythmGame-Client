@@ -3,50 +3,6 @@
 #include <sstream>
 using namespace editor_ui;
 
-void EditorView::EditScore(v::Point point, bool erase)
-{
-    if (erase)
-    {
-        const auto nearest = std::ranges::min_element(noteHits, {}, [point](const NoteHit &n) {
-            return std::hypot(n.point.x - point.x, n.point.y - point.y);
-        });
-        if (nearest != noteHits.end() &&
-            std::hypot(nearest->point.x - point.x, nearest->point.y - point.y) <
-                (state_.realtime ? 55 : 24))
-            state_.editor->DeleteNote(nearest->order);
-        state_.rebuild = true;
-        return;
-    }
-    chart::MusicalPosition p;
-    if (state_.realtime)
-    {
-        if (point.y < 351 || point.y > 579 || realtimeGrid.empty())
-            return;
-        p = std::ranges::min_element(realtimeGrid, {}, [point](const auto &g) {
-                return std::abs(g.first - point.x);
-            })->second;
-    }
-    else
-    {
-        const int row = static_cast<int>((point.y - 150) / 100),
-                  col = static_cast<int>((point.x - 205) / 401);
-        if (point.x < 205 || point.x >= 1809 || point.y < 150 || row >= 6 ||
-            point.y - (150 + row * 100) > 48)
-            return;
-        p.measure = state_.firstMeasure + row * 4 + col;
-        const auto length = state_.editor->Timeline().MeasureLength(p.measure);
-        const int subdivisionsPerWholeNote = state_.division * 4;
-        const auto tick = static_cast<std::int64_t>(
-            std::llround((point.x - 205 - col * 401) / 401.0 * length.Value() *
-                         subdivisionsPerWholeNote));
-        p.fraction = chart::Rational{tick, subdivisionsPerWholeNote};
-        if (p.fraction >= length)
-            p.fraction = chart::Rational{std::max<std::int64_t>(0, tick - 1),
-                                         subdivisionsPerWholeNote};
-    }
-    state_.PlaceNote(p);
-}
-
 void EditorView::UpdateSliders(const mrg::UpdateContext &context)
 {
     if (state_.tab != 0 && state_.tab != 4)
@@ -54,15 +10,15 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
 
     const auto &input = context.input;
     v::PointerInput pointer{};
-    const auto mapped = v::MapScreenPointer(
-        {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
-        {static_cast<float>(width), static_cast<float>(height)}, *canvas.Get());
+    const auto mapped =
+        v::MapScreenPointer({static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
+                            {static_cast<float>(width), static_cast<float>(height)}, *canvas.Get());
     pointer.available = input.IsMouseInsideWindow() && mapped.has_value();
-    pointer.position = mapped.value_or(v::Point{
-        static_cast<float>(input.MousePositionX()) / canvas.Get()->PixelScale() -
-            canvas.Get()->LogicalSize().width * .5F,
-        canvas.Get()->LogicalSize().height * .5F -
-            static_cast<float>(input.MousePositionY()) / canvas.Get()->PixelScale()});
+    pointer.position =
+        mapped.value_or(v::Point{static_cast<float>(input.MousePositionX()) / canvas.Get()->PixelScale() -
+                                     canvas.Get()->LogicalSize().width * .5F,
+                                 canvas.Get()->LogicalSize().height * .5F -
+                                     static_cast<float>(input.MousePositionY()) / canvas.Get()->PixelScale()});
     pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
     pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
     pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
@@ -72,10 +28,8 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
     bool timeChanged = false;
     for (const auto &action : canvas.Get()->TakeActions())
     {
-        changed |= action.source == divisionSliderNode_->Id() &&
-                   action.type == v::ActionType::ValueChanged;
-        timeChanged |= action.source == timelineSliderNode_->Id() &&
-                       action.type == v::ActionType::ValueChanged;
+        changed |= action.source == divisionSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
+        timeChanged |= action.source == timelineSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
     }
     // A direct-input value above 16 can share the slider's end position.
     if (pointer.leftButtonPressed && sliderInput_.CapturedNode() == divisionSliderNode_->Id())
@@ -115,19 +69,16 @@ bool EditorView::Update(const mrg::UpdateContext &context)
     {
         if (input.WasKeyPressed(VK_ESCAPE))
         {
-            if (state_.pending || state_.popup >= 0)
+            if (state_.mode->CancelInteraction())
             {
-                state_.pending.reset();
-                state_.popup = -1;
                 state_.rebuild = true;
             }
             else if (!state_.editor->Dirty() ||
-                     MessageBoxW(GetActiveWindow(), Texts().discardChanges.data(),
-                                 Texts().editorTitle.data(), MB_YESNO | MB_ICONQUESTION) == IDYES)
+                     MessageBoxW(GetActiveWindow(), Texts().discardChanges.data(), Texts().editorTitle.data(),
+                                 MB_YESNO | MB_ICONQUESTION) == IDYES)
                 leave = true;
         }
-        const bool controlDown =
-            input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+        const bool controlDown = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
         if (controlDown && input.WasKeyPressed('S'))
             state_.Save();
         if (input.WasKeyPressed(VK_LEFT))
@@ -144,10 +95,10 @@ bool EditorView::Update(const mrg::UpdateContext &context)
         {
             const int delta = input.MouseWheelDelta() > 0 ? -1 : 1;
             if (state_.tab == 0)
-                state_.firstMeasure = std::max<std::int64_t>(0, state_.firstMeasure + delta * 4);
+                state_.mode->ScrollScore(state_, delta);
             else if (state_.tab != 4)
-                state_.listOffset = static_cast<std::size_t>(std::max<std::int64_t>(
-                    0, static_cast<std::int64_t>(state_.listOffset) + delta));
+                state_.listOffset = static_cast<std::size_t>(
+                    std::max<std::int64_t>(0, static_cast<std::int64_t>(state_.listOffset) + delta));
             state_.rebuild = true;
         }
         const float scale = std::max(.001F, std::min(width / 1920.0F, height / 1080.0F));
@@ -156,14 +107,12 @@ bool EditorView::Update(const mrg::UpdateContext &context)
         UpdateSliders(context);
         if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Right) && state_.tab == 0)
         {
-            if (point.x >= 24 && point.x < 94 && point.y >= 202 && point.y < 522)
+            if (state_.mode->OpenToolMenu(point))
             {
-                state_.popup = point.y < 282 ? 1 : point.y < 362 ? 2 : 3;
-                state_.pending.reset();
                 state_.rebuild = true;
             }
             else
-                EditScore(point, true);
+                state_.mode->EditScore(state_, point, true);
         }
         if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Left) &&
             sliderInput_.CapturedNode() != divisionSliderNode_->Id() &&
@@ -177,7 +126,7 @@ bool EditorView::Update(const mrg::UpdateContext &context)
                 action();
             }
             else if (state_.tab == 0)
-                EditScore(point, false);
+                state_.mode->EditScore(state_, point, false);
         }
     }
     catch (const std::exception &e)

@@ -5,8 +5,10 @@ Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성�
 일반 실행은 여전히 로고 화면에서 시작합니다.
 
 수정 시 `Client/EditorScene/EditorScene.*`는 조립 흐름만 확인합니다.
-`Submodules/EditorWorkspace`는 문서/도구/배치, `EditorView`와 각 `Editor*View.cpp`는
-화면, `EditorInput`은 좌표/입력, `EditorAnalysisController`는 worker와 marker 캐시를 맡습니다.
+`Submodules/EditorWorkspace`는 문서와 모드의 수명 및 공통 편집 상태를,
+`EditorView`와 각 `Editor*View.cpp`는 공통 탭/타임라인/분석 화면을 맡습니다.
+`EditorInput`은 공통 입력을 연결하고 모드별 좌표 해석은 모드 객체에 위임합니다.
+`EditorAnalysisController`는 worker와 marker 캐시를 맡습니다.
 PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
 문법 변경이 없으면 다른 형식 문서와 엔진 내부를 읽을 필요가 없습니다.
 
@@ -43,7 +45,58 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
 
 ## 내부 구조와 검증 경계
 
-`FingerDrum.Chart/Editing/ChartEditor`는 엔진 비종속 편집 상태와 저장을 소유합니다.
+### 모드와 파일 형식의 교체 경계
+
+```text
+EditorScene
+  EditorWorkspace
+    IEditorMode                 도구/배치/그리기/좌표/히트사운드 정책
+      Modes/Taiko/TaikoEditorMode
+    IEditorDocument             공통 편집용 데이터와 파일 형식별 수정/저장
+      ChartEditor               현재 YMP/YME 구현
+    EditorAnalysisController    모드가 제공한 파일/marker의 비동기 분석
+  EditorView                    공통 탭/박자 디바이더/타임라인/FFT 화면
+    IEditorModeCanvas           모드에 제공하는 Box/Text/Button 그리기 계약
+```
+
+`EditorModeFactory`가 진입 요청의 `mode`에 맞는 객체를 생성합니다. 현재 등록된
+모드는 Taiko 하나이고 빈 모드 ID는 기존처럼 Taiko입니다. 미지원 ID 또는
+Taiko로 열었는데 다른 모드가 기록된 문서는 오류로 거부하며 Taiko 도구로 덮어쓰지 않습니다.
+활성 에디터 안에서 모드를 바꾸는 UI는 제공하지 않습니다.
+
+Taiko의 도구 ID/그룹/선택 상태, 미완성 롱노트, 팝업, 노트 색/모양,
+악보/실시간 레인, 노트 hit-test/스냅/마디 스크롤, YMP 메타데이터 편집과
+동·캇/틱 사운드 정책은 `Modes/Taiko/`가 소유합니다. 도구 문구와 동·캇 이펙트
+문구는 `Client/Texts/EditorScene/Taiko/`에 있습니다. 공통 화면에는 Taiko
+노트 enum/숫자 의미나 도구 개수/그룹을 넣지 않습니다. 이펙트의 공통 자동화
+편집 UI는 유지하고 사운드 대상 목록/표시는 모드에서 받습니다.
+
+새 모드를 추가할 때는 `Modes/<Mode>/`의 `IEditorMode` 구현과 문구 표를
+만들고 factory에 연결합니다. 도구 개수와 그리기 모양/방향은 모드가 결정하며,
+`DrawChart`에서 만든 좌표를 해당 모드의 `EditScore`가 해석합니다.
+`OpenDocument`는 파일 형식에 맞는 `IEditorDocument`를 반환합니다.
+UI 그리기는 전달받은 Canvas를 해당 호출에서만 사용하고, Button 콜백은
+활성 Workspace/모드의 수명 안에서 실행됩니다. 모드가 Scene 전환을 호출하지 않습니다.
+`AudioFiles`의 `Music` 키는 음악 파형/FFT용이며 나머지 키는
+`AudioMarker.sound`와 대응하는 히트사운드입니다. 파일 목록은 worker에 복사합니다.
+
+`IEditorDocument`의 Pattern/Effects/Notes/Timeline은 **편집용 공통 표현**입니다.
+새 파일 형식은 adapter가 원본의 추가 필드/지시문을 보관하고,
+수정·검증·롱노트 연결·저장을 그 형식의 규칙에 따라 구현해야 합니다.
+공통 표현으로 변환한 뒤 YMP로 저장하는 계약이 아닙니다.
+현재 `ChartEditor`의 동·캇 키 검증과 롱노트 연결 규칙은 현재 YMP 편집 구현에
+남아 있으며, 새 형식이 이를 상속하거나 그대로 재사용할 필요는 없습니다.
+메타데이터 화면/오디오 파일 해석도 모드가 소유하므로 YMM 경로를 강제하지 않습니다.
+
+BMS 파싱·저장, 7키/스크래치 배치와 전용 도구는 아직 구현하지 않았습니다.
+나중에 BMS를 실제로 지원할 때는 위 모드/문서 adapter 외에도 현재 YMM/YMP
+중심인 곡 카탈로그의 검색·진입 연결을 추가해야 합니다. 이번 변경은 에디터 내부의
+교체 경계를 마련한 것이며 파일 지원이 추가된 것은 아닙니다.
+
+### 공통 처리와 검증
+
+`FingerDrum.Chart/Editing/ChartEditor`는 `IEditorDocument`의 현재 구현으로
+엔진 비종속 편집 상태와 YMP/YME 저장을 소유합니다.
 노트 위치·마디 길이는 Rational이며 수정할 때만 MusicalTimeline의 누적합과 정수 us 캐시를
 재생성합니다. 화면 좌표를 위한 부동소수점은 렌더링/마우스 스냅 경계에서만 사용합니다.
 
@@ -74,6 +127,10 @@ Undo/Redo, 드래그 이동,
 오디오 분석 회귀는 반대 위상의 스테레오 1kHz 신호의 Hz/dBFS와 무음을 검사합니다.
 별도 [오디오 뷰 회귀](../Tests/Presentation/README.md)는 Client object를 사용해 실제 곡의
 세 영역 draw packet, 타임라인 범위/슬라이더 action, 탭별 숨김, 언어 전환과 정리를 검사합니다.
+같은 실행 파일의 `EditorModeTests`는 Taiko 전체 도구의 ID/롱노트/버즈 옵션/예상
+히트사운드, 악보 스냅/삭제/취소를 검사합니다. 테스트에만 존재하는 다른 모드와
+문서 adapter로 도구/세로 그리기/좌표/메타데이터/사운드 대상/저장/marker 캐시가
+공통 화면에 연결되는지도 검사합니다. 이 테스트 모드는 게임에 등록하거나 배포하지 않습니다.
 
 ## 이전 기능 검증의 한계
 

@@ -7,8 +7,7 @@
 class EditorWorkspace final
 {
   public:
-    explicit EditorWorkspace(finger_drum::GameplayLaunchRequest selected)
-        : request(std::move(selected))
+    explicit EditorWorkspace(finger_drum::GameplayLaunchRequest selected) : request(std::move(selected))
     {
     }
     void Initialize();
@@ -18,11 +17,10 @@ class EditorWorkspace final
     void PlaceNote(finger_drum::chart::MusicalPosition position);
     [[nodiscard]] std::pair<double, double> TimelineRangeMilliseconds() const;
     finger_drum::GameplayLaunchRequest request;
-    std::unique_ptr<finger_drum::chart::ChartEditor> editor;
+    std::unique_ptr<finger_drum::chart::IEditorDocument> editor;
+    std::unique_ptr<IEditorMode> mode;
     EditorAnalysisController analysis;
-    std::optional<finger_drum::chart::MusicalPosition> pending;
-    int tab{}, tool{1}, popup{-1}, division{4};
-    int smallTool{1}, bigTool{3}, rollTool{11}, focusTool{15};
+    int tab{}, division{4};
     std::int64_t firstMeasure{};
     bool realtime{}, rebuild{true};
     double timeMs{}, audioWindow{8.0};

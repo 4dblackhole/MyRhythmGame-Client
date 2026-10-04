@@ -68,9 +68,13 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 - Logo에서 Editor를 누르면 기록 패널이 없는 EditorSongSelect로 이동합니다.
   이 Scene은 Lobby의 카탈로그·미리듣기·검색·정렬·곡/난이도 탐색을 공유하며,
   난이도를 확정하면 선택 경로를 기록하고 Editor Scene으로 이동합니다.
-- Editor는 YMP/YME를 `ChartEditor`로 읽고 유리수 누적합과 정수 us 캐시를 만듭니다.
+- EditorWorkspace는 진입 요청의 모드에 따라 `IEditorMode`를 조립하고,
+  모드의 `OpenDocument`에서 `IEditorDocument`를 받습니다. 현재 Taiko 구현은
+  YMP/YME를 `ChartEditor`로 읽고 유리수 누적합과 정수 us 캐시를 만듭니다.
   악보/실시간 뷰는 같은 모델을 편집하며 변경 시에만 캐시를 다시 계산합니다.
-  EditorAnalysisController가 PCM/FFT worker를, EditorView가 Canvas draw packet을 관리합니다.
+  모드는 도구 상태·좌표 해석·노트 그리기를, EditorAnalysisController는
+  모드가 제공한 파일/marker의 PCM/FFT worker를, EditorView는 공통 Canvas를 관리합니다.
+  모드와 문서는 Workspace와 함께 파기되고 worker는 복사한 파일 경로만 참조합니다.
   Ctrl+S는 같은 폴더에 저장하며 Escape는 미저장 변경을 확인한 뒤 돌아갑니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
   `SongCatalog`가 외부 Songs의 AngelDream YMM과 YMP 3개 및 사용자 곡·패턴을

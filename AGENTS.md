@@ -133,3 +133,5 @@ Use `Docs/Verification.md` for canonical commands. Code changes require
 Debug/Release x64 solution builds, logic tests and all four Client smoke routes.
 Engine changes additionally require the relevant `ColoredCubeGame` route.
 Report automated checks separately from actual visual/manual validation.
+Completion reports must also brief the changed classes/files, their responsibility
+boundaries, effects on existing behavior, and verification results.

@@ -33,4 +33,5 @@
     <ClCompile Include="Utility\RationalNumber.cpp"><Filter>Utility</Filter></ClCompile>
     <ClInclude Include="Utility\RationalNumber.h"><Filter>Utility</Filter></ClInclude>
   </ItemGroup>
+  <ItemGroup><ClInclude Include="Editing\IEditorDocument.h"><Filter>Editing</Filter></ClInclude></ItemGroup>
 </Project>

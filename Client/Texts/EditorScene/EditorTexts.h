@@ -20,8 +20,6 @@ namespace finger_drum::texts
         std::wstring_view directInput;
         std::wstring_view beatDivisionDialog;
         std::wstring_view tools;
-        std::array<std::wstring_view, 7> toolGroups;
-        std::array<std::wstring_view, 13> toolVariants;
 
         std::wstring_view timingTitle;
         std::wstring_view timingColumns;
@@ -47,7 +45,7 @@ namespace finger_drum::texts
 
         std::wstring_view effectsTitle;
         std::wstring_view effectsColumns;
-        std::array<std::wstring_view, 6> effectTypes;
+        std::array<std::wstring_view, 4> effectTypes;
         std::wstring_view startBeat;
         std::wstring_view endMeasureOptional;
         std::wstring_view endBeatOptional;
@@ -57,9 +55,6 @@ namespace finger_drum::texts
         std::array<std::wstring_view, 4> curves;
         std::wstring_view audioBus;
         std::wstring_view addOrUpdateEffect;
-        std::wstring_view effectsHelp;
-        std::wstring_view don;
-        std::wstring_view kat;
 
         std::wstring_view audioAnalysis;
         std::wstring_view currentTime;

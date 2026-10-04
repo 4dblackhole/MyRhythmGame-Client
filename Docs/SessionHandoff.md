@@ -25,6 +25,9 @@
   이 목록은 추가 구현 지시가 아닙니다. 기능별 제한은 해당 문서가 기준입니다.
 - Scene 전용 폴더와 `Submodules`, Note 계약/규칙 트리를 사용합니다.
   파일 추가 시 프로젝트와 Visual Studio 필터도 같은 트리로 등록합니다.
+- 에디터는 `IEditorMode`와 `IEditorDocument`로 도구/표시/입력과 파일 편집/저장을
+  교체합니다. 현재 구현은 Taiko + YMP/YME이며 BMS/7키는 아직 미구현입니다.
+  확장 경계는 [ChartEditor](ChartEditor.md)의 모드/파일 형식 절에서 확인합니다.
 - 고정 문구와 언어별 글꼴은 `Client/Texts`의 사용 위치별 표가 소유합니다.
   로고와 곡 선택은 공통 `OptionsPanel`에서 한국어/영어와 스킨 폴더를 바꿉니다.
 - 선택한 스킨 이름은 `%LOCALAPPDATA%/FingerDrum/skin-set.txt`에 유지하며,
@@ -47,3 +50,4 @@ Debug 6개·Release 0개였고, EXE·fmod.dll·기본 Songs만 복사한 깨끗�
 smoke 통과는 픽셀/마우스 수동 검증을 뜻하지 않습니다.
 영구 계약은 기능 문서 한 곳에서 갱신하고 이 문서는 현재 주의점만 유지합니다.
 엔진 변경 시 엔진 원격 반영 → Client gitlink 순서로 동기화합니다.
+완료 보고에는 변경 클래스/파일과 책임 분리, 기존 동작에 미치는 영향 및 검증 결과를 브리핑합니다.

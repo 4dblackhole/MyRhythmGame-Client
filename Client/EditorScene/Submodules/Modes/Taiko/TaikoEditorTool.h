@@ -54,8 +54,7 @@ namespace editor_tools
         using namespace finger_drum::mode;
         if (tool.note != Type::Buzz)
             return {};
-        return {std::string(taiko_option::Action) +
-                    (tool.buzzAction == TaikoAction::Kat ? "=Kat" : "=Don"),
+        return {std::string(taiko_option::Action) + (tool.buzzAction == TaikoAction::Kat ? "=Kat" : "=Don"),
                 std::string(taiko_option::TickDivision) + "=16"};
     }
 } // namespace editor_tools

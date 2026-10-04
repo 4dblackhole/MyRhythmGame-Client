@@ -11,22 +11,22 @@ void EditorView::Initialize(const mrg::EngineServices &services)
     static_cast<void>(canvas.SetVisible(true));
     node = &canvas.Get()->CreateNode(v::Anchor::Center, "Editor");
     visual = &node->AddComponent<EditorVisual>();
-    divisionSliderNode_ = &v::CreateSlider(
-        *node,
-        {DivisionSliderRect.x - 960, 540 - DivisionSliderRect.y - DivisionSliderRect.height,
-         DivisionSliderRect.width, DivisionSliderRect.height},
-        (state_.division - 1) / 15.0F, "Beat division");
+    divisionSliderNode_ =
+        &v::CreateSlider(*node,
+                         {DivisionSliderRect.x - 960, 540 - DivisionSliderRect.y - DivisionSliderRect.height,
+                          DivisionSliderRect.width, DivisionSliderRect.height},
+                         (state_.division - 1) / 15.0F, "Beat division");
     v::VisualStyle sliderStyle{};
     sliderStyle.normal.alpha = 0;
     sliderStyle.hovered.alpha = 0;
     sliderStyle.pressed.alpha = 0;
     sliderStyle.disabled.alpha = 0;
     divisionSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
-    timelineSliderNode_ = &v::CreateSlider(
-        *node,
-        {TimelineSliderRect.x - 960, 540 - TimelineSliderRect.y - TimelineSliderRect.height,
-         TimelineSliderRect.width, TimelineSliderRect.height},
-        0, "Editor timeline");
+    timelineSliderNode_ =
+        &v::CreateSlider(*node,
+                         {TimelineSliderRect.x - 960, 540 - TimelineSliderRect.y - TimelineSliderRect.height,
+                          TimelineSliderRect.width, TimelineSliderRect.height},
+                         0, "Editor timeline");
     timelineSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
     ReloadSize();
     Build();
@@ -44,7 +44,7 @@ void EditorView::Build()
             [this, i] {
                 state_.tab = i;
                 state_.listOffset = 0;
-                state_.popup = -1;
+                state_.mode->CloseToolMenu();
                 state_.rebuild = true;
             },
             state_.tab == i);
@@ -53,7 +53,7 @@ void EditorView::Build()
     else if (state_.tab == 1)
         DrawTiming();
     else if (state_.tab == 2)
-        DrawMetadata();
+        state_.mode->DrawMetadata(*this, state_, texts_.CurrentLanguage());
     else if (state_.tab == 3)
         DrawEffects();
     else
@@ -77,8 +77,7 @@ void EditorView::Build()
     SyncDivisionSlider();
     SyncTimelineSlider();
     Button(
-        {1740, 1035, 150, 36},
-        std::wstring(state_.editor->Dirty() ? text.saveDirty : text.save),
+        {1740, 1035, 150, 36}, std::wstring(state_.editor->Dirty() ? text.saveDirty : text.save),
         [this] { state_.Save(); }, true);
     Text({24, 1040, 1690, 32}, Wide(state_.status), 16);
     textRevision_ = texts_.Revision();
@@ -114,8 +113,7 @@ const finger_drum::texts::EditorTextSet &EditorView::Texts() const noexcept
 void EditorView::Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected)
 {
     Box(r, selected ? Blue : Pale, 5);
-    Text({r.x + 10, r.y + 3, r.width - 15, r.height - 4}, std::move(text), 20,
-         selected ? White : Ink);
+    Text({r.x + 10, r.y + 3, r.width - 15, r.height - 4}, std::move(text), 20, selected ? White : Ink);
     controls.push_back({r, std::move(action)});
 }
 
@@ -131,16 +129,6 @@ void EditorView::Field(v::Rect r, const wchar_t *label, std::string &value)
     });
 }
 
-void EditorView::Circle(float x, float y, int type, float radius)
-{
-    const auto color = type == 2 || type == 4 ? Kat
-                       : type == 5            ? v::Color{.65F, .30F, .85F, 1}
-                       : type > 5             ? Gold
-                                              : Don;
-    Box({x - radius - 2, y - radius - 2, radius * 2 + 4, radius * 2 + 4}, White, radius + 2);
-    Box({x - radius, y - radius, radius * 2, radius * 2}, color, radius);
-}
-
 void EditorView::ReloadSize()
 {
     const float scale = std::min(1.0F, canvas.Get()->LogicalSize().width / 1920.0F);
@@ -151,6 +139,6 @@ void EditorView::ReloadSize()
 
 void EditorView::SyncDivisionSlider() noexcept
 {
-    divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue(
-        (std::min(state_.division, 16) - 1) / 15.0F);
+    divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue((std::min(state_.division, 16) - 1) /
+                                                                              15.0F);
 }

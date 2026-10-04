@@ -18,8 +18,3 @@ struct Control
     v::Rect rect;
     std::function<void()> click;
 };
-struct NoteHit
-{
-    v::Point point;
-    std::size_t order;
-};

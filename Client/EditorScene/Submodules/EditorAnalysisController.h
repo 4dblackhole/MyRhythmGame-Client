@@ -1,7 +1,7 @@
 #pragma once
 #include "Audio/EditorAudioAnalysis.h"
-#include "Editing/ChartEditor.h"
 #include "GameFlow/GameplayLaunchRequest.h"
+#include "Modes/IEditorMode.h"
 #include <future>
 #include <map>
 #include <string>
@@ -10,12 +10,6 @@ struct AnalysisBatch
     std::map<std::string, finger_drum::editor::AudioAnalysis> sounds;
     std::string errors;
 };
-struct AudioMarker
-{
-    double seconds{};
-    std::string sound;
-};
-
 class EditorAnalysisController final
 {
   public:
@@ -31,9 +25,9 @@ class EditorAnalysisController final
     {
         analysisStop.request_stop();
     }
-    bool Update(const finger_drum::chart::ChartEditor &, finger_drum::GameplayLaunchRequest &,
+    bool Update(const finger_drum::chart::IEditorDocument &, const IEditorMode &, finger_drum::GameplayLaunchRequest &,
                 std::string &status);
-    void CacheAudioMarkers(const finger_drum::chart::ChartEditor &);
+    void CacheAudioMarkers(const finger_drum::chart::IEditorDocument &, const IEditorMode &);
     const AnalysisBatch &Data() const noexcept
     {
         return analysis;
@@ -50,6 +44,8 @@ class EditorAnalysisController final
     {
         audioMarkers.clear();
         audioMarkerRevision = revision;
+        audioMarkerDocument = nullptr;
+        audioMarkerMode = nullptr;
     }
 
   private:
@@ -60,4 +56,6 @@ class EditorAnalysisController final
     std::map<std::string, std::filesystem::path> analysisFiles;
     std::vector<AudioMarker> audioMarkers;
     std::uint64_t audioMarkerRevision{};
+    const finger_drum::chart::IEditorDocument *audioMarkerDocument{};
+    const IEditorMode *audioMarkerMode{};
 };

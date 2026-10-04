@@ -6,6 +6,17 @@ using namespace editor_ui;
 void EditorView::DrawEffects()
 {
     const auto &labels = Texts();
+    const auto soundChoices = state_.mode->SoundChoices(texts_.CurrentLanguage());
+    const auto soundLabel = [&soundChoices](int key) {
+        for (const auto &choice : soundChoices)
+            if (choice.keyType == key)
+                return choice.label;
+        return std::to_wstring(key);
+    };
+    const auto effectLabel = [&labels, &soundChoices](int index) {
+        return index < 4 ? std::wstring(labels.effectTypes[index])
+                         : soundChoices.at(static_cast<std::size_t>(index - 4)).effectLabel;
+    };
     Text({136, 105, 1000, 40}, std::wstring(labels.effectsTitle), 28);
     Box({132, 173, 1728, 310}, White, 12);
     Box({132, 503, 1728, 365}, White, 12);
@@ -34,18 +45,15 @@ void EditorView::DrawEffects()
         if (i < e.commands.size())
         {
             const auto &c = e.commands[i];
-            rowText = std::to_wstring(c.position.measure + 1) + L" / " +
-                      Wide(Fraction(c.position.fraction)) + L"    " +
-                      commandTypeText(c.type) + L"    " +
-                      std::to_wstring(c.beginValue) + L" → " + std::to_wstring(c.endValue);
+            rowText = std::to_wstring(c.position.measure + 1) + L" / " + Wide(Fraction(c.position.fraction)) + L"    " +
+                      commandTypeText(c.type) + L"    " + std::to_wstring(c.beginValue) + L" → " +
+                      std::to_wstring(c.endValue);
         }
         else
         {
             const auto &c = e.hitSoundChanges[i - e.commands.size()];
-            rowText = std::to_wstring(c.position.measure + 1) + L" / " +
-                      Wide(Fraction(c.position.fraction)) + L"    " +
-                      std::wstring(c.keyType == 1 ? labels.don : labels.kat) + L"    " +
-                      Wide(c.soundIndex);
+            rowText = std::to_wstring(c.position.measure + 1) + L" / " + Wide(Fraction(c.position.fraction)) + L"    " +
+                      soundLabel(c.keyType) + L"    " + Wide(c.soundIndex);
         }
         Button({156, y, 1430, 40}, rowText, [this, i] {
             const auto &effects = state_.editor->Effects();
@@ -63,8 +71,7 @@ void EditorView::DrawEffects()
                 else if (c.type == chart::EffectCommandType::ScrollSpeed)
                     state_.effectType = 3;
                 else
-                    throw std::runtime_error(
-                        "This legacy effect is preserved; its editor is not part of this task.");
+                    throw std::runtime_error("This legacy effect is preserved; its editor is not part of this task.");
                 state_.effectFields[0] = std::to_string(c.position.measure + 1);
                 state_.effectFields[1] = Fraction(c.position.fraction);
                 state_.effectFields[4] = std::to_string(c.beginValue);
@@ -80,7 +87,11 @@ void EditorView::DrawEffects()
             else
             {
                 const auto &c = effects.hitSoundChanges[i - effects.commands.size()];
-                state_.effectType = c.keyType == 1 ? 4 : 5;
+                const auto choices = state_.mode->SoundChoices(texts_.CurrentLanguage());
+                const auto found = std::ranges::find(choices, c.keyType, &EditorSoundChoice::keyType);
+                if (found == choices.end())
+                    throw std::runtime_error("This sound target is not supported by the selected editor mode.");
+                state_.effectType = 4 + static_cast<int>(found - choices.begin());
                 state_.effectFields[0] = std::to_string(c.position.measure + 1);
                 state_.effectFields[1] = Fraction(c.position.fraction);
                 state_.effectFields[4] = c.soundIndex;
@@ -92,8 +103,7 @@ void EditorView::DrawEffects()
             if (i < effects.commands.size())
                 effects.commands.erase(effects.commands.begin() + i);
             else
-                effects.hitSoundChanges.erase(effects.hitSoundChanges.begin() +
-                                              (i - effects.commands.size()));
+                effects.hitSoundChanges.erase(effects.hitSoundChanges.begin() + (i - effects.commands.size()));
             state_.editor->Replace(state_.editor->Pattern(), effects);
             state_.rebuild = true;
         });
@@ -102,12 +112,12 @@ void EditorView::DrawEffects()
     Field({370, 595, 188, 42}, labels.startBeat.data(), state_.effectFields[1]);
     Field({584, 595, 188, 42}, labels.endMeasureOptional.data(), state_.effectFields[2]);
     Field({798, 595, 188, 42}, labels.endBeatOptional.data(), state_.effectFields[3]);
-    Button({1036, 595, 789, 42}, std::wstring(labels.effectTypes[state_.effectType]), [this] {
-        state_.effectType = (state_.effectType + 1) % 6;
+    Button({1036, 595, 789, 42}, effectLabel(state_.effectType), [this] {
+        state_.effectType = (state_.effectType + 1) %
+                            (4 + static_cast<int>(state_.mode->SoundChoices(texts_.CurrentLanguage()).size()));
         state_.rebuild = true;
     });
-    Field({156, 718, 319, 42},
-          state_.effectType >= 4 ? labels.hitSoundIndex.data() : labels.startValue.data(),
+    Field({156, 718, 319, 42}, state_.effectType >= 4 ? labels.hitSoundIndex.data() : labels.startValue.data(),
           state_.effectFields[4]);
     Field({500, 718, 319, 42}, labels.endValue.data(), state_.effectFields[5]);
     Button({844, 718, 360, 42}, std::wstring(labels.curves[state_.curve]), [this] {
@@ -122,7 +132,9 @@ void EditorView::DrawEffects()
             const auto p = Position(state_.effectFields[0], state_.effectFields[1]);
             if (state_.effectType >= 4)
             {
-                const int key = state_.effectType == 4 ? 1 : 2;
+                const int key = state_.mode->SoundChoices(texts_.CurrentLanguage())
+                                    .at(static_cast<std::size_t>(state_.effectType - 4))
+                                    .keyType;
                 std::erase_if(effects.hitSoundChanges,
                               [&](const auto &c) { return c.position == p && c.keyType == key; });
                 effects.hitSoundChanges.push_back({p, state_.effectFields[4], key});
@@ -130,8 +142,7 @@ void EditorView::DrawEffects()
             else
             {
                 constexpr chart::EffectCommandType types[]{
-                    chart::EffectCommandType::BusVolume,
-                    chart::EffectCommandType::MeasureLineVisible,
+                    chart::EffectCommandType::BusVolume, chart::EffectCommandType::MeasureLineVisible,
                     chart::EffectCommandType::NoteSpeed, chart::EffectCommandType::ScrollSpeed};
                 chart::EffectCommand c;
                 c.position = p;
@@ -155,5 +166,5 @@ void EditorView::DrawEffects()
             state_.rebuild = true;
         },
         true);
-    Text({156, 800, 1620, 50}, std::wstring(labels.effectsHelp), 18);
+    Text({156, 800, 1620, 50}, std::wstring(state_.mode->SoundEffectHelp(texts_.CurrentLanguage())), 18);
 }

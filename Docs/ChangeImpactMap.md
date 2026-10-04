@@ -20,12 +20,13 @@
 | Lane·기어·resize | 같은 폴더 `GameplayLayout.cpp`, GameplaySupport.h | GameplayPresenter.h; gameplay smoke |
 | 정확도/특수 노트 표시 | 같은 폴더 `GameplayFeedbackVisuals.cpp` | NoteTypes.h의 이벤트/정확도; AccuracyTests |
 | 키 불빛 | 같은 폴더 `GameplayKeys.cpp`, `Client/Presentation/LaneKeyBeam.*` | GameplayFeedback.h; gameplay smoke |
-| 에디터 도구/배치 취소 | `Client/EditorScene/Submodules/EditorWorkspace.*`, EditorTool.h | ChartEditorTests, SceneStateTests |
-| 에디터 화면/입력 | 같은 폴더 `EditorView.h`, EditorScoreView.cpp / EditorInput.cpp | Workspace.h, editor smoke |
-| BPM·metadata·effect UI | 같은 폴더 `EditorTimingView`, `EditorMetadataView`, `EditorEffectsView` | ChartEditor의 Replace 계약, 저장 왕복 |
+| 에디터 모드 추가/파일 교체 | `Client/EditorScene/Submodules/Modes/IEditorMode.h`, EditorModeFactory; `FingerDrum.Chart/Editing/IEditorDocument.h` | ChartEditor의 교체 경계; EditorModeTests, editor smoke |
+| 에디터 도구/배치 취소 | `Modes/Taiko/TaikoEditorMode.*`, TaikoEditorTool.h / TaikoEditorTools.cpp | ChartEditorTests, SceneStateTests, EditorModeTests |
+| 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
+| BPM·metadata·effect UI | 공통 EditorTimingView / EditorEffectsView, `Modes/Taiko/TaikoEditorMetadata` | IEditorDocument의 Replace 계약, 저장 왕복 |
 | 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
-| Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | EditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
+| Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드 정책 | 같은 폴더 TaikoSoundPolicy.cpp / TaikoSoundIds.h | NoteSoundPolicy.h; SoundPolicyTests |
 | 문법 추가 | `FingerDrum.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
 | BPM/마디 시간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | Formats/Timing; ChartParser/ChartEditorTests |
@@ -48,12 +49,17 @@ Client/GameScene/MusicSelectScene/
 Client/EditorScene/
   EditorScene.h/.cpp
   Submodules/
-    EditorWorkspace.*         문서와 편집 상태
-    EditorView.*              UI 조립과 표시
+    EditorWorkspace.*         문서/모드 수명과 공통 편집 상태
+    EditorView.*              공통 UI 조립과 표시
     EditorAnalysisController.* worker 수명과 결과
+    Modes/
+      IEditorMode.h           모드별 도구/그리기/좌표/사운드 계약
+      EditorModeFactory.*     진입 시 지원 모드 선택
+      Taiko/                  Taiko 전용 상태와 구현
 Client/Texts/
   TextCatalog.*                  공유 언어 상태와 언어별 글꼴
   <사용 위치>/                  화면별 한국어·영어 문구 표
+  EditorScene/Taiko/              Taiko 편집 도구/사운드 문구
 FingerDrum.Rhythm/Note/
   Note.h                      기존 호출부 호환 facade
   Submodules/

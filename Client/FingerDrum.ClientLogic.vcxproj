@@ -15,7 +15,7 @@
   <ItemGroup>
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
     <ClInclude Include="GameFlow\GameplayLaunchStore.h" />
-    <ClInclude Include="EditorScene\Submodules\EditorTool.h" />
+    <ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorTool.h" />
     <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionState.h" />
     <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectionState.cpp" />
     <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionText.h" />

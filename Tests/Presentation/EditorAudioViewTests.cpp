@@ -1,5 +1,7 @@
 #include "App/AssetPaths.h"
 #include "Catalog/SongCatalog.h"
+#include "Editing/ChartEditor.h"
+#include "EditorModeTests.h"
 #include "EditorScene/Submodules/EditorView.h"
 #include <chrono>
 #include <iostream>
@@ -25,22 +27,20 @@ namespace
         {
             return {};
         }
-        void SubmitScreen(const v::Visual2DCanvas &canvas, const mrg::graphics::RenderContext &,
-                          v::Point, std::uint32_t) override
+        void SubmitScreen(const v::Visual2DCanvas &canvas, const mrg::graphics::RenderContext &, v::Point,
+                          std::uint32_t) override
         {
             packets = canvas.BuildDrawList();
         }
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &,
-                         const DirectX::XMFLOAT4X4 &, v::Size, const DirectX::XMFLOAT4X4 &) override
+        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         v::Size, const DirectX::XMFLOAT4X4 &) override
         {
         }
-        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t,
-                                                                          std::uint32_t) override
+        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
         {
             return {};
         }
-        void RenderToTexture(const v::Visual2DCanvas &,
-                             const mrg::graphics::RenderTargetTextureHandle &,
+        void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
                              const mrg::graphics::RenderContext &) override
         {
         }
@@ -74,12 +74,10 @@ int main()
               "Timeline must include negative notes and the last note.");
 
         const auto songs = chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
-        Check(!songs.songs.empty() && !songs.songs.front().patterns.empty(),
-              "Real catalog missing");
+        Check(!songs.songs.empty() && !songs.songs.front().patterns.empty(), "Real catalog missing");
         const auto &song = songs.songs.front();
         const auto &selected = song.patterns.front();
-        EditorWorkspace state(
-            {selected.patternPath, selected.effectPath, song.audioPath, selected.pattern.mode});
+        EditorWorkspace state({selected.patternPath, selected.effectPath, song.audioPath, selected.pattern.mode});
         state.Initialize();
         state.UpdateAnalysis();
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{120};
@@ -88,8 +86,7 @@ int main()
             std::this_thread::sleep_for(std::chrono::milliseconds{10});
             state.UpdateAnalysis();
         }
-        Check(!state.analysis.Running() && state.analysis.Data().errors.empty(),
-              "Audio worker failed");
+        Check(!state.analysis.Running() && state.analysis.Data().errors.empty(), "Audio worker failed");
         const auto [begin, end] = state.TimelineRangeMilliseconds();
         Check(end >= state.analysis.Data().sounds.at("Music").durationSeconds * 1000,
               "Timeline must include the entire music file.");
@@ -104,8 +101,7 @@ int main()
         EditorView view(visuals, state, texts);
         view.Initialize({meshes, textRendering, renderer, audio, 1920, 1080});
         const auto hasText = [&](const std::wstring_view text) {
-            return std::ranges::any_of(renderer.packets,
-                                       [&](const auto &packet) { return packet.text == text; });
+            return std::ranges::any_of(renderer.packets, [&](const auto &packet) { return packet.text == text; });
         };
         visuals.Render({});
         Check(hasText(L"타임라인") && !hasText(L"음악 FFT 스펙트로그램"),
@@ -122,8 +118,8 @@ int main()
             return std::ranges::count_if(renderer.packets, [&](const auto &packet) {
                 const float y = 540 - packet.bounds.y - packet.bounds.height;
                 return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
-                       packet.bounds.x >= 205 - 960 && packet.bounds.x < 1770 - 960 &&
-                       packet.color.red > .3F && packet.color.green < .95F;
+                       packet.bounds.x >= 205 - 960 && packet.bounds.x < 1770 - 960 && packet.color.red > .3F &&
+                       packet.color.green < .95F;
             });
         };
         Check(coloredIn(375, 587) > 10 && coloredIn(640, 852) > 10,
@@ -158,10 +154,12 @@ int main()
         visuals.OnResize(900, 720);
         view.Resize(900, 720);
         view.Build();
-        Check(state.TimelineRangeMilliseconds() == std::pair{begin, end},
-              "Resize changed time range");
+        Check(state.TimelineRangeMilliseconds() == std::pair{begin, end}, "Resize changed time range");
         view.Shutdown();
         Check(visuals.CanvasCount() == 0, "Editor Canvas survived shutdown");
+        visuals.OnResize(1920, 1080);
+        TestEditorModes(visuals, {meshes, textRendering, renderer, audio, 1920, 1080}, texts,
+                        [&renderer]() -> const std::vector<v::DrawPacket> & { return renderer.packets; });
         std::cout << "Editor audio view tests passed.\n";
         return 0;
     }

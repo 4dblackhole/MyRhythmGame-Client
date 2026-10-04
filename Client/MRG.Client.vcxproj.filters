@@ -43,12 +43,10 @@
     <ClCompile Include="EditorScene\Submodules\EditorTimelineView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClCompile Include="EditorScene\Submodules\EditorEffectsView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClCompile Include="EditorScene\Submodules\EditorInput.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
-    <ClCompile Include="EditorScene\Submodules\EditorMetadataView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClCompile Include="EditorScene\Submodules\EditorScoreView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClInclude Include="EditorScene\Submodules\EditorSupport.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
     <ClCompile Include="EditorScene\Submodules\EditorTextDialog.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClCompile Include="EditorScene\Submodules\EditorTimingView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
-    <ClInclude Include="EditorScene\Submodules\EditorTool.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
     <ClCompile Include="EditorScene\Submodules\EditorView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClInclude Include="EditorScene\Submodules\EditorView.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
     <ClInclude Include="EditorScene\Submodules\EditorVisual.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
@@ -126,5 +124,20 @@
     <ClInclude Include="Texts\Options\OptionTexts.h"><Filter>Texts\Options</Filter></ClInclude>
     <ClCompile Include="Texts\TextCatalog.cpp"><Filter>Texts</Filter></ClCompile>
     <ClInclude Include="Texts\TextCatalog.h"><Filter>Texts</Filter></ClInclude>
+    <Filter Include="EditorScene\Submodules\Modes" />
+    <Filter Include="EditorScene\Submodules\Modes\Taiko" />
+    <Filter Include="Texts\EditorScene\Taiko" />
   </ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\EditorModeFactory.cpp"><Filter>EditorScene\Submodules\Modes</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\EditorModeFactory.h"><Filter>EditorScene\Submodules\Modes</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\IEditorMode.h"><Filter>EditorScene\Submodules\Modes</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorAudio.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorMetadata.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorMode.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorMode.h"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorScore.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorTool.h"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorTools.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClCompile Include="Texts\EditorScene\Taiko\TaikoEditorTexts.cpp"><Filter>Texts\EditorScene\Taiko</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClInclude Include="Texts\EditorScene\Taiko\TaikoEditorTexts.h"><Filter>Texts\EditorScene\Taiko</Filter></ClInclude></ItemGroup>
 </Project>

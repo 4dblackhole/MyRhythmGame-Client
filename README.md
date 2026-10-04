@@ -27,6 +27,9 @@
 Scene마다 전용 폴더와 `Submodules/`를 둡니다. Scene은 작은 호출로 책임 클래스를
 조립하며, UI·세션·분석 상태는 각 클래스가 관리합니다. Note도 계약·규칙별 트리를
 사용하며 Visual Studio 필터를 물리 폴더와 일치시킵니다.
+에디터는 공통 화면과 `IEditorMode`의 도구/노트 표시/입력 정책,
+`IEditorDocument`의 파일 형식별 편집·저장을 분리합니다. 현재 구현은 Taiko와
+YMP/YME이며 새 모드 연결 경계는 [에디터 구조](Docs/ChartEditor.md)에 있습니다.
 
 ## 빌드·실행
 

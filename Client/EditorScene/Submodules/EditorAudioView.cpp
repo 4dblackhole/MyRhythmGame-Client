@@ -36,9 +36,8 @@ namespace
         return text.str();
     }
 
-    void AccumulateColumns(std::vector<SpectrumFrame> &columns, const AudioAnalysis &data,
-                           const double offset, const double begin, const double window,
-                           const double minimumHz, const double maximumHz)
+    void AccumulateColumns(std::vector<SpectrumFrame> &columns, const AudioAnalysis &data, const double offset,
+                           const double begin, const double window, const double minimumHz, const double maximumHz)
     {
         if (data.frames.empty() || data.secondsPerFrame <= 0)
             return;
@@ -46,35 +45,30 @@ namespace
         for (std::size_t band = 0; band < sourceBands.size(); ++band)
         {
             const double frequency =
-                minimumHz * std::pow(maximumHz / minimumHz,
-                                     (static_cast<double>(band) + .5) / sourceBands.size());
-            sourceBands[band] =
-                frequency > data.maximumFrequencyHz
-                    ? data.frames.front().bands.size()
-                    : static_cast<std::size_t>(std::clamp(
-                          std::log(frequency / data.minimumFrequencyHz) /
-                              std::log(data.maximumFrequencyHz / data.minimumFrequencyHz) *
-                              data.frames.front().bands.size(),
-                          0.0, static_cast<double>(data.frames.front().bands.size() - 1)));
+                minimumHz * std::pow(maximumHz / minimumHz, (static_cast<double>(band) + .5) / sourceBands.size());
+            sourceBands[band] = frequency > data.maximumFrequencyHz
+                                    ? data.frames.front().bands.size()
+                                    : static_cast<std::size_t>(
+                                          std::clamp(std::log(frequency / data.minimumFrequencyHz) /
+                                                         std::log(data.maximumFrequencyHz / data.minimumFrequencyHz) *
+                                                         data.frames.front().bands.size(),
+                                                     0.0, static_cast<double>(data.frames.front().bands.size() - 1)));
         }
-        const int firstColumn =
-            static_cast<int>(std::clamp(std::floor((offset - begin) / window * columns.size()), 0.0,
-                                        static_cast<double>(columns.size())));
-        const int lastColumn = static_cast<int>(
-            std::clamp(std::ceil((offset + data.durationSeconds - begin) / window * columns.size()),
-                       0.0, static_cast<double>(columns.size())));
+        const int firstColumn = static_cast<int>(std::clamp(std::floor((offset - begin) / window * columns.size()), 0.0,
+                                                            static_cast<double>(columns.size())));
+        const int lastColumn =
+            static_cast<int>(std::clamp(std::ceil((offset + data.durationSeconds - begin) / window * columns.size()),
+                                        0.0, static_cast<double>(columns.size())));
         for (int column = firstColumn; column < lastColumn; ++column)
         {
             const double left = std::max(0.0, begin + window * column / columns.size() - offset);
-            const double right = std::min(data.durationSeconds,
-                                          begin + window * (column + 1) / columns.size() - offset);
+            const double right =
+                std::min(data.durationSeconds, begin + window * (column + 1) / columns.size() - offset);
             if (right <= left)
                 continue;
-            const auto first = std::min(data.frames.size() - 1,
-                                        static_cast<std::size_t>(left / data.secondsPerFrame));
+            const auto first = std::min(data.frames.size() - 1, static_cast<std::size_t>(left / data.secondsPerFrame));
             const auto last =
-                std::min(data.frames.size(),
-                         static_cast<std::size_t>(std::ceil(right / data.secondsPerFrame)));
+                std::min(data.frames.size(), static_cast<std::size_t>(std::ceil(right / data.secondsPerFrame)));
             auto &output = columns[static_cast<std::size_t>(column)];
             // Max-pooling retains short hits at every zoom level and combines
             // overlapping expected hits without hiding the music track.
@@ -85,8 +79,7 @@ namespace
                 output.maximum = std::max(output.maximum, frame.maximum);
                 for (std::size_t band = 0; band < sourceBands.size(); ++band)
                     if (sourceBands[band] < frame.bands.size())
-                        output.bands[band] =
-                            std::max(output.bands[band], frame.bands[sourceBands[band]]);
+                        output.bands[band] = std::max(output.bands[band], frame.bands[sourceBands[band]]);
             }
         }
     }
@@ -101,8 +94,7 @@ void EditorView::DrawAudioSpectrum(const v::Rect rect, const std::vector<Spectru
     for (std::size_t band = 0; band < finger_drum::editor::SpectrumBandCount; ++band)
     {
         const auto colorAt = [&](const std::size_t column) {
-            return static_cast<std::size_t>(
-                std::lround(columns[column].bands[band] * (SpectrumColors.size() - 1)));
+            return static_cast<std::size_t>(std::lround(columns[column].bands[band] * (SpectrumColors.size() - 1)));
         };
         // Adjacent cells with the same palette entry share one rectangle.
         for (std::size_t first = 0; first < columns.size();)
@@ -123,24 +115,18 @@ void EditorView::DrawAudioSpectrum(const v::Rect rect, const std::vector<Spectru
     {
         if (frequency < minimumHz || frequency > maximumHz)
             continue;
-        const float y =
-            rect.y + rect.height * static_cast<float>(1 - std::log(frequency / minimumHz) /
-                                                              std::log(maximumHz / minimumHz));
+        const float y = rect.y + rect.height * static_cast<float>(1 - std::log(frequency / minimumHz) /
+                                                                          std::log(maximumHz / minimumHz));
         Box({rect.x, y, rect.width, 1}, {1, 1, 1, .10F});
         Text({125, std::clamp(y - 10, rect.y, rect.y + rect.height - 20), 78, 20},
-             frequency >= 1000 ? Decimal(frequency / 1000, 0) + L"k Hz"
-                               : Decimal(frequency, 0) + L" Hz",
-             14);
+             frequency >= 1000 ? Decimal(frequency / 1000, 0) + L"k Hz" : Decimal(frequency, 0) + L" Hz", 14);
     }
     for (std::size_t color = 0; color < SpectrumColors.size(); ++color)
-        Box({1795,
-             rect.y + rect.height * static_cast<float>(SpectrumColors.size() - 1 - color) /
-                          SpectrumColors.size(),
+        Box({1795, rect.y + rect.height * static_cast<float>(SpectrumColors.size() - 1 - color) / SpectrumColors.size(),
              18, rect.height / SpectrumColors.size() + .1F},
             SpectrumColors[color]);
     for (int tick = 0; tick <= 3; ++tick)
-        Text({1820, rect.y + (rect.height - 20) * tick / 3, 70, 20},
-             std::to_wstring(-30 * tick) + L" dB", 14);
+        Text({1820, rect.y + (rect.height - 20) * tick / 3, 70, 20}, std::to_wstring(-30 * tick) + L" dB", 14);
 }
 
 void EditorView::DrawAudioWaveform(const std::vector<SpectrumFrame> &columns)
@@ -150,10 +136,8 @@ void EditorView::DrawAudioWaveform(const std::vector<SpectrumFrame> &columns)
     Box({Waveform.x, centerY, Waveform.width, 1}, {.25F, .35F, .3F, 1});
     for (std::size_t column = 0; column < columns.size(); ++column)
     {
-        const float top =
-            centerY - std::clamp(columns[column].maximum, -1.0F, 1.0F) * Waveform.height * .48F;
-        const float bottom =
-            centerY - std::clamp(columns[column].minimum, -1.0F, 1.0F) * Waveform.height * .48F;
+        const float top = centerY - std::clamp(columns[column].maximum, -1.0F, 1.0F) * Waveform.height * .48F;
+        const float bottom = centerY - std::clamp(columns[column].minimum, -1.0F, 1.0F) * Waveform.height * .48F;
         if (bottom > top)
             Box({Waveform.x + Waveform.width * static_cast<float>(column) / Columns, top,
                  Waveform.width / Columns + .1F, bottom - top},
@@ -170,11 +154,9 @@ void EditorView::DrawAudioTimeRuler(const double begin)
     double step = std::pow(10.0, std::floor(std::log10(state_.audioWindow / 8)));
     const double ratio = state_.audioWindow / (8 * step);
     step *= ratio > 5 ? 10 : ratio > 2 ? 5 : ratio > 1 ? 2 : 1;
-    for (double seconds = std::ceil(begin / step) * step; seconds <= begin + state_.audioWindow;
-         seconds += step)
+    for (double seconds = std::ceil(begin / step) * step; seconds <= begin + state_.audioWindow; seconds += step)
     {
-        const float x = Waveform.x +
-                        static_cast<float>((seconds - begin) / state_.audioWindow) * Waveform.width;
+        const float x = Waveform.x + static_cast<float>((seconds - begin) / state_.audioWindow) * Waveform.width;
         Text({std::clamp(x - 30, Waveform.x, Waveform.x + Waveform.width - 70), 126, 70, 22},
              Decimal(seconds, step < 1 ? 2 : 0) + L" s", 14);
         for (const auto rect : {Waveform, MusicSpectrum, HitSpectrum})
@@ -189,7 +171,7 @@ void EditorView::DrawAudio()
     const auto &text = Texts();
     try
     {
-        state_.analysis.CacheAudioMarkers(*state_.editor);
+        state_.analysis.CacheAudioMarkers(*state_.editor, *state_.mode);
     }
     catch (const std::exception &error)
     {
@@ -215,15 +197,13 @@ void EditorView::DrawAudio()
     }
     std::vector<SpectrumFrame> musicColumns(Columns), hitColumns(Columns);
     if (const auto music = sounds.find("Music"); music != sounds.end())
-        AccumulateColumns(musicColumns, music->second, 0, begin, state_.audioWindow, minimumHz,
-                          maximumHz);
+        AccumulateColumns(musicColumns, music->second, 0, begin, state_.audioWindow, minimumHz, maximumHz);
     const auto &markers = state_.analysis.Markers();
-    for (auto marker =
-             std::ranges::lower_bound(markers, begin - longestSound, {}, &AudioMarker::seconds);
+    for (auto marker = std::ranges::lower_bound(markers, begin - longestSound, {}, &AudioMarker::seconds);
          marker != markers.end() && marker->seconds <= begin + state_.audioWindow; ++marker)
         if (const auto sound = sounds.find(marker->sound); sound != sounds.end())
-            AccumulateColumns(hitColumns, sound->second, marker->seconds, begin, state_.audioWindow,
-                              minimumHz, maximumHz);
+            AccumulateColumns(hitColumns, sound->second, marker->seconds, begin, state_.audioWindow, minimumHz,
+                              maximumHz);
 
     // Draw distinct tracks before their shared ruler/cursor and controls.
     Box({112, 76, 1784, 797}, Paper, 8);
