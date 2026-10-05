@@ -4,8 +4,9 @@
 #include <stdexcept>
 
 FingerDrumLogoScene::FingerDrumLogoScene(mrg::visual2d::ScreenVisual2DManager &visuals,
-                                         finger_drum::texts::TextCatalog &texts)
-    : view_(std::make_unique<LogoView>(visuals, texts))
+                                         finger_drum::texts::TextCatalog &texts,
+                                         mrg_client::OptionSettings &options)
+    : view_(std::make_unique<LogoView>(visuals, texts, options))
 {
 }
 FingerDrumLogoScene::~FingerDrumLogoScene() = default;

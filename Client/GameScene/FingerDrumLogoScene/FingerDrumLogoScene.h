@@ -2,6 +2,7 @@
 
 #include "MRG_Core.h"
 #include "Texts/TextCatalog.h"
+#include "App/OptionSettings.h"
 
 #include <array>
 #include <cstddef>
@@ -16,7 +17,8 @@ class FingerDrumLogoScene final : public mrg::scene::GameScene
 {
   public:
     FingerDrumLogoScene(mrg::visual2d::ScreenVisual2DManager &screenVisuals,
-                        finger_drum::texts::TextCatalog &texts);
+                        finger_drum::texts::TextCatalog &texts,
+                        mrg_client::OptionSettings &options);
 
     ~FingerDrumLogoScene() override;
     void Initialize(const mrg::EngineServices &services) override;

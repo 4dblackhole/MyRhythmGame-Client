@@ -5,8 +5,8 @@
 using namespace logo_ui;
 
 LogoView::LogoView(mrg::visual2d::ScreenVisual2DManager &screenVisuals,
-                   finger_drum::texts::TextCatalog &texts) noexcept
-    : screenVisuals_(screenVisuals), texts_(texts), options_(texts)
+                   finger_drum::texts::TextCatalog &texts, mrg_client::OptionSettings &options) noexcept
+    : screenVisuals_(screenVisuals), texts_(texts), options_(texts, options)
 {
 }
 
@@ -28,7 +28,7 @@ void LogoView::Initialize(const mrg::EngineServices &services)
     CreateLogoStrip();
     CreateMenu();
     skinRevision_ = mrg_client::SkinSetSelection::Instance().Revision();
-    options_.Initialize(*canvas_);
+    options_.Initialize(*canvas_, services.audio);
     ApplyTexts();
     UpdateLogoStripLayout();
 }

@@ -7,7 +7,6 @@
 #endif
 
 #include "App/FingerDrumGame.h"
-#include "App/SkinSetSelection.h"
 #ifdef _DEBUG
 #include "Examples/ColoredCube/App/ColoredCubeGame.h"
 #include "Examples/ColoredCube/GameFlow/SceneIds.h"
@@ -81,16 +80,6 @@ int WINAPI wWinMain(
             MB_OK | MB_ICONERROR);
         return EXIT_FAILURE;
     }
-    try
-    {
-        mrg_client::SkinSetSelection::Instance().Initialize();
-    }
-    catch (const std::exception &error)
-    {
-        MessageBoxA(nullptr, error.what(), "FingerDrum skin settings error",
-                    MB_OK | MB_ICONERROR);
-        return EXIT_FAILURE;
-    }
 
     // The executable selects the requested Client route. Run owns the Win32,
     // D3D12, input, and audio lifetime around that object.
@@ -140,8 +129,14 @@ int WINAPI wWinMain(
 
     // Specialized hidden routes exercise catalog widgets and layered Taiko
     // assets without changing the normal executable's Logo entry point.
-    return mrg::Run(std::make_unique<FingerDrumGame>(
-        smokeTest,
-        std::move(initialScene),
-        rhythmDebugMode));
+    try
+    {
+        return mrg::Run(std::make_unique<FingerDrumGame>(
+            smokeTest, std::move(initialScene), rhythmDebugMode));
+    }
+    catch (const std::exception &error)
+    {
+        MessageBoxA(nullptr, error.what(), "FingerDrum option settings error", MB_OK | MB_ICONERROR);
+        return EXIT_FAILURE;
+    }
 }

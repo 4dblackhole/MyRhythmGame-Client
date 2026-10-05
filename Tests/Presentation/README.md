@@ -54,6 +54,24 @@ preview failure retry suppression/selection recovery/owned voice cleanup and
 detaching a cancelled analysis job. Drawing assertions do not initialize a GPU;
 this does not replace visual inspection, listening or mouse testing in the app.
 
+## Options panel and Option.ini regression
+
+After building both configurations, run in an x64 Visual Studio developer PowerShell
+with `FMOD_ROOT` set to the installed SDK:
+
+```powershell
+./Tests/Presentation/RunOptionsPanelTests.ps1 -Configuration Debug
+./Tests/Presentation/RunOptionsPanelTests.ps1 -Configuration Release
+```
+
+This links the production panel/settings objects. It checks UTF-8 settings round trips,
+invalid values, all three audio ComboBoxes, sparse driver indices, output-scoped lists,
+failed switches and rollback after a read-only INI blocks saving. Test files are isolated
+in a unique temporary directory; the user's Option.ini and skins are not changed.
+The ASIO transition/failure cases use a test backend. A separate actual FMOD check
+switches Automatic to WASAPI and selects the current driver while retaining a loaded
+sample. It does not play sound or replace manual mouse/listening/real ASIO-device checks.
+
 ## All-notes actual gameplay replay
 
 After a full solution build, run from the repository root in an x64 Visual Studio

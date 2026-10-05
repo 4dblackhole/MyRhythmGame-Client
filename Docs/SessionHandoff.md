@@ -37,8 +37,10 @@
 - AngelDream `All Notes Verification`은 전 노트 및 밀집 Don/Kat Buzz를 재현합니다.
   채보 위치와 +50ms GOOD 입력의 틱 기대값은 [Gameplay Debugging](Gameplay/Debugging.md)을 참고합니다.
 - 고정 문구와 언어별 글꼴은 `Client/Texts`의 사용 위치별 표가 소유합니다.
-  로고와 곡 선택은 공통 `OptionsPanel`에서 한국어/영어와 스킨 폴더를 바꿉니다.
-- 선택한 스킨 이름은 `%LOCALAPPDATA%/FingerDrum/skin-set.txt`에 유지하며,
+  로고와 곡 선택은 공통 `OptionsPanel`에서 언어·스킨·FMOD·자동/WASAPI/ASIO·드라이버를 선택합니다.
+  출력 방식/드라이버는 즉시 적용하고 모든 옵션은 EXE 옆 `Option.ini`에 유지합니다.
+  `OptionSettings`는 파일 저장/읽기만 담당하며 별도 옵션 Controller는 없습니다.
+- 선택한 스킨 이름은 `Option.ini`에 유지하며(기존 skin-set.txt는 최초 생성 시 가져옴),
   각 파일이 없을 때 내장 기본 스킨으로 대체합니다. 풍선 완료음 `pop.wav`도
   `Default Skin/HitSounds/TaikoMode`에 포함됩니다.
 - ColoredCube 기술 예제는 Debug에서만 컴파일합니다. `Client/Assets/Unused`는

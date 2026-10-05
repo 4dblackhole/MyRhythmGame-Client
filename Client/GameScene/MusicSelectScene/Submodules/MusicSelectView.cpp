@@ -32,7 +32,7 @@ void MusicSelectView::Initialize(const mrg::EngineServices &services)
     CreateSongInformationPanel();
     CreateSongBrowser();
     CreateFooter();
-    options_.Initialize(*canvas_);
+    options_.Initialize(*canvas_, services.audio);
     ApplyTexts();
     UpdateResponsiveLayout();
     RebuildVisibleSongs();

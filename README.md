@@ -57,4 +57,6 @@ Release는 ColoredCube 기술 예제를 포함하지 않습니다. 배포할 때
 [자산](Docs/BuiltInAssets.md)에서 설명합니다. 스킨은 실행 파일 옆
 `assets/skins`의 폴더를 옵션 패널에서 선택하며 다음 실행에도 유지됩니다.
 한국어/영어와 옵션 패널은
-[텍스트 관리](Docs/TextManagement.md)에서 관리합니다.
+[텍스트 관리](Docs/TextManagement.md)에서 관리합니다. 패널에서 FMOD, 일반(자동)/WASAPI/ASIO,
+실제 출력 드라이버를 선택하며 출력 방식/장치 변경은 즉시 적용합니다.
+언어·스킨·오디오 설정은 EXE 옆 `Option.ini`에 저장하고 다음 실행에 복원합니다.

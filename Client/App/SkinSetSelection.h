@@ -12,7 +12,7 @@ namespace mrg_client
       public:
         [[nodiscard]] static SkinSetSelection &Instance() noexcept;
 
-        void Initialize();
+        void Initialize(const std::wstring &savedName = L"Default Skin");
         [[nodiscard]] std::vector<std::wstring> AvailableNames() const;
         [[nodiscard]] const std::wstring &CurrentName() const noexcept;
         [[nodiscard]] std::uint64_t Revision() const noexcept;
@@ -20,7 +20,6 @@ namespace mrg_client
         [[nodiscard]] std::filesystem::path Resolve(const std::filesystem::path &relativePath) const;
 
       private:
-        [[nodiscard]] static std::filesystem::path SettingsPath();
         [[nodiscard]] static std::filesystem::path SkinsRoot();
 
         std::wstring currentName_{L"Default Skin"};

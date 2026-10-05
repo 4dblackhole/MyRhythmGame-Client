@@ -48,6 +48,8 @@
     </ClCompile>
     <ClCompile Include="App\SkinSetSelection.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\SkinSetSelection.h"><Filter>App</Filter></ClInclude>
+    <ClCompile Include="App\OptionSettings.cpp"><Filter>App</Filter></ClCompile>
+    <ClInclude Include="App\OptionSettings.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\FingerDrumGame.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\FingerDrumGame.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\Main.cpp"><Filter>App</Filter></ClCompile>

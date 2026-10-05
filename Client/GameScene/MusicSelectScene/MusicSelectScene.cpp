@@ -13,10 +13,11 @@ MusicSelectScene::MusicSelectScene(mrg::visual2d::ScreenVisual2DManager &visuals
                                    mrg::audio::AudioPlaybackManager &playback,
                                    std::shared_ptr<finger_drum::GameplayLaunchStore> request,
                                    SongSelectPurpose purpose,
-                                   finger_drum::texts::TextCatalog &texts)
+                                   finger_drum::texts::TextCatalog &texts,
+                                   mrg_client::OptionSettings &options)
     : launchRequest_(std::move(request)), purpose_(purpose),
       selection_(std::make_unique<SongSelectionState>()),
-      view_(std::make_unique<MusicSelectView>(visuals, *selection_, purpose, texts)),
+      view_(std::make_unique<MusicSelectView>(visuals, *selection_, purpose, texts, options)),
       preview_(std::make_unique<SongPreviewController>(playback))
 {
 }

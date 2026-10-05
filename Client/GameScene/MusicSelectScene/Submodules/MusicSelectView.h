@@ -16,9 +16,10 @@ class MusicSelectView final
 {
   public:
     MusicSelectView(mrg::visual2d::ScreenVisual2DManager &visuals, SongSelectionState &state,
-                    SongSelectPurpose purpose, finger_drum::texts::TextCatalog &texts)
+                    SongSelectPurpose purpose, finger_drum::texts::TextCatalog &texts,
+                    mrg_client::OptionSettings &options)
         : selection_(state), purpose_(purpose), screenVisuals_(visuals), texts_(texts),
-          options_(texts)
+          options_(texts, options)
     {
     }
     void SetVisible(bool visible)

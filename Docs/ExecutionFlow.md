@@ -6,9 +6,8 @@
 ```mermaid
 flowchart TD
     Entry["Client/App/Main.cpp\nwWinMain"] --> Assets["RCDATA asset pack 확인 · cache 준비"]
-    Assets --> Skin["저장된 스킨 폴더 선택 복원"]
-    Skin --> Route{"Debug의 --example?"}
-    Route -->|"no"| Game["FingerDrumGame"]
+    Assets --> Route{"Debug의 --example?"}
+    Route -->|"no"| Game["FingerDrumGame · Option.ini 복원"]
     Route -->|"yes"| Example["ColoredCubeGame · engine example"]
     Game --> Run["mrg::Run"]
     Example --> Run
@@ -29,16 +28,19 @@ flowchart TD
 1. `wWinMain`이 Debug CRT 누수 검사를 켜고 EXE의 RCDATA 기본 자산 팩을
    `%LOCALAPPDATA%/FingerDrum/BuiltInAssets/<pack hash>`에 준비합니다. 같은 팩의
    유효한 캐시가 있으면 다시 기록하지 않습니다.
-2. `%LOCALAPPDATA%/FingerDrum/skin-set.txt`의 선택을 복원합니다. 저장된 스킨
-   폴더가 없으면 `Default Skin`을 사용합니다.
-3. 일반 실행과 FingerDrum smoke는 `FingerDrumGame`을 생성합니다. Debug에서만
+2. 일반 실행과 FingerDrum smoke는 `FingerDrumGame`을 생성합니다. EXE 옆
+   `Option.ini`에서 언어·스킨·오디오 미들웨어/출력 방식/드라이버를 읽습니다.
+   파일이 없으면 기본 설정과 기존 스킨 선택을 저장합니다. 저장된 스킨
+   폴더가 없으면 `Default Skin`을 사용합니다. 상세 형식은 [TextManagement](TextManagement.md)입니다.
+3. Debug에서만
    `--example=mesh|collision|widgets` 경로가 재사용 엔진 검증용
    `ColoredCubeGame`을 생성합니다. Release에는 예제 Scene을 컴파일하지 않습니다.
 4. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다.
 5. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest route를 등록합니다.
-6. `SceneManager`가 최초 Logo Scene을 활성화하고 `Initialize`를 한 번
-   호출합니다.
+6. `SceneManager`가 최초 Scene을 활성화하고 `Initialize`를 한 번 호출합니다.
+   Client 초기화 hook은 첫 update/render 전에 현재 출력 장치 목록에서 저장된
+   드라이버를 찾아 적용합니다. 출력 방식이 fallback됐으면 다른 API의 장치 번호를 사용하지 않습니다.
 
 스킨은 실행 파일 옆 `assets/skins/<선택한 스킨 폴더>`의 같은 상대 경로 파일을
 먼저 사용하고, 파일이 없을 때만 캐시의 내장 파일로 돌아갑니다. 곡 카탈로그는
@@ -65,6 +67,8 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 - Logo의 옵션 버튼 또는 Logo/Lobby의 `Ctrl+O`는 공통 왼쪽 옵션 패널을 열며,
   언어 변경은 `TextCatalog` revision을 통해 활성 화면과 이후 Scene에 반영됩니다.
   스킨 변경은 폴더 이름을 저장하고 이후 자산 로드에 적용합니다.
+  공통 패널의 오디오 ComboBox 3개는 미들웨어(FMOD만 설치)·출력 방식·드라이버입니다.
+  출력 방식/드라이버는 기존 오디오 객체를 유지하면서 즉시 적용하고 Option.ini에 저장합니다.
 - Logo에서 Editor를 누르면 기록 패널이 없는 EditorSongSelect로 이동합니다.
   이 Scene은 Lobby의 카탈로그·미리듣기·검색·정렬·곡/난이도 탐색을 공유하며,
   난이도를 확정하면 선택 경로를 기록하고 Editor Scene으로 이동합니다.

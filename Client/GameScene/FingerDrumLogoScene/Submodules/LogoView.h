@@ -17,7 +17,7 @@ class LogoView final
 {
   public:
     LogoView(mrg::visual2d::ScreenVisual2DManager &screenVisuals,
-             finger_drum::texts::TextCatalog &texts) noexcept;
+             finger_drum::texts::TextCatalog &texts, mrg_client::OptionSettings &options) noexcept;
 
     void Initialize(const mrg::EngineServices &services);
     void BeginScene();

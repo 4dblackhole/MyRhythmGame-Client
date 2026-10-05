@@ -3,6 +3,7 @@
 #include "GameFlow/GameplayLaunchStore.h"
 #include "Submodules/SongSelectPurpose.h"
 #include "Texts/TextCatalog.h"
+#include "App/OptionSettings.h"
 #include <memory>
 
 class SongSelectionState;
@@ -16,7 +17,8 @@ class MusicSelectScene final : public mrg::scene::GameScene
                               mrg::audio::AudioPlaybackManager &audioPlayback,
                               std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest,
                               SongSelectPurpose purpose,
-                              finger_drum::texts::TextCatalog &texts);
+                              finger_drum::texts::TextCatalog &texts,
+                              mrg_client::OptionSettings &options);
 
     ~MusicSelectScene() override;
 

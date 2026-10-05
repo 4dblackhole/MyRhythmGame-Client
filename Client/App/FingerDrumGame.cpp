@@ -17,11 +17,18 @@
 #include <utility>
 
 FingerDrumGame::FingerDrumGame(const bool smokeTest, std::string initialSceneId,
-                               const bool rhythmDebugMode) noexcept
+                               const bool rhythmDebugMode)
     : smokeTest_(smokeTest), showPerformanceOverlay_(smokeTest), rhythmDebugMode_(rhythmDebugMode),
       initialSceneId_(std::move(initialSceneId)),
-      launchRequest_(std::make_shared<finger_drum::GameplayLaunchStore>())
+      launchRequest_(std::make_shared<finger_drum::GameplayLaunchStore>()),
+      optionSettings_(mrg_client::OptionSettings::NextToExecutable())
 {
+    std::string error;
+    if (!optionSettings_.Load(error)) throw std::runtime_error(error);
+    if (optionSettings_.Values().audioMiddleware != "FMOD")
+        throw std::runtime_error("Option.ini selects an unavailable audio middleware. Only FMOD is installed.");
+    texts_.SetLanguage(optionSettings_.Values().language);
+    mrg_client::SkinSetSelection::Instance().Initialize(optionSettings_.Values().skinSet);
 }
 
 mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
@@ -31,7 +38,9 @@ mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
     config.windowWidth = 1280;
     config.windowHeight = 720;
     config.clearColor = {240.0F / 255.0F, 248.0F / 255.0F, 1.0F, 1.0F};
-    config.audio.preferredBackend = mrg::audio::AudioOutputBackend::Automatic;
+    config.audio.preferredBackend = optionSettings_.Values().audioOutput;
+    // Restore the named device after enumeration instead of trusting a stale index.
+    config.audio.driverIndex = -1;
     config.audio.fallBackToWasapi = true;
     config.audio.allowNoSoundFallback = true;
     config.showWindow = !smokeTest_;
@@ -57,16 +66,16 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
     // catalog instead of reviving the ColoredCube sample as a dependency.
     if (!scenes.RegisterScene<FingerDrumLogoScene>(std::string(finger_drum::scene_ids::Logo),
                                                    mrg::scene::SceneRetention::KeepAlive,
-                                                   std::ref(ScreenVisuals()), std::ref(texts_)) ||
+                                                   std::ref(ScreenVisuals()), std::ref(texts_), std::ref(optionSettings_)) ||
         !scenes.RegisterScene<MusicSelectScene>(
             std::string(finger_drum::scene_ids::Lobby), mrg::scene::SceneRetention::KeepAlive,
             std::ref(ScreenVisuals()), std::ref(AudioPlayback()), launchRequest_,
-            SongSelectPurpose::Gameplay, std::ref(texts_)) ||
+            SongSelectPurpose::Gameplay, std::ref(texts_), std::ref(optionSettings_)) ||
         !scenes.RegisterScene<MusicSelectScene>(
             std::string(finger_drum::scene_ids::EditorSongSelect),
             mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),
             std::ref(AudioPlayback()), launchRequest_, SongSelectPurpose::Editor,
-            std::ref(texts_)) ||
+            std::ref(texts_), std::ref(optionSettings_)) ||
         !scenes.RegisterScene<EditorScene>(std::string(finger_drum::scene_ids::Editor),
                                            mrg::scene::SceneRetention::DestroyOnExit,
                                            std::ref(ScreenVisuals()), launchRequest_,
@@ -90,6 +99,8 @@ std::string_view FingerDrumGame::InitialSceneId() const noexcept
 
 void FingerDrumGame::OnClientInitialized(const mrg::EngineServices &services)
 {
+    // This hook runs before the first update/render; output switching retains clips.
+    RestoreSavedAudioDriver(services.audio);
     // Performance text is Client presentation, so the game owns the font and
     // chooses F7 independently from Engine scheduling.
     performanceFont_ =
@@ -131,6 +142,23 @@ void FingerDrumGame::OnClientRendered(const mrg::graphics::RenderContext &contex
 void FingerDrumGame::OnClientShuttingDown() noexcept
 {
     performanceFont_.reset();
+}
+
+void FingerDrumGame::RestoreSavedAudioDriver(mrg::audio::AudioSystem &audio)
+{
+    const auto &saved = optionSettings_.Values();
+    if (audio.RequestedOutput() != saved.audioOutput ||
+        (saved.driverIndex < 0 && saved.driverName.empty())) return;
+    const auto &drivers = audio.OutputDrivers();
+    auto selected = std::ranges::find_if(drivers, [&](const auto &driver) {
+        return driver.driverIndex == saved.driverIndex &&
+            (saved.driverName.empty() || driver.name == saved.driverName);
+    });
+    if (selected == drivers.end() && !saved.driverName.empty())
+        selected = std::ranges::find(drivers, saved.driverName, &mrg::audio::AudioDeviceInfo::name);
+    if (selected == drivers.end()) return; // Keep the default device when hardware is unavailable.
+    std::string error;
+    if (!audio.SetOutputDriver(selected->driverIndex, error)) OutputDebugStringA(error.c_str());
 }
 
 void FingerDrumGame::RefreshPerformanceText(const mrg::PerformanceStatistics &performance)

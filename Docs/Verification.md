@@ -41,6 +41,7 @@ foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.
 전체 노트/Buzz 회귀는 `--catalog-root` 로직 테스트와
 [All-notes actual gameplay replay](../Tests/Presentation/README.md)를 두 구성에서 실행합니다.
+옵션/설정 파일 변경은 같은 문서의 Options panel regression을 두 구성에서 실행합니다.
 
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
@@ -156,3 +157,24 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   여전히 전환 시 동기 작업입니다. 모든 파일 로딩이나 지연 가능성을 제거한 것은 아닙니다.
 - 수동 확인: 실제 화면의 픽셀 배치·마우스/물리 키 입력·청취는 수행하지 않았습니다.
   숨겨진 창의 실제 엔진 replay와 미리듣기 검사는 자동 검증입니다.
+
+## 2026-10-05 오디오 옵션과 Option.ini
+
+- 기존 OptionsPanel에 미들웨어(FMOD만 설치)·일반(자동)/WASAPI/ASIO·실제 드라이버
+  ComboBox 3개를 추가했습니다. 별도 옵션 Controller는 없으며 엔진 API를 직접 사용합니다.
+  언어·스킨·오디오 설정은 EXE 옆 UTF-8 Option.ini로 통합했습니다.
+- Debug/Release x64 솔루션 전체 Rebuild와 마지막 UI 수정의 최종 증분 빌드 성공.
+  두 구성의 로직·카탈로그(1곡/4패턴), smoke-test/lobby/gameplay/editor 종료 코드 0.
+- 두 구성 OptionsPanelTests 성공. 새 파일 생성, 한국어 스킨 이름/언어/오디오 값의
+  저장 왕복, 잘못된 값 거절, 비연속 드라이버 번호, 출력 방식별 목록 갱신,
+  변경 실패와 읽기 전용 INI 저장 실패 시 복구, 장치 없는 상태와 종료 후 입력을 검사했습니다.
+  실제 Canvas hit-test로 ASIO 목록 행이 아래 드라이버 필드보다 먼저 클릭되는 것도 검사했습니다.
+- 두 구성에서 실제 FMOD Automatic → WASAPI 변경 및 현재 드라이버 선택 성공.
+  변경 전 로드한 pop.wav clip이 변경 후에도 Ready/유효한 상태임을 확인했습니다.
+  ASIO 전환/실패 사례는 테스트 backend를 이용했으며 실제 ASIO 하드웨어 검증은 아닙니다.
+- Debug/Release 출력 폴더에 Option.ini가 생성되는 것을 확인했습니다. 테스트용 설정은
+  별도 임시 폴더에 만들고 기존 사용자 설정·곡·스킨과 구형 skin-set.txt는 보존했습니다.
+- 8개 프로젝트의 소스/필터/의존성/엔진 경계와 git diff --check 통과.
+  엔진 저장소/SDK, 파일 형식과 판정 규칙은 변경하지 않았습니다.
+- 수동 확인: 실제 화면 배치·마우스 조작·청취·실제 ASIO 장치 전환은 수행하지 않았습니다.
+  위 포인터 입력과 실제 FMOD 검사는 자동 검증입니다.

@@ -4,6 +4,7 @@
 
 #include "GameFlow/GameplayLaunchStore.h"
 #include "Texts/TextCatalog.h"
+#include "App/OptionSettings.h"
 
 #include <cstdint>
 #include <memory>
@@ -16,7 +17,7 @@ class FingerDrumGame final : public mrg::scene::SceneGameClient
 {
   public:
     FingerDrumGame(bool smokeTest, std::string initialSceneId,
-                   bool rhythmDebugMode = false) noexcept;
+                   bool rhythmDebugMode = false);
 
     [[nodiscard]] mrg::EngineConfig GetEngineConfig() const override;
 
@@ -30,6 +31,7 @@ class FingerDrumGame final : public mrg::scene::SceneGameClient
 
   private:
     void RefreshPerformanceText(const mrg::PerformanceStatistics &performance);
+    void RestoreSavedAudioDriver(mrg::audio::AudioSystem &audio);
     static void SubmitPerformanceLine(mrg::graphics::TextRenderSystem &textRendering,
                                       std::wstring_view text, const mrg::graphics::FontHandle &font,
                                       float layoutY, float viewportWidth);
@@ -40,6 +42,7 @@ class FingerDrumGame final : public mrg::scene::SceneGameClient
     std::string initialSceneId_;
     std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest_;
     finger_drum::texts::TextCatalog texts_;
+    mrg_client::OptionSettings optionSettings_;
     mrg::graphics::FontHandle performanceFont_;
     std::uint64_t lastPerformanceMeasurementIndex_{};
     std::wstring framesPerSecondText_{L"FPS: measuring..."};

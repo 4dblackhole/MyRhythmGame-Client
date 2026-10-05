@@ -120,6 +120,8 @@
     <ClCompile Include="EditorScene\Submodules\EditorForms.cpp" />
     <ClCompile Include="App\SkinSetSelection.cpp" />
     <ClInclude Include="App\SkinSetSelection.h" />
+    <ClCompile Include="App\OptionSettings.cpp" />
+    <ClInclude Include="App\OptionSettings.h" />
     <ClCompile Include="App\FingerDrumGame.cpp" />
     <ClInclude Include="App\FingerDrumGame.h" />
     <ClCompile Include="App\Main.cpp" />
