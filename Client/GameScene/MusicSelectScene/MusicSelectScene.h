@@ -36,4 +36,5 @@ class MusicSelectScene final : public mrg::scene::GameScene
     std::unique_ptr<MusicSelectView> view_;
     std::unique_ptr<SongPreviewController> preview_;
     bool active_{};
+    bool firstEntry_{true};
 };

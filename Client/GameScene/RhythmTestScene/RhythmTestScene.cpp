@@ -12,7 +12,7 @@ RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStor
           std::make_unique<GameplaySessionController>(
               request ? request->Snapshot()
                       : throw std::invalid_argument("Gameplay requires a launch store."),
-              playback, debug)),
+              playback, debug, request ? request->TakeValidatedSession() : nullptr)),
       view_(std::make_unique<GameplayPresenter>(visuals, texts))
 {
 }

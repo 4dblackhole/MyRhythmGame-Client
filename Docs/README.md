@@ -11,7 +11,7 @@
 | Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `FingerDrum.Modes/Taiko` |
 | YMM/YMP/YME 문법 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model` |
 | BPM·마디·유리수 위치 | [타이밍 문법](Formats/Timing.md) | `FingerDrum.Chart/Timing`, `Utility` |
-| 편집·모드 확장·저장·타임라인·오디오 탭 | [ChartEditor](ChartEditor.md) | EditorWorkspace / EditorForms / Modes의 편집·오디오 계약; `FingerDrum.Chart/Editing`, `FingerDrum.Editor` |
+| 편집 트리·모드 확장·저장·타임라인·오디오 탭 | [ChartEditor](ChartEditor.md) | ChartEditor의 원본 트리/조회 snapshot; EditorWorkspace / EditorForms / Modes; `FingerDrum.Editor` |
 | 곡 목록·포커스·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
 | 에디터용 곡 선택 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성 |
 | 플레이 화면·노트 이미지·키빔 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |

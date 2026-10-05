@@ -9,6 +9,13 @@ using finger_drum::tests::Require;
 
 namespace
 {
+    std::size_t NoteRootCount(const mrg::visual2d::Visual2DNode &node)
+    {
+        std::size_t count = node.Name().starts_with("Lane.Note.") ? 1 : 0;
+        for (const auto &child : node.Children())
+            count += NoteRootCount(*child);
+        return count;
+    }
     class ReplayGame final : public mrg::IGameClient
     {
       public:
@@ -44,6 +51,8 @@ namespace
             session_ = std::move(loaded.session);
             replay_ = std::make_unique<tests::AllNotesReplay>(*session_);
             presenter_.Initialize(services, *session_);
+            Require(NoteRootCount(visuals_.FindCanvas(1)->Root()) == 0,
+                    "Session entry must not eagerly construct every note visual.");
             presenter_.SetVisible(true);
             RegisterAudio(services.audio, song->audioPath);
             const auto initial = presenter_.InitialTimelineTime();
@@ -72,6 +81,14 @@ namespace
             if (time >= replay_->End())
             {
                 replay_->Verify(*session_);
+                presenter_.UpdatePresentation(time + rhythm::RhythmDuration{1'000'000});
+                Require(NoteRootCount(visuals_.FindCanvas(1)->Root()) == 0,
+                        "Expired note subtrees must not accumulate during play.");
+                session_->Reset();
+                presenter_.ApplyFeedback({.reset = true});
+                presenter_.UpdatePresentation(session_->Gear().Lanes().front()->Notes().front()->Timing());
+                Require(NoteRootCount(visuals_.FindCanvas(1)->Root()) > 0,
+                        "Reset/backward presentation must recreate visible notes from cached images.");
                 verified_ = true;
                 return false;
             }

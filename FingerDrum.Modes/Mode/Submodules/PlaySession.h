@@ -13,6 +13,7 @@ namespace finger_drum::mode
         void SetInputMapping(std::map<rhythm::PhysicalKey, rhythm::NoteAction> mapping);
         void SetFreeInputCue(rhythm::NoteAction action, rhythm::AudioCueRequest cue);
         void SetEffects(std::vector<chart::CompiledEffectCommand> effects);
+        const std::vector<chart::CompiledEffectCommand> &Effects() const noexcept { return effects_; }
         void SetHitSoundFiles(std::map<rhythm::SoundId, std::filesystem::path> files);
         [[nodiscard]] const std::map<rhythm::SoundId, std::filesystem::path> &HitSoundFiles()
             const noexcept;
@@ -33,7 +34,8 @@ namespace finger_drum::mode
                                                              rhythm::RhythmTime time);
         [[nodiscard]] rhythm::NoteProcessResult Update(
             rhythm::RhythmTime time, std::span<const rhythm::PhysicalKey> heldPhysicalKeys = {});
-        [[nodiscard]] std::vector<AutomationValue> EvaluateAutomation(
+        // The reference remains valid until the next evaluation or SetEffects.
+        [[nodiscard]] const std::vector<AutomationValue> &EvaluateAutomation(
             rhythm::RhythmTime time) const;
         void Reset() noexcept;
         [[nodiscard]] std::optional<double> AccuracyRate() const noexcept;
@@ -52,6 +54,10 @@ namespace finger_drum::mode
         std::map<rhythm::NoteAction, rhythm::AudioCueRequest> freeInputCues_;
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;
+        std::map<std::pair<chart::EffectCommandType, std::string>, std::vector<std::size_t>> effectTracks_;
+        mutable std::optional<rhythm::RhythmTime> automationTime_;
+        mutable std::vector<AutomationValue> automationValues_;
+        mutable std::vector<std::size_t> automationIndices_;
         std::vector<rhythm::RhythmTime> measureLines_;
         std::map<rhythm::SoundId, std::filesystem::path> hitSoundFiles_;
         std::map<rhythm::SoundId, std::vector<TimedSoundOverride>, std::less<>> soundOverrides_;

@@ -42,7 +42,11 @@ DSP 예약 시각을 재설정하지 않으므로 이 경우의 동기화는 보
 
 YME의 `BusVolume`, `ReverbSend`, `LowPassCutoff`, `HighPassCutoff` 자동화는
 `PlaySession::EvaluateAutomation`에서 timeline 값으로 평가한 후
-`GameplayAudioRouter`가 엔진 bus/effect에 적용합니다. 향후 compressor,
+`GameplayAudioRouter`가 엔진 bus/effect에 적용합니다. 명령은 종류/대상별 시간 인덱스로
+최신 값만 조회하고 같은 시각의 Controller/Presenter 조회는 평가 결과를 공유합니다.
+대상이 같은 실제 출력에 연결되는 경우에도 원래 명령 순서대로 적용합니다.
+Reverb/필터 DSP는 세션 진입에 미리 만들고 bypass 상태로 두며 첫 자동화부터 활성화합니다.
+향후 compressor,
 delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추가하되 노트
 규칙에서는 FMOD 타입을 참조하지 않습니다.
 
@@ -68,7 +72,11 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 
 YME의 `BusVolume`, `ReverbSend`, `LowPassCutoff`, `HighPassCutoff` 자동화는
 `PlaySession::EvaluateAutomation`에서 timeline 값으로 평가한 후
-`GameplayAudioRouter`가 엔진 bus/effect에 적용합니다. 향후 compressor,
+`GameplayAudioRouter`가 엔진 bus/effect에 적용합니다. 명령은 종류/대상별 시간 인덱스로
+최신 값만 조회하고 같은 시각의 Controller/Presenter 조회는 평가 결과를 공유합니다.
+대상이 같은 실제 출력에 연결되는 경우에도 원래 명령 순서대로 적용합니다.
+Reverb/필터 DSP는 세션 진입에 미리 만들고 bypass 상태로 두며 첫 자동화부터 활성화합니다.
+향후 compressor,
 delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추가하되 노트
 규칙에서는 FMOD 타입을 참조하지 않습니다.
 

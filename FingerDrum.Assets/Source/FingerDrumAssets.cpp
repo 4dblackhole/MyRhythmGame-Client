@@ -296,18 +296,20 @@ namespace finger_drum::assets
             return entries;
         }
 
-        [[nodiscard]] std::string PackHash(
-            const std::span<const std::byte> bytes)
+        [[nodiscard]] std::string PackHash()
         {
-            std::uint64_t hash = 14695981039346656037ULL;
-            for (const std::byte value : bytes)
-            {
-                hash ^= std::to_integer<unsigned char>(value);
-                hash *= 1099511628211ULL;
-            }
-            std::ostringstream stream;
-            stream << std::hex << std::setfill('0') << std::setw(16) << hash;
-            return stream.str();
+            // Cache identity is computed at build time; startup need not scan
+            // every font/skin byte. Pack format and existing cache paths stay intact.
+            const auto module = GetModuleHandleW(nullptr);
+            const auto resource = FindResourceW(module, MAKEINTRESOURCEW(102), RT_RCDATA);
+            const auto loaded = resource ? LoadResource(module, resource) : nullptr;
+            const auto data = loaded ? LockResource(loaded) : nullptr;
+            if (!data || SizeofResource(module, resource) != 16)
+                throw std::runtime_error("The built-in asset cache identity is missing.");
+            const std::string hash(static_cast<const char *>(data), 16);
+            if (!std::ranges::all_of(hash, [](char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); }))
+                throw std::runtime_error("The built-in asset cache identity is invalid.");
+            return hash;
         }
 
         [[nodiscard]] bool InstallationIsComplete(
@@ -456,7 +458,7 @@ namespace finger_drum::assets
             }
             const std::span<const std::byte> bytes = EmbeddedPack();
             const std::vector<PackEntry> entries = ParsePack(bytes);
-            const std::string hash = PackHash(bytes);
+            const std::string hash = PackHash();
             installedRoot = InstallPack(bytes, entries, hash);
             errorMessage.clear();
             return true;

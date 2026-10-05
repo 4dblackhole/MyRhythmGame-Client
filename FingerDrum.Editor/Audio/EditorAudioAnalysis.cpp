@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <complex>
+#include <functional>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -73,9 +74,11 @@ namespace finger_drum::editor
         {
             UINT32 channels{}, rate{};
             std::vector<float> samples;
+            std::size_t firstFrame{}, totalFrames{};
         };
 
-        DecodedAudio DecodeAudio(const std::filesystem::path &path, const std::stop_token stop)
+        DecodedAudio DecodeAudio(const std::filesystem::path &path, const std::stop_token stop,
+                                 const std::function<void(DecodedAudio &)> &consume)
         {
             using Microsoft::WRL::ComPtr;
             ComPtr<IMFSourceReader> reader;
@@ -94,6 +97,7 @@ namespace finger_drum::editor
             if (!channels || !rate)
                 throw std::runtime_error("Audio analysis returned an invalid PCM format.");
             DecodedAudio decoded{channels, rate, {}};
+            consume(decoded);
             while (!stop.stop_requested())
             {
                 DWORD flags{};
@@ -108,9 +112,8 @@ namespace finger_drum::editor
                     Check(sample->ConvertToContiguousBuffer(&buffer));
                     DWORD size{};
                     Check(buffer->GetCurrentLength(&size));
-                    const std::size_t count = size / (sizeof(float) * channels),
-                                      oldSize = decoded.samples.size() / channels;
-                    if (oldSize + count > static_cast<std::size_t>(rate) * 60 * 60 * 2)
+                    const std::size_t count = size / (sizeof(float) * channels);
+                    if (decoded.totalFrames + count > static_cast<std::size_t>(rate) * 60 * 60 * 2)
                         throw std::runtime_error(
                             "Audio exceeds the two-hour editor analysis limit.");
                     BYTE *data{};
@@ -119,6 +122,8 @@ namespace finger_drum::editor
                     decoded.samples.insert(decoded.samples.end(), samples,
                                            samples + count * channels);
                     Check(buffer->Unlock());
+                    decoded.totalFrames += count;
+                    consume(decoded);
                 }
                 if (flags & MF_SOURCE_READERF_ENDOFSTREAM)
                     break;
@@ -184,21 +189,7 @@ namespace finger_drum::editor
     AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, const std::stop_token stop)
     {
         MediaRuntime runtime;
-        const auto audio = DecodeAudio(path, stop);
-        if (stop.stop_requested())
-            return {};
-
-        // Frequency metadata stays with the data so files with different
-        // sample rates share an accurate Hz axis in the editor.
         AudioAnalysis result;
-        result.sampleRate = audio.rate;
-        result.maximumFrequencyHz = std::min(20'000.0, audio.rate * .5);
-        result.minimumFrequencyHz = std::min(20.0, result.maximumFrequencyHz * .5);
-        const auto hop = std::max<std::size_t>(1, audio.rate / 100);
-        const auto count = audio.samples.size() / audio.channels;
-        result.secondsPerFrame = static_cast<double>(hop) / audio.rate;
-        result.durationSeconds = static_cast<double>(count) / audio.rate;
-        result.frames.reserve((count + hop - 1) / hop);
         std::array<float, Window> hann{};
         float windowSum = 0;
         for (std::size_t i = 0; i < Window; ++i)
@@ -208,16 +199,47 @@ namespace finger_drum::editor
             windowSum += hann[i];
         }
         std::array<std::size_t, SpectrumBandCount + 1> bins{};
-        for (std::size_t band = 0; band < bins.size(); ++band)
-        {
-            const double frequency = result.minimumFrequencyHz *
-                                     std::pow(result.maximumFrequencyHz / result.minimumFrequencyHz,
-                                              static_cast<double>(band) / SpectrumBandCount);
-            bins[band] = std::clamp(static_cast<std::size_t>(frequency * Window / audio.rate),
-                                    std::size_t{1}, Window / 2);
-        }
-        for (std::size_t start = 0; start < count && !stop.stop_requested(); start += hop)
-            result.frames.push_back(AnalyzeFrame(audio, start, hop, hann, windowSum, bins));
+        std::size_t nextFrame = 0, hop = 1;
+        const auto initialize = [&](const DecodedAudio &audio) {
+            // Metadata follows each source's rate; only the FFT window is retained.
+            result.sampleRate = audio.rate;
+            result.maximumFrequencyHz = std::min(20'000.0, audio.rate * .5);
+            result.minimumFrequencyHz = std::min(20.0, result.maximumFrequencyHz * .5);
+            hop = std::max<std::size_t>(1, audio.rate / 100);
+            result.secondsPerFrame = static_cast<double>(hop) / audio.rate;
+            for (std::size_t band = 0; band < bins.size(); ++band)
+            {
+                const double frequency = result.minimumFrequencyHz *
+                    std::pow(result.maximumFrequencyHz / result.minimumFrequencyHz,
+                             static_cast<double>(band) / SpectrumBandCount);
+                bins[band] = std::clamp(static_cast<std::size_t>(frequency * Window / audio.rate),
+                                       std::size_t{1}, Window / 2);
+            }
+        };
+        const auto consume = [&](DecodedAudio &audio, bool end) {
+            if (!result.sampleRate)
+                initialize(audio);
+            while (nextFrame < audio.totalFrames && !stop.stop_requested() &&
+                   (end || nextFrame + std::max(Window / 2, hop) <= audio.totalFrames))
+            {
+                result.frames.push_back(AnalyzeFrame(audio, nextFrame - audio.firstFrame, hop, hann, windowSum, bins));
+                nextFrame += hop;
+            }
+            // Keep the preceding half-window for the next centered FFT.
+            const auto keepFrom = std::min(audio.totalFrames,
+                nextFrame > Window / 2 ? nextFrame - Window / 2 : 0);
+            if (keepFrom > audio.firstFrame)
+            {
+                audio.samples.erase(audio.samples.begin(), audio.samples.begin() +
+                    static_cast<std::ptrdiff_t>((keepFrom - audio.firstFrame) * audio.channels));
+                audio.firstFrame = keepFrom;
+            }
+        };
+        auto audio = DecodeAudio(path, stop, [&](DecodedAudio &decoded) { consume(decoded, false); });
+        if (stop.stop_requested())
+            return {};
+        consume(audio, true);
+        result.durationSeconds = static_cast<double>(audio.totalFrames) / audio.rate;
         return result;
     }
 } // namespace finger_drum::editor

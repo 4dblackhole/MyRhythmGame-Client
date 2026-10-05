@@ -10,7 +10,7 @@ void EditorView::DrawTiming()
     Box({132, 173, 920, 650}, White, 12);
     Box({1080, 173, 780, 520}, White, 12);
     Text({156, 198, 830, 38}, std::wstring(text.timingColumns), 22);
-    const auto &timing = state_.Document().Pattern().timing;
+    const auto &timing = state_.Document().Timing();
     for (std::size_t i = state_.listOffset; i < timing.size() && i < state_.listOffset + 11; ++i)
     {
         const auto &t = timing[i];

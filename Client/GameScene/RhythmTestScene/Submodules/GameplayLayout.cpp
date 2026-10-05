@@ -121,7 +121,6 @@ void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &sceneRoot
     laneRoot_->Transform().SetRotationRollPitchYaw(0.0F, 0.0F, -DirectX::XM_PIDIV2);
 
     CreateLaneSurface();
-    CreateMeasureLineVisuals();
 
     const auto beamImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"LaneLight.png"));
     keyBeam_.Initialize(*laneRoot_, beamImage, ScaledImageSize(screenVisuals_, beamImage));
@@ -265,7 +264,7 @@ void GameplayPresenter::UpdateNoteTravelLayout()
         return;
     }
 
-    float largestHeadRadius = 0.0F;
+    float largestHeadRadius = largestHeadRadius_;
     for (const auto &[id, layers] : noteVisuals_)
     {
         static_cast<void>(id);

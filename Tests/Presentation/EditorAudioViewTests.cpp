@@ -4,6 +4,7 @@
 #include "EditorModeTests.h"
 #include "EditorScene/Submodules/EditorView.h"
 #include "EditorScene/Submodules/Modes/EditorModeFactory.h"
+#include "GameScene/MusicSelectScene/Submodules/SongPreviewController.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -11,6 +12,13 @@
 namespace
 {
     namespace v = mrg::visual2d;
+    std::size_t previewLoadCalls{};
+    std::unique_ptr<mrg::audio::IAudioClipBackend> CountClipLoads(mrg::audio::IAudioBackend &backend,
+        const std::filesystem::path &path, mrg::audio::AudioLoadMode mode, std::string &error)
+    {
+        ++previewLoadCalls;
+        return mrg::audio::CreateFmodAudioClipBackend(backend, path, mode, error);
+    }
     void Check(bool condition, const char *message)
     {
         if (!condition)
@@ -31,7 +39,9 @@ namespace
         void SubmitScreen(const v::Visual2DCanvas &canvas, const mrg::graphics::RenderContext &, v::Point,
                           std::uint32_t) override
         {
-            packets = canvas.BuildDrawList();
+            packets.clear();
+            const auto batches = canvas.BuildDrawList();
+            v::ForEachDrawPrimitive(batches, [this](const v::DrawPacket &packet) { packets.push_back(packet); });
         }
         void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
                          v::Size, const DirectX::XMFLOAT4X4 &) override
@@ -77,6 +87,69 @@ int main()
         Check(!songs.songs.empty() && !songs.songs.front().patterns.empty(), "Real catalog missing");
         const auto &song = songs.songs.front();
         const auto &selected = song.patterns.front();
+        {
+            mrg::audio::AudioSystem previewAudio;
+            mrg::audio::AudioConfig config;
+            config.preferredBackend = mrg::audio::AudioOutputBackend::NoSound;
+            std::string error;
+            Check(previewAudio.Initialize(config, mrg::audio::CreateFmodAudioBackend,
+                                           CountClipLoads, error), error.c_str());
+            auto clip = previewAudio.LoadSound(song.audioPath, mrg::audio::AudioLoadMode::StreamAsync, error);
+            Check(clip != nullptr, error.c_str());
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+            auto state = clip->LoadState(error);
+            while (state == mrg::audio::AudioClipLoadState::Loading && std::chrono::steady_clock::now() < deadline)
+            {
+                previewAudio.Update();
+                std::this_thread::sleep_for(std::chrono::milliseconds{1});
+                state = clip->LoadState(error);
+            }
+            Check(state == mrg::audio::AudioClipLoadState::Ready, "Async MP3 never became ready");
+            auto voice = clip->Play({}, nullptr, error);
+            Check(voice != nullptr, "Ready async stream must play");
+            voice.reset();
+            clip.reset();
+
+            mrg::audio::AudioPlaybackManager playback;
+            SongPreviewController preview(playback);
+            preview.Initialize(previewAudio);
+            SongSelectionState selection;
+            selection.catalog_.songs.resize(2);
+            selection.catalog_.songs[0].audioPath = song.audioPath;
+            selection.catalog_.songs[1].audioPath = song.audioPath / "not-a-file";
+            selection.visibleSongIndices_ = {0, 1};
+            previewLoadCalls = 0;
+            const auto poll = [&] {
+                previewAudio.Update();
+                playback.Update();
+                preview.UpdatePreviewAudio(.02);
+                preview.SyncPreviewToFocusedSong(selection, true);
+                std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            };
+            const auto awaitVoice = [&] {
+                const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+                do { poll(); } while (!playback.PlaybackCount() && std::chrono::steady_clock::now() < deadline);
+                Check(playback.PlaybackCount() == 1, "Prepared preview must start one managed voice");
+            };
+            awaitVoice();
+            Check(previewLoadCalls == 1, "Focused ready preview must not reload");
+            selection.focusedSongPosition_ = 1;
+            for (int i = 0; i < 100; ++i) poll();
+            Check(previewLoadCalls == 2, "Failed preview must not reopen its file every Update");
+            selection.focusedSongPosition_ = 0;
+            awaitVoice();
+            Check(previewLoadCalls == 3, "Changing selection must allow preview loading again");
+            preview.StopPreviewAudio();
+            Check(playback.PlaybackCount() == 0, "Leaving preview must stop its own voice");
+            for (int i = 0; i < 10; ++i) preview.UpdatePreviewAudio(.02);
+        }
+        {
+            EditorWorkspace cancelled({selected.patternPath, selected.effectPath, song.audioPath, selected.pattern.mode});
+            cancelled.Initialize();
+            cancelled.UpdateAnalysis();
+            cancelled.Analysis().Stop();
+            Check(!cancelled.Analysis().Running(), "Stopped worker must detach its editor immediately");
+        }
         EditorWorkspace state({selected.patternPath, selected.effectPath, song.audioPath, selected.pattern.mode});
         state.Initialize();
         state.UpdateAnalysis();

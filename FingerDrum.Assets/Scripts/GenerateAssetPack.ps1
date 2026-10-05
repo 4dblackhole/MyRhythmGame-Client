@@ -26,6 +26,7 @@ $assetProjectRoot = [IO.Path]::GetFullPath($ProjectDirectory)
 $generatedRoot = [IO.Path]::GetFullPath($OutputDirectory)
 $packPath = Join-Path $generatedRoot 'BuiltInAssets.fdpak'
 $resourcePath = Join-Path $generatedRoot 'FingerDrum.Assets.rc'
+$hashPath = Join-Path $generatedRoot 'BuiltInAssets.hash'
 $temporaryPack = $packPath + '.tmp'
 
 $sourceGroups = @(
@@ -119,7 +120,24 @@ else {
 }
 
 $resourcePackPath = $packPath.Replace('\', '/')
-$resourceText = "// Generated from FingerDrum.Assets. Pack SHA-256: $packHash`r`n101 RCDATA `"$resourcePackPath`"`r`n"
+if (-not ('FingerDrumAssetHasher' -as [type])) {
+    Add-Type -TypeDefinition @'
+public static class FingerDrumAssetHasher {
+    public static string Hash(string path) {
+        ulong value = 14695981039346656037UL;
+        foreach (byte b in System.IO.File.ReadAllBytes(path))
+            value = unchecked((value ^ b) * 1099511628211UL);
+        return value.ToString("x16", System.Globalization.CultureInfo.InvariantCulture);
+    }
+}
+'@
+}
+$cacheHash = [FingerDrumAssetHasher]::Hash($packPath)
+if (-not (Test-Path -LiteralPath $hashPath) -or [IO.File]::ReadAllText($hashPath) -ne $cacheHash) {
+    [IO.File]::WriteAllText($hashPath, $cacheHash, [Text.Encoding]::ASCII)
+}
+$resourceHashPath = $hashPath.Replace('\', '/')
+$resourceText = "// Generated from FingerDrum.Assets. Pack SHA-256: $packHash`r`n101 RCDATA `"$resourcePackPath`"`r`n102 RCDATA `"$resourceHashPath`"`r`n"
 $currentResourceText = if (Test-Path -LiteralPath $resourcePath -PathType Leaf) {
     [IO.File]::ReadAllText($resourcePath)
 } else {

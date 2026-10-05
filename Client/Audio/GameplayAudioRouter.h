@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <span>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -47,6 +48,7 @@ namespace finger_drum::audio
             const rhythm::RhythmTimer& timer);
         void ApplyAutomation(
             std::span<const mode::AutomationValue> values);
+        void PrepareAutomation(std::span<const chart::CompiledEffectCommand> commands);
         [[nodiscard]] bool SetVoicesPaused(
             bool paused,
             std::string& errorMessage);
@@ -89,5 +91,6 @@ namespace finger_drum::audio
         std::map<const mrg::audio::AudioClip*, mrg::audio::AudioPlaybackId>
             sampleVoices_;
         std::string lastError_;
+        std::set<std::pair<std::string, mrg::audio::AudioEffectType>> bypassedEffects_;
     };
 }

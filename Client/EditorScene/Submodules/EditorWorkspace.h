@@ -99,4 +99,5 @@ class EditorWorkspace final : public IEditorContext
     EditorAnalysisController analysis_;
     EditorScoreState score_;
     double timeMs_{};
+    std::uint64_t audioSourceRevision_{};
 };

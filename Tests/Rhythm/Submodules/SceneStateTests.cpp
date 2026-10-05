@@ -43,6 +43,12 @@ namespace finger_drum::tests
         Require(state.focusedSongPosition_ == 0, "Song focus clamps to the filtered list.");
 
         GameplayLaunchStore store;
+        auto prepared = std::make_unique<mode::PlaySession>();
+        auto *identity = prepared.get();
+        store.SetValidated({"validated.ymp", {}, "music.mp3", "Taiko"}, std::move(prepared));
+        auto transferred = store.TakeValidatedSession();
+        Require(transferred.get() == identity && !store.TakeValidatedSession(),
+                "A validated play session must transfer ownership once without reparsing.");
         store.Set({"first.ymp", {}, "first.mp3", "Taiko"});
         auto playing = store.Snapshot();
         store.Set({"second.ymp", "second.yme", "second.mp3", "Taiko"});

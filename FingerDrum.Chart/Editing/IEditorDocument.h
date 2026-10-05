@@ -11,10 +11,25 @@ namespace finger_drum::chart
     {
       public:
         virtual ~IEditorDocument() = default;
-        virtual const PatternDocument &Pattern() const noexcept = 0;
-        virtual const EffectDocument &Effects() const noexcept = 0;
+        virtual const PatternDocument &Pattern() const = 0;
+        virtual const std::filesystem::path &SourcePath() const { return Pattern().sourcePath; }
+        virtual const EffectDocument &Effects() const = 0;
         virtual const MusicalTimeline &Timeline() const noexcept = 0;
-        virtual const std::vector<CompiledPatternNote> &Notes() const noexcept = 0;
+        virtual const std::vector<CompiledPatternNote> &Notes() const = 0;
+        // Adapters may retain the full projection; indexed documents override these queries.
+        virtual std::vector<CompiledPatternNote> NotesInMeasures(std::int64_t, std::int64_t) const { return Notes(); }
+        virtual std::vector<CompiledPatternNote> NotesInTimeRange(rhythm::RhythmTime, rhythm::RhythmTime) const { return Notes(); }
+        virtual const std::vector<TimingDirective> &Timing() const { return Pattern().timing; }
+        virtual std::pair<rhythm::RhythmTime, rhythm::RhythmTime> NoteTimeRange() const
+        {
+            const auto &notes = Notes();
+            return notes.empty() ? std::pair{rhythm::RhythmTime{}, rhythm::RhythmTime{}}
+                                 : std::pair{notes.front().timing, notes.back().timing};
+        }
+        virtual std::uint64_t AudioSourceRevision() const noexcept { return Revision(); }
+        virtual double EffectValueAt(EffectCommandType type, MusicalPosition position, double fallback = 1) const
+        { return Timeline().EffectValueAt(Effects(), type, position, fallback); }
+        virtual double MinimumScrollMultiplier() const { return 1; }
         virtual bool Dirty() const noexcept = 0;
         virtual std::uint64_t Revision() const noexcept = 0;
         virtual void Replace(PatternDocument pattern, EffectDocument effects) = 0;

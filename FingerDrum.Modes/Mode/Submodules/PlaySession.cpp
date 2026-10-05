@@ -42,7 +42,17 @@ namespace finger_drum::mode
 
     void PlaySession::SetEffects(std::vector<chart::CompiledEffectCommand> effects)
     {
+        decltype(effectTracks_) tracks;
+        for (std::size_t i = 0; i < effects.size(); ++i)
+            tracks[{effects[i].command.type, effects[i].command.target}].push_back(i);
+        for (auto &[key, indices] : tracks)
+            std::ranges::stable_sort(indices, {}, [&effects](std::size_t i) { return effects[i].timing; });
         effects_ = std::move(effects);
+        effectTracks_ = std::move(tracks);
+        automationTime_.reset();
+        automationValues_.clear();
+        automationValues_.reserve(effectTracks_.size());
+        automationIndices_.reserve(effectTracks_.size());
     }
 
     void PlaySession::SetMeasureLines(std::vector<rhythm::RhythmTime> measureLines)
@@ -170,20 +180,34 @@ namespace finger_drum::mode
         return result;
     }
 
-    std::vector<AutomationValue> PlaySession::EvaluateAutomation(
+    const std::vector<AutomationValue> &PlaySession::EvaluateAutomation(
         const rhythm::RhythmTime time) const
     {
-        std::vector<AutomationValue> values;
-        for (const chart::CompiledEffectCommand &command : effects_)
+        if (automationTime_ == time)
+            return automationValues_;
+        automationTime_.reset();
+        auto &selected = automationIndices_;
+        selected.clear();
+        for (const auto &[key, indices] : effectTracks_)
         {
-            if (time < command.timing)
-            {
-                continue;
-            }
-            values.push_back(AutomationValue{command.command.type, command.command.target,
-                                             Interpolate(command, time)});
+            const auto next = std::ranges::upper_bound(indices, time, {},
+                [this](std::size_t i) { return effects_[i].timing; });
+            if (next != indices.begin())
+                selected.push_back(*std::prev(next));
         }
-        return values;
+        // Preserve authored order across targets that share the same output bus.
+        std::ranges::sort(selected);
+        automationValues_.resize(selected.size());
+        for (std::size_t i = 0; i < selected.size(); ++i)
+        {
+            const auto &command = effects_[selected[i]];
+            auto &value = automationValues_[i];
+            value.type = command.command.type;
+            value.target = command.command.target;
+            value.value = Interpolate(command, time);
+        }
+        automationTime_ = time;
+        return automationValues_;
     }
 
     void PlaySession::Reset() noexcept
@@ -192,6 +216,7 @@ namespace finger_drum::mode
         accuracySum_ = 0.0;
         finalizedNoteCount_ = 0;
         lastNoteAccuracy_.reset();
+        automationTime_.reset();
     }
 
     void PlaySession::AccumulateAccuracy(const rhythm::NoteProcessResult &result)

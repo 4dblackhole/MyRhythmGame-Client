@@ -248,6 +248,32 @@ Mode: Taiko
 
     void TestTaikoInputBindings()
     {
+        {
+            mode::PlaySession session;
+            chart::EffectCommand volume;
+            volume.type = chart::EffectCommandType::BusVolume;
+            volume.target = "Music";
+            volume.beginValue = volume.endValue = .25;
+            auto ramp = volume;
+            ramp.beginValue = .5;
+            ramp.endValue = 1;
+            ramp.curve = chart::AutomationCurve::Linear;
+            auto other = volume;
+            other.target = "HitSound";
+            other.beginValue = other.endValue = .8;
+            session.SetEffects({{volume, rhythm::RhythmTime{0}, {}},
+                                {ramp, rhythm::RhythmTime{100'000}, rhythm::RhythmDuration{100'000}},
+                                {other, rhythm::RhythmTime{100'000}, {}}});
+            const auto &values = session.EvaluateAutomation(rhythm::RhythmTime{150'000});
+            Require(values.size() == 2 && std::abs(values[0].value - .75) < 1e-9 &&
+                        std::abs(values[1].value - .8) < 1e-9 &&
+                        session.EvaluateAutomation(rhythm::RhythmTime{150'000}).data() == values.data(),
+                    "Automation must select the latest command per target, interpolate and reuse same-time results.");
+            Require(session.EvaluateAutomation(rhythm::RhythmTime{50'000}).size() == 1 &&
+                        session.EvaluateAutomation(rhythm::RhythmTime{50'000})[0].value == .25 &&
+                        session.EvaluateAutomation(rhythm::RhythmTime{-1}).empty(),
+                    "Automation lookup must remain correct after backward seeks and before the first command.");
+        }
         Require(mode::TaikoInputBindings.size() == 4,
                 "Taiko must expose one input binding for every playfield key.");
 

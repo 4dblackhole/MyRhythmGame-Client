@@ -97,3 +97,14 @@ PNG 자체의 밝기 차이와 함께 강·약 상태가 명확히 구분됩니�
 `GameplayKeys`, `GameplayFeedbackVisuals`에 표시별 구현을 둡니다. `GameplaySessionController`는
 시간·입력·오디오를 소유하고 `GameplayFeedback`으로 표시할 이벤트만 전달합니다.
 UI 수정 시 해당 표시 파일과 `GameplaySupport.h`의 관련 상수만 읽으면 됩니다.
+
+## 표시 객체의 생성과 재사용
+
+세션 진입 때 스킨 이미지를 등록하고 노트 모델의 비소유 ID 인덱스를 만듭니다.
+노트의 head/body/HUD 표시 노드는 화면 snapshot에 처음 포함될 때 생성합니다.
+롱노트 tick은 현재 보이는 시각 구간만 이진 검색하고 표시 객체를 재사용하며,
+원래 tick 시각 배열과 판정 규칙은 유지합니다. 마디선도 보이는 구간의 pool만 갱신합니다.
+화면 구간과 완료 연출을 벗어난 노드 subtree는 제거하여 지나간 노트가 누적되지 않습니다.
+되돌아 탐색하면 같은 모델 ID와 등록된 이미지로 표시를 다시 생성합니다.
+이미지 경로를 노트 출현 때 다시 조회하거나 파일을 다시 읽지 않습니다.
+표시가 관찰하는 PlaySession은 Presenter보다 오래 살아야 하며 Shutdown에서 관찰을 해제합니다.

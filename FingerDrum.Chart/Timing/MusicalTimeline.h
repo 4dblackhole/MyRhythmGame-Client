@@ -36,6 +36,7 @@ namespace finger_drum::chart
         [[nodiscard]] double BaseBpm() const noexcept { return baseBpm_; }
         [[nodiscard]] double EffectValueAt(const EffectDocument& effects,
             EffectCommandType type, MusicalPosition position, double defaultValue = 1) const;
+        [[nodiscard]] double EffectValueAt(const EffectCommand&, MusicalPosition) const;
 
     private:
         struct TempoPoint
@@ -69,6 +70,7 @@ namespace finger_drum::chart
         std::vector<Rational> measurePrefixSums_;
         std::vector<TempoPoint> tempoPoints_;
         std::vector<ScrollPoint> scrollPoints_;
+        std::vector<std::pair<Rational, long double>> delayPrefixSums_;
         bool scrollTimesMonotonic_{true};
     };
 }

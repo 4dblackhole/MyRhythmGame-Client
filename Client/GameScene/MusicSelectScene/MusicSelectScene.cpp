@@ -39,8 +39,11 @@ void MusicSelectScene::Initialize(const mrg::EngineServices &services)
 }
 void MusicSelectScene::BeginScene()
 {
-    selection_->catalog_ =
-        finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
+    // Initialize already loaded the first catalog. Re-entry still observes user edits.
+    if (!firstEntry_)
+        selection_->catalog_ =
+            finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
+    firstEntry_ = false;
     view_->RebuildVisibleSongs();
     active_ = true;
     view_->SetVisible(true);
@@ -114,6 +117,7 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
         return false;
     }
 
+    std::unique_ptr<finger_drum::mode::PlaySession> prepared;
     try
     {
         finger_drum::mode::ModeLoadResult validation =
@@ -127,6 +131,7 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
             view_->RefreshSelectionPresentation();
             return false;
         }
+        prepared = std::move(validation.session);
     }
     catch (const std::exception &exception)
     {
@@ -137,8 +142,8 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
     }
 
     selection_->ClearLaunchError();
-    launchRequest_->Set(
-        {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode});
+    launchRequest_->SetValidated(
+        {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode}, std::move(prepared));
     if (!scenes.ChangeScene(finger_drum::scene_ids::RhythmTest))
     {
         throw std::runtime_error("Failed to enter transient gameplay.");

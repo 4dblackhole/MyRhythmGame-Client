@@ -58,6 +58,8 @@ void GameplayPresenter::Shutdown() noexcept
 {
     keyBeam_.Shutdown();
     noteVisuals_.clear();
+    noteModels_.clear();
+    noteImages_.clear();
     presentedNoteIds_.clear();
     completionEffects_.clear();
     measureLineVisuals_.clear();
@@ -105,6 +107,9 @@ void GameplayPresenter::ApplyFeedback(const GameplayFeedback &feedback)
         {
             continue;
         }
+        if (!noteVisuals_.contains(event.noteId))
+            if (const auto model = noteModels_.find(event.noteId); model != noteModels_.end())
+                CreateNoteVisual(*model->second);
         const auto visual = noteVisuals_.find(event.noteId);
         if (visual != noteVisuals_.end() && visual->second.focusType != FocusNoteType::None)
         {

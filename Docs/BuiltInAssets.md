@@ -27,7 +27,8 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 ## 빌드와 실행 흐름
 
 1. `Scripts/GenerateAssetPack.ps1`이 상대 경로, 크기, offset과 원본 bytes를
-   결정적인 순서로 `BuiltInAssets.fdpak`에 기록합니다.
+   결정적인 순서로 `BuiltInAssets.fdpak`에 기록합니다. 기존 캐시와 같은 FNV hash를
+   빌드 시 계산해 작은 RCDATA 102로 함께 넣으므로 실행 때 팩 전체를 hash하지 않습니다.
 2. 생성된 RC를 컴파일한 `FingerDrum.Assets.res`를 `MRG.Client`가 링크합니다.
 3. `wWinMain`이 엔진 초기화 전에 RCDATA를 검사합니다.
 4. 팩은 `%LOCALAPPDATA%/FingerDrum/BuiltInAssets/<pack hash>`에 임시 디렉터리를

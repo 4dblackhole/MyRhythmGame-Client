@@ -13,6 +13,7 @@ void GameplaySessionController::InitializeAudio(const mrg::EngineServices &servi
 
     std::string hitSoundError;
     RegisterTaikoSounds(hitSoundError);
+    audioRouter_.PrepareAutomation(session_->Effects());
 
     // Decode chart resources once on session entry, never on a key press.
     // Indices resolving to the same file share one sample/channel.

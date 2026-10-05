@@ -35,7 +35,7 @@ void EditorView::Initialize(const mrg::EngineServices &services)
 void EditorView::BuildContent()
 {
     controls.clear();
-    visual->packets.clear();
+    visual->Clear();
     Box({0, 0, 1920, 1080}, Background);
     DrawNavigation();
     if (state_.Tab() == EditorTab::Pattern)
@@ -67,17 +67,14 @@ void EditorView::BuildContent()
     SyncDivisionSlider();
     SyncTimelineSlider();
     DrawFooter();
+    visual->Finish();
     textRevision_ = texts_.Revision();
     state_.FinishBuild();
 }
 
 void EditorView::Box(v::Rect r, v::Color color, float radius)
 {
-    v::DrawPacket p{};
-    p.bounds = {r.x - 960, 540 - r.y - r.height, r.width, r.height};
-    p.color = color;
-    p.cornerRadius = radius;
-    visual->packets.push_back(std::move(p));
+    visual->AddRectangle({r.x - 960, 540 - r.y - r.height, r.width, r.height}, color, radius);
 }
 
 void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
@@ -89,7 +86,7 @@ void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
     p.text = std::move(text);
     p.font = texts_.CurrentProfile().font;
     p.fontSize = size;
-    visual->packets.push_back(std::move(p));
+    visual->AddText(std::move(p));
 }
 
 const finger_drum::texts::EditorTextSet &EditorView::Texts() const noexcept
@@ -162,7 +159,7 @@ void EditorView::Build()
         state_.SetStatus(error.what());
         buildFailed_ = true;
         controls.clear();
-        visual->packets.clear();
+        visual->Clear();
         sliderInput_.Reset(*canvas.Get());
         divisionSliderNode_->SetVisible(false);
         timelineSliderNode_->SetVisible(false);
@@ -171,6 +168,7 @@ void EditorView::Build()
         DrawNavigation();
         DrawTimeInput({1600, 887, 280, 32});
         DrawFooter();
+        visual->Finish();
         state_.FinishBuild();
         textRevision_ = texts_.Revision();
     }

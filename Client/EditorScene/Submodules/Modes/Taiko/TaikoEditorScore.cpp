@@ -2,12 +2,47 @@
 #include "../../EditorTime.h"
 #include "TaikoEditorMode.h"
 #include <algorithm>
+#include <limits>
 using namespace editor_ui;
 
 namespace
 {
     constexpr v::Rect RealtimeLane{164, 351, 1684, 228};
     constexpr v::Color Don{1, .33F, .43F, 1}, Kat{.10F, .76F, .82F, 1}, Gold{.96F, .80F, .29F, 1};
+
+    std::pair<finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmTime> GridTimeRange(
+        const chart::IEditorDocument &document, std::int64_t measure, int subdivisions, int count)
+    {
+        const auto at = [&](int index) { return document.Timeline().Compile({measure, {index, subdivisions}}); };
+        auto low = at(0), high = at(count - 1);
+        if (low > high)
+            std::swap(low, high);
+        // Tempo/delay discontinuities can lie inside a measure, including negative delays.
+        for (const auto &directive : document.Timing())
+            if (directive.position.measure == measure)
+            {
+                const auto nearestIndex = static_cast<int>(std::clamp(
+                    std::floor(directive.position.fraction.Value() * subdivisions), 0.0L,
+                    static_cast<long double>(count - 1)));
+                for (int index = std::max(0, nearestIndex - 1); index <= std::min(count - 1, nearestIndex + 1); ++index)
+                {
+                    const auto time = at(index);
+                    low = std::min(low, time);
+                    high = std::max(high, time);
+                }
+            }
+        return {low, high};
+    }
+
+    finger_drum::rhythm::RhythmTime BoundedTime(long double value)
+    {
+        using Time = finger_drum::rhythm::RhythmTime;
+        if (value <= static_cast<long double>(std::numeric_limits<Time::rep>::min()))
+            return Time::min();
+        if (value >= static_cast<long double>(std::numeric_limits<Time::rep>::max()))
+            return Time::max();
+        return Time{static_cast<Time::rep>(value)};
+    }
 } // namespace
 
 void TaikoEditorMode::ScrollScore(IEditorContext &state, int direction)
@@ -47,7 +82,9 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
                         std::to_wstring(m + 1) + L"  " + Wide(Fraction(timeline.MeasureLength(m))), 13);
             const auto count = static_cast<int>(
                 std::min(4096.0L, std::ceil(timeline.MeasureLength(m).Value() * subdivisionsPerWholeNote)));
-            for (int i = 0; i < count; ++i)
+            // Subpixel helper lines share a visible line; snapping still uses the full division.
+            const int drawStride = std::max(1, static_cast<int>(std::ceil(count / 401.0)));
+            for (int i = 0; i < count; i += drawStride)
             {
                 const float gx = x + static_cast<float>(chart::Rational{i, subdivisionsPerWholeNote}.Value() /
                                                         timeline.MeasureLength(m).Value()) *
@@ -57,7 +94,7 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
         }
     }
     std::optional<chart::PatternNote> head;
-    for (const auto &note : state.Document().Notes())
+    for (const auto &note : state.Document().NotesInMeasures(state.Score().firstMeasure, state.Score().firstMeasure + 24))
     {
         const auto &n = note.note;
         if (n.actionType == 1 && !head)
@@ -82,7 +119,7 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
         Circle(canvas, x, y, n.keyType, (n.keyType >= 3 && n.keyType <= 5) ? 15.0F : 10.0F);
         noteHits_.push_back({{x, y}, n.sourceOrder});
     }
-    for (const auto &t : state.Document().Pattern().timing)
+    for (const auto &t : state.Document().Timing())
         if (t.type == chart::TimingDirectiveType::Bpm && t.position.measure >= state.Score().firstMeasure &&
             t.position.measure < state.Score().firstMeasure + 24)
             canvas.Text({xAt(t.position),
@@ -110,30 +147,43 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     };
     const auto currentMeasure = editor_time::MeasureNearTime(timeline, state.TimeMilliseconds());
     const auto gridBegin = std::max<std::int64_t>(0, currentMeasure - 1);
+    const long double pixelsPerMicrosecond = timeline.BaseBpm() / 240'000'000.0L * pixelsPerWholeNote;
+    const auto minimumSpeed = state.Document().MinimumScrollMultiplier();
+    const auto visibleBegin = BoundedTime(currentTime.count() +
+        (RealtimeLane.x - 230.0L - 110) / (pixelsPerMicrosecond * minimumSpeed));
+    const auto visibleEnd = BoundedTime(currentTime.count() +
+        (RealtimeLane.x + RealtimeLane.width - 230.0L + 110) / (pixelsPerMicrosecond * minimumSpeed));
     // Drawing and input share the same visible snap positions.
     for (std::int64_t m = gridBegin; m < currentMeasure + 32; ++m)
     {
         const int count = static_cast<int>(
             std::min(4096.0L, std::ceil(timeline.MeasureLength(m).Value() * subdivisionsPerWholeNote)));
+        const auto [firstTime, lastTime] = GridTimeRange(state.Document(), m, subdivisionsPerWholeNote, count);
+        if (lastTime < visibleBegin || firstTime > visibleEnd)
+            continue;
+        float lastDrawnX = -std::numeric_limits<float>::infinity();
         for (int i = 0; i < count; ++i)
         {
             chart::MusicalPosition p{m, {i, subdivisionsPerWholeNote}};
             const auto speed =
-                timeline.EffectValueAt(state.Document().Effects(), chart::EffectCommandType::NoteSpeed, p) *
-                timeline.EffectValueAt(state.Document().Effects(), chart::EffectCommandType::ScrollSpeed, p);
+                state.Document().EffectValueAt(chart::EffectCommandType::NoteSpeed, p) *
+                state.Document().EffectValueAt(chart::EffectCommandType::ScrollSpeed, p);
             const float x = xAtTime(timeline.Compile(p), speed);
             if (x < RealtimeLane.x || x > RealtimeLane.x + RealtimeLane.width)
                 continue;
-            if (i != 0 || timeline.EffectValueAt(state.Document().Effects(),
-                                                 chart::EffectCommandType::MeasureLineVisible, p) >= .5)
+            if ((i == 0 || std::abs(x - lastDrawnX) >= 1) &&
+                (i != 0 || state.Document().EffectValueAt(chart::EffectCommandType::MeasureLineVisible, p) >= .5))
+            {
                 canvas.Box({x, 361, i == 0 ? 3.0F : 1.0F, 202}, {.3F, .34F, .42F, i == 0 ? 1.0F : .45F});
+                lastDrawnX = x;
+            }
             realtimeGrid_.push_back({x, p});
         }
     }
     // A linked tail uses its head's speed so the whole interval stays aligned.
     std::optional<float> headX;
     double headSpeed = 1;
-    for (const auto &n : state.Document().Notes())
+    for (const auto &n : state.Document().NotesInTimeRange(visibleBegin, visibleEnd))
     {
         const auto speed = n.note.actionType == 2 && headX ? headSpeed : n.scrollMultiplier;
         const float x = xAtTime(n.timing, speed);
@@ -155,7 +205,7 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
         Circle(canvas, x, 465, n.note.keyType, (n.note.keyType >= 3 && n.note.keyType <= 5) ? 52.0F : normalHeadRadius);
         noteHits_.push_back({{x, 465}, n.note.sourceOrder});
     }
-    for (const auto &t : state.Document().Pattern().timing)
+    for (const auto &t : state.Document().Timing())
     {
         if (t.type != chart::TimingDirectiveType::Bpm)
             continue;

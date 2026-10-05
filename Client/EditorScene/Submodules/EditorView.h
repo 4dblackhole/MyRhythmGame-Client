@@ -5,6 +5,7 @@
 #include "Texts/EditorScene/EditorTexts.h"
 #include <functional>
 #include <vector>
+#include <tuple>
 
 class EditorView final : public IEditorModeCanvas
 {
@@ -81,5 +82,10 @@ class EditorView final : public IEditorModeCanvas
     static constexpr v::Rect DivisionSliderRect{1240, 6, 480, 26};
     static constexpr v::Rect TimelineSliderRect{205, 915, 1645, 44};
     std::vector<Control> controls;
+    using AudioColumnsKey = std::tuple<double, double, double, double, std::uint64_t>;
+    std::optional<AudioColumnsKey> audioColumnsKey_;
+    const finger_drum::chart::IEditorDocument *audioColumnsDocument_{};
+    std::uint64_t audioColumnsDocumentRevision_{};
+    std::vector<finger_drum::editor::SpectrumFrame> musicColumns_, hitColumns_;
     std::uint32_t width{1280}, height{720};
 };

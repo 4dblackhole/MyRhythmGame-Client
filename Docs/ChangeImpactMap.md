@@ -30,6 +30,8 @@
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |
 | 문법 추가 | `FingerDrum.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
 | BPM/마디 시간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | Formats/Timing; ChartParser/ChartEditorTests |
+| 편집 원본 트리·안정 ID·구간 조회 | `FingerDrum.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests; TaikoEditorScore, EditorWorkspace |
+| 플레이 자동화 검색·DSP 준비 | `FingerDrum.Modes/Mode/Submodules/PlaySession.*`, `Client/Audio/GameplayAudioRouter.*` | TaikoModeTests; GameplayAudio, 전체 노트 replay |
 
 테스트 파일은 `Tests/Rhythm/Submodules/`에 있으며 같은 테스트 실행 파일에 링크됩니다.
 ClientLogic는 곡 선택 상태를 Client와 테스트에 같은 라이브러리로 제공합니다.

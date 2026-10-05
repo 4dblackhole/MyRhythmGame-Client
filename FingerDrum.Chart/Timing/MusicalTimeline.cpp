@@ -416,7 +416,11 @@ namespace finger_drum::chart
             if (c.type == type && c.position <= position &&
                 (!selected || selected->position <= c.position)) selected = &c;
         if (!selected) return defaultValue;
-        const auto& c = *selected;
+        return EffectValueAt(*selected, position);
+    }
+
+    double MusicalTimeline::EffectValueAt(const EffectCommand& c, MusicalPosition position) const
+    {
         double amount = 1;
         if (c.endPosition)
         {
@@ -470,6 +474,7 @@ namespace finger_drum::chart
             const long double before = SecondsAt(position) * 1'000'000.0L +
                 accumulatedDelay + static_cast<long double>(offsetMilliseconds_) * 1'000.0L;
             accumulatedDelay += delay;
+            delayPrefixSums_.emplace_back(position, accumulatedDelay / 1'000.0L);
             const auto nextTempo = std::ranges::upper_bound(
                 tempoPoints_, position, {}, &TempoPoint::position);
             const TempoPoint& tempo = *std::prev(nextTempo);
@@ -495,15 +500,8 @@ namespace finger_drum::chart
     long double MusicalTimeline::DelayMillisecondsAt(
         const Rational& position) const
     {
-        long double result = 0.0L;
-        for (const TimingDirective& directive : directives_)
-        {
-            if (directive.type == TimingDirectiveType::DelayMilliseconds &&
-                PositionToWholeNotes(directive.position) <= position)
-            {
-                result += static_cast<long double>(directive.value);
-            }
-        }
-        return result;
+        const auto next = std::ranges::upper_bound(delayPrefixSums_, position, {},
+            [](const auto &point) { return point.first; });
+        return next == delayPrefixSums_.begin() ? 0.0L : std::prev(next)->second;
     }
 }

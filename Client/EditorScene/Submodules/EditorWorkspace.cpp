@@ -12,6 +12,7 @@ void EditorWorkspace::Initialize()
         editor_ = mode_->OpenDocument(request_);
     if (!editor_)
         throw std::runtime_error("Editor mode did not provide a document.");
+    audioSourceRevision_ = editor_->AudioSourceRevision();
 }
 void EditorWorkspace::UpdateAnalysis()
 {
@@ -22,7 +23,11 @@ void EditorWorkspace::DocumentChanged()
 {
     // Resolved path comparison prevents unnecessary worker restarts. Marker
     // invalidation follows document identity/revision, regardless of active tab.
-    analysis_.Invalidate();
+    if (audioSourceRevision_ != Document().AudioSourceRevision())
+    {
+        audioSourceRevision_ = Document().AudioSourceRevision();
+        analysis_.Invalidate();
+    }
     RequestRebuild();
 }
 void EditorWorkspace::Replace(chart::PatternDocument pattern, chart::EffectDocument effects)
@@ -131,12 +136,9 @@ void EditorWorkspace::ApplyEffect()
 std::pair<double, double> EditorWorkspace::TimelineRangeMilliseconds() const
 {
     double begin = 0, end = 1;
-    for (const auto &note : Document().Notes())
-    {
-        const double milliseconds = note.timing.count() / 1000.0;
-        begin = std::min(begin, milliseconds);
-        end = std::max(end, milliseconds);
-    }
+    const auto [first, last] = Document().NoteTimeRange();
+    begin = std::min(begin, first.count() / 1000.0);
+    end = std::max(end, last.count() / 1000.0);
     if (const auto music = analysis_.Data().sounds.find("Music"); music != analysis_.Data().sounds.end())
         end = std::max(end, music->second.durationSeconds * 1000.0);
     return {begin, end};
@@ -151,7 +153,7 @@ void EditorWorkspace::Save()
     editor_->Save();
     const auto &effectPath = Document().Effects().sourcePath;
     request_.effectPath = effectPath.empty() ? std::nullopt : std::optional{effectPath};
-    const auto path = Document().Pattern().sourcePath.u8string();
+    const auto path = Document().SourcePath().u8string();
     SetStatus("Saved: " + std::string(reinterpret_cast<const char *>(path.data()), path.size()));
     RequestRebuild();
 }

@@ -79,8 +79,14 @@ YMM/YMP에는 chart LEVEL이 없으므로 `난이도순`은 catalog 순서를 �
 
 행에는 `SongCatalog`가 읽은 실제 제목과 아티스트만 사용한다. `GO`는 선택한
 `SongCatalogPattern`의 YMP/YME 경로, YMM이 가리키는 음악 경로와 mode를 기존
-`GameplayLaunchStore::Set`에 기록한 뒤 `DestroyOnExit` gameplay Scene으로 전환한다.
+`GameplayLaunchStore::SetValidated`에 기록한 뒤 `DestroyOnExit` gameplay Scene으로 전환한다.
 진입한 Scene은 `Snapshot()`으로 독립적인 `GameplayLaunchRequest` 사본을 받는다.
 Catalog 탐색은 파일별 오류를 격리하므로 손상된 YMM/YMP/YME 또는 누락된 음원은
 진단을 남기고 해당 항목만 제외한다. `GO` 직전에도 선택 패턴을 한 번 검증하며,
-실패하면 Scene을 전환하지 않고 상세 영역에 오류를 표시한다.
+실패하면 Scene을 전환하지 않고 상세 영역에 오류를 표시한다. 성공하면 검증한
+PlaySession의 소유권을 gameplay controller로 한 번 넘겨 같은 파일을 다시 읽지 않는다.
+첫 진입의 Initialize/Begin에서는 카탈로그를 한 번만 읽고 재진입에서는 외부 편집을 반영한다.
+미리듣기는 엔진의 StreamAsync로 열고 준비가 끝난 다음 기존 200ms fade로 재생한다.
+선택이 바뀌면 이전 로딩의 완료를 확인해 폐기하고 최신 선택을 시작한다. 로딩/정지 직후의
+clip은 안전한 release 상태가 될 때까지 보관한다. 실패 파일은 매 Update 재시도하지 않고
+다른 선택이나 Scene 재진입에서 다시 시도한다.

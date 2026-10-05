@@ -35,8 +35,14 @@ class SongPreviewController final
     void StopPreviewSlot(PreviewSlot &slot) noexcept;
 
   private:
+    void PollRetiredClips();
+    void PlayPendingPreview(std::size_t slotIndex);
     mrg::audio::AudioPlaybackManager &audioPlayback_;
     mrg::audio::AudioSystem *audioSystem_{};
     std::array<PreviewSlot, 2> previewSlots_{};
     std::optional<std::size_t> currentPreviewSlot_;
+    // A failed file is retried on another selection/scene entry, never every Update.
+    std::optional<std::size_t> failedPreviewIndex_;
+    std::optional<std::size_t> pendingPreviewSlot_;
+    std::vector<std::shared_ptr<mrg::audio::AudioClip>> retiredClips_;
 };

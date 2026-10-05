@@ -74,11 +74,12 @@
   <Target Name="GenerateBuiltInAssetPack"
           BeforeTargets="ResourceCompile"
           Inputs="$(ProjectDir)Scripts\GenerateAssetPack.ps1;@(BuiltInAsset)"
-          Outputs="$(IntDir)BuiltInAssets.fdpak;$(IntDir)FingerDrum.Assets.rc">
+          Outputs="$(IntDir)BuiltInAssets.fdpak;$(IntDir)BuiltInAssets.hash;$(IntDir)FingerDrum.Assets.rc">
     <MakeDir Directories="$(IntDir)" />
     <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)Scripts\GenerateAssetPack.ps1&quot; -ProjectDirectory &quot;$(ProjectDir).&quot; -OutputDirectory &quot;$(IntDir).&quot;" />
     <ItemGroup>
       <FileWrites Include="$(IntDir)BuiltInAssets.fdpak" />
+      <FileWrites Include="$(IntDir)BuiltInAssets.hash" />
       <FileWrites Include="$(IntDir)FingerDrum.Assets.rc" />
     </ItemGroup>
   </Target>

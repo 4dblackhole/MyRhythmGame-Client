@@ -36,12 +36,12 @@ namespace
         return text.str();
     }
 
-    void AccumulateColumns(std::vector<SpectrumFrame> &columns, const AudioAnalysis &data, const double offset,
-                           const double begin, const double window, const double minimumHz, const double maximumHz)
+    using SourceBands = std::array<std::size_t, finger_drum::editor::SpectrumBandCount>;
+    SourceBands MapFrequencyBands(const AudioAnalysis &data, double minimumHz, double maximumHz)
     {
-        if (data.frames.empty() || data.secondsPerFrame <= 0)
-            return;
-        std::array<std::size_t, finger_drum::editor::SpectrumBandCount> sourceBands{};
+        SourceBands sourceBands{};
+        if (data.frames.empty())
+            return sourceBands;
         for (std::size_t band = 0; band < sourceBands.size(); ++band)
         {
             const double frequency =
@@ -54,6 +54,14 @@ namespace
                                                          data.frames.front().bands.size(),
                                                      0.0, static_cast<double>(data.frames.front().bands.size() - 1)));
         }
+        return sourceBands;
+    }
+
+    void AccumulateColumns(std::vector<SpectrumFrame> &columns, const AudioAnalysis &data, const double offset,
+                           const double begin, const double window, const SourceBands &sourceBands)
+    {
+        if (data.frames.empty() || data.secondsPerFrame <= 0)
+            return;
         const int firstColumn = static_cast<int>(std::clamp(std::floor((offset - begin) / window * columns.size()), 0.0,
                                                             static_cast<double>(columns.size())));
         const int lastColumn =
@@ -195,24 +203,43 @@ void EditorView::DrawAudio()
         }
         maximumHz = std::max(maximumHz, minimumHz * 2);
     }
-    std::vector<SpectrumFrame> musicColumns(Columns), hitColumns(Columns);
-    if (const auto music = sounds.find("Music"); music != sounds.end())
-        AccumulateColumns(musicColumns, music->second, 0, begin, state_.audioWindow, minimumHz, maximumHz);
+    const AudioColumnsKey key{begin, state_.audioWindow, minimumHz, maximumHz, state_.Analysis().Revision()};
+    const bool sourceChanged = audioColumnsKey_ != key;
+    if (sourceChanged)
+    {
+        musicColumns_.assign(Columns, {});
+        if (const auto music = sounds.find("Music"); music != sounds.end())
+            AccumulateColumns(musicColumns_, music->second, 0, begin, state_.audioWindow,
+                              MapFrequencyBands(music->second, minimumHz, maximumHz));
+    }
     const auto &markers = state_.Analysis().Markers();
-    for (auto marker = std::ranges::lower_bound(markers, begin - longestSound, {}, &AudioMarker::seconds);
-         marker != markers.end() && marker->seconds <= begin + state_.audioWindow; ++marker)
-        if (const auto sound = sounds.find(marker->sound); sound != sounds.end())
-            AccumulateColumns(hitColumns, sound->second, marker->seconds, begin, state_.audioWindow, minimumHz,
-                              maximumHz);
+    if (sourceChanged || audioColumnsDocument_ != &state_.Document() ||
+        audioColumnsDocumentRevision_ != state_.Document().Revision())
+    {
+        hitColumns_.assign(Columns, {});
+        std::map<std::string, SourceBands> mappedBands;
+        for (auto marker = std::ranges::lower_bound(markers, begin - longestSound, {}, &AudioMarker::seconds);
+             marker != markers.end() && marker->seconds <= begin + state_.audioWindow; ++marker)
+            if (const auto sound = sounds.find(marker->sound); sound != sounds.end())
+            {
+                auto [bands, inserted] = mappedBands.try_emplace(marker->sound);
+                if (inserted)
+                    bands->second = MapFrequencyBands(sound->second, minimumHz, maximumHz);
+                AccumulateColumns(hitColumns_, sound->second, marker->seconds, begin, state_.audioWindow, bands->second);
+            }
+        audioColumnsDocument_ = &state_.Document();
+        audioColumnsDocumentRevision_ = state_.Document().Revision();
+    }
+    audioColumnsKey_ = key;
 
     // Draw distinct tracks before their shared ruler/cursor and controls.
     Box({112, 76, 1784, 797}, Paper, 8);
     Text({132, 90, 980, 28}, std::wstring(text.waveform), 22);
     Text({132, 340, 1500, 28}, std::wstring(text.musicSpectrum), 22);
     Text({132, 606, 1500, 28}, std::wstring(text.hitSoundSpectrum), 22);
-    DrawAudioWaveform(musicColumns);
-    DrawAudioSpectrum(MusicSpectrum, musicColumns, minimumHz, maximumHz);
-    DrawAudioSpectrum(HitSpectrum, hitColumns, minimumHz, maximumHz);
+    DrawAudioWaveform(musicColumns_);
+    DrawAudioSpectrum(MusicSpectrum, musicColumns_, minimumHz, maximumHz);
+    DrawAudioSpectrum(HitSpectrum, hitColumns_, minimumHz, maximumHz);
     DrawAudioTimeRuler(begin);
     Button({1620, 85, 54, 32}, L"+", [this] {
         state_.audioWindow = std::max(.25, state_.audioWindow / 2);

@@ -61,6 +61,8 @@ class GameplayPresenter final
         mrg::visual2d::Visual2DNode *counter{};
         mrg::visual2d::Visual2DNode *counterText{};
         std::vector<TimedVisual> ticks;
+        mrg::visual2d::ImageHandle tickImage{};
+        mrg::visual2d::Size tickSize{};
         finger_drum::rhythm::RhythmTime timing{};
         finger_drum::rhythm::RhythmTime endTime{};
         FocusNoteType focusType{FocusNoteType::None};
@@ -76,15 +78,20 @@ class GameplayPresenter final
     void CreateLaneVisuals(mrg::visual2d::Visual2DNode &sceneRoot);
     void CreateLaneSurface();
     void UpdateLaneSurfaceLayout(const float laneLength);
-    void CreateMeasureLineVisuals();
     void CreateKeyIndicators(mrg::visual2d::Visual2DNode &inputPanel);
     void CreateNoteVisuals();
+    void CreateNoteVisual(const finger_drum::rhythm::INote &);
+    mrg::visual2d::ImageHandle NoteImage(std::wstring_view);
+    void UpdateMeasureLines(finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmDuration, bool);
+    void UpdateTickVisuals(NoteVisualLayers &, const finger_drum::mode::NotePresentationInfo &,
+                          finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmDuration);
     void UpdatePresentationLayout();
     void UpdateNoteTravelLayout();
     [[nodiscard]] float TravelPixels(finger_drum::rhythm::RhythmDuration duration,
                                      float multiplier = 1.0F) const noexcept;
     [[nodiscard]] finger_drum::rhythm::RhythmDuration VisibleTravelDuration() const;
     void HideTransientNoteVisuals();
+    void RemoveUnusedNoteVisuals();
     void PresentFocusCounter(NoteVisualLayers &layers,
                              const finger_drum::rhythm::NoteProgress &progress,
                              const float visualHeight);
@@ -102,6 +109,9 @@ class GameplayPresenter final
     const finger_drum::mode::PlaySession *session_{};
     finger_drum::presentation::LaneKeyBeam keyBeam_;
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers> noteVisuals_;
+    std::unordered_map<finger_drum::rhythm::NoteId, const finger_drum::rhythm::INote *> noteModels_;
+    std::map<std::wstring, mrg::visual2d::ImageHandle, std::less<>> noteImages_;
+    float largestHeadRadius_{};
     std::vector<finger_drum::rhythm::NoteId> presentedNoteIds_;
     std::unordered_map<finger_drum::rhythm::NoteId, finger_drum::rhythm::RhythmTime>
         completionEffects_;

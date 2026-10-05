@@ -13,8 +13,9 @@ class GameplaySessionController final
 {
   public:
     GameplaySessionController(finger_drum::GameplayLaunchRequest request,
-                              mrg::audio::AudioPlaybackManager &playback, bool debug)
-        : launchRequest_(std::move(request)), audioRouter_(playback), debugMode_(debug)
+                              mrg::audio::AudioPlaybackManager &playback, bool debug,
+                              std::unique_ptr<finger_drum::mode::PlaySession> prepared = {})
+        : launchRequest_(std::move(request)), session_(std::move(prepared)), audioRouter_(playback), debugMode_(debug)
     {
     }
     ~GameplaySessionController()

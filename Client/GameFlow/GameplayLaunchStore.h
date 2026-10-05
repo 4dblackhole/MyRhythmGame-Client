@@ -1,5 +1,7 @@
 #pragma once
 #include "GameFlow/GameplayLaunchRequest.h"
+#include "Mode/Submodules/PlaySession.h"
+#include <memory>
 #include <utility>
 
 namespace finger_drum
@@ -11,7 +13,17 @@ namespace finger_drum
       public:
         void Set(GameplayLaunchRequest request)
         {
+            preparedSession_.reset();
             request_ = std::move(request);
+        }
+        void SetValidated(GameplayLaunchRequest request, std::unique_ptr<mode::PlaySession> session)
+        {
+            Set(std::move(request));
+            preparedSession_ = std::move(session);
+        }
+        [[nodiscard]] std::unique_ptr<mode::PlaySession> TakeValidatedSession() noexcept
+        {
+            return std::move(preparedSession_);
         }
         [[nodiscard]] GameplayLaunchRequest Snapshot() const
         {
@@ -20,5 +32,7 @@ namespace finger_drum
 
       private:
         GameplayLaunchRequest request_;
+        // Single-use transfer; the gameplay controller owns it after Scene entry.
+        std::unique_ptr<mode::PlaySession> preparedSession_;
     };
 } // namespace finger_drum

@@ -5,7 +5,8 @@ using namespace gameplay;
 void GameplaySessionController::InitializeSession()
 {
     PrepareDebugLaunchRequest();
-    session_ = CreateSession();
+    if (!session_)
+        session_ = CreateSession();
 }
 void GameplaySessionController::Start(const mrg::EngineServices &services,
                                       const finger_drum::rhythm::RhythmTime initialTime)

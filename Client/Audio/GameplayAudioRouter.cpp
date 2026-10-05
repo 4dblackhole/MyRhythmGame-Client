@@ -52,6 +52,7 @@ namespace finger_drum::audio
     {
         StopAllVoices();
         effects_.clear();
+        bypassedEffects_.clear();
         clips_.clear();
         buses_.clear();
         audioSystem_ = nullptr;
@@ -385,15 +386,48 @@ namespace finger_drum::audio
             return;
         }
 
-        if (mrg::audio::AudioEffect* const effect = EnsureEffect(
-                target,
-                effectType);
-            effect != nullptr && !effect->SetParameter(
-                parameter,
-                parameterValue,
-                error))
+        auto *effect = EnsureEffect(target, effectType);
+        if (!effect)
+            return;
+        const auto pending = bypassedEffects_.find({std::string(target), effectType});
+        if (pending != bypassedEffects_.end())
+        {
+            if (!effect->SetBypass(false, error))
+            {
+                lastError_ = std::move(error);
+                return;
+            }
+            bypassedEffects_.erase(pending);
+        }
+        if (!effect->SetParameter(parameter, parameterValue, error))
         {
             lastError_ = std::move(error);
+        }
+    }
+
+    void GameplayAudioRouter::PrepareAutomation(std::span<const chart::CompiledEffectCommand> commands)
+    {
+        for (const auto &compiled : commands)
+        {
+            mrg::audio::AudioEffectType type;
+            switch (compiled.command.type)
+            {
+            case chart::EffectCommandType::ReverbSend: type = mrg::audio::AudioEffectType::Reverb; break;
+            case chart::EffectCommandType::LowPassCutoff: type = mrg::audio::AudioEffectType::LowPass; break;
+            case chart::EffectCommandType::HighPassCutoff: type = mrg::audio::AudioEffectType::HighPass; break;
+            default: continue;
+            }
+            const auto target = compiled.command.target.empty() ? std::string{"HitSound"} : compiled.command.target;
+            if (const auto bus = effects_.find(target); bus != effects_.end() && bus->second.contains(type))
+                continue;
+            if (auto *effect = EnsureEffect(target, type))
+            {
+                std::string error;
+                if (effect->SetBypass(true, error))
+                    bypassedEffects_.emplace(target, type);
+                else
+                    lastError_ = std::move(error);
+            }
         }
     }
 }

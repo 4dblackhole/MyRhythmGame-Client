@@ -5,6 +5,55 @@ namespace finger_drum::tests
     void TestChartEditingAndSave()
     {
         using namespace finger_drum;
+        {
+            chart::PatternDocument source;
+            source.baseBpm = 120;
+            source.notes = {{{0, {}}, 11, 1, {}, {}, {}, 90},
+                            {{10, {}}, 11, 2, {}, {}, {}, 2}};
+            chart::ChartEditor indexed(source);
+            Require(indexed.NotesInMeasures(4, 5).size() == 2 &&
+                        indexed.NotesInTimeRange(rhythm::RhythmTime{8'000'000}, rhythm::RhythmTime{9'000'000}).size() == 2,
+                    "Viewport queries must retain long notes whose endpoints both lie outside, regardless of ID order.");
+            indexed.AddNote({5, {1, 4}}, 1);
+            const auto addedId = indexed.NotesInMeasures(5, 6)[1].note.sourceOrder;
+            indexed.DeleteNote(addedId);
+            indexed.Replace(indexed.Pattern(), indexed.Effects());
+            indexed.AddNote({5, {1, 4}}, 2);
+            Require(indexed.Pattern().notes[1].sourceOrder > addedId,
+                    "Deleting and recompiling must not reuse IDs of removed notes.");
+            const auto audioRevision = indexed.AudioSourceRevision();
+            const auto oldTime = indexed.NotesInMeasures(5, 6)[1].timing;
+            auto changed = indexed.Pattern();
+            changed.timing.push_back({{1, {}}, chart::TimingDirectiveType::Bpm, 240});
+            changed.timing.push_back({{2, {}}, chart::TimingDirectiveType::DelayMilliseconds, -100});
+            indexed.Replace(changed, indexed.Effects());
+            Require(indexed.NotesInMeasures(5, 6)[1].timing < oldTime && indexed.AudioSourceRevision() == audioRevision,
+                    "BPM/delay edits must update time indices without invalidating unchanged audio sources.");
+            const auto revisionBeforeFailure = indexed.Revision();
+            bool rejectedEnd = false;
+            try { indexed.AddNote({1, {}}, 11, chart::MusicalPosition{-1, {}}); }
+            catch (const std::invalid_argument &) { rejectedEnd = true; }
+            Require(rejectedEnd && indexed.Revision() == revisionBeforeFailure,
+                    "Failed insertion must leave trees and revision unchanged.");
+            indexed.DeleteNote(2);
+            Require(indexed.Pattern().notes.size() == 1,
+                    "Deleting a long tail must remove its paired head while preserving the normal note.");
+            changed = indexed.Pattern();
+            changed.hitSounds.emplace("custom", "custom.wav");
+            indexed.Replace(changed, indexed.Effects());
+            Require(indexed.AudioSourceRevision() == audioRevision + 1,
+                    "Changing a sound source must invalidate audio file resolution.");
+            chart::EffectDocument effects;
+            chart::EffectCommand speed;
+            speed.type = chart::EffectCommandType::ScrollSpeed;
+            speed.beginValue = speed.endValue = .5;
+            effects.commands.push_back(speed);
+            indexed.Replace(indexed.Pattern(), effects);
+            auto copied = indexed;
+            indexed.Replace(indexed.Pattern(), {});
+            Require(copied.EffectValueAt(chart::EffectCommandType::ScrollSpeed, {3, {}}) == .5,
+                    "Copied event trees must own independent effect lookup pointers.");
+        }
         chart::PatternDocument p;
         p.baseBpm = 120;
         p.musicMetadataFile = "../Music/test.ymm";

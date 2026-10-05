@@ -30,7 +30,7 @@ $runtime = @('/MDd', '/D_DEBUG')
 $objects = @($clientProject.Project.ItemGroup.ClCompile | Where-Object { $_.Include -match '^(EditorScene\\|Texts\\EditorScene\\)' } | ForEach-Object { "build/obj/MRG.Client/x64/$configuration/$([IO.Path]::GetFileNameWithoutExtension($_.Include)).obj" })
 $testObjectDirectory = "build/obj/EditorPresentationTests/$configuration"
 New-Item -ItemType Directory -Path $testObjectDirectory -Force | Out-Null
-$objects += @('Pch', 'TextCatalog', 'SkinSetSelection') | ForEach-Object { "build/obj/MRG.Client/x64/$configuration/$_.obj" }
+$objects += @('Pch', 'TextCatalog', 'SkinSetSelection', 'SongPreviewController') | ForEach-Object { "build/obj/MRG.Client/x64/$configuration/$_.obj" }
 $libraries = @('Rhythm', 'Chart', 'Modes', 'Editor', 'Assets') | ForEach-Object { "bin/x64/$configuration/FingerDrum.$_.lib" }
 & cl /nologo /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Rhythm /IFingerDrum.Chart /IFingerDrum.Modes /IFingerDrum.Editor /IFingerDrum.Assets/Public /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/EditorAudioViewTests.cpp Tests/Presentation/EditorModeTests.cpp @objects @libraries "Dependencies/MRG-Engine/bin/x64/$configuration/MRG.Core.lib" "/Fo$testObjectDirectory/" "/Febin/x64/$configuration/EditorAudioViewTests.exe" /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" "build/obj/FingerDrum.Assets/x64/$configuration/FingerDrum.Assets.res" user32.lib gdi32.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib
 if ($LASTEXITCODE -ne 0) { throw 'Editor audio view test build failed' }
@@ -48,8 +48,11 @@ It also covers realtime lane boundaries, spaced/case-insensitive Buzz options,
 Purple and timed/explicit sound agreement with play, invalid seek preservation,
 effect/timing commands, failed edit rollback and drawing failure recovery.
 The object list comes from the Client project so removed/stale objects are not linked.
-It records rendering commands without initializing a GPU or
-audio device; it does not replace visual inspection or mouse testing in the app.
+Immutable rectangle batches are expanded only in the recording renderer for visual assertions.
+It also checks actual asynchronous MP3 opening/playback with the FMOD NoSound output,
+preview failure retry suppression/selection recovery/owned voice cleanup and
+detaching a cancelled analysis job. Drawing assertions do not initialize a GPU;
+this does not replace visual inspection, listening or mouse testing in the app.
 
 ## All-notes actual gameplay replay
 
@@ -67,7 +70,8 @@ timer, DSP-scheduled music, the production GameplayPresenter and audio router,
 D3D12 rendering and a real audio backend (no NoSound fallback). Normal notes
 receive perfect scripted inputs; dense Don/Kat Buzz heads receive +50ms GOOD
 inputs. All 19 logical notes, exact-once ordered ticks and final accuracy must
-match the logic replay. Skin aliases share samples as in production. This test
+match the logic replay. It also verifies deferred note-node creation, removing expired
+subtrees and recreating them after reset at the first note time. Skin aliases share samples as in production. This test
 has no game autoplay route and does not change options or user songs/skins.
 
 The window is hidden and input timestamps are supplied directly to PlaySession.
