@@ -3,6 +3,7 @@
 #include "Mode/PlayGameMode.h"
 #include "Presentation/LaneKeyBeam.h"
 #include "GameplayFeedback.h"
+#include "GameplayJudgementView.h"
 #include "Texts/TextCatalog.h"
 #include <array>
 #include <unordered_map>
@@ -24,6 +25,7 @@ class GameplayPresenter final
     void AdvanceEffects(double delta)
     {
         keyBeam_.Update(delta);
+        judgementView_.Update(delta);
     }
     void OnResize(const std::uint32_t width, const std::uint32_t height);
     void Shutdown() noexcept;
@@ -101,6 +103,7 @@ class GameplayPresenter final
                                     const finger_drum::rhythm::RhythmTime time);
     void PresentCompletionEffect(const finger_drum::rhythm::RhythmTime time);
     void UpdateAccuracyPresentation();
+    void PresentJudgementFeedback(const GameplayFeedback &feedback);
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
     mrg::visual2d::ScreenVisual2DManager &screenVisuals_;
@@ -109,6 +112,7 @@ class GameplayPresenter final
     mrg::visual2d::Visual2DCanvas *canvas_{};
     const finger_drum::mode::PlaySession *session_{};
     finger_drum::presentation::LaneKeyBeam keyBeam_;
+    GameplayJudgementView judgementView_;
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers> noteVisuals_;
     std::unordered_map<finger_drum::rhythm::NoteId, const finger_drum::rhythm::INote *> noteModels_;
     std::map<std::wstring, mrg::visual2d::ImageHandle, std::less<>> noteImages_;
@@ -137,7 +141,6 @@ class GameplayPresenter final
 #if defined(_DEBUG)
     mrg::visual2d::Visual2DNode *noteDebugLabel_{};
 #endif
-    mrg::visual2d::Visual2DNode *judgementIndicator_{};
     mrg::visual2d::Visual2DNode *audioErrorLabel_{};
     float laneWidth_{152.0F};
     float laneTileLength_{42.0F};

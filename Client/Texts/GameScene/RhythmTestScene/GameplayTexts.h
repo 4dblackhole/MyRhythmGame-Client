@@ -14,6 +14,8 @@ namespace finger_drum::texts
         std::wstring_view focusPrefix;
         std::wstring_view lastFormat;
         std::wstring_view lastNone;
+        std::wstring_view early;
+        std::wstring_view late;
     };
 
     [[nodiscard]] const GameplayTextSet &Gameplay(Language language) noexcept;

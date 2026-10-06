@@ -42,6 +42,8 @@
 - AngelDream `All Notes Verification`은 전 노트 및 밀집 Don/Kat Buzz를 재현합니다.
   채보 위치와 +50ms GOOD 입력의 틱 기대값은 [Gameplay Debugging](Gameplay/Debugging.md)을 참고합니다.
 - 고정 문구와 언어별 글꼴은 `Client/Texts`의 사용 위치별 표가 소유합니다.
+  플레이의 판정 구간/타이밍 마커와 7종 링·문구는 `GameplayJudgementView`가 소유하며,
+  기본 범위를 세션 중 유지합니다. 동작/스킨 경로는 [Presentation](Gameplay/Presentation.md) 참고.
   로고와 곡 선택은 공통 `OptionsPanel`에서 언어·스킨·FMOD·자동/WASAPI/ASIO·드라이버를 선택합니다.
   출력 방식/드라이버는 즉시 적용하고 모든 옵션은 EXE 옆 `Option.ini`에 유지합니다.
   `OptionSettings`는 파일 저장/읽기만 담당하며 별도 옵션 Controller는 없습니다.
@@ -53,10 +55,12 @@
 
 ## 마무리
 
-YME 효과 작업은 Debug/Release x64 전체 재빌드, 로직·카탈로그(1곡/5패턴),
-각 구성의 4개 Client smoke와 에디터 회귀를 통과했습니다. 실제 D3D12/FMOD 자동
-replay도 새 효과 채보 15개 노트와 기존 전체 종류 채보 19개 노트를 두 구성에서
-완료했습니다. 프로젝트/필터/의존성/엔진 경계를 통과했으며 엔진은 변경하지 않았습니다.
+판정 표시 작업은 Debug/Release x64 전체 재빌드, 로직·카탈로그(1곡/5패턴),
+각 구성의 4개 Client smoke와 판정 표시/키빔 회귀를 통과했습니다.
+실제 D3D12/FMOD 자동 replay도 효과 채보 15개 노트와 전체 종류 채보 19개 노트를
+두 구성에서 완료했습니다. Client MSVC 정적 분석은 새 경고 없이 통과했으며
+기존 코드의 3종 경고를 Verification에 구분해 기록했습니다.
+프로젝트/필터/의존성/엔진 경계를 통과했고 엔진은 변경하지 않았습니다.
 실제 화면/물리 입력/청음은 수동 확인하지 않았습니다. 상세 결과는 Verification이 기준입니다.
 
 [Verification](Verification.md)에 따라 검증하고 실제 결과만 보고합니다.

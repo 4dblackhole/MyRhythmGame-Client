@@ -36,6 +36,8 @@ foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke
 예: `--smoke-test --example=mesh`. Release에는 이 예제 route가 없습니다.
 프로젝트/필터/include 경계는 `Scripts/CheckArchitecture.ps1`로 검사합니다.
 키빔 표시는 [별도 회귀 테스트](../Tests/Presentation/README.md)로 검사할 수 있습니다.
+판정 인디케이터/마커/링·문구 변경은 같은 문서의 Gameplay judgement guide 회귀를
+Debug/Release에서 실행합니다.
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
 에디터 모드/문서 계약 변경도 같은 실행 파일에 연결된 EditorModeTests를 두 구성에서 실행합니다.
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.
@@ -48,6 +50,39 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
+
+## 2026-10-06 판정 인디케이터·마커·링/문구
+
+- `GameplayJudgementView`가 색 구간·마커·7종 링/문구 노드와 표시 수명을 소유합니다.
+  Presenter가 기존 NoteEvent를 전달하고 LaneKeyBeam의 색상/입력 응답 정책을 공유합니다.
+  점수·노트 판정 규칙·오디오·파일 형식과 엔진은 변경하지 않았습니다.
+- 기본 판정레벨에 따른 구간 길이, BAD 바깥 ±10ms 여유, 플레이 중 기본 범위 유지,
+  싱코페이션 입력의 실제 오차 표시, 빠름/늦음/0/끝점 제한과 7종 판정을 검사했습니다.
+  적색 키빔의 조건에만 POOR를 표시하고 범위 밖 입력은 백색 키빔만 생성합니다.
+  자동 MISS에는 새 입력 마커가 없으며 키 해제/정확도 없는 tick은 표시를 시작하지 않습니다.
+- 판정 표시 회귀는 실제 내장/fallback PNG 메타데이터를 읽고 프로덕션 객체를 링크합니다.
+  200ms 페이드/재입력/reset/종료, 판정원 중심·부모 회전과 똑바른 문구 방향,
+  좁은 창과 판정레벨 100, 노드/이미지 재사용, MISS와 성공이 겹친 입력의 우선순위를
+  Debug/Release에서 통과했습니다. 새 테스트 소스의 MSVC `/W4 /analyze`도 경고/오류 없습니다.
+- Debug/Release x64 솔루션 전체 Rebuild와 최종 Client 분석 빌드 성공.
+  두 구성 로직·카탈로그(1곡/5패턴), 판정 표시/기존 키빔 회귀 성공,
+  각 구성 smoke-test/lobby/gameplay/editor 종료 코드 0.
+- 실제 D3D12/FMOD 자동 플레이도 두 구성 전체 노트 19개/85.1694%/1,557프레임,
+  효과 채보 15개/97.8897%/1,302프레임을 완료했습니다.
+  자동 replay의 실제 입력 결과도 판정 표시 경로로 전달하며 오디오 오류 없습니다.
+- MSVC 14.44 Code Analysis/NativeRecommendedRules를 실제 MRG.Client 프로젝트의
+  include/define/PCH/C++20과 x64 Debug/Release 설정으로 실행했습니다.
+  각각 62/56개 분석 컴파일 호출 및 최종 변경 단위 재분석이 성공했습니다.
+  새 코드 경고/오류/분석 파싱 오류는 없습니다. 기존 경고는 Debug 2개/Release 3개:
+  EditorAnalysisController.cpp:51 C26115(잠금 해제), GameplaySessionController.cpp:62
+  C28020(12개 키 배열 범위), Release GameplayInput.cpp:60 C6236(상수 디버그 조건)입니다.
+  해당 원본 코드와 엔진/SDK는 이 작업에서 수정하지 않았습니다.
+- 8개 프로젝트의 소스/필터/의존성/엔진 경계 및 git diff --check 통과.
+  새 PNG는 내장 기본 스킨에 포함되며 사용자 곡·스킨·Option.ini는 보존했습니다.
+  이미지 생성 도구/프롬프트는 [판정 이미지 기록](Gameplay/JudgementAssets.md)에 있습니다.
+- 수동 확인: 생성된 PNG의 문구/형태를 도구 출력에서 확인했고 중심/모서리 투명도를
+  파일에서 검사했습니다. 실제 게임 화면의 픽셀 배치·물리 키 입력·마우스 조작·청음은
+  수동 확인하지 않았습니다. 위 실제 엔진 플레이와 좌표 검사는 자동 검증입니다.
 
 ## 2026-10-04 에디터 모드/문서 책임 분리 검증
 

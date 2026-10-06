@@ -205,6 +205,8 @@
     <ClCompile Include="Pch.cpp"><PrecompiledHeader>Create</PrecompiledHeader></ClCompile>
     <ClInclude Include="Pch.h" />
     <ClCompile Include="Presentation\LaneKeyBeam.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayJudgementView.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayJudgementView.h" />
     <ClInclude Include="Presentation\LaneKeyBeam.h" />
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
     <ClInclude Include="Presentation\MarqueeTextComponent.h" />

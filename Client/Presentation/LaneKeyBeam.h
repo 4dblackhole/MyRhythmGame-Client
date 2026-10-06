@@ -19,6 +19,12 @@ namespace finger_drum::presentation
 
         [[nodiscard]] static mrg::visual2d::Color InputColor(
             const rhythm::NoteProcessResult &result) noexcept;
+        [[nodiscard]] static mrg::visual2d::Color GradeColor(
+            rhythm::JudgementGrade grade) noexcept;
+        [[nodiscard]] static bool IsWrongInput(const rhythm::NoteEvent &event) noexcept;
+        // Returned observer is valid only while result is alive and unchanged.
+        [[nodiscard]] static const rhythm::NoteEvent *InputResponse(
+            const rhythm::NoteProcessResult &result) noexcept;
 
       private:
         mrg::visual2d::Visual2DNode *node_{};

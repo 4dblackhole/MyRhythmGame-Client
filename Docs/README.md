@@ -14,7 +14,7 @@
 | 편집 트리·모드 확장·저장·타임라인·오디오 탭 | [ChartEditor](ChartEditor.md) | ChartEditor의 원본 트리/조회 snapshot; EditorWorkspace / EditorForms / Modes; `FingerDrum.Editor` |
 | 곡 목록·포커스·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
 | 에디터용 곡 선택 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성 |
-| 플레이 화면·노트 이미지·키빔 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
+| 플레이 화면·노트 이미지·키빔·판정 인디케이터/문구 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
 | 플레이 디버그 조작·전체 노트/Buzz 재현 | [디버깅](Gameplay/Debugging.md) | `RhythmTestScene/Submodules/GameplayInput.cpp`, `Tests/Rhythm/Submodules/BuzzReplayTests.cpp` |
 | 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
 | 문구·언어·글꼴·오디오 옵션·Option.ini | [TextManagement](TextManagement.md) | `Client/Texts`, `Client/Presentation/OptionsPanel.*`, `Client/App/OptionSettings.*` |

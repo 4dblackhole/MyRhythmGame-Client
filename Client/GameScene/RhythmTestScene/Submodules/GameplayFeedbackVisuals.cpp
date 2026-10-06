@@ -3,6 +3,21 @@
 #include "Texts/GameScene/RhythmTestScene/GameplayTexts.h"
 using namespace gameplay;
 
+void GameplayPresenter::PresentJudgementFeedback(const GameplayFeedback &feedback)
+{
+    using namespace finger_drum::rhythm;
+    // Match the key beam's input priority. A passive miss or a duplicate
+    // Completed/HoldStarted event must not overwrite this press's actual hit.
+    const NoteEvent *selected = feedback.keyPressed
+        ? finger_drum::presentation::LaneKeyBeam::InputResponse(feedback.result) : nullptr;
+    if (!feedback.keyPressed)
+        for (const auto &event : feedback.result.events)
+            if (event.type == NoteEventType::Missed)
+                selected = &event;
+    if (selected != nullptr)
+        judgementView_.Present(*selected);
+}
+
 void GameplayPresenter::PresentAudioError(const std::string_view message)
 {
     if (audioErrorLabel_ == nullptr || message.empty())

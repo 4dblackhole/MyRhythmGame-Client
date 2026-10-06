@@ -17,6 +17,26 @@ roll ticks, missed-note rollover, alpha at 0/100/200ms, retrigger, sprite reuse,
 inherited Lane rotation/scale, resize clipping, and reset. It does not initialize
 an audio device or renderer; normal gameplay smoke covers resource loading.
 
+## Gameplay judgement guide and overlays
+
+After a solution build, run in an x64 Visual Studio developer PowerShell with
+`FMOD_ROOT` set to the installed SDK:
+
+```powershell
+./Tests/Presentation/RunGameplayJudgementTests.ps1 -Configuration Debug
+./Tests/Presentation/RunGameplayJudgementTests.ps1 -Configuration Release
+```
+
+The test links the production Presenter/JudgementView/key-beam objects and reads
+real fallback PNG metadata. It checks independent band colors, JudgeLevel-based
+lengths, fixed base windows during syncopation, +/-10ms margins, early/late/zero
+and clamped markers, all seven overlays, MISS without invented input timing,
+POOR only on red-beam rejection, out-of-range/release/unjudged-tick suppression,
+200ms fade/retrigger/reset, inherited circle centre, resize, node/image reuse,
+and accepted-hit priority over a passive MISS.
+The test source uses MSVC `/analyze`; no GPU/audio device is started.
+Automated geometry checks do not replace actual screen/input/listening inspection.
+
 ## Allocation failure boundary regression
 
 After a solution build, run in an x64 Visual Studio developer PowerShell:

@@ -3,6 +3,7 @@
 #include "Audio/GameplayAudioRouter.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayPresenter.h"
 #include "MRG_Core.h"
+#include <algorithm>
 
 using namespace finger_drum;
 using finger_drum::tests::Require;
@@ -74,7 +75,9 @@ namespace
             const auto time = timer_.Now(context.audio.CaptureClockSnapshot().performanceCounterTicks);
             const auto result = replay_->Advance(*session_, time);
             presenter_.AdvanceEffects(context.deltaSeconds);
-            presenter_.ApplyFeedback({.result = result});
+            const bool keyPressed = std::ranges::any_of(result.events,
+                [](const rhythm::NoteEvent &event) { return event.inputAction.has_value(); });
+            presenter_.ApplyFeedback({.keyPressed = keyPressed, .result = result});
             presenter_.UpdatePresentation(time);
             audio_.PlayNow(result.audioCues);
             audio_.ApplyAutomation(session_->EvaluateAutomation(time));

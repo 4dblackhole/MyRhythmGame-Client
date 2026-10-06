@@ -25,6 +25,7 @@ void GameplayPresenter::OnResize(const std::uint32_t width, const std::uint32_t 
     if (canvas_ != nullptr)
     {
         UpdatePresentationLayout();
+        judgementView_.OnResize(canvas_->LogicalSize().width);
     }
 }
 
@@ -63,6 +64,7 @@ finger_drum::rhythm::RhythmDuration GameplayPresenter::VisibleTravelDuration() c
 void GameplayPresenter::Shutdown() noexcept
 {
     keyBeam_.Shutdown();
+    judgementView_.Shutdown();
     noteVisuals_.clear();
     noteModels_.clear();
     noteImages_.clear();
@@ -91,7 +93,6 @@ void GameplayPresenter::Shutdown() noexcept
 #if defined(_DEBUG)
     noteDebugLabel_ = nullptr;
 #endif
-    judgementIndicator_ = nullptr;
     audioErrorLabel_ = nullptr;
     canvas_ = nullptr;
     canvasHandle_.Reset();
@@ -103,10 +104,12 @@ void GameplayPresenter::ApplyFeedback(const GameplayFeedback &feedback)
     if (feedback.reset)
     {
         keyBeam_.Reset();
+        judgementView_.Reset();
         completionEffects_.clear();
     }
     if (feedback.keyPressed)
         keyBeam_.OnKeyPressed(feedback.result);
+    PresentJudgementFeedback(feedback);
     for (const finger_drum::rhythm::NoteEvent &event : feedback.result.events)
     {
         if (event.type != finger_drum::rhythm::NoteEventType::Completed)

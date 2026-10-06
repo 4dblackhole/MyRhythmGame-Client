@@ -8,7 +8,7 @@ if (-not $FmodRoot) { throw 'Set FMOD_ROOT or pass -FmodRoot with the installed 
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/MD', '/DNDEBUG') }
 if ($Effects) { $runtime += '/DTEST_YME_EFFECTS' }
 $units = @('Pch', 'GameplayPresenter', 'GameplayLayout', 'GameplayNoteVisuals',
-    'GameplayFeedbackVisuals', 'GameplayKeys', 'LaneKeyBeam', 'GameplayTexts',
+    'GameplayFeedbackVisuals', 'GameplayKeys', 'GameplayJudgementView', 'LaneKeyBeam', 'GameplayTexts',
     'TextCatalog', 'SkinSetSelection', 'GameplayAudioRouter')
 $objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
 $libraries = @('Rhythm', 'Chart', 'Modes', 'Assets') | ForEach-Object { "bin/x64/$Configuration/FingerDrum.$_.lib" }

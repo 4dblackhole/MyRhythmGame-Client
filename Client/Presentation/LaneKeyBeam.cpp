@@ -55,7 +55,19 @@ namespace finger_drum::presentation
         node_->SetClipRect({0, 0, laneWidth, std::min(length, laneLength)});
     }
 
-    mrg::visual2d::Color LaneKeyBeam::InputColor(
+    mrg::visual2d::Color LaneKeyBeam::GradeColor(const rhythm::JudgementGrade grade) noexcept
+    {
+        const auto index = static_cast<std::size_t>(grade);
+        return index < Colors.size() ? Colors[index] : White;
+    }
+
+    bool LaneKeyBeam::IsWrongInput(const rhythm::NoteEvent &event) noexcept
+    {
+        return event.type == rhythm::NoteEventType::InputRejected &&
+            rhythm::IsAtLeastAsAccurateAs(event.judgement.grade, rhythm::JudgementGrade::Good);
+    }
+
+    const rhythm::NoteEvent *LaneKeyBeam::InputResponse(
         const rhythm::NoteProcessResult& result) noexcept
     {
         // A transaction may first miss an old note and then accept the next.
@@ -65,17 +77,22 @@ namespace finger_drum::presentation
             if (event.type == rhythm::NoteEventType::HitAccepted ||
                 event.type == rhythm::NoteEventType::TickAccepted ||
                 event.type == rhythm::NoteEventType::HoldStarted)
-                return JudgementColor(event.judgement);
+                return &event;
         }
         for (const auto& event : result.events)
         {
             if (event.type != rhythm::NoteEventType::InputRejected) continue;
-            if (event.judgement.grade == rhythm::JudgementGrade::Bad)
-                return Colors[4];
-            if (rhythm::IsAtLeastAsAccurateAs(
-                event.judgement.grade, rhythm::JudgementGrade::Good))
-                return WrongInput;
+            if (event.judgement.grade == rhythm::JudgementGrade::Bad || IsWrongInput(event))
+                return &event;
         }
+        return nullptr;
+    }
+
+    mrg::visual2d::Color LaneKeyBeam::InputColor(
+        const rhythm::NoteProcessResult& result) noexcept
+    {
+        if (const auto *event = InputResponse(result))
+            return IsWrongInput(*event) ? WrongInput : JudgementColor(event->judgement);
         return White;
     }
 

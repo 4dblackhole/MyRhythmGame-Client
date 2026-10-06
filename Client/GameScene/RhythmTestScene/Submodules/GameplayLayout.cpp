@@ -61,16 +61,6 @@ void GameplayPresenter::CreatePresentation()
     debugText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
 #endif
 
-    const auto judgementImage =
-        screenVisuals_.RegisterImage(InGameSkinAssetPath(L"JudgementIndicator.png"));
-    const auto judgementSize = ScaledImageSize(screenVisuals_, judgementImage);
-    judgementIndicator_ = &mrg::visual2d::CreateSprite(root,
-                                                       {-judgementSize.width * 0.5F,
-                                                        -CanvasReferenceHeight * 0.5F + 18.0F,
-                                                        judgementSize.width, judgementSize.height},
-                                                       judgementImage, "Hud.JudgementGuide");
-    judgementIndicator_->SetZIndex(5);
-
     scrollGearBorder_ = &mrg::visual2d::CreatePanel(
         root,
         {-CanvasReferenceWidth * 0.5F + GearMargin - GearPadding,
@@ -134,6 +124,14 @@ void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &sceneRoot
          judgementSize.width, judgementSize.height},
         judgementImage, "Lane.JudgementCircle");
     judgementLine.SetZIndex(4);
+    std::size_t level = finger_drum::rhythm::AccuracyRange::DefaultLevel;
+    const auto &lanes = session_->Gear().Lanes();
+    if (!lanes.empty() && !lanes.front()->Notes().empty())
+        level = lanes.front()->Notes().front()->Profile().Level();
+    // Keep the guide fixed for this play session. In particular, do not use
+    // the current note's padded syncopation range to resize the HUD mid-play.
+    const finger_drum::rhythm::AccuracyRange baseRange{"Hud.Default", level};
+    judgementView_.Initialize(screenVisuals_, *canvas_, judgementLine, baseRange, texts_);
 }
 
 void GameplayPresenter::CreateLaneSurface()
@@ -221,12 +219,6 @@ void GameplayPresenter::UpdatePresentationLayout()
         const auto bounds = accuracyIndicator_->Bounds();
         accuracyIndicator_->SetBounds({logicalWidth * 0.5F - GearMargin - bounds.width, bounds.y,
                                        bounds.width, bounds.height});
-    }
-    if (judgementIndicator_ != nullptr)
-    {
-        const auto bounds = judgementIndicator_->Bounds();
-        judgementIndicator_->SetBounds(
-            {-bounds.width * 0.5F, bounds.y, bounds.width, bounds.height});
     }
     if (scrollGearBorder_ != nullptr)
     {

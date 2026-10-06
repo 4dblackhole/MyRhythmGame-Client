@@ -94,8 +94,44 @@ PNG 자체의 밝기 차이와 함께 강·약 상태가 명확히 구분됩니�
 우측 정확도 표시는 같은 HUD 영역의 동적 텍스트로 노트별 평균을 소수점 두 자리까지
 표시합니다. 아직 확정된 노트가 없으면 `--.--%`입니다.
 
+## 판정 인디케이터와 링·문구
+
+`GameplayJudgementView`가 하단 인디케이터와 판정원의 링·문구 상태를 소유합니다.
+Canvas가 노드를 소유하고 Presenter는 초기화·입력 피드백·표시 시간 갱신·종료만 연결합니다.
+기존 NoteEvent의 판정 등급/오차를 사용하며 점수·노트 처리·오디오 동작을 바꾸지 않습니다.
+
+인디케이터는 MAX/PERFECT/GREAT/GOOD/BAD를 각각 독립적인 색 사각형으로 조합합니다.
+넓은 BAD부터 작은 MAX까지 중심에 겹쳐 구성하며 색은 LaneKeyBeam의 공통 GradeColor와
+같습니다. 0 기준선과 빠름/늦음 문구는 별도 요소입니다. 단일 JudgementIndicator.png를
+늘리는 방식은 더 이상 사용하지 않습니다.
+판정레벨 50에서 BAD 전체 폭은 논리 400px(±90ms)이고 양쪽에 10ms씩 회색 여유를 두어
+전체 표시 범위는 ±100ms입니다. 다른 판정레벨의 기본 범위에 비례해 길이가 바뀌되,
+세션 진입 때 정한 범위를 플레이 중 유지합니다. 싱코페이션의 노트별 추가 범위로
+길이나 색 구간을 바꾸지 않습니다. 좁은 창/매우 넓은 범위에서는 좌우 20px 여백 안에
+들어오도록 배율만 줄입니다.
+
+실제 입력의 signedError를 왼쪽(빠름)·오른쪽(늦음) 위치로 표시하고 범위를 넘으면
+마커를 끝점에 제한합니다. 최신 마커 하나를 200ms 표시하며 재입력하면 위치/수명을
+갱신합니다. 범위 밖 입력은 백색 키빔만 생성하고 마커/문구를 시작하지 않습니다.
+정확도 없는 Roll/count tick과 키 해제도 마커/문구를 시작하지 않습니다.
+자동 MISS는 MISS 링·문구만 표시하며 입력 시각이 없으므로 새 마커를 만들지 않습니다.
+
+MAX/PERFECT/GREAT/GOOD/BAD/MISS/POOR는 링과 상단 문구를 합친 투명 PNG 7종입니다.
+`InGame/Judgements/<판정명>.png`를 세션 진입 때 등록하고 같은 노드를 재사용합니다.
+입력마다 파일을 읽거나 노드를 만들지 않습니다. 판정원 자식이므로 위치·배율을 따르고
+Taiko Lane의 -90° 회전을 되돌려 문구를 똑바로 표시합니다.
+최근 판정 하나를 200ms 선형 페이드로 표시합니다. POOR 조건은 적색 키빔과 동일한
+Good 이내 InputRejected이며 BAD는 기존 조기/늦은 Bad 입력을 표시합니다.
+한 입력에서 이전 노트의 MISS와 다음 노트의 성공이 함께 오면 실제 입력 응답을 우선합니다.
+reset/되감기/종료 시 마커와 링·문구를 숨깁니다.
+
+7종 PNG는 내장 기본 스킨 팩에 포함됩니다. 외부 스킨의 같은 상대 경로 파일이 우선하고
+누락된 판정 이미지만 내장본으로 대체합니다. 생성 도구/프롬프트는
+[판정 이미지 제작 기록](JudgementAssets.md)에 있습니다.
+
 코드 진입점은 `Client/GameScene/RhythmTestScene/Submodules`입니다.
-`GameplayPresenter`가 Canvas와 노드를 소유하고 `GameplayLayout`, `GameplayNoteVisuals`,
+`GameplayPresenter`가 Canvas를 소유하고 판정 표시는 `GameplayJudgementView`에 위임합니다.
+`GameplayLayout`, `GameplayNoteVisuals`,
 `GameplayKeys`, `GameplayFeedbackVisuals`에 표시별 구현을 둡니다. `GameplaySessionController`는
 시간·입력·오디오를 소유하고 `GameplayFeedback`으로 표시할 이벤트만 전달합니다.
 UI 수정 시 해당 표시 파일과 `GameplaySupport.h`의 관련 상수만 읽으면 됩니다.
