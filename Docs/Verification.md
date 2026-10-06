@@ -40,6 +40,7 @@ foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke
 Debug/Release에서 실행합니다.
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
 에디터 모드/문서 계약 변경도 같은 실행 파일에 연결된 EditorModeTests를 두 구성에서 실행합니다.
+에디터 상단 메뉴 변경은 같은 실행 파일의 EditorMenuTests도 두 구성에서 실행합니다.
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.
 전체 노트/Buzz 회귀는 `--catalog-root` 로직 테스트와
 [All-notes actual gameplay replay](../Tests/Presentation/README.md)를 두 구성에서 실행합니다.
@@ -50,6 +51,31 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
+
+## 2026-10-06 에디터 자체 상단 저장 메뉴
+
+- `EditorMenuBar`는 Canvas 노드의 비소유 참조와 메뉴 상태만 유지합니다.
+  EditorInput이 키/화면 좌표를 메뉴 의도로 변환하고 EditorView가 저장 요청을
+  기존 Workspace Save에 전달합니다. 하단 저장과 Ctrl+S도 유지했습니다.
+  탭/박자 디바이더를 메뉴 아래에 배치하고 문구는 EditorTexts 표에 추가했습니다.
+  엔진·게임플레이·차트 형식·저장 구현은 변경하지 않았습니다.
+- Debug/Release x64 전체 solution Rebuild와 최종 Client 빌드 성공.
+  두 구성의 로직/카탈로그(실제 곡 1개·패턴 5개), 네 smoke route씩 총 8개 모두 exit 0.
+- 두 구성의 Editor audio/mode/menu 회귀 성공. 메뉴 저장 의도의 1회 발생,
+  Escape/외부 좌·우클릭 소비, 닫힌 메뉴의 입력 반환, 한국어/영어/미저장 표시,
+  1920×1080·1280×720·900×720·2560×1080 좌표와 정리 및 기존 화면 공존을 확인했습니다.
+  기존 타임라인/오디오 분석/모드/저장 adapter 회귀도 같은 실행 파일에서 통과했습니다.
+- MSVC Code Analysis는 실제 Client 프로젝트 설정(C++20/PCH/include/define)으로
+  Debug 63개·Release 57개 translation unit을 `/analyze`로 컴파일했습니다.
+  마지막 메뉴 수정도 Release에서 재분석했으며 파싱/컴파일 오류와 새 경고는 없습니다.
+  테스트 소스 3개도 두 구성에서 `/analyze` 컴파일, 경고 없이 통과했습니다.
+  변경하지 않은 기존 경고는 `EditorAnalysisController.cpp:51`의 C26115,
+  `GameplaySessionController.cpp:62`의 C28020(두 구성),
+  `GameplayInput.cpp:60`의 C6236(Release)입니다. 억제하거나 범위를 넓혀 수정하지 않았습니다.
+- CheckArchitecture(8개 프로젝트), 프로젝트/필터/엔진 경계, `git diff --check` 통과.
+  사용자 곡·스킨·Option.ini와 엔진은 변경하지 않았습니다.
+- 자동 입력 의도/좌표와 draw packet, smoke 실행을 검사했습니다. 실제 화면 픽셀 배치,
+  물리 키보드/마우스 조작과 청취는 수동 확인하지 않았습니다.
 
 ## 2026-10-06 판정 인디케이터·마커·링/문구
 

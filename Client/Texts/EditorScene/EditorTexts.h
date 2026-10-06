@@ -12,6 +12,8 @@ namespace finger_drum::texts
         std::array<std::wstring_view, 5> tabs;
         std::wstring_view save;
         std::wstring_view saveDirty;
+        std::wstring_view fileMenu;
+        std::wstring_view menuSave;
 
         std::wstring_view finishLongNote;
         std::wstring_view overview;

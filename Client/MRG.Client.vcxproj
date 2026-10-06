@@ -141,6 +141,8 @@
     <ClCompile Include="EditorScene\Submodules\EditorTimelineView.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorEffectsView.cpp" />
     <ClCompile Include="EditorScene\Submodules\EditorInput.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorMenuBar.cpp" />
+    <ClInclude Include="EditorScene\Submodules\EditorMenuBar.h" />
     <ClCompile Include="EditorScene\Submodules\EditorScoreView.cpp" />
     <ClInclude Include="EditorScene\Submodules\EditorSupport.h" />
     <ClCompile Include="EditorScene\Submodules\EditorTextDialog.cpp" />

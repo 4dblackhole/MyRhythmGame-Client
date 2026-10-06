@@ -54,6 +54,24 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
     }
 }
 
+EditorMenuInputResult EditorView::UpdateMenu(const mrg::platform::InputState &input)
+{
+    EditorMenuInput menu;
+    if (input.IsMouseInsideWindow())
+        menu.pointer = v::MapScreenPointer(
+            {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
+            {static_cast<float>(width), static_cast<float>(height)}, *canvas.Get());
+    menu.leftPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
+    menu.rightPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Right);
+    const bool alt = input.IsKeyDown(VK_LMENU) || input.IsKeyDown(VK_RMENU);
+    const bool control = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+    menu.toggle = input.WasKeyPressed(VK_F10) || (alt && input.WasKeyPressed('F'));
+    menu.accept = input.WasKeyPressed(VK_RETURN) || (control && input.WasKeyPressed('S'));
+    menu.dismiss = input.WasKeyPressed(VK_ESCAPE);
+    menu.select = input.WasKeyPressed(VK_DOWN) || input.WasKeyPressed(VK_UP);
+    return menuBar_.Update(menu, state_.Document().Dirty());
+}
+
 bool EditorView::Update(const mrg::UpdateContext &context)
 {
     bool leave = false;
@@ -65,8 +83,15 @@ bool EditorView::Update(const mrg::UpdateContext &context)
     }
     try
     {
-        leave = UpdateKeyboard(input);
-        UpdatePointer(context);
+        const auto menu = UpdateMenu(input);
+        if (menu.saveRequested)
+            state_.Save();
+        if (!menu.consumeKeyboard)
+            leave = UpdateKeyboard(input);
+        if (menu.consumePointer)
+            sliderInput_.Reset(*canvas.Get());
+        else
+            UpdatePointer(context);
     }
     catch (const std::exception &e)
     {

@@ -8,6 +8,8 @@ Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성�
 `Submodules/EditorWorkspace`는 문서와 모드의 수명 및 공통 편집 상태를,
 `EditorView`와 각 `Editor*View.cpp`는 공통 탭/타임라인/분석 화면을 맡습니다.
 `EditorInput`은 공통 입력을 연결하고 모드별 좌표 해석은 모드 객체에 위임합니다.
+`EditorMenuBar`는 에디터 전용 Canvas 상단 메뉴와 열림/강조 상태를 맡고,
+저장 의도만 View로 반환합니다. 문서·모드·Scene을 참조하지 않습니다.
 `EditorAnalysisController`는 worker와 marker 캐시를 맡습니다.
 PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
 문법 변경이 없으면 다른 형식 문서와 엔진 내부를 읽을 필요가 없습니다.
@@ -46,7 +48,12 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
   표의 소유 파일은 YME이며 사운드 상대경로도 YME 폴더 기준입니다.
 - 이펙트 목록 선택 후 같은 위치의 값을 수정하거나 삭제할 수 있습니다. 동/캇 변경은 각각
   독립 지시문입니다. 각 입력 필드는 Unicode 입력을 지원하는 Windows 텍스트 창에서 편집합니다.
-- Ctrl+S 또는 저장 버튼으로 YMP와 `Effect file`이 지정한 YME를 저장합니다.
+- 최상단 자체 메뉴바의 파일 → 저장하기, 기존 하단 저장 버튼 또는 Ctrl+S로
+  YMP와 `Effect file`이 지정한 YME를 저장합니다. 세 경로 모두 Workspace의 같은 저장 명령입니다.
+  메뉴바는 에디터에서만 표시하며 Windows 네이티브 메뉴 API를 사용하지 않습니다.
+  Alt+F/F10으로 메뉴를 열거나 닫고 Enter로 저장할 수 있습니다. 메뉴가 열린 동안
+  뒤쪽 탭·노트·슬라이더 입력을 차단하며, 바깥 클릭 또는 Escape는 메뉴만 닫습니다.
+  메뉴 문구·글꼴은 기존 `Texts/EditorScene` 표와 언어별 글꼴 설정을 사용합니다.
   경로가 없으면 같은 이름의 YME를 생성하고 YMP에 참조를 기록합니다. 미저장 상태에서
   Escape를 누르면 폐기 여부를 확인합니다. 저장 전 파싱 왕복 검증 및 두 파일의 임시/복구본을
   사용합니다. 저장 실패로 `.editor.tmp`/`.editor.bak`가 남으면 원본 복구를 확인한 뒤 제거하세요.
@@ -70,6 +77,7 @@ EditorScene
       ChartEditor               현재 YMP/YME 구현
     EditorAnalysisController    IEditorAudioSource의 파일/marker 비동기 분석
   EditorView                    공통 탭/박자 디바이더/타임라인/FFT 화면
+    EditorMenuBar               Canvas 상단 파일/저장 메뉴와 입력 점유 상태
     IEditorModeCanvas           모드에 제공하는 Box/Text/Button 그리기 계약
 ```
 

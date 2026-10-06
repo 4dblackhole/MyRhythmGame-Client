@@ -2,6 +2,7 @@
 #include "Catalog/SongCatalog.h"
 #include "Editing/ChartEditor.h"
 #include "EditorModeTests.h"
+#include "EditorMenuTests.h"
 #include "EditorScene/Submodules/EditorView.h"
 #include "EditorScene/Submodules/Modes/EditorModeFactory.h"
 #include "GameScene/MusicSelectScene/Submodules/SongPreviewController.h"
@@ -73,6 +74,7 @@ int main()
     {
         std::string assetError;
         Check(finger_drum::assets::InitializeBuiltInAssets(assetError), assetError.c_str());
+        TestEditorMenu();
         namespace chart = finger_drum::chart;
         chart::PatternDocument pattern;
         pattern.baseBpm = 120;
@@ -177,6 +179,10 @@ int main()
             return std::ranges::any_of(renderer.packets, [&](const auto &packet) { return packet.text == text; });
         };
         visuals.Render({});
+        Check(hasText(L"파일"), "Editor view must compose the top menu.");
+        Check(hasText(std::wstring(state.Document().Dirty() ? finger_drum::texts::Editor(texts.CurrentLanguage()).saveDirty
+                                                           : finger_drum::texts::Editor(texts.CurrentLanguage()).save)),
+              "Existing footer Save must remain available.");
         Check(hasText(L"타임라인") && !hasText(L"음악 FFT 스펙트로그램"),
               "Pattern tab must show the timeline without the audio analysis "
               "tracks.");
@@ -200,9 +206,16 @@ int main()
               "cells.");
 
         auto *canvas = visuals.FindCanvas(1);
-        Check(canvas != nullptr, "Editor Canvas missing");
+        if (canvas == nullptr)
+            throw std::runtime_error("Editor Canvas missing");
+        auto *menuBar = FindNode(canvas->Root(), "Editor.MenuBar");
+        if (menuBar == nullptr)
+            throw std::runtime_error("Editor top menu is missing.");
+        Check(menuBar->BoundsInCanvas().height == EditorMenuBar::Height, "Editor top menu geometry is wrong.");
         auto *slider = FindNode(canvas->AnchorNode(v::Anchor::Center), "Editor timeline");
-        Check(slider && slider->IsVisible(), "Audio timeline slider missing");
+        if (slider == nullptr)
+            throw std::runtime_error("Audio timeline slider missing");
+        Check(slider->IsVisible(), "Audio timeline slider hidden");
         v::Visual2DInputRouter pointerRouter;
         v::PointerInput pointer{};
         pointer.available = true;
@@ -223,11 +236,14 @@ int main()
         texts.SetLanguage(finger_drum::texts::Language::English);
         view.Build();
         visuals.Render({});
-        Check(hasText(L"AUDIO") && hasText(L"MUSIC FFT SPECTROGRAM"), "Audio labels not localized");
+        Check(hasText(L"AUDIO") && hasText(L"MUSIC FFT SPECTROGRAM") && hasText(L"File"),
+              "Audio and menu labels not localized");
         visuals.OnResize(900, 720);
         view.Resize(900, 720);
         view.Build();
         Check(state.TimelineRangeMilliseconds() == std::pair{begin, end}, "Resize changed time range");
+        Check(menuBar->BoundsInCanvas().width == canvas->LogicalSize().width,
+              "Editor view must resize the composed menu.");
         view.Shutdown();
         Check(visuals.CanvasCount() == 0, "Editor Canvas survived shutdown");
         visuals.OnResize(1920, 1080);

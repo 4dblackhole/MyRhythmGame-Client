@@ -63,6 +63,8 @@
     <ClCompile Include="EditorScene\Submodules\EditorTimelineView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClCompile Include="EditorScene\Submodules\EditorEffectsView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClCompile Include="EditorScene\Submodules\EditorInput.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
+    <ClCompile Include="EditorScene\Submodules\EditorMenuBar.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
+    <ClInclude Include="EditorScene\Submodules\EditorMenuBar.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
     <ClCompile Include="EditorScene\Submodules\EditorScoreView.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClInclude Include="EditorScene\Submodules\EditorSupport.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
     <ClCompile Include="EditorScene\Submodules\EditorTextDialog.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>

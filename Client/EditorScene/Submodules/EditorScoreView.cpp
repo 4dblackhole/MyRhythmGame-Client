@@ -22,15 +22,16 @@ void EditorView::DrawTools()
         !state_.Score().realtime);
     Button(
         {292, 76, 180, 32}, std::wstring(text.realtime), [this] { state_.SetRealtime(true); }, state_.Score().realtime);
-    Text({1080, 5, 150, 24}, std::wstring(text.beatDivider), 17);
-    Text({1080, 29, 150, 26}, L"1/" + std::to_wstring(state_.Score().division), 18, Blue);
+    Text({1080, 5 + EditorMenuBar::Height, 150, 24}, std::wstring(text.beatDivider), 17);
+    Text({1080, 29 + EditorMenuBar::Height, 150, 26}, L"1/" + std::to_wstring(state_.Score().division), 18, Blue);
     for (int d = 1; d <= 16; ++d)
     {
         const float x = DivisionSliderRect.x + 8 + (DivisionSliderRect.width - 16) * (d - 1) / 15.0F;
-        Box({x - 1, 32, 2, 5}, Ink);
-        Text({x - 19, 38, 38, 18}, L"1/" + std::to_wstring(d), 12, state_.Score().division == d ? Blue : Ink);
+        Box({x - 1, 32 + EditorMenuBar::Height, 2, 5}, Ink);
+        Text({x - 19, 38 + EditorMenuBar::Height, 38, 18}, L"1/" + std::to_wstring(d), 12,
+             state_.Score().division == d ? Blue : Ink);
     }
-    Button({1740, 8, 150, 40}, std::wstring(text.directInput), [this] {
+    Button({1740, 8 + EditorMenuBar::Height, 150, 40}, std::wstring(text.directInput), [this] {
         if (auto s =
                 EditText(std::wstring(Texts().beatDivisionDialog), std::to_string(state_.Score().division), Texts()))
         {

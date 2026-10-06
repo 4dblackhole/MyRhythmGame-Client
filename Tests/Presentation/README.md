@@ -68,7 +68,7 @@ $testObjectDirectory = "build/obj/EditorPresentationTests/$configuration"
 New-Item -ItemType Directory -Path $testObjectDirectory -Force | Out-Null
 $objects += @('Pch', 'TextCatalog', 'SkinSetSelection', 'SongPreviewController') | ForEach-Object { "build/obj/MRG.Client/x64/$configuration/$_.obj" }
 $libraries = @('Rhythm', 'Chart', 'Modes', 'Editor', 'Assets') | ForEach-Object { "bin/x64/$configuration/FingerDrum.$_.lib" }
-& cl /nologo /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Rhythm /IFingerDrum.Chart /IFingerDrum.Modes /IFingerDrum.Editor /IFingerDrum.Assets/Public /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/EditorAudioViewTests.cpp Tests/Presentation/EditorModeTests.cpp @objects @libraries "Dependencies/MRG-Engine/bin/x64/$configuration/MRG.Core.lib" "/Fo$testObjectDirectory/" "/Febin/x64/$configuration/EditorAudioViewTests.exe" /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" "build/obj/FingerDrum.Assets/x64/$configuration/FingerDrum.Assets.res" user32.lib gdi32.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib
+& cl /nologo /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Rhythm /IFingerDrum.Chart /IFingerDrum.Modes /IFingerDrum.Editor /IFingerDrum.Assets/Public /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/EditorAudioViewTests.cpp Tests/Presentation/EditorModeTests.cpp Tests/Presentation/EditorMenuTests.cpp @objects @libraries "Dependencies/MRG-Engine/bin/x64/$configuration/MRG.Core.lib" "/Fo$testObjectDirectory/" "/Febin/x64/$configuration/EditorAudioViewTests.exe" /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" "build/obj/FingerDrum.Assets/x64/$configuration/FingerDrum.Assets.res" user32.lib gdi32.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib
 if ($LASTEXITCODE -ne 0) { throw 'Editor audio view test build failed' }
 & "./bin/x64/$configuration/EditorAudioViewTests.exe"
 if ($LASTEXITCODE -ne 0) { throw 'Editor audio view tests failed' }
@@ -83,6 +83,11 @@ targets, Save dispatch and marker revision caching through the common editor.
 It also covers realtime lane boundaries, spaced/case-insensitive Buzz options,
 Purple and timed/explicit sound agreement with play, invalid seek preservation,
 effect/timing commands, failed edit rollback and drawing failure recovery.
+`EditorMenuTests.cpp` checks the Save-only Canvas menu, Korean/English and dirty
+labels, pointer mapping at four viewport sizes, one-shot mouse/keyboard Save,
+Escape/outside/right-click dismissal, input consumption and observer cleanup.
+The composed view checks menu/footer coexistence and menu resizing. These are
+synthetic menu intents and draw geometry, not physical Raw Input or manual UI tests.
 The object list comes from the Client project so removed/stale objects are not linked.
 Immutable rectangle batches are expanded only in the recording renderer for visual assertions.
 It also checks actual asynchronous MP3 opening/playback with the FMOD NoSound output,

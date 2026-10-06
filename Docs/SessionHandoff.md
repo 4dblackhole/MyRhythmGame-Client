@@ -22,6 +22,9 @@
 
 - 기본 진입은 로고 → 플레이 또는 에디터 곡 선택 → 플레이/에디터입니다.
 - YMP/YME 편집·저장, BPM/마디/히트사운드 변경과 오디오 분석을 지원합니다.
+- 에디터 전용 Canvas 상단 메뉴는 파일 → 저장하기만 제공합니다. `EditorMenuBar`는
+  메뉴 상태/저장 의도를 맡으며 하단 저장·Ctrl+S와 함께 기존 Workspace Save를 사용합니다.
+  메뉴 입력 차단/언어/해상도 회귀는 Presentation의 EditorMenuTests에 있습니다.
 - YMP의 Effect file은 YMP 기준이고 히트사운드 표/파일 경로는 YME 소유/기준입니다.
   YME는 Interpolation/HitSounds 기본 데이터와 Speed/Sounds/Zone 명령을 분리합니다.
   볼륨은 히트사운드 대상입니다. 문법·보간·Whole/Separate·싱코페이션/Kiai는

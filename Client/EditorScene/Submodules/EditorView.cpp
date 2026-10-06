@@ -28,6 +28,7 @@ void EditorView::Initialize(const mrg::EngineServices &services)
                           TimelineSliderRect.width, TimelineSliderRect.height},
                          0, "Editor timeline");
     timelineSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
+    menuBar_.Initialize(*canvas.Get(), texts_);
     ReloadSize();
     Build();
 }
@@ -117,6 +118,7 @@ void EditorView::ReloadSize()
 {
     const float scale = std::min(1.0F, canvas.Get()->LogicalSize().width / 1920.0F);
     node->Transform().SetScale(scale, scale, 1);
+    menuBar_.Resize();
     sliderInput_.InvalidateHitTest();
     state_.RequestRebuild();
 }
@@ -132,7 +134,7 @@ void EditorView::DrawNavigation()
     const auto &text = Texts();
     for (int i = 0; i < static_cast<int>(text.tabs.size()); ++i)
         Button(
-            {i * 200.0F, 0, 200, 60}, std::wstring(text.tabs[i]),
+            {i * 200.0F, EditorMenuBar::Height, 200, 40}, std::wstring(text.tabs[i]),
             [this, i] { state_.SelectTab(static_cast<EditorTab>(i)); }, static_cast<int>(state_.Tab()) == i);
 }
 
@@ -149,6 +151,7 @@ void EditorView::Build()
 {
     try
     {
+        menuBar_.Refresh(state_.Document().Dirty());
         BuildContent();
         buildFailed_ = false;
     }

@@ -1,5 +1,6 @@
 #pragma once
 #include "EditorSupport.h"
+#include "EditorMenuBar.h"
 #include "EditorVisual.h"
 #include "EditorWorkspace.h"
 #include "Texts/EditorScene/EditorTexts.h"
@@ -28,6 +29,7 @@ class EditorView final : public IEditorModeCanvas
         controls.clear();
         if (canvas.Get())
             sliderInput_.Reset(*canvas.Get());
+        menuBar_.Shutdown();
         canvas.Reset();
         node = nullptr;
         divisionSliderNode_ = nullptr;
@@ -51,6 +53,7 @@ class EditorView final : public IEditorModeCanvas
     void DrawScore();
     void DrawTools();
     void UpdateSliders(const mrg::UpdateContext &context);
+    EditorMenuInputResult UpdateMenu(const mrg::platform::InputState &input);
     bool UpdateKeyboard(const mrg::platform::InputState &);
     void UpdatePointer(const mrg::UpdateContext &);
     void SyncDivisionSlider() noexcept;
@@ -77,9 +80,10 @@ class EditorView final : public IEditorModeCanvas
     mrg::visual2d::Visual2DNode *divisionSliderNode_{};
     mrg::visual2d::Visual2DNode *timelineSliderNode_{};
     mrg::visual2d::Visual2DInputRouter sliderInput_;
+    EditorMenuBar menuBar_;
     EditorVisual *visual{};
     bool buildFailed_{};
-    static constexpr v::Rect DivisionSliderRect{1240, 6, 480, 26};
+    static constexpr v::Rect DivisionSliderRect{1240, 6 + EditorMenuBar::Height, 480, 26};
     static constexpr v::Rect TimelineSliderRect{205, 915, 1645, 44};
     std::vector<Control> controls;
     using AudioColumnsKey = std::tuple<double, double, double, double, std::uint64_t>;
