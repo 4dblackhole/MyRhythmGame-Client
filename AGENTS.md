@@ -127,6 +127,33 @@ This file applies to the entire repository except the independently versioned
   bypass failed checks, merge conflicts, or branch protection; report such a
   blocker instead. Preserve unrelated working-tree files while synchronizing.
 
+## Code quality checks
+
+- For every code change, review the changed code and direct callers for
+  correctness, ownership/lifetime, error handling, bounds and conversions,
+  applicable concurrency risks, duplication, and function responsibility/readability.
+  Keep fixes within the requested change boundary.
+- Run static analysis on the affected Client-owned C++ projects with
+  `clang-tidy` or MSVC Code Analysis before completing code changes. Use the
+  actual project include paths, defines, C++ standard, and relevant x64 build
+  configurations; a run with parsing errors is not a successful quality check.
+  Follow repository-defined checks and commands when available, and record the
+  tool, configuration, scope, and results in the completion report.
+- Run `Scripts/CheckArchitecture.ps1` for code/project changes and
+  `git diff --check` for every change. Static analysis supplements the builds,
+  logic tests, and smoke routes required below; it does not replace them.
+- Resolve compiler warnings and static-analysis findings introduced by the
+  change. Report unrelated existing findings separately without expanding the
+  task into a repository-wide cleanup.
+- Do not apply blanket automatic fixes or suppress diagnostics merely to make
+  checks pass. Any targeted suppression must explain why the diagnostic does
+  not apply. Keep engine sources, third-party SDKs, and generated files outside
+  the Client analysis/fix scope; engine work follows its own repository rules.
+- If a required tool is unavailable or analysis cannot run, report the exact
+  limitation and the checks actually performed. Do not silently skip the check
+  or claim it passed. Documentation-only changes require `git diff --check`;
+  they do not require C++ static analysis, builds, or runtime tests.
+
 ## Verification
 
 Use `Docs/Verification.md` for canonical commands. Code changes require
