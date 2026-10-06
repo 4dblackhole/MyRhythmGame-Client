@@ -1,5 +1,6 @@
 #include "Editing/ChartEditor.h"
 #include "Parsing/ChartParser.h"
+#include "Automation/InterpolationExpression.h"
 
 #include <algorithm>
 #include <cmath>
@@ -44,23 +45,95 @@ void WriteFile(const std::filesystem::path &path, const std::string &text)
     file.close();
 }
 
+void WritePosition(std::ostream &out, MusicalPosition p)
+{
+    out << p.measure + 1 << ", " << Fraction(p.fraction);
+}
+std::string_view EffectSection(EffectCommandType type)
+{
+        if (type == EffectCommandType::ScrollSpeed || type == EffectCommandType::NoteSpeed) return "Speed";
+        if (type == EffectCommandType::SyncopationZone || type == EffectCommandType::Kiai || type == EffectCommandType::MeasureLineVisible) return "Zone";
+        return "Sounds";
+}
+
+void WriteEffect(std::ostream &out, const EffectCommand &c)
+{
+    WritePosition(out, c.position);
+    if (c.endPosition) { out << ", Area, "; WritePosition(out, *c.endPosition); }
+    out << ", #";
+    switch (c.type)
+    {
+    case EffectCommandType::ScrollSpeed: out << "ScrollSpeed Whole"; break;
+    case EffectCommandType::NoteSpeed: out << "ScrollSpeed Separate"; break;
+    case EffectCommandType::BusVolume: out << "Volume " << c.target; break;
+    case EffectCommandType::ReverbSend: out << "ReverbSend " << c.target; break;
+    case EffectCommandType::LowPassCutoff: out << "LowPassCutoff " << c.target; break;
+    case EffectCommandType::HighPassCutoff: out << "HighPassCutoff " << c.target; break;
+    case EffectCommandType::MeasureLineVisible: out << "MeasureLineVisible"; break;
+    case EffectCommandType::SyncopationZone: out << "Syncopation"; break;
+    case EffectCommandType::Kiai: out << "Kiai"; break;
+    default: throw std::invalid_argument("Unsupported YME effect.");
+    }
+    if (c.type == EffectCommandType::SyncopationZone || c.type == EffectCommandType::Kiai)
+    {
+        out << (c.endValue >= .5 ? " ON" : " OFF");
+        if (!c.excludedDivisions.empty())
+        {
+            out << ", Exclude=";
+            for (std::size_t i = 0; i < c.excludedDivisions.size(); ++i) out << (i ? "|" : "") << c.excludedDivisions[i];
+        }
+    }
+    else if (c.endPosition)
+    {
+        const auto curve = !c.curveName.empty() ? c.curveName :
+            c.curve == AutomationCurve::Linear ? "Linear" : c.curve == AutomationCurve::Exponential ? "Exponential" :
+            c.curve == AutomationCurve::Harmonic ? "Harmonic" : "";
+        if (curve.empty()) throw std::invalid_argument("Area requires a registered or built-in curve.");
+        out << ", From=" << c.beginValue << ", To=" << c.endValue << ", Curve=" << curve;
+    }
+    else out << ", Value=" << c.endValue;
+    out << '\n';
+}
+
+void CompileDocumentInterpolations(EffectDocument &effects)
+{
+    CompiledInterpolations compiled;
+    for (const auto &[name, expression] : effects.interpolations)
+        compiled.emplace(name, std::make_shared<const InterpolationExpression>(expression));
+    for (auto &command : effects.commands)
+        if (command.endPosition && !command.curveName.empty())
+            ResolveInterpolation(command, compiled);
+}
+
 void Validate(const PatternDocument &pattern, const EffectDocument &effects, const MusicalTimeline &timeline)
 {
     const auto validPosition = [&timeline](MusicalPosition p) {
         return p.measure >= 0 && p.fraction >= Rational{} && p.fraction < timeline.MeasureLength(p.measure);
     };
     for (const auto &note : pattern.notes)
+    {
         if (!validPosition(note.position))
             throw std::invalid_argument("Note is outside its measure.");
+        if (!note.hitSound.empty() && !effects.hitSounds.contains(note.hitSound))
+            throw std::invalid_argument("Note references an undefined YME hit sound index.");
+    }
     for (const auto &directive : pattern.timing)
         if (!validPosition(directive.position))
             throw std::invalid_argument("Move the out-of-measure timing directive before changing this signature.");
     for (const auto &change : effects.hitSoundChanges)
-        if (!validPosition(change.position) || !pattern.hitSounds.contains(change.soundIndex) ||
+        if (!validPosition(change.position) || !effects.hitSounds.contains(change.soundIndex) ||
             (change.keyType != 1 && change.keyType != 2))
             throw std::invalid_argument("Invalid hit sound change position, index or key ID.");
     for (const auto &command : effects.commands)
     {
+        if (command.type == EffectCommandType::BusVolume && command.target != "HitSound" &&
+            command.target != "TickSound" && command.target != "UserInputFeedback")
+            throw std::invalid_argument("Volume targets hit sounds, not Music/UI.");
+        if (command.type == EffectCommandType::BusVolume && (command.beginValue < 0 || command.endValue < 0))
+            throw std::invalid_argument("Volume cannot be negative.");
+        if (command.endPosition && (command.curve == AutomationCurve::Exponential || command.curve == AutomationCurve::Harmonic) &&
+            (command.beginValue <= 0 || command.endValue <= 0))
+            throw std::invalid_argument("Exponential/Harmonic endpoints must be positive.");
         if (!validPosition(command.position) ||
             (command.endPosition && (!validPosition(*command.endPosition) || *command.endPosition <= command.position)))
             throw std::invalid_argument("Effect starts outside its measure.");
@@ -70,6 +143,15 @@ void Validate(const PatternDocument &pattern, const EffectDocument &effects, con
         if ((command.type == EffectCommandType::NoteSpeed || command.type == EffectCommandType::ScrollSpeed) &&
             (command.beginValue <= 0 || command.endValue <= 0))
             throw std::invalid_argument("Speed must be positive.");
+        if (command.endPosition)
+            for (int i = 0; i <= 128; ++i)
+            {
+                const auto value = EvaluateInterpolation(command, i / 128.0);
+                if (!std::isfinite(value) ||
+                    ((command.type == EffectCommandType::NoteSpeed || command.type == EffectCommandType::ScrollSpeed) && value <= 0) ||
+                    (command.type == EffectCommandType::BusVolume && value < 0))
+                    throw std::invalid_argument("Interpolation produces an invalid effect value.");
+            }
     }
 }
 } // namespace
@@ -77,7 +159,12 @@ void Validate(const PatternDocument &pattern, const EffectDocument &effects, con
 ChartEditor::ChartEditor(PatternDocument pattern, EffectDocument effects)
     : pattern_(std::move(pattern)), effects_(std::move(effects)), timeline_(pattern_)
 {
+    CompileDocumentInterpolations(effects_);
+    if (effects_.sourcePath.empty() && !pattern_.sourcePath.empty())
+        effects_.sourcePath = pattern_.sourcePath.parent_path() / (pattern_.effectFile.empty()
+            ? std::filesystem::path(pattern_.sourcePath.stem().wstring() + L".yme") : pattern_.effectFile);
     Validate(pattern_, effects_, timeline_);
+    scroll_ = ScrollAutomation(timeline_.CompileEffects(effects_));
     InitializeEventTrees();
 }
 
@@ -93,17 +180,16 @@ void ChartEditor::InitializeEventTrees()
     for (auto &change : effects_.hitSoundChanges)
         soundChangeTree_.emplace(change.position, std::move(change));
     // A conservative lower bound also covers grid points with no authored note.
-    double noteMinimum = 1, scrollMinimum = 1;
+    double noteMinimum = 1;
     for (const auto &[position, command] : effectTree_)
     {
         const double value = std::min(command.beginValue, command.endValue);
         if (command.type == EffectCommandType::NoteSpeed)
             noteMinimum = std::min(noteMinimum, value);
-        if (command.type == EffectCommandType::ScrollSpeed)
-            scrollMinimum = std::min(scrollMinimum, value);
+
     }
     minimumScrollMultiplier_ = static_cast<double>(std::max(
-        static_cast<long double>(noteMinimum) * scrollMinimum,
+        static_cast<long double>(noteMinimum),
         static_cast<long double>(std::numeric_limits<double>::denorm_min())));
     pattern_.timing.clear();
     effects_.commands.clear();
@@ -187,8 +273,7 @@ CompiledPatternNote ChartEditor::CompileNote(PatternNote note) const
         note.position.fraction >= timeline_.MeasureLength(note.position.measure))
         throw std::invalid_argument("Note is outside its measure.");
     const auto time = timeline_.Compile(note.position);
-    const auto speed = EffectValueAt(EffectCommandType::NoteSpeed, note.position) *
-                       EffectValueAt(EffectCommandType::ScrollSpeed, note.position);
+    const auto speed = EffectValueAt(EffectCommandType::NoteSpeed, note.position);
     if (!std::isfinite(speed) || speed <= 0)
         throw std::invalid_argument("Combined note speed must be positive and finite.");
     return {std::move(note), time, speed};
@@ -336,7 +421,8 @@ void ChartEditor::Replace(PatternDocument pattern, EffectDocument effects)
     // Construct caches before publishing the edit, preserving the old chart on error.
     ChartEditor replacement(std::move(pattern), std::move(effects));
     const bool sourcesChanged = replacement.pattern_.musicMetadataFile != pattern_.musicMetadataFile ||
-        replacement.pattern_.sourcePath != pattern_.sourcePath || replacement.pattern_.hitSounds != pattern_.hitSounds;
+        replacement.pattern_.sourcePath != pattern_.sourcePath ||
+        replacement.effects_.sourcePath != effects_.sourcePath || replacement.effects_.hitSounds != effects_.hitSounds;
     replacement.audioSourceRevision_ = audioSourceRevision_ + sourcesChanged;
     replacement.nextNoteId_ = std::max(nextNoteId_, replacement.nextNoteId_);
     replacement.dirty_ = true;
@@ -457,6 +543,7 @@ std::string ChartEditor::WritePattern(const PatternDocument &pattern)
     out.imbue(std::locale::classic());
     out << std::setprecision(17) << "Version: " << pattern.version << "\n[Metadata]\n"
         << "Music metadata: " << Utf8(pattern.musicMetadataFile) << '\n'
+        << "Effect file: " << Utf8(pattern.effectFile) << '\n'
         << "Pattern Name: " << pattern.name << '\n';
     for (std::size_t i = 0; i < pattern.makers.size(); ++i)
         out << "Pattern Maker " << i << ": " << pattern.makers[i] << '\n';
@@ -464,9 +551,7 @@ std::string ChartEditor::WritePattern(const PatternDocument &pattern)
     for (std::size_t i = 0; i < pattern.tags.size(); ++i)
         out << (i ? ", " : "") << pattern.tags[i];
     out << "\nPattern Offset: " << pattern.patternOffsetMilliseconds << "\nBase BPM: " << pattern.baseBpm
-        << "\n[Difficulty]\nMode: " << pattern.mode << "\nJudgeLevel: " << pattern.judgementLevel << "\n[HitSounds]\n";
-    for (const auto &[index, path] : pattern.hitSounds)
-        out << index << ": " << Utf8(path) << '\n';
+        << "\n[Difficulty]\nMode: " << pattern.mode << "\nJudgeLevel: " << pattern.judgementLevel << '\n';
     out << "[Time Signature]\n";
     auto timing = pattern.timing;
     std::ranges::stable_sort(timing, {}, &TimingDirective::position);
@@ -499,34 +584,30 @@ std::string ChartEditor::WritePattern(const PatternDocument &pattern)
 
 std::string ChartEditor::WriteEffects(const EffectDocument &effects)
 {
-    static constexpr const char *Names[]{"ScrollSpeed",     "NoteSpeed",     "BusVolume",
-                                         "ReverbSend",      "LowPassCutoff", "HighPassCutoff",
-                                         "SyncopationZone", "Custom",        "MeasureLineVisible"};
-    static constexpr const char *Curves[]{"Step", "Linear", "Smoothstep", "Exponential"};
     std::ostringstream out;
     out.imbue(std::locale::classic());
-    out << std::setprecision(17) << "Version: " << effects.version << "\n[Effects]\n";
+    out << std::setprecision(17) << "Version: " << effects.version << "\n[Interpolation]\n";
+    for (const auto &[name, expression] : effects.interpolations) out << name << ": " << expression << '\n';
+    out << "[HitSounds]\n";
+    for (const auto &[index, path] : effects.hitSounds) out << index << ": " << Utf8(path) << '\n';
     auto commands = effects.commands;
     std::ranges::stable_sort(commands, {}, &EffectCommand::position);
-    std::int64_t measure = 0;
-    for (const auto &c : commands)
+    const auto position = [&out](MusicalPosition p) { out << p.measure + 1 << ", " << Fraction(p.fraction); };
+    for (const auto group : {"Speed", "Sounds", "Zone"})
     {
-        Advance(out, measure, c.position.measure);
-        const std::string name = c.type == EffectCommandType::Custom && !c.customCommand.empty()
-                                     ? c.customCommand
-                                     : "#" + std::string(Names[static_cast<unsigned>(c.type)]);
-        out << Fraction(c.position.fraction) << ", " << name << ", " << c.target << ", " << c.beginValue << ", "
-            << c.endValue << ", " << c.durationMilliseconds << ", " << Curves[static_cast<unsigned>(c.curve)];
-        for (const auto &argument : c.arguments)
-            out << ", " << argument;
-        if (c.endPosition)
-            out << ", End=" << c.endPosition->measure + 1 << ':' << Fraction(c.endPosition->fraction);
-        out << '\n';
+        out << '[' << group << "]\n";
+        for (const auto &c : commands)
+        {
+            if (EffectSection(c.type) != group) continue;
+            WriteEffect(out, c);
+        }
+        if (std::string_view(group) == "Sounds")
+            for (const auto &c : effects.hitSoundChanges)
+            {
+                position(c.position);
+                out << ", #HitSound " << (c.keyType == 1 ? "Don" : "Kat") << ' ' << c.soundIndex << '\n';
+            }
     }
-    out << "[HitSound Changes]\n";
-    for (const auto &c : effects.hitSoundChanges)
-        out << c.position.measure + 1 << ", " << Fraction(c.position.fraction) << ", " << c.soundIndex << ", "
-            << c.keyType << '\n';
     return out.str();
 }
 
@@ -534,9 +615,11 @@ void ChartEditor::Save()
 {
     if (pattern_.sourcePath.empty())
         throw std::runtime_error("No YMP save path.");
-    auto effectPath = pattern_.sourcePath;
-    effectPath.replace_extension(L".yme");
-    const std::string patternText = WritePattern(Pattern());
+    auto savedPattern = Pattern();
+    if (savedPattern.effectFile.empty())
+        savedPattern.effectFile = pattern_.sourcePath.stem().wstring() + L".yme";
+    const auto effectPath = (pattern_.sourcePath.parent_path() / savedPattern.effectFile).lexically_normal();
+    const std::string patternText = WritePattern(savedPattern);
     const std::string effectText = WriteEffects(Effects());
     ChartParser parser;
     const auto parsedPattern = parser.ParsePattern(patternText);
@@ -544,6 +627,7 @@ void ChartEditor::Save()
     if (!parsedPattern.Succeeded() || !parsedEffects.Succeeded() ||
         WritePattern(parsedPattern.document) != patternText || WriteEffects(parsedEffects.document) != effectText)
         throw std::runtime_error("Serialized chart failed validation; originals were not modified.");
+    if (!effectPath.parent_path().empty()) std::filesystem::create_directories(effectPath.parent_path());
 
     // Stage both files first and retain recoverable backups if any replace
     // fails. Existing backups are never overwritten.
@@ -596,6 +680,7 @@ void ChartEditor::Save()
         std::filesystem::remove(patternBackup, ignored);
     if (backedEffect)
         std::filesystem::remove(effectBackup, ignored);
+    pattern_.effectFile = savedPattern.effectFile;
     effects_.sourcePath = effectPath;
     dirty_ = false;
 }

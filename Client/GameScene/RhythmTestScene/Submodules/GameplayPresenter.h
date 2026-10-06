@@ -84,11 +84,12 @@ class GameplayPresenter final
     mrg::visual2d::ImageHandle NoteImage(std::wstring_view);
     void UpdateMeasureLines(finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmDuration, bool);
     void UpdateTickVisuals(NoteVisualLayers &, const finger_drum::mode::NotePresentationInfo &,
-                          finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmDuration);
+                          finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmDuration, finger_drum::rhythm::RhythmTime);
     void UpdatePresentationLayout();
     void UpdateNoteTravelLayout();
     [[nodiscard]] float TravelPixels(finger_drum::rhythm::RhythmDuration duration,
                                      float multiplier = 1.0F) const noexcept;
+    float TravelPixelsAt(finger_drum::rhythm::RhythmTime target, finger_drum::rhythm::RhythmTime current, float multiplier = 1) const;
     [[nodiscard]] finger_drum::rhythm::RhythmDuration VisibleTravelDuration() const;
     void HideTransientNoteVisuals();
     void RemoveUnusedNoteVisuals();

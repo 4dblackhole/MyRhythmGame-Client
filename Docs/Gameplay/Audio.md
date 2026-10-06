@@ -40,7 +40,7 @@ DSP 예약 시각을 재설정하지 않으므로 이 경우의 동기화는 보
 
 ## 실시간 오디오 효과
 
-YME의 `BusVolume`, `ReverbSend`, `LowPassCutoff`, `HighPassCutoff` 자동화는
+YME Sounds의 `#Volume`, `#ReverbSend`, `#LowPassCutoff`, `#HighPassCutoff` 자동화는
 `PlaySession::EvaluateAutomation`에서 timeline 값으로 평가한 후
 `GameplayAudioRouter`가 엔진 bus/effect에 적용합니다. 명령은 종류/대상별 시간 인덱스로
 최신 값만 조회하고 같은 시각의 Controller/Presenter 조회는 평가 결과를 공유합니다.
@@ -53,32 +53,10 @@ delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추�
 기본 히트사운드는 수락한 입력에 맞는 Don/Kat이며 명시적 hitsound도
 지원합니다. 이는 게임별 라우터를 거치며 새 오디오 채널 정책을 추가하지 않습니다.
 
-## 상태 기반 히트사운드
-
-노트 규칙은 직접 FMOD를 호출하지 않습니다. 상태 전이인 `NoteEvent`를 만들고
-`INoteSoundPolicy`가 이를 `AudioCueRequest`로 변환합니다. binding은 event,
-이전/다음 상태, 판정 등급, hit index, tick index를 조건으로 사용할 수 있습니다.
-
-- 큰 노트는 Good 이상인 첫 번째 accepted hit(`hitIndex == 0`)에서만 전용
-  사운드를 냅니다.
-- 범위 밖 입력은 노트 전용 사운드가 아니라 `UserInputFeedback` bus의 일반
-  Don/Kat 사운드를 냅니다.
-- 홀드 tick은 `TickAccepted`마다 한 번만 `TickSound` bus로 전달됩니다.
-
-이 분리 덕분에 같은 노트 규칙을 유지한 채 스킨별 파일, 볼륨, pitch, pan,
-우선순위와 bus를 바꿀 수 있습니다.
-
-## 실시간 오디오 효과
-
-YME의 `BusVolume`, `ReverbSend`, `LowPassCutoff`, `HighPassCutoff` 자동화는
-`PlaySession::EvaluateAutomation`에서 timeline 값으로 평가한 후
-`GameplayAudioRouter`가 엔진 bus/effect에 적용합니다. 명령은 종류/대상별 시간 인덱스로
-최신 값만 조회하고 같은 시각의 Controller/Presenter 조회는 평가 결과를 공유합니다.
-대상이 같은 실제 출력에 연결되는 경우에도 원래 명령 순서대로 적용합니다.
-Reverb/필터 DSP는 세션 진입에 미리 만들고 bypass 상태로 두며 첫 자동화부터 활성화합니다.
-향후 compressor,
-delay 또는 모드 전용 효과는 차트 명령과 라우터 mapping을 추가하되 노트
-규칙에서는 FMOD 타입을 참조하지 않습니다.
+`#Volume`은 히트사운드 크기를 제어하며 대상은 HitSound/TickSound/UserInputFeedback입니다.
+음악과 UI 볼륨은 이 명령으로 변경할 수 없습니다. 히트사운드 표는 YME가 소유하고
+등록할 파일은 YME 폴더 기준으로 해석합니다. YMP는 Effect file과 노트별 표 인덱스만
+참조합니다. 지점/Area 및 보간식 문법은 [YME](../Formats/Yme.md)가 기준입니다.
 
 ## 테스트 드라이버
 

@@ -293,7 +293,7 @@ void GameplayPresenter::UpdateNoteTravelLayout()
             for (const TimedVisual &tick : layers.ticks)
             {
                 const auto bounds = tick.node->Bounds();
-                const float offset = TravelPixels(tick.timing - layers.timing, speed);
+                const float offset = TravelPixelsAt(tick.timing, layers.timing, speed);
                 tick.node->SetBounds(
                     {(layers.diameter - bounds.width) * 0.5F,
                      layers.diameter * 0.5F + offset - bounds.height * 0.5F,

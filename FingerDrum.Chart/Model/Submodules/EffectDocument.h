@@ -1,8 +1,10 @@
 #pragma once
 #include "Model/Submodules/ChartTypes.h"
+#include <memory>
 
 namespace finger_drum::chart
 {
+    class InterpolationExpression;
     enum class EffectCommandType : std::uint8_t
     {
         ScrollSpeed,
@@ -14,6 +16,7 @@ namespace finger_drum::chart
         SyncopationZone,
         Custom,
         MeasureLineVisible,
+        Kiai,
     };
 
     enum class AutomationCurve : std::uint8_t
@@ -22,6 +25,8 @@ namespace finger_drum::chart
         Linear,
         Smoothstep,
         Exponential,
+        Harmonic,
+        Expression,
     };
 
     struct EffectCommand
@@ -37,6 +42,9 @@ namespace finger_drum::chart
         SourceLocation source;
         std::optional<MusicalPosition> endPosition;
         std::string customCommand;
+        std::string curveName;
+        std::shared_ptr<const InterpolationExpression> interpolation;
+        std::vector<std::size_t> excludedDivisions;
     };
 
     // YME uses one-based measure numbers on disk; positions remain zero-based.
@@ -52,6 +60,8 @@ namespace finger_drum::chart
     {
         int version{1};
         std::filesystem::path sourcePath;
+        std::map<std::string, std::filesystem::path, std::less<>> hitSounds;
+        std::map<std::string, std::string, std::less<>> interpolations;
         std::vector<EffectCommand> commands;
         std::vector<HitSoundChange> hitSoundChanges;
     };

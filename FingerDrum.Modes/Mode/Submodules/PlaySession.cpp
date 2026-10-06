@@ -1,4 +1,5 @@
 #include "Mode/PlayGameMode.h"
+#include "Automation/InterpolationExpression.h"
 
 #include <algorithm>
 #include <cmath>
@@ -42,12 +43,14 @@ namespace finger_drum::mode
 
     void PlaySession::SetEffects(std::vector<chart::CompiledEffectCommand> effects)
     {
+        chart::ScrollAutomation scroll(effects);
         decltype(effectTracks_) tracks;
         for (std::size_t i = 0; i < effects.size(); ++i)
             tracks[{effects[i].command.type, effects[i].command.target}].push_back(i);
         for (auto &[key, indices] : tracks)
             std::ranges::stable_sort(indices, {}, [&effects](std::size_t i) { return effects[i].timing; });
         effects_ = std::move(effects);
+        scroll_ = std::move(scroll);
         effectTracks_ = std::move(tracks);
         automationTime_.reset();
         automationValues_.clear();
@@ -219,6 +222,13 @@ namespace finger_drum::mode
         automationTime_.reset();
     }
 
+    bool PlaySession::IsKiaiActive(rhythm::RhythmTime time) const
+    {
+        for (const auto &value : EvaluateAutomation(time))
+            if (value.type == chart::EffectCommandType::Kiai) return value.value >= .5;
+        return false;
+    }
+
     void PlaySession::AccumulateAccuracy(const rhythm::NoteProcessResult &result)
     {
         for (const rhythm::NoteAccuracy &accuracy : result.finalizedAccuracies)
@@ -245,31 +255,10 @@ namespace finger_drum::mode
         return lastNoteAccuracy_;
     }
 
-    double PlaySession::Interpolate(const chart::CompiledEffectCommand &command,
-                                    const rhythm::RhythmTime time) noexcept
+    double PlaySession::Interpolate(const chart::CompiledEffectCommand &command, rhythm::RhythmTime time)
     {
-        if (command.duration <= rhythm::RhythmDuration::zero())
-        {
-            return command.command.endValue;
-        }
-        double amount = std::clamp(static_cast<double>((time - command.timing).count()) /
-                                       static_cast<double>(command.duration.count()),
-                                   0.0, 1.0);
-        switch (command.command.curve)
-        {
-        case chart::AutomationCurve::Step:
-            amount = amount >= 1.0 ? 1.0 : 0.0;
-            break;
-        case chart::AutomationCurve::Smoothstep:
-            amount = amount * amount * (3.0 - 2.0 * amount);
-            break;
-        case chart::AutomationCurve::Exponential:
-            amount *= amount;
-            break;
-        case chart::AutomationCurve::Linear:
-            break;
-        }
-        return std::lerp(command.command.beginValue, command.command.endValue, amount);
+        if (command.duration <= rhythm::RhythmDuration::zero()) return command.command.endValue;
+        return chart::EvaluateInterpolation(command.command,
+            static_cast<double>((time - command.timing).count()) / command.duration.count());
     }
-
 } // namespace finger_drum::mode

@@ -19,8 +19,8 @@ namespace
     class ReplayGame final : public mrg::IGameClient
     {
       public:
-        ReplayGame(bool &verified, std::size_t &frames)
-            : presenter_(visuals_, texts_), audio_(playback_), verified_(verified), frames_(frames)
+        ReplayGame(bool &verified, std::size_t &frames, bool effects)
+            : presenter_(visuals_, texts_), audio_(playback_), verified_(verified), frames_(frames), effects_(effects)
         {
         }
 
@@ -46,10 +46,14 @@ namespace
                 if (entry.metadataPath.filename() == "angel dream hand shaking.ymm")
                     song = &entry;
             Require(song != nullptr, "Actual engine replay requires AngelDream music.");
-            auto loaded = mode::TaikoMode{}.LoadSession(root / "Pattern/angeldream/angeldream [all notes test].ymp");
+            auto loaded = mode::TaikoMode{}.LoadSession(root / (effects_
+                ? "Pattern/angeldream/angeldream [effects test].ymp" : "Pattern/angeldream/angeldream [all notes test].ymp"));
             Require(loaded.Succeeded(), "All-notes gameplay chart must load.");
             session_ = std::move(loaded.session);
-            replay_ = std::make_unique<tests::AllNotesReplay>(*session_);
+            Require(!effects_ || session_->Gear().Lanes().front()->Notes().size() == 15,
+                    "Effects replay must load the effect fixture, not the all-notes fixture.");
+            std::cout << (effects_ ? "Replay fixture: YME effects\n" : "Replay fixture: all notes\n");
+            replay_ = std::make_unique<tests::AllNotesReplay>(*session_, !effects_);
             presenter_.Initialize(services, *session_);
             Require(NoteRootCount(visuals_.FindCanvas(1)->Root()) == 0,
                     "Session entry must not eagerly construct every note visual.");
@@ -140,6 +144,9 @@ namespace
             for (const auto &[file, ids] : aliases)
                 Require(audio_.RegisterSoundAliases(ids, mrg_client::asset_paths::skin::TaikoHitSound(file), error),
                         "Sample registration: " + error);
+            for (const auto &[id, path] : session_->HitSoundFiles())
+                Require(audio_.RegisterSound(id, path, mrg::audio::AudioLoadMode::Sample, error), "YME sample registration: " + error);
+            audio_.PrepareAutomation(session_->Effects());
             Require(audio_.RegisterSound("Music.Track", music, mrg::audio::AudioLoadMode::Stream, error),
                     "Music registration: " + error);
             std::cout << "Actual audio output: " << static_cast<int>(system.ActiveOutput()) << '\n';
@@ -155,6 +162,7 @@ namespace
         rhythm::RhythmTimer timer_;
         bool &verified_;
         std::size_t &frames_;
+        bool effects_{};
     };
 } // namespace
 
@@ -166,7 +174,12 @@ int main()
         Require(assets::InitializeBuiltInAssets(error), "Built-in assets: " + error);
         bool verified = false;
         std::size_t frames = 0;
-        const int exitCode = mrg::Run(std::make_unique<ReplayGame>(verified, frames));
+#if defined(TEST_YME_EFFECTS)
+        constexpr bool effects = true;
+#else
+        constexpr bool effects = false;
+#endif
+        const int exitCode = mrg::Run(std::make_unique<ReplayGame>(verified, frames, effects));
         Require(exitCode == 0 && verified && frames > 100,
                 "Actual engine must render and complete the entire gameplay replay.");
         std::cout << "D3D12/FMOD gameplay replay passed: " << frames << " rendered frames.\n";

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Automation" />
     <Filter Include="Catalog" />
     <Filter Include="Editing" />
     <Filter Include="Model" />
@@ -34,4 +35,8 @@
     <ClInclude Include="Utility\RationalNumber.h"><Filter>Utility</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup><ClInclude Include="Editing\IEditorDocument.h"><Filter>Editing</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClInclude Include="Automation\InterpolationExpression.h"><Filter>Automation</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClCompile Include="Automation\InterpolationExpression.cpp"><Filter>Automation</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClInclude Include="Automation\ScrollAutomation.h"><Filter>Automation</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClCompile Include="Automation\ScrollAutomation.cpp"><Filter>Automation</Filter></ClCompile></ItemGroup>
 </Project>

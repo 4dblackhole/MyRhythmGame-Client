@@ -68,6 +68,7 @@
     <None Include="Assets\Skins\Default Skin\**\*.*" />
     <None Include="Assets\Songs\Music\Angeldream\*.*" />
     <None Include="Assets\Songs\Pattern\angeldream\*.ymp" />
+    <None Include="Assets\Songs\Pattern\angeldream\Effects\**\*.*" />
     <None Include="Scripts\GenerateAssetPack.ps1" />
     <ResourceCompile Include="$(IntDir)FingerDrum.Assets.rc" />
   </ItemGroup>

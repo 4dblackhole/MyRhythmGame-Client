@@ -3,6 +3,8 @@
 
 namespace finger_drum::tests
 {
+    void TestYmeSyntax();
+    void TestYmeEffects(const std::filesystem::path &songsRoot);
     void TestSceneStateBoundaries();
     void TestJudgementScalingAndInterpolation();
     void TestRhythmTimerClockMapping();

@@ -58,7 +58,7 @@ namespace finger_drum::tests
                 const auto reloaded = chart::ChartParser{}.ParsePatternFile(copy.sourcePath);
                 Require(reloaded.Succeeded() &&
                             chart::ChartEditor::WritePattern(reloaded.document) ==
-                                chart::ChartEditor::WritePattern(copy),
+                                chart::ChartEditor::WritePattern(editing.Pattern()),
                         "Every provided chart must save/reload without source-data loss (using a "
                         "temporary copy).");
                 if (pattern.patternPath.filename().string() == "Rapbit - Saika [test].ymp")

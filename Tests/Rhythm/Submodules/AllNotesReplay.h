@@ -15,10 +15,11 @@ namespace finger_drum::tests
     class AllNotesReplay final
     {
       public:
-        explicit AllNotesReplay(const mode::PlaySession &session)
+        explicit AllNotesReplay(const mode::PlaySession &session, bool requireAllKinds = true)
         {
             const auto &notes = session.Gear().Lanes().front()->Notes();
-            Require(notes.size() == 19, "All-notes chart must contain 19 logical notes.");
+            expectedNoteCount_ = notes.size();
+            if (requireAllKinds) Require(notes.size() == 19, "All-notes chart must contain 19 logical notes.");
             std::set<mode::NoteVisualKind> kinds;
             for (const auto &note : notes)
             {
@@ -62,7 +63,7 @@ namespace finger_drum::tests
                 end_ = std::max(end_, view.hasEndTime ? view.endTime : note->Timing());
             }
             // TickRoll uses the same skin appearance as Roll (also for BigRoll).
-            Require(kinds.size() == 11, "Chart must exercise every Taiko visual kind.");
+            if (requireAllKinds) Require(kinds.size() == 11, "Chart must exercise every Taiko visual kind.");
             std::stable_sort(inputs_.begin(), inputs_.end(),
                              [](const auto &a, const auto &b) { return a.time < b.time; });
         }
@@ -93,7 +94,7 @@ namespace finger_drum::tests
 
         void Verify(const mode::PlaySession &session) const
         {
-            Require(session.FinalizedNoteCount() == 19 && log_.finalizedAccuracies.size() == 19,
+            Require(session.FinalizedNoteCount() == expectedNoteCount_ && log_.finalizedAccuracies.size() == expectedNoteCount_,
                     "Every logical note must finalize exactly once.");
             for (const auto &note : session.Gear().Lanes().front()->Notes())
             {
@@ -132,7 +133,7 @@ namespace finger_drum::tests
                 std::cout << "Buzz " << note->Id() << ": " << missed << " missed / " << index << " ticks; accepted "
                           << accuracy.acceptedTicks << '\n';
             }
-            std::cout << "All-notes replay verified: 19 completed; accuracy " << *session.AccuracyRate() * 100 << "%\n";
+            std::cout << "Gameplay replay verified: " << expectedNoteCount_ << " completed; accuracy " << *session.AccuracyRate() * 100 << "%\n";
         }
 
       private:
@@ -144,6 +145,7 @@ namespace finger_drum::tests
         std::vector<ReplayInput> inputs_;
         std::vector<rhythm::PhysicalKey> held_;
         std::size_t next_{};
+        std::size_t expectedNoteCount_{};
         rhythm::RhythmTime end_{};
         rhythm::NoteProcessResult log_;
     };

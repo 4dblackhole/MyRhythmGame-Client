@@ -15,6 +15,8 @@ std::unique_ptr<chart::IEditorDocument> TaikoEditorMode::OpenDocument(
     chart::ParseResult<chart::EffectDocument> e;
     if (request.effectPath)
         e = parser.ParseEffectFile(*request.effectPath);
+    else if (!p.document.effectFile.empty())
+        e = parser.ParseEffectFile(request.patternPath.parent_path() / p.document.effectFile);
     if (!p.Succeeded() || !e.Succeeded())
         throw std::runtime_error("Editor could not parse the selected chart.");
     if (!p.document.mode.empty() && p.document.mode != Id())

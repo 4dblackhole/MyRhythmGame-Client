@@ -80,6 +80,8 @@ developer PowerShell with `FMOD_ROOT` set to the installed SDK:
 ```powershell
 ./Tests/Presentation/RunAllNotesGameplayTests.ps1 -Configuration Debug
 ./Tests/Presentation/RunAllNotesGameplayTests.ps1 -Configuration Release
+./Tests/Presentation/RunAllNotesGameplayTests.ps1 -Configuration Debug -Effects
+./Tests/Presentation/RunAllNotesGameplayTests.ps1 -Configuration Release -Effects
 ```
 
 This standalone test loads the deployed AngelDream `All Notes Verification` YMP
@@ -96,3 +98,15 @@ The window is hidden and input timestamps are supplied directly to PlaySession.
 This verifies real rendering/audio execution, not pixel appearance, hearing,
 physical keyboard Raw Input or mouse interaction. The test requires Songs beside
 its executable; it fails when the all-notes chart or music is absent.
+
+`-Effects` compiles this test with `TEST_YME_EFFECTS` and loads AngelDream
+`YME Effects Verification` instead. It is a test-runner option, not a game CLI route.
+The explicit YMP reference resolves a YME in `Effects/`, including its relative
+sound table. The same real engine/presenter/router run plays all 15 logical notes
+with Whole/Separate curves, hit-sound changes/volume and syncopation ranges.
+The dense Buzz head is deliberately late: 2 of 37 body ticks must fail and the
+remaining 35 succeed once. Final scripted accuracy is 97.8897%.
+YmeEffectsTests separately checks every expanded judgement boundary, exclusions,
+all interpolation types, position continuity, sound precedence and Kiai ON/OFF state.
+This remains hidden-window automation; it does not verify audible volume differences
+or the visual appearance of motion.

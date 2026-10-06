@@ -12,7 +12,7 @@ namespace finger_drum::rhythm
     using namespace detail;
 
     RuleBasedNote::RuleBasedNote(const NoteId id, const RhythmTime timing,
-                                 std::shared_ptr<const JudgementProfile> profile,
+                                 std::shared_ptr<const AccuracyRange> profile,
                                  std::unique_ptr<INoteRule> rule,
                                  std::shared_ptr<const INoteSoundPolicy> soundPolicy)
         : id_(id), timing_(timing), profile_(std::move(profile)), rule_(std::move(rule)),
@@ -77,7 +77,7 @@ namespace finger_drum::rhythm
     }
 #endif
 
-    const JudgementProfile &RuleBasedNote::Profile() const noexcept
+    const AccuracyRange &RuleBasedNote::Profile() const noexcept
     {
         return *profile_;
     }

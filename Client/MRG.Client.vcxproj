@@ -94,6 +94,12 @@
       <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Music\Angeldream\*.*">
         <RuntimeDirectory>Music\Angeldream</RuntimeDirectory>
       </DefaultSong>
+      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\Effects\*.yme">
+        <RuntimeDirectory>Pattern\angeldream\Effects</RuntimeDirectory>
+      </DefaultSong>
+      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\Effects\Sounds\*.wav">
+        <RuntimeDirectory>Pattern\angeldream\Effects\Sounds</RuntimeDirectory>
+      </DefaultSong>
       <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\*.ymp">
         <RuntimeDirectory>Pattern\angeldream</RuntimeDirectory>
       </DefaultSong>

@@ -14,7 +14,7 @@ void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
     for (auto it = std::ranges::lower_bound(lines, time - MissedTravelDuration);
          it != lines.end() && *it <= time + horizon; ++it)
     {
-        const float y = judgementLocalY_ + TravelPixels(*it - time);
+        const float y = judgementLocalY_ + TravelPixelsAt(*it, time);
         if (y > judgementLocalY_ + noteTravelDistance_ || y < judgementLocalY_ - noteTravelDistance_)
             continue;
         if (used == measureLineVisuals_.size())
@@ -33,7 +33,7 @@ void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
 
 void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
     const finger_drum::mode::NotePresentationInfo &presentation,
-    finger_drum::rhythm::RhythmTime time, finger_drum::rhythm::RhythmDuration horizon)
+    finger_drum::rhythm::RhythmTime time, finger_drum::rhythm::RhythmDuration horizon, finger_drum::rhythm::RhythmTime anchor)
 {
     std::size_t used = 0;
     const auto &ticks = presentation.tickTimes;
@@ -43,7 +43,7 @@ void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
     {
         if (*it <= layers.timing)
             continue;
-        const float y = judgementLocalY_ + TravelPixels(*it - time, speed);
+        const float y = judgementLocalY_ + TravelPixelsAt(*it, time, speed);
         if (y < 0 || y > laneRoot_->NodeSize().height + layers.tickSize.height)
             continue;
         if (used == layers.ticks.size())
@@ -56,7 +56,7 @@ void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
         visual.timing = *it;
         visual.node->SetVisible(true);
         visual.node->SetBounds({(layers.diameter - layers.tickSize.width) * .5F,
-            layers.diameter * .5F - layers.tickSize.height * .5F + TravelPixels(*it - layers.timing, speed),
+            layers.diameter * .5F - layers.tickSize.height * .5F + TravelPixelsAt(*it, anchor, speed),
             layers.tickSize.width, layers.tickSize.height});
     }
     for (; used < layers.ticks.size(); ++used)
@@ -357,7 +357,7 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         }
         const float speed =
             presentation != nullptr ? static_cast<float>(presentation->scrollMultiplier) : 1.0F;
-        const float localY = judgementLocalY_ + TravelPixels(targetTime - time, speed);
+        const float localY = judgementLocalY_ + TravelPixelsAt(targetTime, time, speed);
         layers.root->SetPosition({laneWidth_ * 0.5F, localY});
         const bool showLaneHead =
             focusNote ? !completed && (!processing || missed) : !completed && !missed;
@@ -372,8 +372,8 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         if (presentation != nullptr && presentation->hasEndTime && layers.body != nullptr &&
             layers.tail != nullptr)
         {
-            UpdateTickVisuals(layers, *presentation, time, horizon);
-            const float tailTravel = std::clamp(TravelPixels(layers.endTime - time, speed),
+            UpdateTickVisuals(layers, *presentation, time, horizon, targetTime);
+            const float tailTravel = std::clamp(TravelPixelsAt(layers.endTime, time, speed),
                                                 -0.05F * noteTravelDistance_,
                                                 1.65F * noteTravelDistance_);
             const float tailLocalY = judgementLocalY_ + tailTravel;

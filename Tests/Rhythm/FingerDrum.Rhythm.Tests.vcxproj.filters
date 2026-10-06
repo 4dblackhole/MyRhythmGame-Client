@@ -17,4 +17,5 @@
     <ClInclude Include="Submodules\AllNotesReplay.h"><Filter>Submodules</Filter></ClInclude>
     <ClInclude Include="Submodules\TestSupport.h"><Filter>Submodules</Filter></ClInclude>
   </ItemGroup>
+  <ItemGroup><ClCompile Include="Submodules\YmeEffectsTests.cpp"><Filter>Submodules</Filter></ClCompile></ItemGroup>
 </Project>

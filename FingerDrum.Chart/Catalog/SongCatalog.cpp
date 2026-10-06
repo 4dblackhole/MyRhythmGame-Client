@@ -288,11 +288,11 @@ namespace finger_drum::chart
             SongCatalogPattern pattern;
             pattern.patternPath = path;
             const std::filesystem::path effectPath =
-                path.parent_path() /
-                (path.stem().wstring() + L".yme");
+                parsed.document.effectFile.empty() ? std::filesystem::path{} :
+                (path.parent_path() / parsed.document.effectFile).lexically_normal();
             std::error_code effectError;
             const bool effectExists =
-                std::filesystem::exists(effectPath, effectError);
+                !effectPath.empty() && std::filesystem::exists(effectPath, effectError);
             if (effectError)
             {
                 AddCatalogError(
@@ -300,6 +300,11 @@ namespace finger_drum::chart
                     effectPath,
                     "Unable to inspect the matching effect file: " +
                         effectError.message());
+                continue;
+            }
+            if (!effectPath.empty() && !effectExists)
+            {
+                AddCatalogError(result, effectPath, "Referenced Effect file was not found.");
                 continue;
             }
             if (effectExists)

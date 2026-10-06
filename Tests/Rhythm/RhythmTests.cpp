@@ -10,6 +10,7 @@ int main(const int argumentCount, char *arguments[])
 {
     try
     {
+        TestYmeSyntax();
         TestSceneStateBoundaries();
         TestJudgementScalingAndInterpolation();
         TestRhythmTimerClockMapping();
@@ -44,6 +45,7 @@ int main(const int argumentCount, char *arguments[])
         if (argumentCount == 3 && std::string_view(arguments[1]) == "--catalog-root")
         {
             TestSongCatalog(std::filesystem::path(arguments[2]));
+            TestYmeEffects(std::filesystem::path(arguments[2]));
             TestAngelDreamAllNotesReplay(std::filesystem::path(arguments[2]));
             TestEditorAudioAnalysis(std::filesystem::path(arguments[2]));
         }

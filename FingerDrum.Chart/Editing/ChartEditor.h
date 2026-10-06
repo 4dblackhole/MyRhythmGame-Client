@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Editing/IEditorDocument.h"
+#include "Automation/ScrollAutomation.h"
 
 #include <optional>
 #include <map>
@@ -32,7 +33,9 @@ namespace finger_drum::chart
         std::pair<rhythm::RhythmTime, rhythm::RhythmTime> NoteTimeRange() const override;
         std::uint64_t AudioSourceRevision() const noexcept override { return audioSourceRevision_; }
         double EffectValueAt(EffectCommandType, MusicalPosition, double fallback = 1) const override;
-        double MinimumScrollMultiplier() const override { return minimumScrollMultiplier_; }
+        double MinimumScrollMultiplier() const override { return minimumScrollMultiplier_ * scroll_.MinimumMultiplier(); }
+        long double ScrollDistance(rhythm::RhythmTime target, rhythm::RhythmTime current) const override
+        { return scroll_.Distance(target, current); }
         [[nodiscard]] bool Dirty() const noexcept override
         {
             return dirty_;
@@ -73,6 +76,7 @@ namespace finger_drum::chart
         mutable PatternDocument pattern_;
         mutable EffectDocument effects_;
         MusicalTimeline timeline_;
+        ScrollAutomation scroll_;
         mutable std::vector<CompiledPatternNote> notes_;
         mutable bool patternNotesDirty_{true}, timingDirty_{true}, effectsDirty_{true}, notesDirty_{true};
         std::size_t nextNoteId_{};

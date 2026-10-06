@@ -34,6 +34,9 @@ YMP/YME이며 새 모드 연결 경계는 [에디터 구조](Docs/ChartEditor.md
 오디오 계약을 사용합니다. Taiko 옵션·사운드 해석은 플레이와 에디터가 공유합니다.
 편집 원본 노트·타이밍·이펙트는 균형 트리로 관리하며, 저장/플레이 snapshot과
 렌더링 임시 목록은 vector를 사용합니다. 조회·분석·표시 캐시의 경계는 에디터 문서에 있습니다.
+YMP의 `Effect file`이 참조하는 [YME](Docs/Formats/Yme.md)는 히트사운드 표와
+Speed/Sounds/Zone 명령을 소유합니다. Whole/Separate, 세 기본 보간·사용자 식·3차 베지어,
+히트사운드 볼륨, 싱코페이션 판정 보정과 Kiai 상태를 지원합니다.
 
 ## 빌드·실행
 

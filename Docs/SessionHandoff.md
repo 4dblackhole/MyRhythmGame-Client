@@ -14,13 +14,18 @@
 - 커밋과 동기화 상태는 Git이 기준입니다. 문서에 고정 SHA를 복제하지 않습니다.
 - C++20 / MSVC v143 / Windows / D3D12. Client의 엔진 경계는 `MRG_Core.h` 하나입니다.
 - 판정/차트/모드/편집 분석은 엔진 비종속 프로젝트입니다. Scene은 수명주기와 조립을 맡습니다.
-- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP 4개는 외부 `assets/Songs`입니다.
+- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP 5개와
+  효과 테스트 YME 1개·WAV 2개는 외부 `assets/Songs`입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
 ## 현재 범위와 주의점
 
 - 기본 진입은 로고 → 플레이 또는 에디터 곡 선택 → 플레이/에디터입니다.
 - YMP/YME 편집·저장, BPM/마디/히트사운드 변경과 오디오 분석을 지원합니다.
+- YMP의 Effect file은 YMP 기준이고 히트사운드 표/파일 경로는 YME 소유/기준입니다.
+  YME는 Interpolation/HitSounds 기본 데이터와 Speed/Sounds/Zone 명령을 분리합니다.
+  볼륨은 히트사운드 대상입니다. 문법·보간·Whole/Separate·싱코페이션/Kiai는
+  [YME](Formats/Yme.md), 실제 AngelDream 효과 테스트는 Presentation의 -Effects를 참고합니다.
 - 결과 Scene/영구 기록, 에디터 Undo/Redo·드래그·다중 선택·음악 재생은 미구현입니다.
   이 목록은 추가 구현 지시가 아닙니다. 기능별 제한은 해당 문서가 기준입니다.
 - Scene 전용 폴더와 `Submodules`, Note 계약/규칙 트리를 사용합니다.
@@ -48,13 +53,11 @@
 
 ## 마무리
 
-이번 배포 구성 정리 후 Debug/Release x64 전체 재빌드, 로직·카탈로그
-(1곡/3패턴), 각 구성의 4개 Client smoke, Debug의 mesh/collision/widgets smoke,
-프로젝트/필터/의존성 검사를 통과했습니다. MSBuild 평가에서 예제 cpp는
-Debug 6개·Release 0개였고, EXE·fmod.dll·기본 Songs만 복사한 깨끗한 폴더의
-4개 smoke도 통과했습니다. Songs가 없는 EXE·DLL 폴더의 로고·곡 선택 smoke도
-통과했습니다. 예제 큐브 텍스처를 다른 크기의 내장 스킨 PNG로
-바꾼 뒤 Debug 증분 빌드도 통과했습니다. 실제 화면/청음 확인은 하지 않았습니다.
+YME 효과 작업은 Debug/Release x64 전체 재빌드, 로직·카탈로그(1곡/5패턴),
+각 구성의 4개 Client smoke와 에디터 회귀를 통과했습니다. 실제 D3D12/FMOD 자동
+replay도 새 효과 채보 15개 노트와 기존 전체 종류 채보 19개 노트를 두 구성에서
+완료했습니다. 프로젝트/필터/의존성/엔진 경계를 통과했으며 엔진은 변경하지 않았습니다.
+실제 화면/물리 입력/청음은 수동 확인하지 않았습니다. 상세 결과는 Verification이 기준입니다.
 
 [Verification](Verification.md)에 따라 검증하고 실제 결과만 보고합니다.
 smoke 통과는 픽셀/마우스 수동 검증을 뜻하지 않습니다.

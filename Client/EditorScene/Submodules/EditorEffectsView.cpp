@@ -103,9 +103,15 @@ void EditorView::DrawEffectFields()
                                                                        : text.startValue.data(),
           form.beginValue);
     Field({500, 718, 319, 42}, text.endValue.data(), form.endValue);
-    Button({844, 718, 360, 42}, std::wstring(text.curves[static_cast<std::size_t>(form.curve)]), [this] {
-        state_.effectForm.curve = static_cast<chart::AutomationCurve>(
-            (static_cast<std::size_t>(state_.effectForm.curve) + 1) % Texts().curves.size());
+    const std::array curves{chart::AutomationCurve::Linear, chart::AutomationCurve::Exponential, chart::AutomationCurve::Harmonic};
+    const auto found = std::ranges::find(curves, form.curve);
+    const auto label = found == curves.end() ? Wide(form.curveName) : std::wstring(text.curves[static_cast<std::size_t>(found - curves.begin())]);
+    Button({844, 718, 360, 42}, label, [this, curves] {
+        auto &draft = state_.effectForm;
+        auto next = std::ranges::find(curves, draft.curve);
+        if (next != curves.end()) ++next;
+        draft.curve = next == curves.end() ? curves.front() : *next;
+        draft.curveName.clear();
         state_.RequestRebuild();
     });
     Field({1230, 718, 245, 42}, text.audioBus.data(), form.audioBus);

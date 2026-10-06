@@ -17,7 +17,7 @@
   <ItemDefinitionGroup><ClCompile><AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories><WarningLevel>Level4</WarningLevel><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp20</LanguageStandard><AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions></ClCompile></ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Common\RhythmTypes.h" />
-    <ClCompile Include="Judgement\JudgementProfile.cpp" />
+    <ClCompile Include="Judgement\AccuracyRange.cpp" />
     <ClInclude Include="Judgement\JudgementProfile.h" />
     <ClCompile Include="Lane\Lane.cpp" />
     <ClInclude Include="Lane\Lane.h" />
@@ -51,5 +51,6 @@
     <ClCompile Include="Time\RhythmTimer.cpp" />
     <ClInclude Include="Time\RhythmTimer.h" />
   </ItemGroup>
+  <ItemGroup><ClInclude Include="Judgement\AccuracyRange.h" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

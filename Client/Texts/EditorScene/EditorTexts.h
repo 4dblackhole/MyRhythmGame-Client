@@ -52,7 +52,7 @@ namespace finger_drum::texts
         std::wstring_view hitSoundIndex;
         std::wstring_view startValue;
         std::wstring_view endValue;
-        std::array<std::wstring_view, 4> curves;
+        std::array<std::wstring_view, 3> curves;
         std::wstring_view audioBus;
         std::wstring_view addOrUpdateEffect;
 

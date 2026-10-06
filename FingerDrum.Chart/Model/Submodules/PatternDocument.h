@@ -35,6 +35,7 @@ namespace finger_drum::chart
         int version{1};
         std::filesystem::path sourcePath;
         std::filesystem::path musicMetadataFile;
+        std::filesystem::path effectFile;
         std::vector<std::string> makers;
         std::vector<std::string> tags;
         std::string name;
@@ -42,7 +43,6 @@ namespace finger_drum::chart
         double patternOffsetMilliseconds{};
         double baseBpm{120.0};
         std::size_t judgementLevel{50};
-        std::map<std::string, std::filesystem::path, std::less<>> hitSounds;
         std::vector<TimingDirective> timing;
         std::vector<PatternNote> notes;
         // Each entry is the zero-based measure that starts a new notation

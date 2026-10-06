@@ -35,5 +35,6 @@
     <ClInclude Include="Submodules\AllNotesReplay.h" />
     <ClInclude Include="Submodules\TestSupport.h" />
   </ItemGroup>
+  <ItemGroup><ClCompile Include="Submodules\YmeEffectsTests.cpp" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

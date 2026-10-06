@@ -38,5 +38,9 @@
     <ClInclude Include="Utility\RationalNumber.h" />
   </ItemGroup>
   <ItemGroup><ClInclude Include="Editing\IEditorDocument.h" /></ItemGroup>
+  <ItemGroup><ClInclude Include="Automation\InterpolationExpression.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Automation\InterpolationExpression.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="Automation\ScrollAutomation.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Automation\ScrollAutomation.cpp" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

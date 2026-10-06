@@ -39,19 +39,20 @@ namespace finger_drum::tests
             Require(indexed.Pattern().notes.size() == 1,
                     "Deleting a long tail must remove its paired head while preserving the normal note.");
             changed = indexed.Pattern();
-            changed.hitSounds.emplace("custom", "custom.wav");
-            indexed.Replace(changed, indexed.Effects());
+            auto soundEffects = indexed.Effects();
+            soundEffects.hitSounds.emplace("custom", "custom.wav");
+            indexed.Replace(changed, soundEffects);
             Require(indexed.AudioSourceRevision() == audioRevision + 1,
                     "Changing a sound source must invalidate audio file resolution.");
             chart::EffectDocument effects;
             chart::EffectCommand speed;
-            speed.type = chart::EffectCommandType::ScrollSpeed;
+            speed.type = chart::EffectCommandType::NoteSpeed;
             speed.beginValue = speed.endValue = .5;
             effects.commands.push_back(speed);
             indexed.Replace(indexed.Pattern(), effects);
             auto copied = indexed;
             indexed.Replace(indexed.Pattern(), {});
-            Require(copied.EffectValueAt(chart::EffectCommandType::ScrollSpeed, {3, {}}) == .5,
+            Require(copied.EffectValueAt(chart::EffectCommandType::NoteSpeed, {3, {}}) == .5,
                     "Copied event trees must own independent effect lookup pointers.");
         }
         chart::PatternDocument p;
@@ -90,11 +91,12 @@ namespace finger_drum::tests
                     "Prefix sum inverse must remain exact, including extrapolated measures.");
 
         auto pattern = editor.Pattern();
-        pattern.hitSounds["1"] = "Sounds/pop.wav";
+
         pattern.timing.push_back({{0, {1, 4}}, chart::TimingDirectiveType::Bpm, 240});
         chart::EffectDocument effects;
+        effects.hitSounds["1"] = "Sounds/pop.wav";
         chart::EffectCommand speed;
-        speed.type = chart::EffectCommandType::ScrollSpeed;
+        speed.type = chart::EffectCommandType::NoteSpeed;
         speed.beginValue = 1;
         speed.endValue = 2;
         speed.curve = chart::AutomationCurve::Linear;
@@ -105,8 +107,8 @@ namespace finger_drum::tests
         const auto revision = editor.Revision();
         editor.Replace(pattern, effects);
         Require(editor.Revision() == revision + 1, "Edits must invalidate dependent editor caches exactly once.");
-        Require(std::abs(editor.Notes()[0].scrollMultiplier - 1.5) < 1e-9,
-                "Region speed must interpolate by rational beat, not by elapsed seconds across a "
+        Require(std::abs(editor.Notes()[0].scrollMultiplier - (5.0 / 3.0)) < 1e-9,
+                "Separate speed must interpolate by compiled elapsed time across a "
                 "BPM change.");
         const auto beforeRevision = editor.Revision();
         const auto beforeDirty = editor.Dirty();
@@ -127,7 +129,7 @@ namespace finger_drum::tests
         Require(invalidRejected && editor.Revision() == beforeRevision && editor.Dirty() == beforeDirty &&
                     chart::ChartEditor::WritePattern(editor.Pattern()) == beforePattern &&
                     chart::ChartEditor::WriteEffects(editor.Effects()) == beforeEffects &&
-                    editor.Notes().front().timing == beforeTime && editor.Notes().front().scrollMultiplier == 1.5,
+                    editor.Notes().front().timing == beforeTime && std::abs(editor.Notes().front().scrollMultiplier - (5.0 / 3.0)) < 1e-9,
                 "Failed candidate validation must preserve document, revision, dirty state and compiled caches.");
         auto serialized = chart::ChartEditor::WriteEffects(effects);
         const auto parsedEffects = chart::ChartParser{}.ParseEffect(serialized);
@@ -145,7 +147,8 @@ namespace finger_drum::tests
                 "Save must produce adjacent YMP/YME and clear dirty state.");
         const auto parsed = chart::ChartParser{}.ParsePatternFile(pattern.sourcePath);
         Require(parsed.Succeeded() && parsed.document.notes.size() == pattern.notes.size() &&
-                    parsed.document.makers == pattern.makers && parsed.document.hitSounds == pattern.hitSounds &&
+                    parsed.document.makers == pattern.makers &&
+                    chart::ChartParser{}.ParseEffectFile(yme).document.hitSounds == effects.hitSounds &&
                     chart::MusicalTimeline(parsed.document).CompileNotes(parsed.document)[0].timing ==
                         editor.Notes()[0].timing,
                 "Saving must preserve Unicode metadata, hit sound table and exact compiled note "

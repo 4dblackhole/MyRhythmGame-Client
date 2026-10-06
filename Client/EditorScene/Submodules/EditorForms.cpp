@@ -13,7 +13,7 @@ void EditorEffectForm::Load(const chart::EffectDocument &effects, std::size_t ro
         const auto &command = effects.commands[row];
         if (std::ranges::find(EditorEffectDefinitions, command.type, &EditorEffectDefinition::type) ==
             EditorEffectDefinitions.end())
-            throw std::runtime_error("This legacy effect is preserved; its editor is not supported.");
+            throw std::runtime_error("This effect is preserved; its editor is not supported.");
         draft.selection = command.type;
         draft.startMeasure = std::to_string(command.position.measure + 1);
         draft.startFraction = Fraction(command.position.fraction);
@@ -21,6 +21,7 @@ void EditorEffectForm::Load(const chart::EffectDocument &effects, std::size_t ro
         draft.endValue = std::to_string(command.endValue);
         draft.audioBus = command.target;
         draft.curve = command.curve;
+        draft.curveName = command.curveName;
         if (command.endPosition)
         {
             draft.endMeasure = std::to_string(command.endPosition->measure + 1);
@@ -59,6 +60,12 @@ chart::EffectDocument EditorEffectForm::Apply(const chart::EffectDocument &sourc
         command.beginValue = Number(beginValue);
         command.endValue = Number(endValue);
         command.curve = curve;
+        command.curveName = curveName;
+        if (command.curve == chart::AutomationCurve::Expression)
+        {
+            const auto current = std::ranges::find_if(source.commands, [&](const auto &c) { return c.curveName == curveName; });
+            if (current != source.commands.end()) command.interpolation = current->interpolation;
+        }
         if (!endMeasure.empty() || !endFraction.empty())
             command.endPosition = Position(endMeasure, endFraction);
         else

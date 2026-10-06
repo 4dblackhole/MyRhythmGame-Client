@@ -1,10 +1,12 @@
 param(
     [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug',
-    [string]$FmodRoot = $env:FMOD_ROOT
+    [string]$FmodRoot = $env:FMOD_ROOT,
+    [switch]$Effects
 )
 $ErrorActionPreference = 'Stop'
 if (-not $FmodRoot) { throw 'Set FMOD_ROOT or pass -FmodRoot with the installed SDK path.' }
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/MD', '/DNDEBUG') }
+if ($Effects) { $runtime += '/DTEST_YME_EFFECTS' }
 $units = @('Pch', 'GameplayPresenter', 'GameplayLayout', 'GameplayNoteVisuals',
     'GameplayFeedbackVisuals', 'GameplayKeys', 'LaneKeyBeam', 'GameplayTexts',
     'TextCatalog', 'SkinSetSelection', 'GameplayAudioRouter')

@@ -1,4 +1,5 @@
 #include "Timing/MusicalTimeline.h"
+#include "Automation/InterpolationExpression.h"
 
 #include <algorithm>
 #include <cmath>
@@ -76,6 +77,8 @@ namespace finger_drum::chart
         result.reserve(effects.commands.size());
         for (const EffectCommand& command : effects.commands)
         {
+            if (command.endPosition && Compile(*command.endPosition) <= Compile(command.position))
+                throw std::invalid_argument("Area duration must be positive in compiled time.");
             result.push_back(CompiledEffectCommand{
                 command,
                 Compile(command.position),
@@ -421,21 +424,10 @@ namespace finger_drum::chart
 
     double MusicalTimeline::EffectValueAt(const EffectCommand& c, MusicalPosition position) const
     {
-        double amount = 1;
-        if (c.endPosition)
-        {
-            const auto begin = PositionToWholeNotes(c.position);
-            const auto length = PositionToWholeNotes(*c.endPosition) - begin;
-            if (length > Rational{}) amount = static_cast<double>(
-                (PositionToWholeNotes(position) - begin).Value() / length.Value());
-        }
-        else if (c.durationMilliseconds > 0)
-            amount = (Compile(position) - Compile(c.position)).count() / (c.durationMilliseconds * 1000);
-        amount = std::clamp(amount, 0.0, 1.0);
-        if (c.curve == AutomationCurve::Step) amount = amount >= 1 ? 1 : 0;
-        else if (c.curve == AutomationCurve::Smoothstep) amount = amount * amount * (3 - 2 * amount);
-        else if (c.curve == AutomationCurve::Exponential) amount *= amount;
-        return std::lerp(c.beginValue, c.endValue, amount);
+        const auto duration = c.endPosition ? Compile(*c.endPosition) - Compile(c.position)
+            : rhythm::RhythmDuration{static_cast<rhythm::RhythmDuration::rep>(std::llround(c.durationMilliseconds * 1000))};
+        if (duration <= rhythm::RhythmDuration::zero()) return c.endValue;
+        return EvaluateInterpolation(c, static_cast<double>((Compile(position) - Compile(c.position)).count()) / duration.count());
     }
 
     long double MusicalTimeline::SecondsAt(

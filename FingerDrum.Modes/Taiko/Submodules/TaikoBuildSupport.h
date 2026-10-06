@@ -16,14 +16,26 @@ namespace finger_drum::mode::taiko_build
 {
     using namespace taiko_options;
     using taiko_audio::ChartSoundId;
-    inline void ConfigureHitSounds(PlaySession &session, const chart::PatternDocument &pattern,
+    inline bool UsesSyncopation(const chart::EffectDocument &effects, chart::MusicalPosition position)
+    {
+        const chart::EffectCommand *selected = nullptr;
+        for (const auto &c : effects.commands)
+            if (c.type == chart::EffectCommandType::SyncopationZone && c.position <= position &&
+                (!selected || selected->position <= c.position)) selected = &c;
+        if (!selected || selected->endValue < .5) return false;
+        for (const auto division : selected->excludedDivisions)
+            if ((position.fraction * static_cast<std::int64_t>(division * 4)).Denominator() == 1)
+                return false;
+        return true;
+    }
+    inline void ConfigureHitSounds(PlaySession &session,
                                    const chart::EffectDocument &effects, const chart::MusicalTimeline &timeline,
                                    std::vector<chart::Diagnostic> &diagnostics)
     {
         std::map<rhythm::SoundId, std::filesystem::path> files;
-        for (const auto &[index, path] : pattern.hitSounds)
+        for (const auto &[index, path] : effects.hitSounds)
         {
-            files.emplace(ChartSoundId(index), (pattern.sourcePath.parent_path() / path).lexically_normal());
+            files.emplace(ChartSoundId(index), (effects.sourcePath.parent_path() / path).lexically_normal());
         }
         session.SetHitSoundFiles(std::move(files));
 
@@ -31,7 +43,7 @@ namespace finger_drum::mode::taiko_build
         std::vector<TimedSoundOverride> katChanges;
         for (const auto &change : effects.hitSoundChanges)
         {
-            if ((change.keyType != 1 && change.keyType != 2) || !pattern.hitSounds.contains(change.soundIndex) ||
+            if ((change.keyType != 1 && change.keyType != 2) || !effects.hitSounds.contains(change.soundIndex) ||
                 change.position.measure < 0 || change.position.fraction < chart::Rational{} ||
                 change.position.fraction >= timeline.MeasureLength(change.position.measure))
             {

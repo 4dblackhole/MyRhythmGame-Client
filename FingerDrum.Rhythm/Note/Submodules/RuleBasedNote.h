@@ -9,7 +9,7 @@ namespace finger_drum::rhythm
     class RuleBasedNote final : public INote
     {
       public:
-        RuleBasedNote(NoteId id, RhythmTime timing, std::shared_ptr<const JudgementProfile> profile,
+        RuleBasedNote(NoteId id, RhythmTime timing, std::shared_ptr<const AccuracyRange> profile,
                       std::unique_ptr<INoteRule> rule,
                       std::shared_ptr<const INoteSoundPolicy> soundPolicy = {});
         ~RuleBasedNote() override;
@@ -23,7 +23,7 @@ namespace finger_drum::rhythm
 #if defined(_DEBUG)
         [[nodiscard]] std::wstring DebugText() const override;
 #endif
-        [[nodiscard]] const JudgementProfile &Profile() const noexcept override;
+        [[nodiscard]] const AccuracyRange &Profile() const noexcept override;
         [[nodiscard]] JudgementResult Preview(
             const RhythmInputEvent &input) const noexcept override;
         [[nodiscard]] bool CanAccept(const RhythmInputEvent &input) const noexcept override;
@@ -39,7 +39,7 @@ namespace finger_drum::rhythm
 
         NoteId id_{};
         RhythmTime timing_{};
-        std::shared_ptr<const JudgementProfile> profile_;
+        std::shared_ptr<const AccuracyRange> profile_;
         std::unique_ptr<INoteRule> rule_;
         std::shared_ptr<const INoteSoundPolicy> soundPolicy_;
         NoteAccuracy accuracy_;

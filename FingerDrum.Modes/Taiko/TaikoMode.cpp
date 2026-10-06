@@ -15,9 +15,11 @@ namespace finger_drum::mode
         chart::ChartParser parser;
         chart::ParseResult<chart::PatternDocument> pattern = parser.ParsePatternFile(patternPath);
         chart::ParseResult<chart::EffectDocument> effect;
-        if (effectPath.has_value())
+        const auto resolvedEffect = effectPath ? *effectPath : pattern.document.effectFile.empty()
+            ? std::filesystem::path{} : patternPath.parent_path() / pattern.document.effectFile;
+        if (!resolvedEffect.empty())
         {
-            effect = parser.ParseEffectFile(*effectPath);
+            effect = parser.ParseEffectFile(resolvedEffect);
         }
 
         ModeLoadResult result;
@@ -43,6 +45,12 @@ namespace finger_drum::mode
     ModeLoadResult TaikoMode::CreateSession(const chart::PatternDocument &pattern,
                                             const chart::EffectDocument &effects) const
     {
-        return TaikoSessionBuilder::CreateSession(pattern, effects);
+        try { return TaikoSessionBuilder::CreateSession(pattern, effects); }
+        catch (const std::exception &error)
+        {
+            ModeLoadResult result;
+            result.diagnostics.push_back({chart::DiagnosticSeverity::Error, {pattern.sourcePath, 1, 1}, error.what()});
+            return result;
+        }
     }
 } // namespace finger_drum::mode

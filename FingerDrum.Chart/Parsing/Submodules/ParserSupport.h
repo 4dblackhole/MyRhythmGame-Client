@@ -159,40 +159,6 @@ namespace finger_drum::chart::parsing
         return lines;
     }
 
-    [[nodiscard]] inline AutomationCurve ParseCurve(const std::string_view value) noexcept
-    {
-        const std::string normalized = NormalizeCommand(value);
-        if (normalized == "linear")
-            return AutomationCurve::Linear;
-        if (normalized == "smoothstep")
-            return AutomationCurve::Smoothstep;
-        if (normalized == "exponential")
-            return AutomationCurve::Exponential;
-        return AutomationCurve::Step;
-    }
-
-    [[nodiscard]] inline EffectCommandType ParseEffectType(const std::string_view value) noexcept
-    {
-        const std::string normalized = NormalizeCommand(value);
-        if (normalized == "scrollspeed")
-            return EffectCommandType::ScrollSpeed;
-        if (normalized == "notespeed")
-            return EffectCommandType::NoteSpeed;
-        if (normalized == "busvolume" || normalized == "volume")
-            return EffectCommandType::BusVolume;
-        if (normalized == "reverbsend")
-            return EffectCommandType::ReverbSend;
-        if (normalized == "lowpasscutoff")
-            return EffectCommandType::LowPassCutoff;
-        if (normalized == "highpasscutoff")
-            return EffectCommandType::HighPassCutoff;
-        if (normalized == "syncopationzone" || normalized == "area")
-            return EffectCommandType::SyncopationZone;
-        if (normalized == "measurelinevisible")
-            return EffectCommandType::MeasureLineVisible;
-        return EffectCommandType::Custom;
-    }
-
     struct ParsedCommand
     {
         std::string name;

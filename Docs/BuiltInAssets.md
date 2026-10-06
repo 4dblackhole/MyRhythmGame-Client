@@ -9,7 +9,8 @@
 - `Assets/Skins/Default Skin` 전체
 - `Assets/Fonts`의 두 글꼴과 각각의 라이선스
 
-AngelDream Handshaking MP3 1개·YMM 1개·YMP 4개는 EXE에 넣지 않습니다.
+AngelDream Handshaking MP3 1개·YMM 1개·YMP 5개와 이펙트 테스트 YME 1개·WAV 2개는
+EXE에 넣지 않습니다. 추가 WAV는 기본 스킨의 Don/Kat 원본을 재사용한 테스트 파일입니다.
 Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 시
 실행 파일 옆 `assets/Songs`에 복사합니다. 이미 존재하는 파일은 편집본일 수
 있으므로 덮어쓰지 않습니다. 배포할 때 이 Songs 폴더를 EXE와 함께 제공합니다.
@@ -58,7 +59,8 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 제공하면 해당 파일을 사용하고, 없으면 내장 기본 스킨의 소리로 대체합니다.
 
 곡 선택은 실행 파일 옆 `assets/Songs`만 읽습니다. 곡을 캐시에서 다시 생성하지
-않으며, YMP와 같은 폴더의 YME도 사용자가 직접 편집할 수 있습니다. 내장 글꼴은 캐시 경로에서
+않으며, YMP의 `Effect file`이 참조하는 YME도 사용자가 직접 편집할 수 있습니다.
+히트사운드 표의 경로는 YME 폴더 기준입니다. 내장 글꼴은 캐시 경로에서
 직접 읽으며 라이선스도 같은 팩에 보존됩니다.
 
 ## 자산 변경

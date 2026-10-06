@@ -11,20 +11,27 @@ namespace finger_drum::mode
         ModeLoadResult result;
         auto session = std::make_unique<PlaySession>();
         rhythm::Lane &lane = session->Gear().CreateLane();
-        auto profile = std::make_shared<rhythm::JudgementProfile>("Taiko.Default", pattern.judgementLevel);
+        auto defaultRange = std::make_shared<const rhythm::AccuracyRange>("Taiko.Default", pattern.judgementLevel);
+        auto syncopationRange = std::make_shared<const rhythm::AccuracyRange>("Taiko.Syncopation", pattern.judgementLevel,
+            rhythm::AccuracyRange::DefaultLevel50Bands(), rhythm::RhythmDuration{10'000});
 
         chart::MusicalTimeline timeline(pattern);
         std::vector<chart::CompiledPatternNote> compiled = timeline.CompileNotes(pattern);
-        ConfigureHitSounds(*session, pattern, effects, timeline, result.diagnostics);
+        ConfigureHitSounds(*session, effects, timeline, result.diagnostics);
         if (!result.diagnostics.empty())
             return result;
         for (auto &note : compiled)
         {
+            if (!note.note.hitSound.empty() && !effects.hitSounds.contains(note.note.hitSound))
+            {
+                result.diagnostics.push_back({chart::DiagnosticSeverity::Error, note.note.source,
+                    "Note references an undefined YME hit sound index."});
+                return result;
+            }
             note.scrollMultiplier =
-                timeline.EffectValueAt(effects, chart::EffectCommandType::NoteSpeed, note.note.position) *
-                timeline.EffectValueAt(effects, chart::EffectCommandType::ScrollSpeed, note.note.position);
+                timeline.EffectValueAt(effects, chart::EffectCommandType::NoteSpeed, note.note.position);
             // Explicit per-note assignments take precedence over timed defaults.
-            if (pattern.hitSounds.contains(note.note.hitSound))
+            if (effects.hitSounds.contains(note.note.hitSound))
             {
                 note.note.hitSound = ChartSoundId(note.note.hitSound);
             }
@@ -38,6 +45,7 @@ namespace finger_drum::mode
         for (const chart::CompiledPatternNote &compiledNote : compiled)
         {
             const chart::PatternNote &source = compiledNote.note;
+            const auto profile = UsesSyncopation(effects, source.position) ? syncopationRange : defaultRange;
             const TaikoNoteType type = static_cast<TaikoNoteType>(source.keyType);
             const TaikoPatternAction action = static_cast<TaikoPatternAction>(source.actionType);
 
@@ -56,7 +64,8 @@ namespace finger_drum::mode
                     continue;
                 }
                 const auto longNoteId = nextId;
-                AddLongNote(*longNoteHead, compiledNote, timeline, profile, lane, *session, nextId, result.diagnostics);
+                AddLongNote(*longNoteHead, compiledNote, timeline,
+                    UsesSyncopation(effects, longNoteHead->note.position) ? syncopationRange : defaultRange, lane, *session, nextId, result.diagnostics);
                 if (nextId > longNoteId)
                     session->SetNoteScrollMultiplier(longNoteId, longNoteHead->scrollMultiplier);
                 longNoteHead.reset();

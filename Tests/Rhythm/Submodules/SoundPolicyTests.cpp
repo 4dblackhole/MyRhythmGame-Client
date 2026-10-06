@@ -8,9 +8,6 @@ namespace finger_drum::tests
         chart::ChartParser parser;
         const auto parsed = parser.ParsePattern(R"(
 Base BPM: 120
-[HitSounds]
-1: Sounds/pop.wav
-2: Sounds/kat.wav
 [Time Signature]
 --
 #measure 3/4
@@ -20,10 +17,13 @@ Base BPM: 120
         Require(parsed.Succeeded(), "Indexed hit sound table must parse.");
         const auto effects = parser.ParseEffect(R"(
 Version: 1
-[HitSound Changes]
-4, 2/4, 1, 2
-5, 0/4, 2, 1
-5, 0/4, 2, 2
+[HitSounds]
+1: Sounds/pop.wav
+2: Sounds/kat.wav
+[Sounds]
+4, 2/4, #HitSound Kat 1
+5, 0/4, #HitSound Don 2
+5, 0/4, #HitSound Kat 2
 )",
                                                 "Songs/Pattern/test.yme");
         Require(effects.Succeeded() && effects.document.hitSoundChanges.size() == 3 &&
@@ -34,7 +34,7 @@ Version: 1
         Require(loaded.Succeeded(), "Valid indexed changes must load.");
         Require(loaded.session->HitSoundFiles().at("Chart.HitSound.1") ==
                     std::filesystem::path("Songs/Pattern/Sounds/pop.wav"),
-                "Hit sound paths must be relative to the YMP, not the working directory.");
+                "Hit sound paths must be relative to the YME, not the working directory.");
         chart::MusicalTimeline timeline(parsed.document);
         const auto first = timeline.Compile({3, {2, 4}});
         const auto second = timeline.Compile({4, {0, 4}});
@@ -60,16 +60,16 @@ Version: 1
         for (const std::string row : {"0, 2/4, 1, 2", "4, 2/ 4, 1, 2", "4, 2/4, 1, 3", "4, 2/4, 1",
                                       "4, 2/4, , 2", "4, 2/0, 1, 2", "4, -1/4, 1, 2"})
         {
-            Require(!parser.ParseEffect("[HitSound Changes]\n" + row).Succeeded(),
+            Require(!parser.ParseEffect("[Sounds]\n" + row).Succeeded(),
                     "Malformed indexed hit sound rows must be rejected: " + row);
         }
-        const auto unknown = parser.ParseEffect("[HitSound Changes]\n4, 2/4, 999, 2");
+        const auto unknown = parser.ParseEffect("[HitSounds]\n1: a.wav\n[Sounds]\n4, 2/4, #HitSound Kat 999");
         Require(!mode.CreateSession(parsed.document, unknown.document).Succeeded(),
                 "Undefined table references must fail chart loading.");
-        const auto outside = parser.ParseEffect("[HitSound Changes]\n4, 3/4, 1, 2");
+        const auto outside = parser.ParseEffect("[HitSounds]\n1: a.wav\n[Sounds]\n4, 3/4, #HitSound Kat 1");
         Require(!mode.CreateSession(parsed.document, outside.document).Succeeded(),
                 "A change at or outside the measure end must be rejected.");
-        Require(!parser.ParsePattern("[HitSounds]\n1: a.wav\n1: b.wav").Succeeded(),
+        Require(!parser.ParseEffect("[HitSounds]\n1: a.wav\n1: b.wav").Succeeded(),
                 "Duplicate table entries must not be silently discarded.");
 
         // Explicit note assignments override timed Don/Kat defaults.
@@ -102,12 +102,13 @@ Version: 1
         for (const int type : {15, 16, 17})
         {
             chart::PatternDocument pattern;
-            pattern.hitSounds["1"] = "explicit.wav";
-            pattern.hitSounds["2"] = "timed.wav";
+
             pattern.notes.push_back(
                 {{0, {}}, type, 1, "1", {"HitCount=8", "Action=Don", "TickDivision=16"}});
             pattern.notes.push_back({{0, {1, 2}}, type, 2});
             chart::EffectDocument effects;
+            effects.hitSounds["1"] = "explicit.wav";
+            effects.hitSounds["2"] = "timed.wav";
             effects.hitSoundChanges.push_back({{0, {}}, "2", 1});
             auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
             Require(loaded.Succeeded(), "Special sound priority chart must load.");

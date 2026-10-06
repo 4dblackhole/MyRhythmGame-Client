@@ -139,10 +139,10 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     constexpr float normalHeadRadius = 36.0F;
     constexpr float pixelsPerWholeNote = normalHeadRadius * 2.0F * 16.0F * .85F;
     const auto currentTime = editor_time::Microseconds(state.TimeMilliseconds());
-    const auto xAtTime = [currentTime, pixelsPerWholeNote, baseBpm = timeline.BaseBpm()](const auto timing,
+    const auto xAtTime = [currentTime, pixelsPerWholeNote, &document = state.Document(), baseBpm = timeline.BaseBpm()](const auto timing,
                                                                                          const double speed) {
         return 230.0F +
-               static_cast<float>(static_cast<double>(timing.count()) - static_cast<double>(currentTime.count())) *
+               static_cast<float>(document.ScrollDistance(timing, currentTime)) *
                    static_cast<float>(baseBpm / 240'000'000.0) * pixelsPerWholeNote * static_cast<float>(speed);
     };
     const auto currentMeasure = editor_time::MeasureNearTime(timeline, state.TimeMilliseconds());
@@ -166,8 +166,7 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
         {
             chart::MusicalPosition p{m, {i, subdivisionsPerWholeNote}};
             const auto speed =
-                state.Document().EffectValueAt(chart::EffectCommandType::NoteSpeed, p) *
-                state.Document().EffectValueAt(chart::EffectCommandType::ScrollSpeed, p);
+                state.Document().EffectValueAt(chart::EffectCommandType::NoteSpeed, p);
             const float x = xAtTime(timeline.Compile(p), speed);
             if (x < RealtimeLane.x || x > RealtimeLane.x + RealtimeLane.width)
                 continue;

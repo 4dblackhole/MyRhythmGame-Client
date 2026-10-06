@@ -40,9 +40,9 @@ class EditorEffectForm
 {
   public:
     std::string startMeasure{"1"}, startFraction{"0/4"}, endMeasure, endFraction;
-    std::string beginValue{"1"}, endValue{"1"}, audioBus{"HitSound"};
+    std::string beginValue{"1"}, endValue{"1"}, audioBus{"HitSound"}, curveName;
     EditorEffectSelection selection{finger_drum::chart::EffectCommandType::BusVolume};
-    finger_drum::chart::AutomationCurve curve{finger_drum::chart::AutomationCurve::Step};
+    finger_drum::chart::AutomationCurve curve{finger_drum::chart::AutomationCurve::Linear};
     void Load(const finger_drum::chart::EffectDocument &, std::size_t row);
     [[nodiscard]] finger_drum::chart::EffectDocument Apply(const finger_drum::chart::EffectDocument &) const;
 };

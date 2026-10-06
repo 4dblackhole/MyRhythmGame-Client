@@ -1,0 +1,34 @@
+Version: 1
+[Interpolation]
+EaseIn: From + (To - From) * u * u
+Soft: From + (To - From) * Bezier(u, 0.25, 0.10, 0.25, 1.00)
+[HitSounds]
+1: Sounds/don.wav
+2: Sounds/kat.wav
+[Speed]
+1, 0/4, #ScrollSpeed Whole, Value=1
+2, 0/4, #ScrollSpeed Whole, Value=2
+3, 0/4, Area, 4, 0/4, #ScrollSpeed Whole, From=2, To=1, Curve=Linear
+4, 0/4, Area, 5, 0/4, #ScrollSpeed Whole, From=1, To=2, Curve=Exponential
+5, 0/4, Area, 7, 0/4, #ScrollSpeed Whole, From=2, To=0.5, Curve=Harmonic
+7, 0/4, Area, 8, 0/4, #ScrollSpeed Whole, From=0.5, To=1, Curve=EaseIn
+8, 0/4, Area, 9, 0/4, #ScrollSpeed Whole, From=1, To=1.5, Curve=Soft
+9, 0/4, #ScrollSpeed Whole, Value=1
+3, 0/4, Area, 4, 0/4, #ScrollSpeed Separate, From=1, To=1.5, Curve=Linear
+4, 0/4, #ScrollSpeed Separate, Value=2
+5, 0/4, #ScrollSpeed Separate, Value=1
+[Sounds]
+2, 0/4, #HitSound Don 2
+2, 0/4, #HitSound Kat 1
+5, 0/4, #HitSound Don 1
+5, 0/4, #HitSound Kat 2
+1, 0/4, #Volume HitSound, Value=0.5
+3, 0/4, Area, 5, 0/4, #Volume HitSound, From=0.5, To=0.25, Curve=Linear
+5, 0/4, Area, 7, 0/4, #Volume HitSound, From=0.25, To=1, Curve=Exponential
+7, 0/4, Area, 8, 0/4, #Volume HitSound, From=1, To=0.5, Curve=Harmonic
+8, 0/4, Area, 9, 0/4, #Volume HitSound, From=0.5, To=1, Curve=Soft
+[Zone]
+3, 0/4, #Syncopation ON, Exclude=1|2|4
+5, 0/4, #Syncopation OFF
+3, 0/4, #Kiai ON
+7, 0/4, #Kiai OFF

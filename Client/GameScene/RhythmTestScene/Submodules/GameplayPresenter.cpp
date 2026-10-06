@@ -43,6 +43,12 @@ float GameplayPresenter::TravelPixels(const finger_drum::rhythm::RhythmDuration 
                               pixelsPerWholeNote_ * multiplier);
 }
 
+float GameplayPresenter::TravelPixelsAt(finger_drum::rhythm::RhythmTime target, finger_drum::rhythm::RhythmTime current, float multiplier) const
+{
+    return static_cast<float>(session_->ScrollDistance(target, current) *
+        session_->Timeline().BaseBpm() / 240'000'000.0L * pixelsPerWholeNote_ * multiplier);
+}
+
 finger_drum::rhythm::RhythmDuration GameplayPresenter::VisibleTravelDuration() const
 {
     constexpr long double MicrosecondsPerWholeNoteAtBpmOne = 240'000'000.0L;

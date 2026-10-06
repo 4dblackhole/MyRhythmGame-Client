@@ -222,9 +222,9 @@ JudgeLevel: 50
 
         constexpr std::string_view Effects = R"(
 Version: 1
-[AudioAutomation]
-0/1,#BusVolume,HitSound,1.0,0.5,500,Linear
-1/2,#ReverbSend,HitSound,0.0,0.8,1000,Smoothstep
+[Sounds]
+1, 0/4, Area, 1, 1/4, #Volume HitSound, From=1, To=0.5, Curve=Linear
+1, 1/2, Area, 2, 0/4, #ReverbSend HitSound, From=0, To=0.8, Curve=Linear
 )";
         const chart::ParseResult<chart::EffectDocument> effects =
             parser.ParseEffect(Effects, "memory.yme");

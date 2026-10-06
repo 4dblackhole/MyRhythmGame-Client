@@ -11,6 +11,7 @@ UTF-8 텍스트이며 빈 줄과 `//`로 시작하는 줄을 무시합니다. �
 ```text
 [Metadata]
 Music metadata: Music/Angeldream/angel dream hand shaking.ymm
+Effect file: Effects/angeldream-effects.yme
 Pattern Maker Count: 1
 Pattern Maker 1: Maker Name
 Pattern Name: Long Notes Test
@@ -29,6 +30,7 @@ JudgeLevel: 50
 | --- | --- |
 | `Version` | 정수 형식 버전입니다. 생략하면 1입니다. |
 | `Music metadata` | Songs 루트를 기준으로 한 YMM 상대 경로입니다. catalog가 YMM과 YMP를 연결할 때 사용합니다. |
+| `Effect file` | YMP 폴더 기준 YME 경로입니다. 효과가 없으면 생략할 수 있습니다. 같은 이름 YME를 자동 검색하지 않습니다. |
 | `Pattern Maker ...` | 제작자 문자열입니다. `Pattern Maker Count`는 현재 개수 검증에 사용하지 않습니다. |
 | `Pattern Name` | 곡 선택 화면에 표시할 패턴 이름입니다. |
 | `Tags` | 쉼표로 구분한 패턴 태그입니다. |
@@ -40,20 +42,13 @@ JudgeLevel: 50
 
 `Version`, `JudgeLevel`, BPM·offset 등의 숫자 형식이 잘못된 YMP는 진단을 남기고
 곡 선택 catalog에서 해당 패턴만 제외합니다. 같은 catalog의 정상 곡과 패턴은
-계속 사용할 수 있습니다. YME의 begin/end 값은 유한한 수여야 하고 duration은
-유한한 0 이상의 밀리초여야 하며, 잘못된 명령은 진단과 함께 제외됩니다.
+계속 사용할 수 있습니다. 지정한 YME가 없거나 잘못된 경우도 해당 패턴에 진단을 남깁니다.
 
-### HitSounds
+### 히트사운드 참조
 
-```text
-[HitSounds]
-CustomHit: Sounds/custom.wav
-```
-
-`인덱스: 경로`를 등록하는 영역입니다. 숫자 인덱스(`1: Sounds/pop.wav`)와 기존
-문자열 이름을 모두 지원합니다. 경로는 YMP 기준이며 Client가 곡 로드 시 한 번
-등록합니다. 같은 파일의 별칭은 하나의 샘플/재생 채널을 공유합니다.
-`[Pattern]`의 hitsound 칸에 지정한 표의 인덱스는 아래 동·캇 기본값 변경보다 우선합니다.
+히트사운드 표는 [YME의 HitSounds](Yme.md)에만 둡니다. YMP 노트의 HitSound 칸은
+그 표의 인덱스를 참조하며, YME의 시각별 동·캇 기본값 변경보다 우선합니다.
+히트사운드 경로 기준은 YME 폴더입니다. YMP에 표 항목을 적으면 로드 오류입니다.
 
 ### 일반 노트와 롱노트
 

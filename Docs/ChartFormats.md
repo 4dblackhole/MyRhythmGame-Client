@@ -7,10 +7,12 @@
 | 음악 이름·아티스트·음원 경로 | [YMM](Formats/Ymm.md) | MusicParser.cpp |
 | 패턴 metadata·노트·연타수 | [YMP](Formats/Ymp.md) | PatternParser.cpp |
 | 분수 문법·BPM·마디 길이 | [Timing](Formats/Timing.md) | PatternTiming.h / MusicalPositionParser.cpp |
-| 볼륨·마디선·속도·히트사운드 변경 | [YME](Formats/Yme.md) | EffectParser.cpp |
+| 히트사운드 표/볼륨·Whole/Separate·보간·싱코페이션/Kiai | [YME](Formats/Yme.md) | EffectParser.cpp / Automation |
 | 디버그 채보·1ms 이동 | [Debugging](Gameplay/Debugging.md) | GameplayInput.cpp |
 
 파서 경로는 `FingerDrum.Chart/Parsing/Submodules`입니다.
 `ChartParser.h/.cpp`는 파일 입출력 facade, `ParserSupport.h`는 공통 토큰/숫자 처리입니다.
 모델도 `Model/Submodules` 아래 YMM/YMP/YME별로 나뉩니다.
 저장 문법 변경 시 `Editing/ChartEditor.cpp`와 왕복 테스트를 함께 확인합니다.
+YMP가 `Effect file`로 YME를 참조하고 YME가 사운드 표를 소유합니다.
+YME의 효과 명령은 Speed/Sounds/Zone 세 섹션이며 음악 볼륨 명령은 지원하지 않습니다.

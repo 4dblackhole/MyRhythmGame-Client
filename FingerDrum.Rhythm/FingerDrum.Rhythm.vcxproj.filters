@@ -9,7 +9,7 @@
     <Filter Include="Scroll" />
     <Filter Include="Time" />
     <ClInclude Include="Common\RhythmTypes.h"><Filter>Common</Filter></ClInclude>
-    <ClCompile Include="Judgement\JudgementProfile.cpp"><Filter>Judgement</Filter></ClCompile>
+    <ClCompile Include="Judgement\AccuracyRange.cpp"><Filter>Judgement</Filter></ClCompile>
     <ClInclude Include="Judgement\JudgementProfile.h"><Filter>Judgement</Filter></ClInclude>
     <ClCompile Include="Lane\Lane.cpp"><Filter>Lane</Filter></ClCompile>
     <ClInclude Include="Lane\Lane.h"><Filter>Lane</Filter></ClInclude>
@@ -43,4 +43,5 @@
     <ClCompile Include="Time\RhythmTimer.cpp"><Filter>Time</Filter></ClCompile>
     <ClInclude Include="Time\RhythmTimer.h"><Filter>Time</Filter></ClInclude>
   </ItemGroup>
+  <ItemGroup><ClInclude Include="Judgement\AccuracyRange.h"><Filter>Judgement</Filter></ClInclude></ItemGroup>
 </Project>

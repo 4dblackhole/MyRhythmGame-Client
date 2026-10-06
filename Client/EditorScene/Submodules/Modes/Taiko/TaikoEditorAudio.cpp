@@ -24,8 +24,8 @@ std::map<std::string, std::filesystem::path> TaikoEditorMode::AudioFiles(
               {finger_drum::mode::taiko_sound::BigDonFirstHit, L"bigdon.wav"},
               {finger_drum::mode::taiko_sound::BigKatFirstHit, L"bigkat.wav"}}})
         files[id] = mrg_client::asset_paths::skin::TaikoHitSound(file);
-    for (const auto &[id, path] : document.Pattern().hitSounds)
-        files[finger_drum::mode::taiko_audio::ChartSoundId(id)] = document.Pattern().sourcePath.parent_path() / path;
+    for (const auto &[id, path] : document.Effects().hitSounds)
+        files[finger_drum::mode::taiko_audio::ChartSoundId(id)] = document.Effects().sourcePath.parent_path() / path;
     return files;
 }
 

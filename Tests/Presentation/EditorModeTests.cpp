@@ -284,8 +284,8 @@ namespace
 
         // Explicit table assignments beat timed defaults; timed overrides are
         // resolved independently for the two Purple input sounds.
-        purple.hitSounds = {{"own", "own.wav"}, {"don", "don.wav"}, {"kat", "kat.wav"}};
         chart::EffectDocument effects;
+        effects.hitSounds = {{"own", "own.wav"}, {"don", "don.wav"}, {"kat", "kat.wav"}};
         effects.hitSoundChanges = {{{0, {}}, "don", 1}, {{0, {}}, "kat", 2}};
         purpleDocument.Replace(purple, effects);
         const auto changed = editorMode->AudioMarkers(purpleDocument);
@@ -358,11 +358,11 @@ namespace
         state.effectForm.endMeasure = "2";
         state.effectForm.endFraction = "0/4";
         state.effectForm.endValue = "3";
-        state.effectForm.curve = chart::AutomationCurve::Smoothstep;
+        state.effectForm.curve = chart::AutomationCurve::Linear;
         state.ApplyEffect();
         state.effectForm.Load(state.Document().Effects(), 0);
         Check(state.effectForm.endMeasure == "2" && state.effectForm.endFraction == "0/1" &&
-                  state.effectForm.curve == chart::AutomationCurve::Smoothstep,
+                  state.effectForm.curve == chart::AutomationCurve::Linear,
               "Named effect fields lost the region/curve during row selection.");
         const auto revision = state.Document().Revision();
         state.effectForm.beginValue = "0";

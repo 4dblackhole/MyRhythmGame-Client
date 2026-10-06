@@ -1,5 +1,6 @@
 #pragma once
 #include "Mode/Submodules/PlaySessionTypes.h"
+#include "Automation/ScrollAutomation.h"
 
 namespace finger_drum::mode
 {
@@ -26,8 +27,11 @@ namespace finger_drum::mode
         void SetNoteScrollMultiplier(rhythm::NoteId noteId, double multiplier);
         [[nodiscard]] double MinimumScrollMultiplier() const noexcept
         {
-            return minimumScrollMultiplier_;
+            return minimumScrollMultiplier_ * scroll_.MinimumMultiplier();
         }
+        long double ScrollDistance(rhythm::RhythmTime target, rhythm::RhythmTime current) const
+        { return scroll_.Distance(target, current); }
+        bool IsKiaiActive(rhythm::RhythmTime time) const;
 
         [[nodiscard]] rhythm::NoteProcessResult ProcessInput(rhythm::PhysicalKey physicalKey,
                                                              rhythm::InputEdge edge,
@@ -46,7 +50,7 @@ namespace finger_drum::mode
         void AccumulateAccuracy(const rhythm::NoteProcessResult &result);
         void ResolveSoundOverrides(rhythm::NoteProcessResult &result) const;
         [[nodiscard]] static double Interpolate(const chart::CompiledEffectCommand &command,
-                                                rhythm::RhythmTime time) noexcept;
+                                                rhythm::RhythmTime time);
 
         rhythm::ScrollGear gear_;
         std::optional<chart::MusicalTimeline> timeline_;
@@ -54,6 +58,7 @@ namespace finger_drum::mode
         std::map<rhythm::NoteAction, rhythm::AudioCueRequest> freeInputCues_;
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;
+        chart::ScrollAutomation scroll_;
         std::map<std::pair<chart::EffectCommandType, std::string>, std::vector<std::size_t>> effectTracks_;
         mutable std::optional<rhythm::RhythmTime> automationTime_;
         mutable std::vector<AutomationValue> automationValues_;

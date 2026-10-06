@@ -25,7 +25,7 @@ namespace finger_drum::mode
             return *action;
         }
     } // namespace
-    std::vector<TaikoPreviewCue> BuildTaikoAudioPreview(const chart::PatternDocument &pattern,
+    std::vector<TaikoPreviewCue> BuildTaikoAudioPreview(const chart::PatternDocument &,
                                                         const chart::EffectDocument &effects,
                                                         const chart::MusicalTimeline &timeline,
                                                         const std::vector<chart::CompiledPatternNote> &notes)
@@ -33,7 +33,7 @@ namespace finger_drum::mode
         std::vector<TaikoPreviewCue> cues;
         const auto append = [&](chart::PatternNote note, TaikoAction action, rhythm::RhythmTime time,
                                 bool big = false) {
-            if (pattern.hitSounds.contains(note.hitSound))
+            if (effects.hitSounds.contains(note.hitSound))
                 note.hitSound = taiko_audio::ChartSoundId(note.hitSound);
             cues.push_back(
                 {time, taiko_audio::ResolveSound(taiko_audio::NoteSound(note, action, big), time, effects, timeline)});

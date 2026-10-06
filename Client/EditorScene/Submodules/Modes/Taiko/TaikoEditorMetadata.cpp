@@ -59,13 +59,20 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
     metadata(625, text.baseBpm.data(), std::to_string(p.baseBpm),
              [](auto &d, const auto &value) { d.baseBpm = Number(value); });
     std::string sounds;
-    for (const auto &[id, path] : p.hitSounds)
+    for (const auto &[id, path] : state.Document().Effects().hitSounds)
         sounds += id + ": " + Utf8(path.wstring()) + "\n";
-    metadata(705, text.hitSoundTable.data(), sounds, [](auto &d, const auto &value) {
-        const auto result = chart::ChartParser{}.ParsePattern("[HitSounds]\n" + value);
-        if (!result.Succeeded())
-            throw std::invalid_argument("Invalid hit sound table.");
-        d.hitSounds = result.document.hitSounds;
+    canvas.Text({156, 705, 360, 40}, text.hitSoundTable.data(), 22);
+    canvas.Button({520, 705, 1295, 44}, Wide(sounds), [&state, language, sounds] {
+        const auto &labels = finger_drum::texts::Editor(language);
+        if (auto edited = EditText(labels.hitSoundTable.data(), sounds, labels))
+        {
+            const auto parsed = chart::ChartParser{}.ParseEffect("[HitSounds]\n" + *edited);
+            if (!parsed.Succeeded()) throw std::invalid_argument("Invalid YME hit sound table.");
+            auto effects = state.Document().Effects();
+            effects.hitSounds = parsed.document.hitSounds;
+            state.Replace(state.Document().Pattern(), std::move(effects));
+            state.RequestRebuild();
+        }
     });
     canvas.Text({156, 805, 1640, 95}, std::wstring(text.metadataHelp), 21);
 }

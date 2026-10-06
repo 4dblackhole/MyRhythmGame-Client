@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 노트 판정·정확도·타이머 | [판정 규칙](Gameplay/Rules.md) | `FingerDrum.Rhythm/Note`, `Judgement`, `Time` |
 | Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `FingerDrum.Modes/Taiko` |
-| YMM/YMP/YME 문법 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model` |
+| YMM/YMP/YME 문법·히트사운드 볼륨·보간·Whole/Separate·영역 상태 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model`, `Automation` |
 | BPM·마디·유리수 위치 | [타이밍 문법](Formats/Timing.md) | `FingerDrum.Chart/Timing`, `Utility` |
 | 편집 트리·모드 확장·저장·타임라인·오디오 탭 | [ChartEditor](ChartEditor.md) | ChartEditor의 원본 트리/조회 snapshot; EditorWorkspace / EditorForms / Modes; `FingerDrum.Editor` |
 | 곡 목록·포커스·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |

@@ -101,6 +101,8 @@ namespace finger_drum::chart
             }
             else if (key == "Music metadata")
                 result.document.musicMetadataFile = PathFromUtf8(value);
+            else if (key == "Effect file")
+                result.document.effectFile = PathFromUtf8(value);
             else if (StartsWithInsensitive(key, "Pattern Maker") &&
                      !StartsWithInsensitive(key, "Pattern Maker Count"))
                 result.document.makers.emplace_back(value);
@@ -142,13 +144,7 @@ namespace finger_drum::chart
             }
             else if (section == "HitSounds")
             {
-                if (key.empty() || value.empty() ||
-                    !result.document.hitSounds.emplace(std::string(key), PathFromUtf8(value))
-                         .second)
-                {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
-                                  "A hit sound requires a unique index and a non-empty path.");
-                }
+                AddDiagnostic(result.diagnostics, source, lineNumber, "Hit sound tables belong in YME [HitSounds].");
             }
         }
 

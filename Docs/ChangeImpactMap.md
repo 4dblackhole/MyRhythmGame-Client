@@ -30,6 +30,8 @@
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |
 | 문법 추가 | `FingerDrum.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
+| YME 보간·Whole/Separate | `FingerDrum.Chart/Automation/InterpolationExpression.*`, `ScrollAutomation.*` | MusicalTimeline / PlaySession / GameplayPresenter / TaikoEditorScore; YmeEffectsTests, 실제 -Effects replay |
+| 싱코페이션 판정 범위·Kiai 상태 | `FingerDrum.Rhythm/Judgement/AccuracyRange.*`, `FingerDrum.Modes/Taiko/Submodules/TaikoBuildSupport.h` | TaikoSessionBuilder / RuleBasedNote / PlaySession; YmeEffectsTests |
 | BPM/마디 시간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | Formats/Timing; ChartParser/ChartEditorTests |
 | 편집 원본 트리·안정 ID·구간 조회 | `FingerDrum.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests; TaikoEditorScore, EditorWorkspace |
 | 플레이 자동화 검색·DSP 준비 | `FingerDrum.Modes/Mode/Submodules/PlaySession.*`, `Client/Audio/GameplayAudioRouter.*` | TaikoModeTests; GameplayAudio, 전체 노트 replay |
