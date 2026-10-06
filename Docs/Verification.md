@@ -42,6 +42,8 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 전체 노트/Buzz 회귀는 `--catalog-root` 로직 테스트와
 [All-notes actual gameplay replay](../Tests/Presentation/README.md)를 두 구성에서 실행합니다.
 옵션/설정 파일 변경은 같은 문서의 Options panel regression을 두 구성에서 실행합니다.
+숫자 파서/자산 초기화의 예외 경계 변경은 같은 문서의 Allocation failure boundary regression도
+두 구성에서 실행합니다. 이 테스트는 실제 자산 캐시를 사용하지 않습니다.
 
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
@@ -203,3 +205,45 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 수동 확인: 위 실제 엔진 replay는 숨겨진 창과 지정 시각 입력을 사용하는 자동 검증입니다.
   실제 화면의 픽셀·효과 움직임·물리 키/마우스 조작·청취와 볼륨 차이는 수동 확인하지 않았습니다.
   Kiai는 상태만 처리하고 새 시각 효과나 전용 편집 UI를 추가하지 않았습니다.
+
+## 2026-10-06 코드 품질 검사 지적 수정
+
+- 다른 세션의 `build/quality-2026-10-06/Report.md`와 48개 고유 경고를 검토했습니다.
+  `ParseDouble`은 strtod의 반환 포인터가 필드의 실제 끝인지 검사하여 NUL 뒤의 추가 값을
+  거부합니다. 임시 문자열 할당 실패도 기존 noexcept/false 반환 계약 안에서 처리합니다.
+  YMP의 BPM/offset/delay와 YME 값의 잘못된 입력, 기존 부호·지수·16진수/공백 표기를 검사했습니다.
+- 자산 초기화의 오류 저장은 별도 StoreInitializationError가 맡습니다. 오류 메시지의 할당도
+  실패하면 빈 메시지와 false를 반환합니다. 자원 없는 별도 실행 파일에서 두 실패 경계의
+  C++ 할당을 강제로 실패시켜 Debug/Release 모두 종료 없이 처리함을 확인했습니다.
+  이 테스트는 실제 캐시를 생성/수정하지 않으며 `/analyze` 빌드의 경고·오류도 없습니다.
+- YMM/YMP/YME 파서는 경로를 문서로 이동하고 진단은 문서가 소유한 경로를 참조합니다.
+  외부 함수 서명은 유지했습니다. 사운드 정책의 읽기 전용 문자열과 동기 DecodeAudio의
+  stop token 복사를 줄이고, 의미 없는 배열 move를 제거했습니다.
+  순서 입력은 인덱스를 먼저 검사하고 iterator 변환을 명시합니다. 시간은 정수 µs로 유지하며
+  표시/점수의 부동소수점 변환만 명시했습니다. 테스트의 optional 접근과 VK 값/문자열도 정리했습니다.
+- clang-tidy 19.1.5: 수정한 Rhythm/Chart/Modes/Editor/Assets/Rhythm.Tests 6개 프로젝트의
+  48개 번역 단위를 Debug x64와 Release x64에서 각각 분석했습니다.
+  각 프로젝트의 MSBuild ClangTidy 컴파일 DB로 실제 include/define/C++20 설정을 사용했고,
+  `clang-analyzer-*`, `bugprone-*`, `performance-*`를 실행했습니다. 96개 실행 모두 파싱 오류 없이 완료.
+  엔진/표준 라이브러리/SDK는 수정 및 Client 진단 집계 범위에서 제외했습니다.
+- 고유 경고는 기존 48개에서 각 구성 18개로 감소했습니다. 복사/불필요한 move, 암시적 변환,
+  명시적 noexcept 경계, 테스트 optional/문자 처리 지적을 해소했으며 새 경고는 없습니다.
+
+| 남은 진단 | 수 | 검토 및 처리 |
+| --- | ---: | --- |
+| 쉽게 바뀔 수 있는 인자 순서 | 10 | 이름과 직접 호출부의 순서를 확인했습니다. 실제 뒤바뀜은 없고, 타입을 구분하기 위한 API/자료형 재설계를 추가하지 않았습니다. |
+| enum 크기 | 6 | TaikoAction은 NoteAction, 노트 ID는 파일의 int 계약을 사용합니다. 작은 UI enum과 보간 명령의 크기 변경도 실제 성능 이득을 확인하지 못해 유지했습니다. |
+| 암시적 생성자의 exception-escape | 2 | EffectDocument/ParseResult 및 해당 STL map의 기본/이동 생성자는 실제 MSVC Debug/Release 모두 noexcept=false임을 trait 실행으로 확인했습니다. Client가 예외를 금지한 계약 위반은 아니며, 경고를 없애기 위한 특수 멤버 추가/억제는 하지 않았습니다. |
+
+- 원래 보고서의 MSVC C26115는 break 시 unique_lock 소멸자가 해제하는 경로이고,
+  C28020은 4개 바인딩 × (primary 1 + secondary 2)가 크기 12의 배열 안에 기록되는 경로임을
+  재검토했습니다. 두 Client 소스는 수정하지 않았습니다. 현재 검사의 raw 로그/CSV/컴파일 DB는
+  `build/quality-fixes-2026-10-06/{Debug,Release}`에 있으며 원래 검사 산출물은 보존했습니다.
+- Debug/Release x64 솔루션 전체 Rebuild와 최종 테스트 수정 후 증분 Build 성공.
+  일반 빌드 경고·오류 없음. 두 구성 로직·카탈로그(1곡/5패턴), 4개 smoke,
+  EditorAudioViewTests/EditorModeTests, FailureBoundaryTests 성공.
+- 실제 D3D12/FMOD replay도 두 구성 성공: 효과 채보 15개/97.8897%/1,302프레임,
+  기존 전체 종류 채보 19개/85.1694%/1,557프레임. 효과 Buzz는 2개 실패/35개 성공,
+  기존 밀집 Buzz 63개 로직 조건도 유지했습니다. 오디오 오류 없음.
+- 프로젝트/필터/의존성/엔진 경계와 git diff --check 통과. 엔진·파일 형식·사용자 곡/스킨은
+  변경하지 않았습니다. 실제 화면/물리 키·마우스/청취는 수동 확인하지 않았습니다.

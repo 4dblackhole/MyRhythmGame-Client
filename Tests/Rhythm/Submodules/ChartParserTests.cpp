@@ -179,6 +179,34 @@ Base BPM: 120
                 "Invalid YME numeric fields must be diagnosed and excluded.");
     }
 
+    void TestNumericFieldsRejectEmbeddedNulls()
+    {
+        const chart::ChartParser parser;
+        const std::filesystem::path source{"numeric-fields.ymp"};
+        for (const std::string &number : {std::string{"120garbage"}, std::string{""},
+                                        std::string{"120\0garbage", 11}, std::string{"120\0", 4},
+                                        std::string(1, '\0') + "120"})
+        {
+            for (const std::string_view prefix : {"[Metadata]\nBase BPM: ", "[Metadata]\nPattern Offset: ",
+                                                  "[Time Signature]\n0/4,#bpm ", "[Time Signature]\n0/4,#delay "})
+            {
+                const auto parsed = parser.ParsePattern(std::string(prefix) + number + "\n", source);
+                Require(!parsed.Succeeded() && !parsed.diagnostics.empty() && parsed.document.sourcePath == source &&
+                            parsed.diagnostics.front().location.file == source,
+                        "Invalid numeric fields must retain their source and report a diagnostic, including embedded NULs.");
+            }
+            const auto effect = parser.ParseEffect("[Sounds]\n1,0/4,#Volume HitSound,Value=" + number + "\n", "numeric-fields.yme");
+            Require(!effect.Succeeded() && effect.document.commands.empty(),
+                    "YME numeric values must reject the complete invalid field, not just a prefix before NUL.");
+        }
+        for (const std::string_view number : {"120", "+120", "1.2e2", "0x1.ep6", " \t120 \t"})
+        {
+            const auto parsed = parser.ParsePattern("[Metadata]\nBase BPM: " + std::string(number) + "\n", source);
+            Require(parsed.Succeeded() && parsed.document.baseBpm == 120 && parsed.document.sourcePath == source,
+                    "Numeric validation must preserve decimal, sign, exponent, hex and surrounding-whitespace syntax.");
+        }
+    }
+
     void TestLegacyParsingAndMicroseconds()
     {
         constexpr std::string_view Pattern = R"(

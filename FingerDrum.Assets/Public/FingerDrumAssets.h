@@ -10,6 +10,7 @@ namespace finger_drum::assets
     // Installs the executable's RCDATA pack into a versioned per-user cache.
     // Calling this more than once is safe. It must succeed before resolving
     // any built-in asset paths.
+    // On failure, returns false; the error may be empty if allocating its text also failed.
     [[nodiscard]] bool InitializeBuiltInAssets(
         std::string& errorMessage) noexcept;
 

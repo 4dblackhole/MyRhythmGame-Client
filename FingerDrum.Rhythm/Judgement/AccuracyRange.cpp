@@ -28,7 +28,7 @@ AccuracyRange::AccuracyRange(std::string id, const std::size_t level)
 AccuracyRange::AccuracyRange(std::string id, const std::size_t level, std::array<JudgementBand, BandCount> level50Bands,
                              const RhythmDuration extraHalfWindow)
     : extraHalfWindow_(extraHalfWindow), id_(std::move(id)), level_(std::max<std::size_t>(level, 1)),
-      level50Bands_(std::move(level50Bands))
+      level50Bands_(level50Bands)
 {
     if (id_.empty())
     {

@@ -21,14 +21,17 @@ namespace finger_drum::tests
             session.ProcessInput('J', rhythm::InputEdge::Pressed, rhythm::RhythmTime{16'500});
         const double hit2 = profile->Evaluate({}, rhythm::RhythmTime{16'500}).scoreRate;
         const double bigRate = (1.0 + hit2) * 0.5;
+        const auto bigAccuracyRate = session.AccuracyRate();
+        const auto &bigAccuracy = session.LastNoteAccuracy();
         Require(second.finalizedAccuracies.size() == 1 &&
-                    std::abs(*session.AccuracyRate() - bigRate) < 1e-9 &&
-                    session.LastNoteAccuracy()->hitScoreRates == std::vector<double>{1.0, hit2},
+                    bigAccuracyRate && bigAccuracy && std::abs(*bigAccuracyRate - bigRate) < 1e-9 &&
+                    bigAccuracy->hitScoreRates == std::vector<double>{1.0, hit2},
                 "Big accuracy must preserve both interpolated hits and their mean.");
         static_cast<void>(session.Update(rhythm::RhythmTime{400'000}));
         static_cast<void>(session.Update(rhythm::RhythmTime{500'000}));
+        const auto missedAccuracyRate = session.AccuracyRate();
         Require(session.FinalizedNoteCount() == 2 &&
-                    std::abs(*session.AccuracyRate() - bigRate * 0.5) < 1e-9,
+                    missedAccuracyRate && std::abs(*missedAccuracyRate - bigRate * 0.5) < 1e-9,
                 "Each logical note, including a miss, must contribute exactly once.");
         session.Reset();
         Require(!session.AccuracyRate() && !session.LastNoteAccuracy(),
@@ -40,7 +43,8 @@ namespace finger_drum::tests
                     partial.finalizedAccuracies.front().hitScoreRates[1] == 0.0,
                 "An unfilled second hit must count as zero, not discard the first hit.");
 #if defined(_DEBUG)
-        Require(session.LastNoteAccuracy()->DebugText().find(L"Hit2=0.00%") != std::wstring::npos,
+        const auto &partialAccuracy = session.LastNoteAccuracy();
+        Require(partialAccuracy && partialAccuracy->DebugText().find(L"Hit2=0.00%") != std::wstring::npos,
                 "Debug details must expose unfilled hit components.");
 #endif
     }
@@ -102,10 +106,11 @@ namespace finger_drum::tests
                         key, rhythm::InputEdge::Pressed, rhythm::RhythmTime{hit * 10'000}));
                 }
                 const auto expired = loaded.session->Update(rhythm::RhythmTime{1'000'000});
+                const auto finalRate = loaded.session->AccuracyRate();
+                const auto &finalAccuracy = loaded.session->LastNoteAccuracy();
                 Require(HasEvent(expired, rhythm::NoteEventType::Missed) &&
-                            std::abs(*loaded.session->AccuracyRate() - 0.8) < 1e-9 &&
-                            loaded.session->LastNoteAccuracy()->acceptedHits == 8 &&
-                            loaded.session->LastNoteAccuracy()->target.hits == 10,
+                            finalRate && finalAccuracy && std::abs(*finalRate - 0.8) < 1e-9 &&
+                            finalAccuracy->acceptedHits == 8 && finalAccuracy->target.hits == 10,
                         "Eight of ten hits must finalize at 80 percent, even on timeout.");
             }
             auto pattern = MakeLongPattern(type);
@@ -130,8 +135,9 @@ namespace finger_drum::tests
                                                          rhythm::RhythmTime{hit * 1'000}));
         }
         static_cast<void>(roll.session->Update(rhythm::RhythmTime{1'000'000}));
+        const auto &rollAccuracy = roll.session->LastNoteAccuracy();
         Require(roll.session->AccuracyRate() == 1.0 &&
-                    roll.session->LastNoteAccuracy()->acceptedHits == 5,
+                    rollAccuracy && rollAccuracy->acceptedHits == 5,
                 "Roll may keep accepting hits, but its final accuracy must cap at 100 percent.");
     }
 

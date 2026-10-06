@@ -242,7 +242,7 @@ namespace finger_drum::mode
     std::optional<double> PlaySession::AccuracyRate() const noexcept
     {
         return finalizedNoteCount_ == 0 ? std::nullopt
-                                        : std::optional<double>{accuracySum_ / finalizedNoteCount_};
+                                        : std::optional<double>{accuracySum_ / static_cast<double>(finalizedNoteCount_)};
     }
 
     std::size_t PlaySession::FinalizedNoteCount() const noexcept
@@ -259,6 +259,6 @@ namespace finger_drum::mode
     {
         if (command.duration <= rhythm::RhythmDuration::zero()) return command.command.endValue;
         return chart::EvaluateInterpolation(command.command,
-            static_cast<double>((time - command.timing).count()) / command.duration.count());
+            static_cast<double>((time - command.timing).count()) / static_cast<double>(command.duration.count()));
     }
 } // namespace finger_drum::mode

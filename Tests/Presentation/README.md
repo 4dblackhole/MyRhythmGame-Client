@@ -17,6 +17,22 @@ roll ticks, missed-note rollover, alpha at 0/100/200ms, retrigger, sprite reuse,
 inherited Lane rotation/scale, resize clipping, and reset. It does not initialize
 an audio device or renderer; normal gameplay smoke covers resource loading.
 
+## Allocation failure boundary regression
+
+After a solution build, run in an x64 Visual Studio developer PowerShell:
+
+```powershell
+./Tests/Presentation/RunFailureBoundaryTests.ps1 -Configuration Debug
+./Tests/Presentation/RunFailureBoundaryTests.ps1 -Configuration Release
+```
+
+The standalone test replaces C++ allocation only inside its own single-threaded
+process. It checks that the numeric parser returns false when its temporary
+string cannot be allocated and that asset initialization returns false with
+empty error text when storing its error also fails. It deliberately omits the
+RCDATA pack, so initialization fails before installing or reading the user's cache.
+The test source is compiled with MSVC `/analyze`; this is not a game startup route.
+
 ## Editor audio view regression
 
 After building both configurations, run this from PowerShell in an x64 Visual Studio

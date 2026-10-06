@@ -60,12 +60,14 @@ Soft: From + (To - From) * Bezier(u, 0.25, 0.1, 0.25, 1)
                                    "[Sounds]\n1,0/4,Area,2,0/4,#Volume HitSound,From=1,To=2,Curve=Unknown",
                                    "[Interpolation]\nBad: From + unknown(u)",
                                    "[Interpolation]\nLinear: From",
-                                   "[Interpolation]\nBad: From / (u-u)\n[Sounds]\n1,0/4,Area,2,0/4,#Volume "
-                                   "HitSound,From=1,To=2,Curve=Bad",
-                                   "[Interpolation]\nBad: "
-                                   "From+(To-From)*Bezier(u,-1,0,1,1)\n[Speed]\n1,0/4,Area,2,0/"
-                                   "4,#ScrollSpeed "
-                                   "Whole,From=1,To=2,Curve=Bad",
+                                   R"([Interpolation]
+Bad: From / (u-u)
+[Sounds]
+1,0/4,Area,2,0/4,#Volume HitSound,From=1,To=2,Curve=Bad)",
+                                   R"([Interpolation]
+Bad: From+(To-From)*Bezier(u,-1,0,1,1)
+[Speed]
+1,0/4,Area,2,0/4,#ScrollSpeed Whole,From=1,To=2,Curve=Bad)",
                                    "[Zone]\n1,0/4,#Syncopation ON,Exclude=0",
                                    "[Zone]\n1,0/4,Area,2,0/4,#Kiai ON",
                                    "[Speed]\n1,0/4,#ScrollSpeed Whole,Value=1,Value=2",
@@ -158,7 +160,7 @@ void TestYmeEffects(const std::filesystem::path &songsRoot)
             "Kiai must honor ON/OFF boundaries and backward queries without "
             "adding display/score behavior.");
     const auto middle = time(3) + (time(4) - time(3)) / 2;
-    Require(std::abs(session.ScrollDistance(time(4), time(3)) - (time(4) - time(3)).count() * 1.5L) < .01L,
+    Require(std::abs(session.ScrollDistance(time(4), time(3)) - static_cast<long double>((time(4) - time(3)).count()) * 1.5L) < .01L,
             "Whole Linear ramp must integrate velocity to preserve continuous "
             "note positions.");
     const auto separate = session.FindNotePresentation(notes[1]->Id())->scrollMultiplier;

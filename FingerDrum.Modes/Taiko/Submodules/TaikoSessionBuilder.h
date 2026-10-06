@@ -22,10 +22,10 @@ namespace finger_drum::mode
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy> MakeBigSoundPolicy(
             std::string soundId);
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy> MakeTickSoundPolicy(
-            std::string soundId);
+            const std::string &soundId);
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy> MakeBalloonSoundPolicy(
             std::string soundId);
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy>
-        MakeAlternatingSoundPolicy(std::size_t hitCount, std::string soundId);
+        MakeAlternatingSoundPolicy(std::size_t hitCount, const std::string &soundId);
     };
 } // namespace finger_drum::mode

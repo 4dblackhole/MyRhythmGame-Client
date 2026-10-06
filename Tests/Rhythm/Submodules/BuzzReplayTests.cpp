@@ -17,7 +17,7 @@ namespace finger_drum::tests
             const auto &note = *session.Gear().Lanes().front()->Notes().front();
             const auto &view = *session.FindNotePresentation(note.Id());
             const auto press = note.Timing() + delay;
-            const rhythm::PhysicalKey key = kat ? 'D' : 'F';
+            const rhythm::PhysicalKey key = kat ? rhythm::PhysicalKey{'D'} : rhythm::PhysicalKey{'F'};
             rhythm::NoteProcessResult log;
             if (incremental)
                 for (auto time = note.Timing(); time < press; time += rhythm::RhythmDuration{997})

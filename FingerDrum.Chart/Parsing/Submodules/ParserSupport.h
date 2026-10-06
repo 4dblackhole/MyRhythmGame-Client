@@ -84,10 +84,19 @@ namespace finger_drum::chart::parsing
 
     [[nodiscard]] inline bool ParseDouble(const std::string_view value, double &output) noexcept
     {
-        const std::string owned(Trim(value));
-        char *end = nullptr;
-        output = std::strtod(owned.c_str(), &end);
-        return end != owned.c_str() && *end == '\0';
+        try
+        {
+            const std::string owned(Trim(value));
+            char *end = nullptr;
+            output = std::strtod(owned.c_str(), &end);
+            // An embedded NUL is not the end of the supplied numeric field.
+            return end != owned.c_str() && end == owned.c_str() + owned.size();
+        }
+        catch (const std::exception &)
+        {
+            // Keep the failure-return contract if the temporary string cannot be allocated.
+            return false;
+        }
     }
 
     [[nodiscard]] inline std::pair<std::string_view, std::string_view> SplitKeyValue(

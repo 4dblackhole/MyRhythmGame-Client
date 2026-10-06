@@ -8,7 +8,8 @@ namespace finger_drum::chart
                                                            std::filesystem::path source) const
     {
         ParseResult<PatternDocument> result;
-        result.document.sourcePath = source;
+        result.document.sourcePath = std::move(source);
+        const auto &sourcePath = result.document.sourcePath;
         std::string section;
         std::int64_t timingMeasure = 0;
         std::int64_t patternMeasure = 0;
@@ -53,7 +54,7 @@ namespace finger_drum::chart
                 const std::vector<std::string_view> fields = Split(line, ',');
                 if (fields.size() < 3)
                 {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
                                   "A pattern note requires position, key type and action type.");
                     continue;
                 }
@@ -63,7 +64,7 @@ namespace finger_drum::chart
                     !ParseInteger(fields[2], note.actionType))
                 {
                     AddDiagnostic(
-                        result.diagnostics, source, lineNumber,
+                        result.diagnostics, sourcePath, lineNumber,
                         "The pattern note contains an invalid position or integer field.");
                     continue;
                 }
@@ -73,7 +74,7 @@ namespace finger_drum::chart
                 {
                     note.extraData.emplace_back(fields[index]);
                 }
-                note.source = {source, lineNumber, 1};
+                note.source = {sourcePath, lineNumber, 1};
                 note.sourceOrder = sourceOrder++;
                 result.document.notes.push_back(std::move(note));
                 continue;
@@ -83,10 +84,10 @@ namespace finger_drum::chart
             {
                 if (line.front() == '#')
                 {
-                    ParseStandaloneTimingCommand(line, timingMeasure, lineNumber, source, result);
+                    ParseStandaloneTimingCommand(line, timingMeasure, lineNumber, sourcePath, result);
                     continue;
                 }
-                ParsePositionedTimingCommand(line, timingMeasure, lineNumber, source, result);
+                ParsePositionedTimingCommand(line, timingMeasure, lineNumber, sourcePath, result);
                 continue;
             }
 
@@ -95,7 +96,7 @@ namespace finger_drum::chart
             {
                 if (!ParseInteger(value, result.document.version))
                 {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
                                   "Version must be an integer.");
                 }
             }
@@ -115,7 +116,7 @@ namespace finger_drum::chart
                 if (!ParseDouble(value, result.document.patternOffsetMilliseconds) ||
                     !IsFinite(result.document.patternOffsetMilliseconds))
                 {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
                                   "Pattern Offset requires a finite millisecond value.");
                 }
             }
@@ -124,7 +125,7 @@ namespace finger_drum::chart
                 if (!ParseDouble(value, result.document.baseBpm) ||
                     !IsFinite(result.document.baseBpm))
                 {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
                                   "Base BPM requires a finite numeric value.");
                 }
             }
@@ -133,7 +134,7 @@ namespace finger_drum::chart
                 if (!ParseInteger(value, result.document.judgementLevel) ||
                     result.document.judgementLevel == 0)
                 {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
                                   "JudgeLevel must be a positive integer.");
                 }
             }
@@ -144,13 +145,13 @@ namespace finger_drum::chart
             }
             else if (section == "HitSounds")
             {
-                AddDiagnostic(result.diagnostics, source, lineNumber, "Hit sound tables belong in YME [HitSounds].");
+                AddDiagnostic(result.diagnostics, sourcePath, lineNumber, "Hit sound tables belong in YME [HitSounds].");
             }
         }
 
         if (result.document.baseBpm <= 0.0)
         {
-            AddDiagnostic(result.diagnostics, source, 1, "Base BPM must be greater than zero.");
+            AddDiagnostic(result.diagnostics, sourcePath, 1, "Base BPM must be greater than zero.");
         }
         RemoveOutOfMeasureEntries(result);
         std::ranges::sort(result.document.systemBreakMeasures);

@@ -64,7 +64,7 @@ namespace finger_drum::rhythm
         if (target.kind == NoteAccuracyKind::Hold || target.kind == NoteAccuracyKind::Ticks)
         {
             const double ratio =
-                target.ticks == 0 ? 0.0 : 100.0 * static_cast<double>(acceptedTicks) / target.ticks;
+                target.ticks == 0 ? 0.0 : 100.0 * static_cast<double>(acceptedTicks) / static_cast<double>(target.ticks);
             result +=
                 std::format(L"Ticks={}/{} ({:.2f}%){}  ", acceptedTicks, target.ticks, ratio,
                             target.kind == NoteAccuracyKind::Hold ? L" [head/ticks 50:50]" : L"");

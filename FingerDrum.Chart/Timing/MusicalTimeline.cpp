@@ -427,7 +427,8 @@ namespace finger_drum::chart
         const auto duration = c.endPosition ? Compile(*c.endPosition) - Compile(c.position)
             : rhythm::RhythmDuration{static_cast<rhythm::RhythmDuration::rep>(std::llround(c.durationMilliseconds * 1000))};
         if (duration <= rhythm::RhythmDuration::zero()) return c.endValue;
-        return EvaluateInterpolation(c, static_cast<double>((Compile(position) - Compile(c.position)).count()) / duration.count());
+        return EvaluateInterpolation(c, static_cast<double>((Compile(position) - Compile(c.position)).count()) /
+            static_cast<double>(duration.count()));
     }
 
     long double MusicalTimeline::SecondsAt(

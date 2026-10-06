@@ -48,7 +48,7 @@ namespace finger_drum::tests
             const double frequency =
                 analysis.minimumFrequencyHz *
                 std::pow(analysis.maximumFrequencyHz / analysis.minimumFrequencyHz,
-                         (static_cast<double>(band) + .5) / frame.bands.size());
+                         (static_cast<double>(band) + .5) / static_cast<double>(frame.bands.size()));
             const float db = editor::SpectrumFloorDb * (1 - *strongest);
             Require(std::abs(frequency - 1000) < 80 && db > -9 && db < -4 &&
                         frame.minimum < -.49F && frame.maximum > .49F,

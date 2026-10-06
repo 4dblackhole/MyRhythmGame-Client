@@ -1,5 +1,6 @@
 #include "Submodules/TestCases.h"
 #include <cstdlib>
+#include <cstdio>
 #include <exception>
 #include <iostream>
 #include <string_view>
@@ -41,6 +42,7 @@ int main(const int argumentCount, char *arguments[])
         TestOutOfMeasureEntriesAreIgnored();
         TestLegacyParsingAndMicroseconds();
         TestInvalidNumericFieldsReportDiagnostics();
+        TestNumericFieldsRejectEmbeddedNulls();
         TestSongCatalogIsolatesInvalidFiles();
         if (argumentCount == 3 && std::string_view(arguments[1]) == "--catalog-root")
         {
@@ -54,7 +56,12 @@ int main(const int argumentCount, char *arguments[])
     }
     catch (const std::exception &exception)
     {
-        std::cerr << "FingerDrum rhythm test failure: " << exception.what() << '\n';
+        std::fprintf(stderr, "FingerDrum rhythm test failure: %s\n", exception.what());
+        return EXIT_FAILURE;
+    }
+    catch (...)
+    {
+        std::fputs("FingerDrum rhythm test failure: unknown exception\n", stderr);
         return EXIT_FAILURE;
     }
 }

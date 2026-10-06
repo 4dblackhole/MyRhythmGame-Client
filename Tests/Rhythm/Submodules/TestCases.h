@@ -34,6 +34,7 @@ namespace finger_drum::tests
     void TestSongCatalog(const std::filesystem::path &songsRoot);
     void TestSongCatalogIsolatesInvalidFiles();
     void TestInvalidNumericFieldsReportDiagnostics();
+    void TestNumericFieldsRejectEmbeddedNulls();
     void TestLegacyParsingAndMicroseconds();
     void TestIndexedHitSoundChanges();
     void TestSpecialNoteSoundOverridePriority();

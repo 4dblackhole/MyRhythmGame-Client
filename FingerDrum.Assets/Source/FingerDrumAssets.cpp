@@ -419,6 +419,19 @@ namespace finger_drum::assets
             return destination;
         }
 
+        void StoreInitializationError(std::string &output, const char *message) noexcept
+        {
+            try
+            {
+                output = message;
+            }
+            catch (...)
+            {
+                // Reporting allocation failure must not turn a failed initialization into termination.
+                output.clear();
+            }
+        }
+
         [[nodiscard]] std::filesystem::path RequireBuiltInRoot()
         {
             std::scoped_lock lock(assetMutex);
@@ -465,7 +478,12 @@ namespace finger_drum::assets
         }
         catch (const std::exception& exception)
         {
-            errorMessage = exception.what();
+            StoreInitializationError(errorMessage, exception.what());
+            return false;
+        }
+        catch (...)
+        {
+            StoreInitializationError(errorMessage, "Unknown built-in asset initialization error.");
             return false;
         }
     }

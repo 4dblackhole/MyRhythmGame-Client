@@ -162,7 +162,8 @@ ParseResult<EffectDocument> ChartParser::ParseEffect(std::string_view utf8, std:
 {
     ParseResult<EffectDocument> result;
     auto &document = result.document;
-    document.sourcePath = source;
+    document.sourcePath = std::move(source);
+    const auto &sourcePath = result.document.sourcePath;
     CompiledInterpolations expressions;
     std::string section;
     for (const auto &[lineNumber, raw] : EnumerateLines(utf8))
@@ -214,13 +215,13 @@ ParseResult<EffectDocument> ChartParser::ParseEffect(std::string_view utf8, std:
                         (tokens >> extra))
                         throw std::invalid_argument("HitSound requires Don/Kat and a table index.");
                     c.keyType = target == "Don" ? 1 : 2;
-                    c.source = {source, lineNumber, 1};
+                    c.source = {sourcePath, lineNumber, 1};
                     document.hitSoundChanges.push_back(std::move(c));
                 }
                 else
                 {
                     auto c = ParseCommand(section, fields);
-                    c.source = {source, lineNumber, 1};
+                    c.source = {sourcePath, lineNumber, 1};
                     document.commands.push_back(std::move(c));
                 }
             }
@@ -229,13 +230,13 @@ ParseResult<EffectDocument> ChartParser::ParseEffect(std::string_view utf8, std:
         }
         catch (const std::exception &error)
         {
-            AddDiagnostic(result.diagnostics, source, lineNumber, error.what());
+            AddDiagnostic(result.diagnostics, sourcePath, lineNumber, error.what());
         }
     }
-    ResolveCurves(document, expressions, result.diagnostics, source);
+    ResolveCurves(document, expressions, result.diagnostics, sourcePath);
     for (const auto &c : document.hitSoundChanges)
         if (!document.hitSounds.contains(c.soundIndex))
-            AddDiagnostic(result.diagnostics, source, c.source.line, "Undefined hit sound table index.");
+            AddDiagnostic(result.diagnostics, sourcePath, c.source.line, "Undefined hit sound table index.");
     return result;
 }
 } // namespace finger_drum::chart

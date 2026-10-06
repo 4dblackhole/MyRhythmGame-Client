@@ -52,7 +52,9 @@ void ScrollAutomation::Subdivide(const CompiledEffectCommand &c, long double beg
 {
     const auto value = [&c](long double time) {
         const double v =
-            EvaluateInterpolation(c.command, static_cast<double>((time - c.timing.count()) / c.duration.count()));
+            EvaluateInterpolation(c.command, static_cast<double>(
+                (time - static_cast<long double>(c.timing.count())) /
+                static_cast<long double>(c.duration.count())));
         if (!std::isfinite(v) || v <= 0)
             throw std::invalid_argument("Whole scroll interpolation must remain positive and finite.");
         return v;

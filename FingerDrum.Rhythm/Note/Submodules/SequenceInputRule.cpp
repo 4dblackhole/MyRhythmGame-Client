@@ -36,11 +36,12 @@ namespace finger_drum::rhythm
     bool SequenceInputRule::CanAccept(const NoteRuleContext &, const RhythmInputEvent &input,
                                       const JudgementResult &judgement) const noexcept
     {
-        return !IsTerminal(state_) && input.edge == InputEdge::Pressed &&
-               (allowAnyOrder_ ? std::find(sequence_.begin() + nextActionIndex_, sequence_.end(),
-                                           input.action) != sequence_.end()
-                               : input.action == sequence_[nextActionIndex_]) &&
-               IsAtLeastAsAccurateAs(judgement.grade, maximumGrade_);
+        if (IsTerminal(state_) || nextActionIndex_ >= sequence_.size() || input.edge != InputEdge::Pressed)
+            return false;
+        const auto next = sequence_.begin() + static_cast<std::vector<NoteAction>::difference_type>(nextActionIndex_);
+        const bool matches = allowAnyOrder_ ? std::find(next, sequence_.end(), input.action) != sequence_.end()
+                                           : input.action == *next;
+        return matches && IsAtLeastAsAccurateAs(judgement.grade, maximumGrade_);
     }
 
     void SequenceInputRule::ProcessInput(const NoteRuleContext &context,
@@ -58,7 +59,7 @@ namespace finger_drum::rhythm
         const NoteState before = state_;
         if (allowAnyOrder_)
         {
-            const auto next = sequence_.begin() + nextActionIndex_;
+            const auto next = sequence_.begin() + static_cast<std::vector<NoteAction>::difference_type>(nextActionIndex_);
             std::iter_swap(next, std::find(next, sequence_.end(), input.action));
         }
         const std::size_t acceptedIndex = nextActionIndex_++;

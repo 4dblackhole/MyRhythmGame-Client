@@ -31,7 +31,7 @@ namespace finger_drum::chart
         { return Timeline().EffectValueAt(Effects(), type, position, fallback); }
         virtual double MinimumScrollMultiplier() const { return 1; }
         virtual long double ScrollDistance(rhythm::RhythmTime target, rhythm::RhythmTime current) const
-        { return static_cast<long double>(target.count()) - current.count(); }
+        { return static_cast<long double>(target.count()) - static_cast<long double>(current.count()); }
         virtual bool Dirty() const noexcept = 0;
         virtual std::uint64_t Revision() const noexcept = 0;
         virtual void Replace(PatternDocument pattern, EffectDocument effects) = 0;

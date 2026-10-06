@@ -8,7 +8,8 @@ namespace finger_drum::chart
                                                        std::filesystem::path source) const
     {
         ParseResult<MusicDocument> result;
-        result.document.sourcePath = source;
+        result.document.sourcePath = std::move(source);
+        const auto &sourcePath = result.document.sourcePath;
         for (const auto &[lineNumber, rawLine] : EnumerateLines(utf8))
         {
             const std::string_view line = Trim(rawLine);
@@ -21,7 +22,7 @@ namespace finger_drum::chart
             {
                 if (!ParseInteger(value, result.document.version))
                 {
-                    AddDiagnostic(result.diagnostics, source, lineNumber,
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
                                   "Version must be an integer.");
                 }
             }
@@ -49,7 +50,7 @@ namespace finger_drum::chart
         }
         if (result.document.audioFile.empty())
         {
-            AddDiagnostic(result.diagnostics, source, 1,
+            AddDiagnostic(result.diagnostics, sourcePath, 1,
                           "Music metadata is missing the audio File field.");
         }
         return result;

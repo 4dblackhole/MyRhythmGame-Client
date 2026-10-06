@@ -24,7 +24,7 @@ namespace finger_drum::mode
         return policy;
     }
 
-    std::shared_ptr<const rhythm::INoteSoundPolicy> TaikoSessionBuilder::MakeTickSoundPolicy(std::string soundId)
+    std::shared_ptr<const rhythm::INoteSoundPolicy> TaikoSessionBuilder::MakeTickSoundPolicy(const std::string &soundId)
     {
         auto policy = std::make_shared<rhythm::MappedNoteSoundPolicy>();
         for (const TaikoAction action : {TaikoAction::Don, TaikoAction::Kat})
@@ -49,7 +49,7 @@ namespace finger_drum::mode
     }
 
     std::shared_ptr<const rhythm::INoteSoundPolicy> TaikoSessionBuilder::MakeAlternatingSoundPolicy(
-        const std::size_t hitCount, std::string soundId)
+        const std::size_t hitCount, const std::string &soundId)
     {
         auto policy = std::make_shared<rhythm::MappedNoteSoundPolicy>();
         for (std::size_t index = 0; index < hitCount; ++index)

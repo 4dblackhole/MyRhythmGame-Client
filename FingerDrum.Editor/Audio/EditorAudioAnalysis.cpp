@@ -77,7 +77,7 @@ namespace finger_drum::editor
             std::size_t firstFrame{}, totalFrames{};
         };
 
-        DecodedAudio DecodeAudio(const std::filesystem::path &path, const std::stop_token stop,
+        DecodedAudio DecodeAudio(const std::filesystem::path &path, const std::stop_token &stop,
                                  const std::function<void(DecodedAudio &)> &consume)
         {
             using Microsoft::WRL::ComPtr;

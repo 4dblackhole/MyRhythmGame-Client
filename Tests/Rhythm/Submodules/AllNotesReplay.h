@@ -28,8 +28,8 @@ namespace finger_drum::tests
                 const rhythm::PhysicalKey key = view.visualKind == mode::NoteVisualKind::Kat ||
                                                         view.visualKind == mode::NoteVisualKind::BigKat ||
                                                         view.visualKind == mode::NoteVisualKind::KatBuzz
-                                                    ? 'D'
-                                                    : 'F';
+                                                    ? rhythm::PhysicalKey{'D'}
+                                                    : rhythm::PhysicalKey{'F'};
                 const auto &target = note->Accuracy().target;
                 if (target.kind == rhythm::NoteAccuracyKind::Hold)
                 {
@@ -127,7 +127,7 @@ namespace finger_drum::tests
                             accuracy.acceptedHits == 1,
                         "Late GOOD head must retain all missed and accepted body ticks.");
                 const auto head = note->Profile().Evaluate(note->Timing(), press);
-                const double expected = (head.scoreRate + double(index - missed) / index) * 0.5;
+                const double expected = (head.scoreRate + static_cast<double>(index - missed) / static_cast<double>(index)) * 0.5;
                 Require(std::abs(accuracy.ScoreRate() - expected) < 1e-9,
                         "Buzz score must combine head and complete tick denominator.");
                 std::cout << "Buzz " << note->Id() << ": " << missed << " missed / " << index << " ticks; accepted "
