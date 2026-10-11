@@ -52,6 +52,24 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 선택 실행·서식·도메인 CI
+
+`FingerDrum.Rhythm.Tests.exe --list`는 테스트 이름을 나열하고 `--filter Chart`는
+이름에 Chart가 있는 검사만 실행합니다. `--catalog-root`와 함께 사용할 수 있습니다.
+실패한 검사가 있어도 나머지를 실행하며 실패가 하나라도 있거나 선택 결과가 없으면
+종료 코드는 1입니다. 전체 필수 검증에서는 filter를 지정하지 않습니다.
+
+`.clang-format`/`.editorconfig`는 변경 영역의 서식 기준입니다. `.clang-tidy`는
+clang-analyzer/bugprone/performance 검사를 설정하며 컴파일 DB에는 실제 x64 프로젝트의
+include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하는 경우에는
+해당 프로젝트에 `/t:Rebuild /p:RunCodeAnalysis=true`를 지정합니다. 종속 프로젝트를
+이미 빌드한 분석 실행에서는 `/p:BuildProjectReferences=false`로 엔진/SDK 재분석을 피합니다.
+
+`.github/workflows/domain-tests.yml`은 Windows의 Debug/Release에서
+`Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접 빌드하고 로직·기본곡 카탈로그를
+검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
+presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
+
 ## 2026-10-06 에디터 자체 상단 저장 메뉴
 
 - `EditorMenuBar`는 Canvas 노드의 비소유 참조와 메뉴 상태만 유지합니다.
@@ -308,3 +326,53 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   기존 밀집 Buzz 63개 로직 조건도 유지했습니다. 오디오 오류 없음.
 - 프로젝트/필터/의존성/엔진 경계와 git diff --check 통과. 엔진·파일 형식·사용자 곡/스킨은
   변경하지 않았습니다. 실제 화면/물리 키·마우스/청취는 수동 확인하지 않았습니다.
+
+## 2026-10-11 Claude 리뷰 수정
+
+- [리뷰 반영표](Reviews/ClaudeReview-2026-10-11.md)의 변경을 검증했습니다.
+  사용자 선택에 따라 마디 수는 최대 100,000이며, 마지막 마디 경계 조회와
+  범위를 넘는 파일/직접 문서/편집 입력을 구분합니다.
+- Debug/Release x64 솔루션 전체 Rebuild 성공. 최종 경계 조건 수정 후 두 구성의
+  증분 Build와 MSVC Code Analysis도 성공했습니다. 일반 빌드의 새 경고/오류는 없습니다.
+- 두 구성 로직·카탈로그 각각 **41개, 실패 0**(실제 1곡/5패턴).
+  `--filter`로 선택한 테스트가 없으면 종료 코드 1을 반환하는 것도 확인했습니다.
+  밀집 Buzz의 63개 판정 경계 조건은 그대로 통과합니다.
+- 저장 중 각 원본 파일의 rename을 잠금으로 실패시켜 이전 파일/dirty/revision 보존,
+  임시 파일 정리 및 재시도 성공을 검사했습니다. 기존 복구 파일은 보존하고,
+  YMP/YME 같은 대상 저장은 거부합니다. 프로세스 강제 종료나 OS 복구 실패의
+  완전한 원자성을 보장하는 테스트는 아닙니다.
+- UTF-8 한글 경로·BOM·알 수 없는 metadata Warning·파일 읽기 진단, 100,000마디
+  경계 및 큰 정수 입력, 부분 타이밍/효과 수정의 ID·범위 조회·소유권·실패 보존을 검사했습니다.
+  Taiko 롱노트 겹침 거부/인접 허용, 실패한 배치의 pending 상태와 기존 파일의
+  건너뛴 노트 Warning도 검사했습니다.
+- 두 구성에서 smoke-test/lobby/gameplay/editor, EditorAudioViewTests/EditorModeTests/
+  EditorMenuTests, OptionsPanelTests, FailureBoundaryTests, GameplayJudgementTests 성공.
+  옵션 검증은 실제 FMOD Automatic → WASAPI 및 현재 드라이버 전환도 포함합니다.
+  실제 ASIO 장치 검증은 수행하지 않았습니다.
+- 독립 폴더에 EXE와 FMOD DLL을 복사하여 잘못된 언어, 잘못된 INI 문법,
+  미설치 미들웨어, INI 경로가 디렉터리인 경우를 각각 실행했습니다.
+  두 구성 총 8건 모두 기본 설정으로 시작하고 smoke 종료 코드 0이며 원본을 보존했습니다.
+  기존 bin 폴더의 사용자 Option.ini는 변경하지 않았습니다.
+- 실제 D3D12/FMOD 자동 replay도 두 구성 성공: 전체 종류는 19개 완료/85.1694%,
+  Debug 1,554프레임·Release 1,557프레임. 효과 채보는 15개 완료/97.8897%,
+  두 구성 모두 1,302프레임이며 Buzz 37틱 중 35개 성공/2개 실패와 오디오 오류 없음을 확인했습니다.
+- MSVC **14.44.35207 Code Analysis**, Native Recommended Rules, 실제 프로젝트의
+  include/define/C++20 및 Debug/Release x64 설정으로 Rhythm/Chart/Modes/ClientLogic/
+  Rhythm.Tests/Client 6개 프로젝트를 분석했습니다. 분석 명령은 Debug 111개,
+  Release 105개이며 파싱/컴파일 오류와 새 경고는 없습니다. 엔진/SDK는 Client 수정 범위 밖입니다.
+
+| 기존 MSVC 진단 | 위치 | 확인 결과 |
+| --- | --- | --- |
+| C26115 (두 구성) | EditorAnalysisController.cpp:51 | break 이후 unique_lock 소멸자가 해제하는 경로. 이번에 수정하지 않은 코드. |
+| C28020 (두 구성) | GameplaySessionController.cpp:62 | 4개 바인딩 × 3개 키가 12개 배열 안에 기록됨. 이번에 수정하지 않은 코드. |
+| C6236 (Release) | GameplayInput.cpp:60 | Debug 전용 조건이 Release에서 상수인 기존 경로. 억제나 범위 밖 수정을 추가하지 않음. |
+
+- clang-format/clang-tidy 19.1.5로 설정 파일을 읽을 수 있음을 확인했습니다.
+  이번 C++ 정적 분석 실행 도구는 위 MSVC Code Analysis이며 clang-tidy 실행으로 혼동하지 않습니다.
+- 8개 프로젝트의 소스/필터/의존성/엔진 경계와 `git diff --check` 통과.
+  엔진 및 사용자 곡/스킨은 변경하지 않았습니다. CI 설정은 FMOD/엔진 없이
+  Debug/Release 도메인 빌드·테스트를 실행하며 원격 실행 결과는 별도로 확인합니다.
+- 로컬 원시 로그: `build/review-rebuild-{debug,release}.log`, `build/review-quality/`
+  (구성별 분석 로그와 Summary.csv), `build/review-final-*.log`, `build/review-startup-results.log`.
+- **수동 확인:** 실제 화면 배치·마우스/물리 키 입력·청취는 수행하지 않았습니다.
+  위 D3D12/FMOD replay와 옵션 입력은 숨겨진 창 및 지정 입력을 사용하는 자동 검증입니다.

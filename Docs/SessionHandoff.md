@@ -41,6 +41,8 @@
   Taiko 옵션/사운드 예측은 플레이의 공통 규칙을 사용합니다.
 - 편집 원본 노트/BPM/마디/이펙트는 위치 기반 균형 트리로 관리합니다. 고유 노트 ID는
   배열 인덱스가 아니며 저장/플레이/렌더링 조회는 읽기 전용 snapshot입니다.
+  BPM/이펙트 수정은 `ReplaceTiming`/`ReplaceEffects`로 필요한 캐시만 갱신합니다.
+  마디 상한은 사용자 선택에 따라 100,000이며 Taiko 새 배치에서 롱노트 겹침을 거부합니다.
   분석 취소는 Scene에서 기다리지 않고, 미리듣기는 StreamAsync의 준비 상태를 확인합니다.
 - AngelDream `All Notes Verification`은 전 노트 및 밀집 Don/Kat Buzz를 재현합니다.
   채보 위치와 +50ms GOOD 입력의 틱 기대값은 [Gameplay Debugging](Gameplay/Debugging.md)을 참고합니다.
@@ -50,6 +52,7 @@
   로고와 곡 선택은 공통 `OptionsPanel`에서 언어·스킨·FMOD·자동/WASAPI/ASIO·드라이버를 선택합니다.
   출력 방식/드라이버는 즉시 적용하고 모든 옵션은 EXE 옆 `Option.ini`에 유지합니다.
   `OptionSettings`는 파일 저장/읽기만 담당하며 별도 옵션 Controller는 없습니다.
+  잘못되거나 생성할 수 없는 INI는 원본을 보존하고 기본 설정으로 실행하며 패널에 경고합니다.
 - 선택한 스킨 이름은 `Option.ini`에 유지하며(기존 skin-set.txt는 최초 생성 시 가져옴),
   각 파일이 없을 때 내장 기본 스킨으로 대체합니다. 풍선 완료음 `pop.wav`도
   `Default Skin/HitSounds/TaikoMode`에 포함됩니다.
@@ -58,12 +61,14 @@
 
 ## 마무리
 
-판정 표시 작업은 Debug/Release x64 전체 재빌드, 로직·카탈로그(1곡/5패턴),
-각 구성의 4개 Client smoke와 판정 표시/키빔 회귀를 통과했습니다.
-실제 D3D12/FMOD 자동 replay도 효과 채보 15개 노트와 전체 종류 채보 19개 노트를
-두 구성에서 완료했습니다. Client MSVC 정적 분석은 새 경고 없이 통과했으며
-기존 코드의 3종 경고를 Verification에 구분해 기록했습니다.
-프로젝트/필터/의존성/엔진 경계를 통과했고 엔진은 변경하지 않았습니다.
+Claude 리뷰의 적용 판단은 [리뷰 반영표](Reviews/ClaudeReview-2026-10-11.md)에 있습니다.
+저장 복구·파서 경계·부분 편집·Taiko 배치·옵션 실패 처리와 할당을 수정했습니다.
+Debug/Release x64 전체 재빌드 및 최종 증분 분석 빌드, 각 구성 41개 로직·카탈로그,
+4개 Client smoke, 에디터/옵션/실패 경계/판정 표시 회귀를 통과했습니다.
+실제 D3D12/FMOD 자동 replay도 효과 채보 15개와 전체 종류 채보 19개 노트를 완료했습니다.
+손상되거나 읽을 수 없는 INI의 독립 EXE 시작 8건도 원본 보존과 정상 종료를 확인했습니다.
+수정 대상 6개 프로젝트의 MSVC 정적 분석은 새 경고 없이 완료했고 기존 3종 경고는
+Verification에 구분했습니다. 엔진·사용자 곡/스킨은 변경하지 않았습니다.
 실제 화면/물리 입력/청음은 수동 확인하지 않았습니다. 상세 결과는 Verification이 기준입니다.
 
 [Verification](Verification.md)에 따라 검증하고 실제 결과만 보고합니다.

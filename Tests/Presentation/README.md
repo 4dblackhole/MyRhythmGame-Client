@@ -55,25 +55,14 @@ The test source is compiled with MSVC `/analyze`; this is not a game startup rou
 
 ## Editor audio view regression
 
-After building both configurations, run this from PowerShell in an x64 Visual Studio
-developer environment. Set `FMOD_ROOT` to the installed SDK and change `$configuration`
-to `Release` with `$runtime = @('/MD', '/DNDEBUG')` for the other build.
+After building both configurations, run in an x64 Visual Studio developer PowerShell.
+The script obtains the editor object list from the Client project and compiles the three
+test translation units with MSVC Code Analysis. Set `FMOD_ROOT` for a custom SDK install.
 
 ```powershell
-$configuration = 'Debug'
-$runtime = @('/MDd', '/D_DEBUG')
-[xml]$clientProject = Get-Content Client/MRG.Client.vcxproj
-$objects = @($clientProject.Project.ItemGroup.ClCompile | Where-Object { $_.Include -match '^(EditorScene\\|Texts\\EditorScene\\)' } | ForEach-Object { "build/obj/MRG.Client/x64/$configuration/$([IO.Path]::GetFileNameWithoutExtension($_.Include)).obj" })
-$testObjectDirectory = "build/obj/EditorPresentationTests/$configuration"
-New-Item -ItemType Directory -Path $testObjectDirectory -Force | Out-Null
-$objects += @('Pch', 'TextCatalog', 'SkinSetSelection', 'SongPreviewController') | ForEach-Object { "build/obj/MRG.Client/x64/$configuration/$_.obj" }
-$libraries = @('Rhythm', 'Chart', 'Modes', 'Editor', 'Assets') | ForEach-Object { "bin/x64/$configuration/FingerDrum.$_.lib" }
-& cl /nologo /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Rhythm /IFingerDrum.Chart /IFingerDrum.Modes /IFingerDrum.Editor /IFingerDrum.Assets/Public /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/EditorAudioViewTests.cpp Tests/Presentation/EditorModeTests.cpp Tests/Presentation/EditorMenuTests.cpp @objects @libraries "Dependencies/MRG-Engine/bin/x64/$configuration/MRG.Core.lib" "/Fo$testObjectDirectory/" "/Febin/x64/$configuration/EditorAudioViewTests.exe" /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" "build/obj/FingerDrum.Assets/x64/$configuration/FingerDrum.Assets.res" user32.lib gdi32.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib
-if ($LASTEXITCODE -ne 0) { throw 'Editor audio view test build failed' }
-& "./bin/x64/$configuration/EditorAudioViewTests.exe"
-if ($LASTEXITCODE -ne 0) { throw 'Editor audio view tests failed' }
+./Tests/Presentation/RunEditorPresentationTests.ps1 -configuration Debug
+./Tests/Presentation/RunEditorPresentationTests.ps1 -configuration Release
 ```
-
 This checks the production view's draw packets for real song/hit spectra, negative
 note/music time ranges, slider input actions, tab visibility, localization, resize,
 and Canvas cleanup. `EditorModeTests.cpp` also checks Taiko tool placement, snapping,

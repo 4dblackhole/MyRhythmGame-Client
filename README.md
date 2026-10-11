@@ -53,6 +53,11 @@ msbuild MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
 msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 ```
 
+도메인 테스트만 빌드할 때는 `Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접
+빌드할 수 있으며 엔진 checkout/FMOD SDK가 필요하지 않습니다. Windows CI가
+Debug/Release 로직·카탈로그를 검사합니다. 선택 실행(`--filter`)과 정적 분석 방법은
+[검증 문서](Docs/Verification.md)를 참고하세요.
+
 일반 실행은 로고 → 플레이/에디터 곡 선택으로 시작합니다.
 에디터 최상단의 자체 메뉴바에서 파일 → 저장하기를 선택할 수 있으며,
 기존 하단 저장 버튼과 Ctrl+S도 같은 저장 동작을 사용합니다.

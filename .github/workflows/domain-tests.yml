@@ -1,0 +1,38 @@
+name: Domain tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  domain:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
+        with:
+          msbuild-architecture: x64
+      # This graph contains domain libraries only: no engine checkout or FMOD SDK.
+      - name: Build domain tests
+        shell: pwsh
+        run: |
+          msbuild Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj /m /t:Rebuild /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run logic and catalog tests
+        shell: pwsh
+        run: |
+          & './bin/x64/${{ matrix.configuration }}/FingerDrum.Rhythm.Tests.exe' --catalog-root FingerDrum.Assets/Assets/Songs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -26,7 +26,7 @@
 | 에디터 상단 메뉴·저장 입력 | `Client/EditorScene/Submodules/EditorMenuBar.*`, EditorView / EditorInput | EditorWorkspace Save, EditorTexts; EditorMenuTests / EditorAudioViewTests, editor smoke |
 | 에디터 도구/배치 취소 | `Modes/Taiko/TaikoEditorMode.*`, TaikoEditorTool.h / TaikoEditorTools.cpp | ChartEditorTests, SceneStateTests, EditorModeTests |
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
-| BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace, 저장 왕복 |
+| BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace/ReplaceTiming/ReplaceEffects, 저장 왕복 |
 | 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
@@ -35,7 +35,7 @@
 | YME 보간·Whole/Separate | `FingerDrum.Chart/Automation/InterpolationExpression.*`, `ScrollAutomation.*` | MusicalTimeline / PlaySession / GameplayPresenter / TaikoEditorScore; YmeEffectsTests, 실제 -Effects replay |
 | 싱코페이션 판정 범위·Kiai 상태 | `FingerDrum.Rhythm/Judgement/AccuracyRange.*`, `FingerDrum.Modes/Taiko/Submodules/TaikoBuildSupport.h` | TaikoSessionBuilder / RuleBasedNote / PlaySession; YmeEffectsTests |
 | BPM/마디 시간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | Formats/Timing; ChartParser/ChartEditorTests |
-| 편집 원본 트리·안정 ID·구간 조회 | `FingerDrum.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests; TaikoEditorScore, EditorWorkspace |
+| 편집 원본 트리·안정 ID·구간 조회·저장 실패 복구 | `FingerDrum.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests/ChartReviewRegressionTests; TaikoEditorScore, EditorWorkspace |
 | 플레이 자동화 검색·DSP 준비 | `FingerDrum.Modes/Mode/Submodules/PlaySession.*`, `Client/Audio/GameplayAudioRouter.*` | TaikoModeTests; GameplayAudio, 전체 노트 replay |
 
 테스트 파일은 `Tests/Rhythm/Submodules/`에 있으며 같은 테스트 실행 파일에 링크됩니다.
