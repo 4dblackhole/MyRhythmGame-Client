@@ -21,6 +21,7 @@ namespace finger_drum::texts
         std::wstring_view audioError;
         std::wstring_view outputFallback;
         std::wstring_view driverUnavailable;
+        std::wstring_view loadWarning;
     };
 
     [[nodiscard]] const OptionTextSet &Options(Language language) noexcept;

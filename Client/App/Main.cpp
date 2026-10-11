@@ -17,6 +17,7 @@
 #include <Windows.h>
 
 #include <cstdlib>
+#include <algorithm>
 #include <exception>
 #include <memory>
 #include <optional>
@@ -136,7 +137,17 @@ int WINAPI wWinMain(
     }
     catch (const std::exception &error)
     {
-        MessageBoxA(nullptr, error.what(), "FingerDrum option settings error", MB_OK | MB_ICONERROR);
+        // Application/engine failures are not necessarily option errors. Decode
+        // UTF-8 explicitly so paths and localized diagnostics survive Win32 UI.
+        const int length = MultiByteToWideChar(CP_UTF8, 0, error.what(), -1, nullptr, 0);
+        std::wstring message(static_cast<std::size_t>(std::max(length, 1)), L'\0');
+        if (length > 0)
+            MultiByteToWideChar(CP_UTF8, 0, error.what(), -1, message.data(), length);
+        else
+            message = L"Unable to decode the startup error.";
+        OutputDebugStringW(message.c_str());
+        if (!smokeTest)
+            MessageBoxW(nullptr, message.c_str(), L"FingerDrum", MB_OK | MB_ICONERROR);
         return EXIT_FAILURE;
     }
 }

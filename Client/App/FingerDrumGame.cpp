@@ -24,9 +24,10 @@ FingerDrumGame::FingerDrumGame(const bool smokeTest, std::string initialSceneId,
       optionSettings_(mrg_client::OptionSettings::NextToExecutable())
 {
     std::string error;
-    if (!optionSettings_.Load(error)) throw std::runtime_error(error);
-    if (optionSettings_.Values().audioMiddleware != "FMOD")
-        throw std::runtime_error("Option.ini selects an unavailable audio middleware. Only FMOD is installed.");
+    // Invalid/unwritable settings must not prevent startup. The options panel
+    // retains the load warning until the user successfully saves new settings.
+    if (!optionSettings_.Load(error))
+        OutputDebugStringA(error.c_str());
     texts_.SetLanguage(optionSettings_.Values().language);
     mrg_client::SkinSetSelection::Instance().Initialize(optionSettings_.Values().skinSet);
 }

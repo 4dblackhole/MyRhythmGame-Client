@@ -76,6 +76,8 @@ namespace mrg_client
             if (skin.empty() || !IsSingleLine(skin) || values.skinSet == L"." ||
                 values.skinSet == L".." || values.skinSet.find_first_of(L"/\\") != std::wstring::npos)
                 throw std::runtime_error("The skin option must name one folder.");
+            if (values.audioMiddleware != "FMOD")
+                throw std::runtime_error("Only the FMOD audio middleware is installed.");
             static_cast<void>(OutputName(values.audioOutput));
         }
 
@@ -153,7 +155,9 @@ namespace mrg_client
             if (!std::filesystem::exists(path_))
             {
                 ImportLegacySkin(candidate);
-                return Save(candidate, error);
+                if (!Save(candidate, error))
+                    throw std::runtime_error(error);
+                return true;
             }
             std::ifstream file(path_, std::ios::binary);
             if (!file) throw std::runtime_error("Unable to read Option.ini.");
@@ -181,12 +185,16 @@ namespace mrg_client
             if (!file.eof()) throw std::runtime_error("Unable to finish reading Option.ini.");
             Validate(candidate);
             values_ = std::move(candidate);
+            loadWarning_.clear();
             ++revision_;
             return true;
         }
         catch (const std::exception &exception)
         {
             error = exception.what();
+            loadWarning_ = error;
+            values_ = OptionValues{};
+            ++revision_;
             return false;
         }
     }
@@ -214,6 +222,7 @@ namespace mrg_client
                                      MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
                 throw std::runtime_error("Unable to save Option.ini beside the executable.");
             values_ = std::move(candidate);
+            loadWarning_.clear();
             ++revision_;
             return true;
         }

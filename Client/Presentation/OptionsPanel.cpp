@@ -171,7 +171,7 @@ namespace finger_drum::presentation
         skinCombo_->SetZIndex(40);
 
         statusLabel_ = &mrg::visual2d::CreateLabel(
-            *content_, {24.0F, ContentHeight - 784.0F, PanelWidth - 48.0F, 78.0F}, L"",
+            *content_, {24.0F, ContentHeight - 784.0F, PanelWidth - 48.0F, 140.0F}, L"",
             "Options.Status");
         auto &status = RequireComponent<mrg::visual2d::TextVisualComponent>(*statusLabel_);
         status.SetFontSize(14.0F);
@@ -517,6 +517,11 @@ namespace finger_drum::presentation
                  (saved.driverName.empty() && saved.driverIndex >= 0 && saved.driverIndex != audio_->ActiveDriverIndex()))
             value = text.driverUnavailable;
         if (!statusDetail_.empty()) value += L"\n" + WideText(statusDetail_);
+        if (!options_.LoadWarning().empty())
+        {
+            if (!value.empty()) value += L"\n";
+            value += std::wstring(text.loadWarning) + L"\n" + WideText(options_.LoadWarning());
+        }
         auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*statusLabel_);
         label.SetText(value);
         texts_.ApplyFont(label);

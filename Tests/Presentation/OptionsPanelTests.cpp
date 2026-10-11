@@ -123,6 +123,32 @@ namespace
         return action;
     }
 
+    void TestInvalidOptionFallback(const std::filesystem::path &folder)
+    {
+        const auto path = folder / L"설정 오류.ini";
+        mrg_client::OptionSettings settings(path);
+        std::string error;
+        for (const std::string content : {"[General]\nLanguage=ja\n", "missing separator\n",
+                                          "[Audio]\nMiddleware=uninstalled\n"})
+        {
+            auto previous = settings.Values();
+            previous.driverIndex = 7;
+            Check(settings.Save(previous, error), "Could not prepare valid option values.");
+            { std::ofstream file(path); file << content; }
+            Check(!settings.Load(error) && !settings.LoadWarning().empty() && settings.Values().driverIndex == -1 &&
+                      settings.Values().audioMiddleware == "FMOD",
+                  "Failed reloads must publish defaults and retain a visible warning.");
+            std::ifstream file(path);
+            const std::string preserved{std::istreambuf_iterator<char>(file), {}};
+            Check(preserved == content, "Invalid option files must remain available for user repair.");
+        }
+        Check(settings.Save(settings.Values(), error) && settings.LoadWarning().empty(),
+              "A successful user save must clear the startup warning.");
+        mrg_client::OptionSettings unavailable(folder / "missing-directory" / "Option.ini");
+        Check(!unavailable.Load(error) && unavailable.Values().driverIndex == -1 && !unavailable.LoadWarning().empty(),
+              "Failure creating a first-run INI must still provide defaults.");
+    }
+
     void TestOptions(const std::filesystem::path &folder)
     {
         std::string error;
@@ -172,6 +198,13 @@ namespace
         panel.Toggle();
         panel.Update(0.2);
         Check(panel.IsVisible(), "The panel must finish its slide animation.");
+        { std::ofstream file(settings.Path()); file << "[General]\nLanguage=ja\n"; }
+        Check(!settings.Load(error), "Invalid language must trigger startup fallback.");
+        panel.Update(0);
+        Check(FindNode(canvas.Root(), "Options.Status").GetComponent<v::TextVisualComponent>()->Text().find(L"Using defaults") != std::wstring::npos,
+              "The panel must expose the retained startup warning.");
+        Check(settings.Save(values, error), "Could not restore the option test fixture.");
+        panel.Update(0);
         Check(Combo(canvas, "Options.Middleware.Combo").Items() == std::vector<std::wstring>{L"FMOD"},
               "Only installed middleware may appear.");
         Check(panel.ProcessAction(Select(canvas, "Options.Driver.Combo", 0)) && backend->lastSetDriver == 0,
@@ -267,6 +300,7 @@ int main()
     try
     {
         std::filesystem::create_directory(folder);
+        TestInvalidOptionFallback(folder);
         TestOptions(folder);
         TestActualAudio();
         std::filesystem::remove_all(folder);

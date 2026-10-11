@@ -28,12 +28,15 @@ namespace mrg_client
         [[nodiscard]] const std::filesystem::path &Path() const noexcept { return path_; }
         [[nodiscard]] const OptionValues &Values() const noexcept { return values_; }
         [[nodiscard]] std::uint64_t Revision() const noexcept { return revision_; }
+        [[nodiscard]] const std::string &LoadWarning() const noexcept { return loadWarning_; }
+        // Failure publishes defaults and a warning without overwriting the original INI.
         [[nodiscard]] bool Load(std::string &error);
         [[nodiscard]] bool Save(const OptionValues &values, std::string &error);
 
       private:
         std::filesystem::path path_;
         OptionValues values_;
+        std::string loadWarning_;
         std::uint64_t revision_{};
     };
 }
