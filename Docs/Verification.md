@@ -370,8 +370,9 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - clang-format/clang-tidy 19.1.5로 설정 파일을 읽을 수 있음을 확인했습니다.
   이번 C++ 정적 분석 실행 도구는 위 MSVC Code Analysis이며 clang-tidy 실행으로 혼동하지 않습니다.
 - 8개 프로젝트의 소스/필터/의존성/엔진 경계와 `git diff --check` 통과.
-  엔진 및 사용자 곡/스킨은 변경하지 않았습니다. CI 설정은 FMOD/엔진 없이
-  Debug/Release 도메인 빌드·테스트를 실행하며 원격 실행 결과는 별도로 확인합니다.
+  엔진 및 사용자 곡/스킨은 변경하지 않았습니다. FMOD/엔진을 체크아웃하지 않는
+  GitHub Windows 도메인 CI도 `e36fda2`에서 Debug/Release 빌드·테스트에 성공했습니다
+  ([실행 38140842315](https://github.com/4dblackhole/MyRhythmGame-Client/actions/runs/38140842315)).
 - 로컬 원시 로그: `build/review-rebuild-{debug,release}.log`, `build/review-quality/`
   (구성별 분석 로그와 Summary.csv), `build/review-final-*.log`, `build/review-startup-results.log`.
 - **수동 확인:** 실제 화면 배치·마우스/물리 키 입력·청취는 수행하지 않았습니다.
