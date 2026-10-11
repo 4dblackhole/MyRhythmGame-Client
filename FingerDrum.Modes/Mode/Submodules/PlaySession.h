@@ -41,6 +41,10 @@ namespace finger_drum::mode
         // The reference remains valid until the next evaluation or SetEffects.
         [[nodiscard]] const std::vector<AutomationValue> &EvaluateAutomation(
             rhythm::RhythmTime time) const;
+        [[nodiscard]] std::string_view AutomationError() const noexcept
+        {
+            return automationError_;
+        }
         void Reset() noexcept;
         [[nodiscard]] std::optional<double> AccuracyRate() const noexcept;
         [[nodiscard]] std::size_t FinalizedNoteCount() const noexcept;
@@ -51,6 +55,7 @@ namespace finger_drum::mode
         void ResolveSoundOverrides(rhythm::NoteProcessResult &result) const;
         [[nodiscard]] static double Interpolate(const chart::CompiledEffectCommand &command,
                                                 rhythm::RhythmTime time);
+        double EvaluateTrack(std::size_t effectIndex, std::size_t trackIndex, rhythm::RhythmTime time) const;
 
         rhythm::ScrollGear gear_;
         std::optional<chart::MusicalTimeline> timeline_;
@@ -63,7 +68,9 @@ namespace finger_drum::mode
         std::map<std::pair<chart::EffectCommandType, std::string>, std::vector<std::size_t>> effectTracks_;
         mutable std::optional<rhythm::RhythmTime> automationTime_;
         mutable std::vector<AutomationValue> automationValues_;
-        mutable std::vector<std::size_t> automationIndices_;
+        mutable std::vector<std::pair<std::size_t, std::size_t>> automationIndices_;
+        mutable std::vector<std::optional<double>> automationLastValues_;
+        mutable std::string automationError_;
         std::vector<rhythm::RhythmTime> measureLines_;
         std::map<rhythm::SoundId, std::filesystem::path> hitSoundFiles_;
         std::map<rhythm::SoundId, std::vector<TimedSoundOverride>, std::less<>> soundOverrides_;

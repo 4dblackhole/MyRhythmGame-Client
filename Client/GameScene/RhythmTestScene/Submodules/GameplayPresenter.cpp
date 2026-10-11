@@ -93,7 +93,7 @@ void GameplayPresenter::Shutdown() noexcept
 #if defined(_DEBUG)
     noteDebugLabel_ = nullptr;
 #endif
-    audioErrorLabel_ = nullptr;
+    errorLabel_ = nullptr;
     canvas_ = nullptr;
     canvasHandle_.Reset();
     session_ = nullptr;

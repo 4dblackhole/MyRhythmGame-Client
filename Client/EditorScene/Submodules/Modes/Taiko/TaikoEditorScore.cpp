@@ -155,6 +155,12 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     const auto gridBegin = std::max<std::int64_t>(0, currentMeasure - 1);
     const long double pixelsPerMicrosecond = timeline.BaseBpm() / 240'000'000.0L * pixelsPerWholeNote;
     const auto minimumSpeed = state.Document().MinimumScrollMultiplier();
+    const bool customGridSpeed = std::ranges::any_of(state.Document().Effects().commands,
+                                                     [](const auto &command)
+                                                     {
+                                                         return command.type == chart::EffectCommandType::NoteSpeed &&
+                                                                command.curve == chart::AutomationCurve::Expression;
+                                                     });
     const auto visibleBegin = BoundedTime(currentTime.count() +
         (RealtimeLane.x - 230.0L - 110) / (pixelsPerMicrosecond * minimumSpeed));
     const auto visibleEnd = BoundedTime(currentTime.count() +
@@ -164,9 +170,14 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     {
         const int count = static_cast<int>(
             std::min(4096.0L, std::ceil(timeline.MeasureLength(m).Value() * subdivisionsPerWholeNote)));
-        const auto [firstTime, lastTime] = GridTimeRange(state.Document(), m, subdivisionsPerWholeNote, count);
-        if (lastTime < visibleBegin || firstTime > visibleEnd)
-            continue;
+        // Arbitrary expressions can dip below both endpoints between authored
+        // notes. Keep the bounded grid traversal and clip by its actual X.
+        if (!customGridSpeed)
+        {
+            const auto [firstTime, lastTime] = GridTimeRange(state.Document(), m, subdivisionsPerWholeNote, count);
+            if (lastTime < visibleBegin || firstTime > visibleEnd)
+                continue;
+        }
         float lastDrawnX = -std::numeric_limits<float>::infinity();
         for (int i = 0; i < count; ++i)
         {

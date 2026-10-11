@@ -69,6 +69,34 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 코드 품질 재검토 수정
+
+- [품질 수정 기록](Reviews/QualityFixes-2026-10-12.md)에 따라 보간식의 런타임 실패 복구,
+  Separate 실제 노트 배율의 조회 범위, 편집/플레이 효과 검증 불일치와 숨김 엔진 실행의
+  모달 오류를 수정했습니다. 분석 Controller의 복사/이동도 금지했습니다.
+- 엔진과 Client Debug/Release x64 solution 전체 Rebuild 성공(컴파일 경고/오류 0).
+  엔진 SDK 기본 테스트와 실제 D3D12/FMOD NoSound `--headless-error`도 두 구성에서 통과했습니다.
+  숨김 Update 예외 후 실패 반환/Client Shutdown 호출과 30초 안의 비차단 종료를 확인했습니다.
+- 두 구성 각각 로직 44개, 실패 0. 실제 카탈로그는 1곡/5패턴입니다.
+  새 세 테스트는 샘플 사이의 특이점·음수 볼륨, 트랙/다음 명령별 정상값 유지와 복구,
+  Reset/SetEffects, 0.25배 Separate 조회/인덱스 편집, DTO 검증 일치와 식 재컴파일을 검사합니다.
+- 각 구성 smoke-test/lobby/gameplay/editor 총 8개 exit 0. Editor audio/mode/menu와
+  Gameplay judgement/error HUD 회귀도 두 구성에서 통과했습니다.
+  느린 노트 그리기·삭제, 느린 노트 삭제 후 스냅 그리드의 존속, 오류 HUD 표시/숨김을
+  프로덕션 객체와 자동 좌표/노드 검사로 확인했습니다.
+- 실제 D3D12/FMOD 자동 플레이도 두 구성에서 전체 종류 19개/85.1694%/1,557프레임과
+  효과 채보 15개/97.8897%/1,302프레임을 완료했습니다. 기존 결과와 같고 오디오 오류가 없습니다.
+- MSVC 14.44 Code Analysis/NativeRecommendedRules를 실제 include/define/PCH/C++20과
+  x64 Debug/Release 설정으로 Chart, Modes, Rhythm.Tests, MRG.Client 네 프로젝트에 실행했습니다.
+  BuildProjectReferences=false로 엔진/SDK 재분석을 제외했고 파싱/컴파일 오류 및 새 경고가 없습니다.
+  Editor 회귀 3개 및 GameplayJudgementTests의 테스트 단위도 두 구성 `/analyze`를 통과했습니다.
+  기존 경고는 EditorAnalysisController.cpp:51 C26115, GameplaySessionController.cpp:64
+  C28020(이전 62행, 구현 동일), Release GameplayInput.cpp:60 C6236입니다. 억제하지 않았습니다.
+- CheckArchitecture(8개 프로젝트), 물리 폴더/필터, 의존성 순환/엔진 경계와 git diff --check 통과.
+  기존 Option.ini는 실행 전후 SHA256이 같고 사용자 곡/스킨은 변경하지 않았습니다.
+- 실제 화면 픽셀 배치·물리 입력·청음은 수동 확인하지 않았습니다. 자동 표시/입력과
+  실행/정리 검사를 수동 확인으로 보고하지 않습니다.
+
 ## 2026-10-06 에디터 자체 상단 저장 메뉴
 
 - `EditorMenuBar`는 Canvas 노드의 비소유 참조와 메뉴 상태만 유지합니다.

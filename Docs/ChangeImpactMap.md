@@ -33,6 +33,7 @@
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |
 | 문법 추가 | `FingerDrum.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
 | YME 보간·Whole/Separate | `FingerDrum.Chart/Automation/InterpolationExpression.*`, `ScrollAutomation.*` | MusicalTimeline / PlaySession / GameplayPresenter / TaikoEditorScore; YmeEffectsTests, 실제 -Effects replay |
+| 효과 검증·런타임 실패 복구 | `FingerDrum.Chart/Automation/EffectValidation.*`, `PlaySession.*` | EffectParser / ChartEditor / TaikoMode; GameplaySessionController / Presenter 오류 HUD; YmeEffectsTests |
 | 싱코페이션 판정 범위·Kiai 상태 | `FingerDrum.Rhythm/Judgement/AccuracyRange.*`, `FingerDrum.Modes/Taiko/Submodules/TaikoBuildSupport.h` | TaikoSessionBuilder / RuleBasedNote / PlaySession; YmeEffectsTests |
 | BPM/마디 시간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | Formats/Timing; ChartParser/ChartEditorTests |
 | 편집 원본 트리·안정 ID·구간 조회·저장 실패 복구 | `FingerDrum.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests/ChartReviewRegressionTests; TaikoEditorScore, EditorWorkspace |

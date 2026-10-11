@@ -1,8 +1,9 @@
-#include "Note/Submodules/RuleBasedNote.h"
-#include "Note/Submodules/TapInputRule.h"
-#include "Note/Submodules/CountedHitInputRule.h"
-#include "Note/Submodules/SequenceInputRule.h"
 #include "TaikoSessionBuilder.h"
+#include "Automation/EffectValidation.h"
+#include "Note/Submodules/CountedHitInputRule.h"
+#include "Note/Submodules/RuleBasedNote.h"
+#include "Note/Submodules/SequenceInputRule.h"
+#include "Note/Submodules/TapInputRule.h"
 #include "TaikoBuildSupport.h"
 
 namespace finger_drum::mode
@@ -26,6 +27,7 @@ namespace finger_drum::mode
             rhythm::AccuracyRange::DefaultLevel50Bands(), rhythm::RhythmDuration{10'000});
 
         chart::MusicalTimeline timeline(pattern);
+        chart::ValidateEffectPositions(effects, timeline);
         std::vector<chart::CompiledPatternNote> compiled = timeline.CompileNotes(pattern);
         ConfigureHitSounds(*session, effects, timeline, result.diagnostics);
         if (!result.diagnostics.empty())

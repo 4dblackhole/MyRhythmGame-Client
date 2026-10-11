@@ -22,7 +22,7 @@ void RhythmTestScene::Initialize(const mrg::EngineServices &services)
     controller_->InitializeSession();
     view_->Initialize(services, controller_->Session());
     controller_->Start(services, view_->InitialTimelineTime());
-    view_->PresentAudioError(controller_->AudioError());
+    view_->PresentErrorMessage(controller_->ErrorMessage());
 }
 void RhythmTestScene::BeginScene()
 {
@@ -46,7 +46,7 @@ void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::Scen
         view_->ApplyFeedback(feedback);
     view_->UpdatePresentation(controller_->Time());
     view_->UpdateInputPresentation(context.input, context.deltaSeconds);
-    view_->PresentAudioError(controller_->AudioError());
+    view_->PresentErrorMessage(controller_->ErrorMessage());
     if (controller_->ShouldReturnToLobby() && !scenes.ChangeScene(finger_drum::scene_ids::Lobby))
         throw std::runtime_error("Failed to return to song select.");
 }

@@ -4,6 +4,9 @@
 namespace finger_drum::tests
 {
     void TestYmeSyntax();
+    void TestRuntimeAutomationRecovery();
+    void TestEditorCompiledSpeedBounds();
+    void TestEffectValidationConsistency();
     void TestYmeEffects(const std::filesystem::path &songsRoot);
     void TestSceneStateBoundaries();
     void TestJudgementScalingAndInterpolation();

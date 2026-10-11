@@ -34,6 +34,7 @@ and clamped markers, all seven overlays, MISS without invented input timing,
 POOR only on red-beam rejection, out-of-range/release/unjudged-tick suppression,
 200ms fade/retrigger/reset, inherited circle centre, resize, node/image reuse,
 and accepted-hit priority over a passive MISS.
+It also verifies displaying an automation diagnostic in the shared error HUD and hiding it when cleared.
 The test source uses MSVC `/analyze`; no GPU/audio device is started.
 Automated geometry checks do not replace actual screen/input/listening inspection.
 
@@ -72,6 +73,7 @@ targets, Save dispatch and marker revision caching through the common editor.
 It also covers realtime lane boundaries, spaced/case-insensitive Buzz options,
 Purple and timed/explicit sound agreement with play, invalid seek preservation,
 effect/timing commands, failed edit rollback and drawing failure recovery.
+Custom Separate curves also cover visible slow-note drawing/deletion and grid snapping after removing the slow note.
 `EditorMenuTests.cpp` checks the Save-only Canvas menu, Korean/English and dirty
 labels, pointer mapping at four viewport sizes, one-shot mouse/keyboard Save,
 Escape/outside/right-click dismissal, input consumption and observer cleanup.

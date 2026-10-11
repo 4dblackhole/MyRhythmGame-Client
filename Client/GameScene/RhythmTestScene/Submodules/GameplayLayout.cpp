@@ -13,15 +13,14 @@ void GameplayPresenter::CreatePresentation()
                                     "Background");
     SetColor(*background_, {0.941F, 0.973F, 1.0F, 1.0F});
 
-    audioErrorLabel_ =
-        &mrg::visual2d::CreateLabel(root, {-500.0F, 320.0F, 1000.0F, 28.0F}, L"", "Hud.AudioError");
-    audioErrorLabel_->SetZIndex(20);
-    audioErrorLabel_->SetVisible(false);
-    auto &audioErrorText = RequireComponent<mrg::visual2d::TextVisualComponent>(*audioErrorLabel_);
-    texts_.ApplyFont(audioErrorText);
-    audioErrorText.SetFontSize(16.0F);
-    audioErrorText.SetTextColor({0.78F, 0.06F, 0.08F, 1.0F});
-    audioErrorText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
+    errorLabel_ = &mrg::visual2d::CreateLabel(root, {-500.0F, 320.0F, 1000.0F, 28.0F}, L"", "Hud.Error");
+    errorLabel_->SetZIndex(20);
+    errorLabel_->SetVisible(false);
+    auto &errorText = RequireComponent<mrg::visual2d::TextVisualComponent>(*errorLabel_);
+    texts_.ApplyFont(errorText);
+    errorText.SetFontSize(16.0F);
+    errorText.SetTextColor({0.78F, 0.06F, 0.08F, 1.0F});
+    errorText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
 
     const auto progressImage =
         screenVisuals_.RegisterImage(InGameSkinAssetPath(L"GameProgressBar.png"));

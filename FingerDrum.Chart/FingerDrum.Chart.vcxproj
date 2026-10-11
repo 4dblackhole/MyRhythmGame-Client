@@ -40,5 +40,6 @@
   <ItemGroup><ClCompile Include="Automation\InterpolationExpression.cpp" /></ItemGroup>
   <ItemGroup><ClInclude Include="Automation\ScrollAutomation.h" /></ItemGroup>
   <ItemGroup><ClCompile Include="Automation\ScrollAutomation.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="Automation\EffectValidation.h" /><ClCompile Include="Automation\EffectValidation.cpp" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

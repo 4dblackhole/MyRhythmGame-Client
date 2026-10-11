@@ -1,9 +1,158 @@
 #include "Automation/InterpolationExpression.h"
 #include "Automation/ScrollAutomation.h"
 #include "TestSupport.h"
+#include <limits>
 
 namespace finger_drum::tests
 {
+    namespace
+    {
+        chart::EffectDocument ParseRegressionEffects(std::string_view text)
+        {
+            const auto parsed = chart::ChartParser{}.ParseEffect(text, "quality-regression.yme");
+            Require(parsed.Succeeded(), "The regression fixture must pass load-time validation.");
+            return parsed.document;
+        }
+        chart::PatternDocument RegressionPattern()
+        {
+            chart::PatternDocument pattern;
+            pattern.mode = "Taiko";
+            pattern.baseBpm = 120;
+            return pattern;
+        }
+    } // namespace
+
+    void TestRuntimeAutomationRecovery()
+    {
+        const auto effects = ParseRegressionEffects(R"([Interpolation]
+Singular: 1/(u-0.1)^2
+[Sounds]
+1,0/1,Area,2,0/1,#Volume HitSound,From=1,To=1,Curve=Singular
+1,0/1,Area,2,0/1,#Volume TickSound,From=0,To=1,Curve=Linear
+2,0/1,Area,3,0/1,#Volume HitSound,From=2,To=2,Curve=Singular
+)");
+        auto loaded = mode::TaikoMode{}.CreateSession(RegressionPattern(), effects);
+        Require(loaded.Succeeded(), "An unsampled singularity must exercise runtime recovery.");
+        auto &session = *loaded.session;
+        const auto volume = [&session](long long time, std::string_view target)
+        {
+            for (const auto &value : session.EvaluateAutomation(rhythm::RhythmTime{time}))
+                if (value.target == target)
+                    return value.value;
+            throw std::runtime_error("Missing effect track.");
+        };
+        Require(std::abs(volume(100'000, "HitSound") - 400) < 1e-8, "Capture the last valid value.");
+        Require(std::abs(volume(200'000, "HitSound") - 400) < 1e-8 &&
+                    std::abs(volume(200'000, "TickSound") - .1) < 1e-12,
+                "A failing track must retain its value while another track continues.");
+        Require(session.AutomationError().find("quality-regression.yme:4") != std::string_view::npos,
+                "The visible error must identify the authored command.");
+        Require(!session.IsKiaiActive(rhythm::RhythmTime{200'000}),
+                "Other consumers must reuse the safe cached result.");
+        Require(std::abs(volume(400'000, "HitSound") - 100) < 1e-8 && !session.AutomationError().empty(),
+                "Valid samples must resume while retaining the diagnostic until reset.");
+        Require(std::abs(volume(2'200'000, "HitSound") - 100) < 1e-8,
+                "A replacement command on the same track must retain the track's prior normal value on failure.");
+        session.Reset();
+        Require(session.AutomationError().empty() && volume(200'000, "HitSound") == 1,
+                "Reset clears history; first-sample failure uses the validated From anchor.");
+        session.SetEffects({});
+        Require(session.AutomationError().empty() && session.EvaluateAutomation({}).empty(),
+                "Replacing tracks must discard all previous history and errors.");
+
+        const auto negative = ParseRegressionEffects(R"([Interpolation]
+NarrowDip: (u-0.1)^2-0.000001
+[Sounds]
+1,0/1,Area,2,0/1,#Volume HitSound,From=1,To=1,Curve=NarrowDip
+)");
+        loaded = mode::TaikoMode{}.CreateSession(RegressionPattern(), negative);
+        Require(loaded.Succeeded(), "A narrow negative dip must pass sampling and be guarded at runtime.");
+        const auto good = loaded.session->EvaluateAutomation(rhythm::RhythmTime{100'000}).front().value;
+        Require(loaded.session->EvaluateAutomation(rhythm::RhythmTime{200'000}).front().value == good &&
+                    !loaded.session->AutomationError().empty(),
+                "Finite but semantically invalid values must also retain the last valid value.");
+    }
+
+    void TestEditorCompiledSpeedBounds()
+    {
+        const auto effects = ParseRegressionEffects(R"([Interpolation]
+Dip: 1-3*u*(1-u)
+[Speed]
+1,0/1,Area,9,0/1,#ScrollSpeed Separate,From=1,To=1,Curve=Dip
+)");
+        auto pattern = RegressionPattern();
+        pattern.notes.push_back({{4, {}}, 1});
+        chart::ChartEditor editor(pattern, effects);
+        auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+        Require(loaded.Succeeded() && editor.MinimumScrollMultiplier() == .25 &&
+                    loaded.session->MinimumScrollMultiplier() == .25,
+                "A custom curve minimum at an actual note must match gameplay, not its endpoints.");
+    const auto end = rhythm::RhythmTime{
+        static_cast<long long>((1848 - 230 + 110) / (.0004896 * editor.MinimumScrollMultiplier()))};
+        Require(editor.NotesInTimeRange({}, end).size() == 1,
+                "The slow note at 8s must be retained in the visible realtime query.");
+        chart::ChartEditor copied(editor);
+        Require(copied.MinimumScrollMultiplier() == .25, "Copy must rebuild the speed index.");
+        const auto id = editor.Notes().front().note.sourceOrder;
+        editor.DeleteNote(id);
+        Require(editor.MinimumScrollMultiplier() == 1, "Deleting the minimum-speed note must update the index.");
+        editor.AddNote({4, {}}, 1);
+        Require(editor.MinimumScrollMultiplier() == .25, "Insertion must index the compiled speed.");
+        auto changed = effects;
+        changed.interpolations.at("Dip") = "1";
+        editor.ReplaceEffects(changed);
+        Require(editor.MinimumScrollMultiplier() == 1, "Replacing formulas must replace cached note speeds.");
+        editor.ReplaceEffects(effects);
+        editor.ReplaceTiming({{{2, {}}, chart::TimingDirectiveType::Bpm, 240}});
+        Require(editor.MinimumScrollMultiplier() == editor.Notes().front().scrollMultiplier &&
+                    editor.MinimumScrollMultiplier() != .25,
+                "Tempo edits must rebuild time-dependent note speed bounds transactionally.");
+    }
+
+    void TestEffectValidationConsistency()
+    {
+        const auto pattern = RegressionPattern();
+        const auto base = ParseRegressionEffects("[Sounds]\n1,0/1,#Volume HitSound,Value=1\n");
+        std::vector<chart::EffectDocument> invalid;
+        invalid.push_back(base);
+        invalid.back().commands.front().beginValue = invalid.back().commands.front().endValue = -1;
+        invalid.push_back(base);
+        invalid.back().commands.front().target = "Music";
+        invalid.push_back(base);
+        invalid.back().commands.front().position.fraction = {1, 1};
+        invalid.push_back(base);
+        invalid.back().commands.front().durationMilliseconds = -1;
+        invalid.push_back(base);
+        invalid.back().commands.front().durationMilliseconds = std::numeric_limits<double>::max();
+        invalid.push_back(base);
+        invalid.back().commands.front().endValue = std::numeric_limits<double>::quiet_NaN();
+        for (const auto &effects : invalid)
+        {
+            bool rejected = false;
+            try
+            {
+                chart::ChartEditor editor(pattern, effects);
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejected = true;
+            }
+            Require(rejected && !mode::TaikoMode{}.CreateSession(pattern, effects).Succeeded(),
+                    "Editor and direct gameplay construction must reject the same invalid effect data.");
+        }
+        auto effects = ParseRegressionEffects(R"([Interpolation]
+Ramp: From+(To-From)*u
+[Sounds]
+1,0/1,Area,2,0/1,#Volume HitSound,From=0,To=1,Curve=Ramp
+)");
+        effects.interpolations.at("Ramp") = "From+(To-From)*u*u";
+        chart::ChartEditor editor(pattern, effects);
+        auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+        Require(loaded.Succeeded() && editor.EffectValueAt(chart::EffectCommandType::BusVolume, {0, {1, 2}}) == .25 &&
+                    loaded.session->EvaluateAutomation(rhythm::RhythmTime{1'000'000}).front().value == .25,
+                "Editor and gameplay must recompile edited formulas from the same document.");
+    }
+
 void TestYmeSyntax()
 {
     chart::ChartParser parser;

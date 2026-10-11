@@ -14,6 +14,11 @@ struct EditorAnalysisJob;
 class EditorAnalysisController final
 {
   public:
+    EditorAnalysisController() = default;
+    EditorAnalysisController(const EditorAnalysisController &) = delete;
+    EditorAnalysisController &operator=(const EditorAnalysisController &) = delete;
+    EditorAnalysisController(EditorAnalysisController &&) = delete;
+    EditorAnalysisController &operator=(EditorAnalysisController &&) = delete;
     ~EditorAnalysisController()
     {
         Stop();

@@ -35,8 +35,10 @@ void GameplaySessionController::Update(const mrg::UpdateContext &context)
     if (!debugMode_ && IsPatternComplete())
         completedElapsedSeconds_ += context.deltaSeconds;
 }
-std::string_view GameplaySessionController::AudioError() const noexcept
+std::string_view GameplaySessionController::ErrorMessage() const noexcept
 {
+    if (session_ && !session_->AutomationError().empty())
+        return session_->AutomationError();
     return audioRouter_.LastError().empty() ? initializationError_ : audioRouter_.LastError();
 }
 void GameplaySessionController::Shutdown() noexcept

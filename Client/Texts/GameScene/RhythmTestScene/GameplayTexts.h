@@ -8,7 +8,7 @@ namespace finger_drum::texts
 {
     struct GameplayTextSet
     {
-        std::wstring_view audioErrorPrefix;
+        std::wstring_view errorPrefix;
         std::wstring_view audioInitializationFailed;
         std::wstring_view focusNone;
         std::wstring_view focusPrefix;

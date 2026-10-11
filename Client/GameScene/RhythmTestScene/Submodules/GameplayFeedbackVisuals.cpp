@@ -18,17 +18,18 @@ void GameplayPresenter::PresentJudgementFeedback(const GameplayFeedback &feedbac
         judgementView_.Present(*selected);
 }
 
-void GameplayPresenter::PresentAudioError(const std::string_view message)
+void GameplayPresenter::PresentErrorMessage(const std::string_view message)
 {
-    if (audioErrorLabel_ == nullptr || message.empty())
+    if (errorLabel_ == nullptr)
     {
         return;
     }
+    errorLabel_->SetVisible(!message.empty());
+    if (message.empty())
+        return;
     const auto &text = finger_drum::texts::Gameplay(texts_.CurrentLanguage());
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*audioErrorLabel_)
-        .SetText(std::wstring(text.audioErrorPrefix) +
-                 Utf8ToWide(message, text.audioInitializationFailed));
-    audioErrorLabel_->SetVisible(true);
+    RequireComponent<mrg::visual2d::TextVisualComponent>(*errorLabel_)
+        .SetText(std::wstring(text.errorPrefix) + Utf8ToWide(message, text.audioInitializationFailed));
 }
 
 void GameplayPresenter::PresentFocusCounter(NoteVisualLayers &layers,

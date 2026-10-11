@@ -1,6 +1,7 @@
 #include "Taiko/TaikoMode.h"
-#include "Taiko/Submodules/TaikoSessionBuilder.h"
+#include "Automation/EffectValidation.h"
 #include "Parsing/ChartParser.h"
+#include "Taiko/Submodules/TaikoSessionBuilder.h"
 
 namespace finger_drum::mode
 {
@@ -46,7 +47,13 @@ namespace finger_drum::mode
     ModeLoadResult TaikoMode::CreateSession(const chart::PatternDocument &pattern,
                                             const chart::EffectDocument &effects) const
     {
-        try { return TaikoSessionBuilder::CreateSession(pattern, effects); }
+        try
+        {
+            auto resolved = effects;
+            chart::ResolveEffectInterpolations(resolved);
+            chart::ValidateEffectDocument(resolved);
+            return TaikoSessionBuilder::CreateSession(pattern, resolved);
+        }
         catch (const std::exception &error)
         {
             ModeLoadResult result;

@@ -215,6 +215,11 @@ namespace
         GameplayPresenter presenter(visuals, texts);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
+        presenter.PresentErrorMessage("quality-regression.yme:4 [HitSound] invalid value");
+        auto &errorLabel = Node(root, "Hud.Error");
+        Check(errorLabel.IsVisible(), "An automation diagnostic must be visible in the gameplay HUD.");
+        presenter.PresentErrorMessage({});
+        Check(!errorLabel.IsVisible(), "Reset/cleared errors must hide the previous diagnostic.");
         r::NoteProcessResult rollover;
         rollover.events.push_back(Event(r::NoteEventType::Missed, r::JudgementGrade::Miss));
         rollover.events.push_back(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Max));

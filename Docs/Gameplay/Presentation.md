@@ -15,6 +15,9 @@ Scene 종료 전에 빔의 observer를 해제하고 Canvas가 노드를 파기�
 `RhythmTestScene`은 Lobby가 선택한 YMP/YME를 `TaikoMode`에 전달해 세션을
 만듭니다. `DestroyOnExit`이므로 매 플레이마다 새로 생성되고 Escape 또는 패턴
 완료 3초 뒤 Lobby로 돌아갈 때 Canvas, audio voice, session과 함께 삭제됩니다.
+`GameplaySessionController::ErrorMessage`는 세션 자동화 오류 또는 오디오 오류를 전달하며,
+`GameplayPresenter::PresentErrorMessage`는 공통 HUD에 표시하고 오류가 비면 숨깁니다.
+사용자 보간식의 트랙별 정상값 유지/복구 규칙은 [YME](../Formats/Yme.md)의 보간 절을 따릅니다.
 
 플레이 화면의 기준 시안과 런타임 PNG 자산 원본은 Penpot의
 [Gameplay · Sky](https://design.penpot.app/#/workspace?team-id=3be9e5e1-190f-8090-8008-7464803e8b40&file-id=3be9e5e1-190f-8090-8008-7468d9cc1bc8&page-id=618d0170-ff55-8025-8008-80646ceaa9d9)에 있습니다.

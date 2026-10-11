@@ -3,8 +3,10 @@
 #include "Editing/IEditorDocument.h"
 #include "Automation/ScrollAutomation.h"
 
-#include <optional>
+#include <algorithm>
 #include <map>
+#include <optional>
+#include <set>
 #include <string>
 
 namespace finger_drum::chart
@@ -33,7 +35,13 @@ namespace finger_drum::chart
         std::pair<rhythm::RhythmTime, rhythm::RhythmTime> NoteTimeRange() const override;
         std::uint64_t AudioSourceRevision() const noexcept override { return audioSourceRevision_; }
         double EffectValueAt(EffectCommandType, MusicalPosition, double fallback = 1) const override;
-        double MinimumScrollMultiplier() const override { return minimumScrollMultiplier_ * scroll_.MinimumMultiplier(); }
+        double MinimumScrollMultiplier() const override
+        {
+            const auto minimum = noteSpeedIndex_.empty()
+                                     ? minimumScrollMultiplier_
+                                     : std::min(minimumScrollMultiplier_, noteSpeedIndex_.begin()->first);
+            return minimum * scroll_.MinimumMultiplier();
+        }
         long double ScrollDistance(rhythm::RhythmTime target, rhythm::RhythmTime current) const override
         { return scroll_.Distance(target, current); }
         [[nodiscard]] bool Dirty() const noexcept override
@@ -69,6 +77,8 @@ namespace finger_drum::chart
         std::map<NoteKey, CompiledPatternNote> noteTree_;
         std::map<std::size_t, NoteKey> noteKeys_;
         std::map<TimeKey, NoteKey> timeIndex_;
+        // Actual compiled speeds, keyed by stable ID for transactional insertion/removal.
+        std::set<std::pair<double, std::size_t>> noteSpeedIndex_;
         std::map<std::size_t, std::size_t> longPartners_;
         std::map<NoteKey, std::size_t> longEndpoints_;
         std::multimap<MusicalPosition, TimingDirective> timingTree_;

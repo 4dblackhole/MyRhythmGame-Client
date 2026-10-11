@@ -1,3 +1,4 @@
+#include "Automation/EffectValidation.h"
 #include "Automation/InterpolationExpression.h"
 #include "Parsing/Submodules/ParserSupport.h"
 #include <set>
@@ -119,11 +120,6 @@ EffectCommand ParseCommand(std::string_view section, const std::vector<std::stri
     if (!flag && ((!c.endPosition && !seen.contains("Value")) ||
                   (c.endPosition && (!seen.contains("From") || !seen.contains("To") || !seen.contains("Curve")))))
         throw std::invalid_argument("Point requires Value; Area requires From, To and Curve.");
-    if ((c.type == EffectCommandType::ScrollSpeed || c.type == EffectCommandType::NoteSpeed) &&
-        (c.beginValue <= 0 || c.endValue <= 0))
-        throw std::invalid_argument("Scroll speed must be positive.");
-    if (c.type == EffectCommandType::BusVolume && (c.beginValue < 0 || c.endValue < 0))
-        throw std::invalid_argument("Volume cannot be negative.");
     return c;
 }
 void ResolveCurves(EffectDocument &document, const CompiledInterpolations &expressions,
@@ -132,23 +128,11 @@ void ResolveCurves(EffectDocument &document, const CompiledInterpolations &expre
     // Resolve curves after all sections, allowing definitions after uses.
     for (auto &c : document.commands)
     {
-        if (!c.endPosition)
-            continue;
         try
         {
-            ResolveInterpolation(c, expressions);
-            if ((c.curve == AutomationCurve::Exponential || c.curve == AutomationCurve::Harmonic) &&
-                (c.beginValue <= 0 || c.endValue <= 0))
-                throw std::invalid_argument("Exponential/Harmonic endpoints must be positive.");
-            for (int i = 0; i <= 128; ++i)
-            {
-                const double value = EvaluateInterpolation(c, i / 128.0);
-                if (!std::isfinite(value) ||
-                    ((c.type == EffectCommandType::ScrollSpeed || c.type == EffectCommandType::NoteSpeed) &&
-                     value <= 0) ||
-                    (c.type == EffectCommandType::BusVolume && value < 0))
-                    throw std::invalid_argument("Interpolation produces an invalid effect value.");
-            }
+            if (c.endPosition)
+                ResolveInterpolation(c, expressions);
+            ValidateEffectCommand(c);
         }
         catch (const std::exception &error)
         {

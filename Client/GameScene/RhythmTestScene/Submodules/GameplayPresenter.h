@@ -30,7 +30,7 @@ class GameplayPresenter final
     void OnResize(const std::uint32_t width, const std::uint32_t height);
     void Shutdown() noexcept;
     void ApplyFeedback(const GameplayFeedback &feedback);
-    void PresentAudioError(const std::string_view message);
+    void PresentErrorMessage(const std::string_view message);
     void UpdatePresentation(const finger_drum::rhythm::RhythmTime time);
     [[nodiscard]] finger_drum::rhythm::RhythmTime InitialTimelineTime() const;
     void UpdateInputPresentation(const mrg::platform::InputState &input, const double deltaSeconds);
@@ -141,7 +141,7 @@ class GameplayPresenter final
 #if defined(_DEBUG)
     mrg::visual2d::Visual2DNode *noteDebugLabel_{};
 #endif
-    mrg::visual2d::Visual2DNode *audioErrorLabel_{};
+    mrg::visual2d::Visual2DNode *errorLabel_{};
     float laneWidth_{152.0F};
     float laneTileLength_{42.0F};
     float judgementLocalY_{76.0F};

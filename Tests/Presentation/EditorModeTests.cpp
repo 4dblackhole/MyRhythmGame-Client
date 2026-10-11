@@ -444,6 +444,39 @@ namespace
         state.RemoveTiming(0);
         Check(state.Document().Pattern().timing.empty(), "Timing deletion failed.");
     }
+
+    void TestCustomSeparateRealtimeVisibility()
+    {
+        auto pattern = chart::PatternDocument{};
+        pattern.baseBpm = 120;
+        pattern.notes.push_back({{4, {}}, 1});
+        const auto parsed = chart::ChartParser{}.ParseEffect(R"([Interpolation]
+Dip: 1-3*u*(1-u)
+[Speed]
+1,0/1,Area,9,0/1,#ScrollSpeed Separate,From=1,To=1,Curve=Dip
+)");
+        Check(parsed.Succeeded(), "Custom Separate regression fixture must parse.");
+        EditorWorkspace state(CreateEditorMode("Taiko"),
+                              std::make_unique<chart::ChartEditor>(pattern, parsed.document));
+        state.SetRealtime(true);
+        state.SelectTool(1);
+        RecordingCanvas canvas;
+        state.Mode().DrawChart(canvas, state);
+        const auto drawn = std::ranges::any_of(
+            canvas.rectangles, [](const auto &rect)
+            { return std::abs(rect.x + rect.width / 2 - 1209.2F) < .01F && rect.width == 72 && rect.height == 72; });
+        Check(drawn, "The custom curve's slow 8s note must be drawn inside the realtime lane.");
+        state.Mode().EditScore(state, {1209.2F, 465}, true);
+        Check(state.Document().Notes().empty(), "The visible slow note must participate in deletion hit testing.");
+        // With no authored slow note left, the endpoint bound becomes 1.
+        // The same custom curve's visible grid still needs to be selectable.
+        canvas.rectangles.clear();
+        state.Mode().DrawChart(canvas, state);
+        state.Mode().EditScore(state, {1209.2F, 465}, false);
+        Check(state.Document().Notes().size() == 1 &&
+                  state.Document().Notes().front().note.position == chart::MusicalPosition{4, {}},
+              "A custom Separate grid must remain visible/snappable without an authored minimum-speed note.");
+    }
 } // namespace
 
 void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineServices &services,
@@ -454,6 +487,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     TestTaikoPlacementConflicts();
     TestPreviewMatchesPlay();
     TestSeekAndEffectEdits();
+    TestCustomSeparateRealtimeVisibility();
     auto mode = std::make_unique<ProbeMode>();
     auto *probe = mode.get();
     EditorWorkspace state(finger_drum::GameplayLaunchRequest{}, std::move(mode));

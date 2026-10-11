@@ -39,7 +39,7 @@ class GameplaySessionController final
     {
         return feedback_;
     }
-    std::string_view AudioError() const noexcept;
+    std::string_view ErrorMessage() const noexcept;
     bool ShouldReturnToLobby() const noexcept
     {
         return !debugMode_ && completedElapsedSeconds_ >= 3.0;

@@ -1,5 +1,6 @@
-#include "Mode/PlayGameMode.h"
+#include "Automation/EffectValidation.h"
 #include "Automation/InterpolationExpression.h"
+#include "Mode/PlayGameMode.h"
 
 #include <algorithm>
 #include <cmath>
@@ -49,13 +50,16 @@ namespace finger_drum::mode
             tracks[{effects[i].command.type, effects[i].command.target}].push_back(i);
         for (auto &[key, indices] : tracks)
             std::ranges::stable_sort(indices, {}, [&effects](std::size_t i) { return effects[i].timing; });
+        decltype(automationLastValues_) lastValues(tracks.size());
+        automationValues_.reserve(tracks.size());
+        automationIndices_.reserve(tracks.size());
         effects_ = std::move(effects);
         scroll_ = std::move(scroll);
         effectTracks_ = std::move(tracks);
         automationTime_.reset();
         automationValues_.clear();
-        automationValues_.reserve(effectTracks_.size());
-        automationIndices_.reserve(effectTracks_.size());
+        automationLastValues_.swap(lastValues);
+        automationError_.clear();
     }
 
     void PlaySession::SetMeasureLines(std::vector<rhythm::RhythmTime> measureLines)
@@ -190,26 +194,57 @@ namespace finger_drum::mode
         automationTime_.reset();
         auto &selected = automationIndices_;
         selected.clear();
+        std::size_t trackIndex = 0;
         for (const auto &[key, indices] : effectTracks_)
         {
             const auto next = std::ranges::upper_bound(indices, time, {},
                 [this](std::size_t i) { return effects_[i].timing; });
             if (next != indices.begin())
-                selected.push_back(*std::prev(next));
+                selected.emplace_back(*std::prev(next), trackIndex);
+            ++trackIndex;
         }
         // Preserve authored order across targets that share the same output bus.
-        std::ranges::sort(selected);
+        std::ranges::sort(selected, {}, [](const auto &entry) { return entry.first; });
         automationValues_.resize(selected.size());
         for (std::size_t i = 0; i < selected.size(); ++i)
         {
-            const auto &command = effects_[selected[i]];
+            const auto &[effectIndex, track] = selected[i];
+            const auto &command = effects_[effectIndex];
             auto &value = automationValues_[i];
             value.type = command.command.type;
             value.target = command.command.target;
-            value.value = Interpolate(command, time);
+            value.value = EvaluateTrack(effectIndex, track, time);
         }
         automationTime_ = time;
         return automationValues_;
+    }
+
+    double PlaySession::EvaluateTrack(std::size_t effectIndex, std::size_t trackIndex, rhythm::RhythmTime time) const
+    {
+        const auto &effect = effects_[effectIndex];
+        auto &lastValue = automationLastValues_[trackIndex];
+        // The validated From value anchors a track until its first successful
+        // sample, including a first query that seeks directly into a failure.
+        if (!lastValue)
+            lastValue = effect.command.beginValue;
+        try
+        {
+            const auto value = Interpolate(effect, time);
+            chart::ValidateEffectValue(effect.command.type, value);
+            lastValue = value;
+            return value;
+        }
+        catch (const std::exception &error)
+        {
+            if (automationError_.empty())
+            {
+                const auto path = effect.command.source.file.generic_u8string();
+                automationError_ = std::string(reinterpret_cast<const char *>(path.data()), path.size()) + ":" +
+                                   std::to_string(effect.command.source.line) + " [" + effect.command.target + "] " +
+                                   error.what();
+            }
+            return *lastValue;
+        }
     }
 
     void PlaySession::Reset() noexcept
@@ -219,6 +254,8 @@ namespace finger_drum::mode
         finalizedNoteCount_ = 0;
         lastNoteAccuracy_.reset();
         automationTime_.reset();
+        std::ranges::fill(automationLastValues_, std::nullopt);
+        automationError_.clear();
     }
 
     bool PlaySession::IsKiaiActive(rhythm::RhythmTime time) const

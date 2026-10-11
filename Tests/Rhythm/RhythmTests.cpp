@@ -36,6 +36,9 @@ int main(const int argumentCount, char *arguments[])
     };
     std::vector<TestCase> tests{
         {"TestYmeSyntax", TestYmeSyntax},
+        {"TestRuntimeAutomationRecovery", TestRuntimeAutomationRecovery},
+        {"TestEditorCompiledSpeedBounds", TestEditorCompiledSpeedBounds},
+        {"TestEffectValidationConsistency", TestEffectValidationConsistency},
         {"TestSceneStateBoundaries", TestSceneStateBoundaries},
         {"TestJudgementScalingAndInterpolation", TestJudgementScalingAndInterpolation},
         {"TestRhythmTimerClockMapping", TestRhythmTimerClockMapping},

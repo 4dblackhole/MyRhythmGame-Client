@@ -3,6 +3,8 @@
 파서/모델: `FingerDrum.Chart/Parsing/Submodules/EffectParser.cpp`,
 `Model/Submodules/EffectDocument.h`. 보간/스크롤: `Automation/InterpolationExpression.*`,
 `Automation/ScrollAutomation.*`. 저장: `Editing/ChartEditor.cpp`.
+효과 값/보간의 공통 검증은 `Automation/EffectValidation.*`이며 파서, 편집 문서와
+직접 플레이 세션 생성이 같은 규칙을 사용합니다.
 검증: `Tests/Rhythm/Submodules/YmeEffectsTests.cpp`, 실제 실행은
 [Presentation 테스트](../../Tests/Presentation/README.md)의 `-Effects`입니다.
 
@@ -84,6 +86,12 @@ X축 시간에 해당하는 매개변수를 찾은 뒤 Y값을 반환합니다. 
 재파싱/할당하지 않습니다. 코드 실행이나 임의 함수 호출은 지원하지 않습니다.
 잘못된 식, 정의하지 않은 이름, 비유한 값, 음수 볼륨/0 이하 속도는 오류입니다.
 사용자 식은 여러 지점에서 검증하며 Whole 적분에도 작업량 제한을 둡니다.
+샘플 검증만으로 모든 연속 시각의 특이점을 증명할 수는 없습니다. 플레이 중 자동화
+평가에서 예외·비유한 값·음수 볼륨·0 이하 속도가 발생하면 해당 종류/대상의 트랙만
+마지막 정상값을 유지하고 HUD에 YME 경로/행과 오류를 표시합니다. 아직 정상 평가가
+없으면 검증된 `From`을 초기값으로 사용합니다. 다음 정상 평가부터 값을 다시 갱신하며
+오류는 세션 Reset 또는 효과 트랙 교체까지 유지합니다. 다른 트랙과 판정은 계속 동작합니다.
+Whole 거리 표와 Separate 노트 배율의 로드 시 컴파일 실패는 세션/편집 변경을 거부합니다.
 
 ## 히트사운드와 볼륨
 
