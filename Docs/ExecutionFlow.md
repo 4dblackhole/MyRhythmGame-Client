@@ -6,11 +6,8 @@
 ```mermaid
 flowchart TD
     Entry["Client/App/Main.cpp\nwWinMain"] --> Assets["RCDATA asset pack 확인 · cache 준비"]
-    Assets --> Route{"Debug의 --example?"}
-    Route -->|"no"| Game["FingerDrumGame · Option.ini 복원"]
-    Route -->|"yes"| Example["ColoredCubeGame · engine example"]
+    Assets --> Game["FingerDrumGame · Option.ini 복원"]
     Game --> Run["mrg::Run"]
-    Example --> Run
     Run --> Systems["Win32 · D3D12 · Raw Input · Audio"]
     Game --> Manager["SceneManager"]
     Manager --> Logo["FingerDrumLogoScene"]
@@ -30,21 +27,18 @@ flowchart TD
    유효한 캐시가 있으면 다시 기록하지 않습니다.
 2. 일반 실행과 FingerDrum smoke는 `FingerDrumGame`을 생성합니다. EXE 옆
    `Option.ini`에서 언어·스킨·오디오 미들웨어/출력 방식/드라이버를 읽습니다.
-   파일이 없으면 기본 설정과 기존 스킨 선택을 저장합니다. 저장된 스킨
+   파일이 없으면 기본 설정을 저장합니다. 저장된 스킨
    폴더가 없으면 `Default Skin`을 사용합니다. 상세 형식은 [TextManagement](TextManagement.md)입니다.
-3. Debug에서만
-   `--example=mesh|collision|widgets` 경로가 재사용 엔진 검증용
-   `ColoredCubeGame`을 생성합니다. Release에는 예제 Scene을 컴파일하지 않습니다.
-4. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
+3. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다.
-5. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest route를 등록합니다.
-6. `SceneManager`가 최초 Scene을 활성화하고 `Initialize`를 한 번 호출합니다.
+4. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest route를 등록합니다.
+5. `SceneManager`가 최초 Scene을 활성화하고 `Initialize`를 한 번 호출합니다.
    Client 초기화 hook은 첫 update/render 전에 현재 출력 장치 목록에서 저장된
    드라이버를 찾아 적용합니다. 출력 방식이 fallback됐으면 다른 API의 장치 번호를 사용하지 않습니다.
 
 스킨은 실행 파일 옆 `assets/skins/<선택한 스킨 폴더>`의 같은 상대 경로 파일을
 먼저 사용하고, 파일이 없을 때만 캐시의 내장 파일로 돌아갑니다. 곡 카탈로그는
-실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3 1개·YMM 1개·YMP 4개는
+실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3 1개·YMM 1개·YMP 5개와 효과 테스트 YME/WAV는
 외부 파일로 배포하며 빌드는 이미 존재하는 편집본을 덮어쓰지 않습니다.
 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 
@@ -82,7 +76,7 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
   Scene 종료 시 worker 완료를 기다리지 않고 취소를 요청합니다. worker 자체는 프로세스 수명입니다.
   Ctrl+S는 같은 폴더에 저장하며 Escape는 미저장 변경을 확인한 뒤 돌아갑니다.
 - Lobby는 Penpot의 `Music Select · Sky` 화면을 Visual2D 트리로 구성합니다.
-  `SongCatalog`가 외부 Songs의 AngelDream YMM과 YMP 4개 및 사용자 곡·패턴을
+  `SongCatalog`가 외부 Songs의 AngelDream YMM과 YMP 5개 및 사용자 곡·패턴을
   연결해 표시합니다.
   포커스된 곡 카드만 난이도 목록을 펼치며 좌우키는 곡, 상하키는 난이도를
   이동합니다. 하단 BACK 버튼이나 Escape로 Logo에 돌아갑니다.

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common/RhythmTypes.h"
-#include "Judgement/JudgementProfile.h"
+#include "Judgement/AccuracyRange.h"
 #include <cstddef>
 #include <optional>
 #include <string>

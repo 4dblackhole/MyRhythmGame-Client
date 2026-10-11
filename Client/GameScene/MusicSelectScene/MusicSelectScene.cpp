@@ -98,6 +98,15 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
     }
     const auto &pattern = song.patterns[selection_->selectedPatternIndex_];
 
+    // Validate both entry routes before a Scene factory can reject the request.
+    if (pattern.pattern.mode != "Taiko")
+    {
+        selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::UnsupportedMode,
+                                   pattern.pattern.mode);
+        view_->RefreshSelectionPresentation();
+        return false;
+    }
+
     if (purpose_ == SongSelectPurpose::Editor)
     {
         selection_->ClearLaunchError();
@@ -108,14 +117,6 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
             throw std::runtime_error("Failed to enter the editor scene.");
         }
         return true;
-    }
-
-    if (!pattern.pattern.mode.empty() && pattern.pattern.mode != "Taiko")
-    {
-        selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::UnsupportedMode,
-                                   pattern.pattern.mode);
-        view_->RefreshSelectionPresentation();
-        return false;
     }
 
     std::unique_ptr<finger_drum::mode::PlaySession> prepared;

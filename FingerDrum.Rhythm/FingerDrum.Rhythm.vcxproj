@@ -18,10 +18,8 @@
   <ItemGroup>
     <ClInclude Include="Common\RhythmTypes.h" />
     <ClCompile Include="Judgement\AccuracyRange.cpp" />
-    <ClInclude Include="Judgement\JudgementProfile.h" />
     <ClCompile Include="Lane\Lane.cpp" />
     <ClInclude Include="Lane\Lane.h" />
-    <ClInclude Include="Note\Note.h" />
     <ClCompile Include="Note\Submodules\CountedHitInputRule.cpp" />
     <ClInclude Include="Note\Submodules\CountedHitInputRule.h" />
     <ClCompile Include="Note\Submodules\DrumRollInputRule.cpp" />

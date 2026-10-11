@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Model/ChartDocument.h"
+#include "Model/Submodules/CompiledChart.h"
 
 #include <cstddef>
 #include <vector>

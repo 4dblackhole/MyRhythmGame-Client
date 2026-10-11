@@ -201,6 +201,7 @@ namespace
         v::ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280.0F, 720.0F});
         finger_drum::chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
         pattern.baseBpm = 180;
         finger_drum::chart::PatternNote note;
         note.keyType = 1;

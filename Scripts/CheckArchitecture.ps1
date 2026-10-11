@@ -57,8 +57,7 @@ foreach ($source in $sources) {
         $body -match '#include\s*[<"][^">]*(?:MRG-Engine|Engine/|Engine\\)[^">]*[">]') {
         $problems.Add("Client bypasses MRG_Core.h: $source")
     }
-    if ($source -notmatch '[\\/]Examples[\\/]' -and
-        $body -match 'class\s+(\w+Scene)\s+final\s*:\s*public\s+mrg::scene::GameScene') {
+    if ($body -match 'class\s+(\w+Scene)\s+final\s*:\s*public\s+mrg::scene::GameScene') {
         if ((Split-Path -Leaf (Split-Path -Parent $source)) -ne $Matches[1]) {
             $problems.Add("Scene lacks its own directory: $source")
         }

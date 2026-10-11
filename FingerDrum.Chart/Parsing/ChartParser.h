@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Model/ChartDocument.h"
+#include "Model/Submodules/MusicDocument.h"
+#include "Model/Submodules/PatternDocument.h"
+#include "Model/Submodules/EffectDocument.h"
 
 #include <filesystem>
 #include <string_view>

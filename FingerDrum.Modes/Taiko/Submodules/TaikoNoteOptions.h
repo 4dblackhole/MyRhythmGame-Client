@@ -1,5 +1,5 @@
 #pragma once
-#include "Model/ChartDocument.h"
+#include "Model/Submodules/PatternDocument.h"
 #include "TaikoInputBinding.h"
 #include "TaikoSoundIds.h"
 #include <algorithm>

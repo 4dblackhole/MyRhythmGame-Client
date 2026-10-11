@@ -41,7 +41,7 @@ int main()
         beam.Update(0.2);
         Check(!sprite.IsVisible() && Near(tint().alpha, 0), "200ms hidden");
 
-        rhythm::JudgementProfile profile;
+        rhythm::AccuracyRange profile;
         const auto makeResult = [&](double milliseconds, bool accepted) {
             rhythm::NoteProcessResult result;
             rhythm::NoteEvent event;

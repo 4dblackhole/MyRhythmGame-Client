@@ -1,3 +1,8 @@
+#include "Note/Submodules/RuleBasedNote.h"
+#include "Note/Submodules/DrumRollInputRule.h"
+#include "Note/Submodules/TickRollInputRule.h"
+#include "Note/Submodules/TimedSequenceInputRule.h"
+#include "Note/Submodules/HoldInputRule.h"
 #include "TaikoBuildSupport.h"
 #include "TaikoSessionBuilder.h"
 
@@ -8,7 +13,7 @@ namespace finger_drum::mode
     void TaikoSessionBuilder::AddLongNote(const chart::CompiledPatternNote &compiledHead,
                                           const chart::CompiledPatternNote &compiledTail,
                                           const chart::MusicalTimeline &timeline,
-                                          const std::shared_ptr<const rhythm::JudgementProfile> &profile,
+                                          const std::shared_ptr<const rhythm::AccuracyRange> &profile,
                                           rhythm::Lane &lane, PlaySession &session, rhythm::NoteId &nextId,
                                           std::vector<chart::Diagnostic> &diagnostics)
     {

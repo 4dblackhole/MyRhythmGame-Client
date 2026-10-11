@@ -1,5 +1,5 @@
 #pragma once
-#include "Note/Note.h"
+#include "Note/Submodules/NoteTypes.h"
 #include "Taiko/TaikoMode.h"
 #include "TaikoChartAudio.h"
 #include "TaikoNoteOptions.h"

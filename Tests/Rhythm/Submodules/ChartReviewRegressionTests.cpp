@@ -167,12 +167,14 @@ namespace finger_drum::tests
         command.position.measure = chart::MaximumMeasureCount;
         command.beginValue = command.endValue = 1;
         invalidEffect.commands.push_back(command);
-        Require(!mode::TaikoMode{}.CreateSession(chart::PatternDocument{}, invalidEffect).Succeeded(),
+        chart::PatternDocument effectPattern;
+        effectPattern.mode = "Taiko";
+        Require(!mode::TaikoMode{}.CreateSession(effectPattern, invalidEffect).Succeeded(),
                 "Programmatic effects must not author notes at the exclusive end sentinel.");
         invalidEffect.commands.clear();
         invalidEffect.hitSounds.emplace("1", "sound.wav");
         invalidEffect.hitSoundChanges.push_back({{chart::MaximumMeasureCount, {}}, "1", 1});
-        Require(!mode::TaikoMode{}.CreateSession(chart::PatternDocument{}, invalidEffect).Succeeded(),
+        Require(!mode::TaikoMode{}.CreateSession(effectPattern, invalidEffect).Succeeded(),
                 "Programmatic hit-sound points must enforce the same limit.");
     }
 

@@ -9,7 +9,7 @@ namespace finger_drum::rhythm
     {
         NoteId noteId{};
         RhythmTime noteTime{};
-        const JudgementProfile &judgementProfile;
+        const AccuracyRange &judgementProfile;
     };
 
     struct NoteUpdateContext

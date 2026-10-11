@@ -8,6 +8,7 @@ namespace finger_drum::tests
         chart::ChartParser parser;
         const auto parsed = parser.ParsePattern(R"(
 Base BPM: 120
+Mode: Taiko
 [Time Signature]
 --
 #measure 3/4
@@ -102,6 +103,7 @@ Version: 1
         for (const int type : {15, 16, 17})
         {
             chart::PatternDocument pattern;
+            pattern.mode = "Taiko";
 
             pattern.notes.push_back(
                 {{0, {}}, type, 1, "1", {"HitCount=8", "Action=Don", "TickDivision=16"}});

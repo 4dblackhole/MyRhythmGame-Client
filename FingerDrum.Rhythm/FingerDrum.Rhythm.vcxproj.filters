@@ -10,10 +10,8 @@
     <Filter Include="Time" />
     <ClInclude Include="Common\RhythmTypes.h"><Filter>Common</Filter></ClInclude>
     <ClCompile Include="Judgement\AccuracyRange.cpp"><Filter>Judgement</Filter></ClCompile>
-    <ClInclude Include="Judgement\JudgementProfile.h"><Filter>Judgement</Filter></ClInclude>
     <ClCompile Include="Lane\Lane.cpp"><Filter>Lane</Filter></ClCompile>
     <ClInclude Include="Lane\Lane.h"><Filter>Lane</Filter></ClInclude>
-    <ClInclude Include="Note\Note.h"><Filter>Note</Filter></ClInclude>
     <ClCompile Include="Note\Submodules\CountedHitInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>
     <ClInclude Include="Note\Submodules\CountedHitInputRule.h"><Filter>Note\Submodules</Filter></ClInclude>
     <ClCompile Include="Note\Submodules\DrumRollInputRule.cpp"><Filter>Note\Submodules</Filter></ClCompile>

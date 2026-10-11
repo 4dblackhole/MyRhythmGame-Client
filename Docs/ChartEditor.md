@@ -96,7 +96,7 @@ Workspace가 문서/모드/worker를 단독 소유합니다. 모드는 `IEditorC
 디바이더·표시 모드·첫 마디 변경도 Workspace 명령이 검증/재구축 요청을 함께 처리합니다.
 
 `EditorModeFactory`가 진입 요청의 `mode`에 맞는 객체를 생성합니다. 현재 등록된
-모드는 Taiko 하나이고 빈 모드 ID는 기존처럼 Taiko입니다. 미지원 ID 또는
+모드는 Taiko 하나이며 빈 모드 ID와 미지원 ID는 오류입니다.
 Taiko로 열었는데 다른 모드가 기록된 문서는 오류로 거부하며 Taiko 도구로 덮어쓰지 않습니다.
 활성 에디터 안에서 모드를 바꾸는 UI는 제공하지 않습니다.
 

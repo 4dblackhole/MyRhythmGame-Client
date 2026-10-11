@@ -1,5 +1,6 @@
 #include "../../EditorSupport.h"
 #include "TaikoEditorMode.h"
+#include "Parsing/ChartParser.h"
 #include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
 #include <algorithm>
 using namespace editor_ui;

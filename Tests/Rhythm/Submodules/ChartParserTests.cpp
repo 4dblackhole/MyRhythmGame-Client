@@ -207,7 +207,7 @@ Base BPM: 120
         }
     }
 
-    void TestLegacyParsingAndMicroseconds()
+    void TestTimingMicrosecondsAndEffects()
     {
         constexpr std::string_view Pattern = R"(
 [Metadata]
@@ -219,7 +219,6 @@ JudgeLevel: 50
 [Time Signature]
 0/1,#bpm 120
 #measure 1/2
-#measureLineVisible OFF
 [Pattern]
 1/4,1,0
 --
@@ -229,24 +228,27 @@ JudgeLevel: 50
         const chart::ParseResult<chart::PatternDocument> parsed =
             parser.ParsePattern(Pattern, "memory.ymp");
         Require(parsed.Succeeded() && parsed.document.notes.size() == 2,
-                "Legacy YMP notes and measure separators must parse.");
+                "YMP notes and measure separators must parse.");
         chart::MusicalTimeline timeline(parsed.document);
         const auto compiled = timeline.CompileNotes(parsed.document);
         Require(compiled[0].timing == rhythm::RhythmTime{500'000} &&
                     compiled[1].timing == rhythm::RhythmTime{1'000'000},
-                "Legacy #measure must preserve absolute in-measure positions and exact microsecond "
+                "#measure must preserve absolute in-measure positions and exact microsecond "
                 "timestamps.");
-        Require(std::ranges::any_of(parsed.diagnostics,
-                                    [](const chart::Diagnostic &diagnostic) {
-                                        return diagnostic.severity ==
-                                               chart::DiagnosticSeverity::Warning;
-                                    }),
-                "Legacy visual directives must remain loadable and report migration warnings.");
+        for (const std::string_view command : {"#measureLineVisible OFF", "0/4,#measureLineVisible OFF",
+                                               "#scroll 2", "0/4,#volume 0.5"})
+        {
+            const auto unsupported = parser.ParsePattern("[Time Signature]\n" + std::string(command), "unsupported.ymp");
+            Require(!unsupported.Succeeded() && !unsupported.diagnostics.empty() &&
+                        unsupported.diagnostics.front().severity == chart::DiagnosticSeverity::Error &&
+                        unsupported.diagnostics.front().location.line == 2,
+                    "Unsupported YMP effects must fail rather than silently discard automation.");
+        }
 
         chart::MusicalPosition extendedPosition;
         Require(chart::TryParseMusicalPosition("18/8", 3, extendedPosition) &&
                     extendedPosition.fraction == chart::Rational{18, 8},
-                "Legacy extended measures must accept positions beyond one whole.");
+                "Extended measures must accept positions beyond one whole.");
 
         constexpr std::string_view Effects = R"(
 Version: 1

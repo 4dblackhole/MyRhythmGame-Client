@@ -31,9 +31,8 @@ foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke
 }
 ```
 
-재사용 엔진 변경은 Debug 빌드의 ColoredCubeGame 관련
-`--example=mesh|collision|widgets` route와 엔진 자체 테스트도 실행합니다.
-예: `--smoke-test --example=mesh`. Release에는 이 예제 route가 없습니다.
+재사용 엔진 변경은 엔진 저장소의 Debug/Release 전체 빌드와 관련 SDK 단위 테스트를 실행합니다.
+Client에는 별도 기술 예제 route가 없습니다.
 프로젝트/필터/include 경계는 `Scripts/CheckArchitecture.ps1`로 검사합니다.
 키빔 표시는 [별도 회귀 테스트](../Tests/Presentation/README.md)로 검사할 수 있습니다.
 판정 인디케이터/마커/링·문구 변경은 같은 문서의 Gameplay judgement guide 회귀를
@@ -377,3 +376,42 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   (구성별 분석 로그와 Summary.csv), `build/review-final-*.log`, `build/review-startup-results.log`.
 - **수동 확인:** 실제 화면 배치·마우스/물리 키 입력·청취는 수행하지 않았습니다.
   위 D3D12/FMOD replay와 옵션 입력은 숨겨진 창 및 지정 입력을 사용하는 자동 검증입니다.
+
+## 2026-10-11~12 레거시·기술 예제 제거
+
+- 변경 범위와 유지한 현재 계약은 [레거시 제거 기록](Reviews/LegacyAudit-2026-10-11.md)에 있습니다.
+  ColoredCube 계열 소스 13개·문서 5개와 프로젝트/필터 등록 및 예제 진입 분기를 제거했습니다.
+  구형 설정 가져오기·빈 모드의 Taiko 대체·호환 헤더/별칭도 제거하고,
+  YMP의 알 수 없는 타이밍 명령은 오류로 처리합니다. 효과는 YME 소유입니다.
+- Client와 엔진의 Debug/Release x64 솔루션 전체 Rebuild 성공.
+  최종 곡 선택 진입 검사도 Debug에서 증분 분석 빌드 후 smoke로 확인했고,
+  Release 전체 재빌드에는 해당 수정이 포함됩니다. 일반 빌드의 새 경고/오류는 없습니다.
+  엔진 공개 API/구현 변경은 없으며 두 구성의 MRG.Collision.Tests는
+  audio/Camera/collision/Visual2D SDK 검사를 모두 통과했습니다.
+- 두 구성의 로직·카탈로그 각각 **41개, 실패 0**(실제 1곡/5패턴).
+  빈/미지원 모드의 세션 생성과 에디터 factory 거부, 구형 YMP 효과 명령의
+  오류/행 번호 및 현재 타이밍/YME 처리를 검사했습니다.
+  기존 밀집 Buzz 63개 판정 경계 조건도 통과했습니다.
+- 두 구성에서 EditorAudioViewTests/EditorModeTests/EditorMenuTests,
+  OptionsPanelTests, FailureBoundaryTests, GameplayJudgementTests, LaneKeyBeamTests 성공.
+  옵션은 최초 기본값과 INI 지속성 및 실제 FMOD Automatic → WASAPI/드라이버 전환을 검사했습니다.
+  실제 ASIO 장치 검증은 수행하지 않았습니다. 테스트 채보도 Mode: Taiko를 명시하도록 수정했습니다.
+- 실제 D3D12/FMOD 자동 replay는 두 구성 모두 전체 종류 19개 완료/85.1694%/
+  1,557프레임, 효과 채보 15개 완료/97.8897%/1,302프레임입니다.
+  효과 Buzz는 37틱 중 35개 성공/2개 실패이며 오디오 오류는 없습니다.
+- 최종 두 구성의 smoke-test/lobby/gameplay/editor 총 8개 종료 코드 0.
+  실행 전후 기존 bin 폴더의 Option.ini 해시가 동일하며 사용자 곡/스킨 원본의 Git 변경은 없습니다.
+- MSVC **14.44.35207 Code Analysis**, Native Recommended Rules, 실제 프로젝트의
+  include/define/PCH/C++20 및 Debug/Release x64 설정으로 Rhythm/Chart/Modes/ClientLogic/
+  Rhythm.Tests/Client 6개 프로젝트를 분석했습니다. 파싱/컴파일 오류와 새 경고는 없습니다.
+  엔진/SDK/생성 파일은 Client 분석 대상에서 제외했습니다.
+  수정하지 않은 기존 진단은 EditorAnalysisController.cpp:51 C26115와
+  GameplaySessionController.cpp:62 C28020(두 구성), GameplayInput.cpp:60 C6236(Release)이며,
+  억제나 범위 밖 수정을 추가하지 않았습니다. Presentation 분석 빌드도 새 경고 없이 통과했습니다.
+- CheckArchitecture(8개 프로젝트)의 소스/필터/의존성/엔진 경계와 git diff --check 통과.
+  엔진 문서 커밋을 먼저 원격에 반영한 뒤 Client gitlink를 갱신했습니다.
+  별도 엔진 검증 실행 프로젝트는 추가하지 않았습니다.
+- 로컬 원시 로그: `build/legacy-2026-10-11/`의 engine/solution/analysis/logic,
+  Run*Tests/keybeam/replay/effects 및 final-smokes 로그. 앞선 실패 로그 대신 최종 구성별 로그를 기준으로 합니다.
+- **수동 확인:** 실제 화면 배치·물리 키/마우스 조작·청취는 수행하지 않았습니다.
+  위 D3D12/FMOD replay와 UI 입력/좌표 검사는 자동 검증입니다.

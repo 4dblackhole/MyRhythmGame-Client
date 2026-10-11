@@ -2,7 +2,6 @@
 #include "FingerDrumAssets.h"
 
 #include <Windows.h>
-#include <ShlObj.h>
 
 #include <charconv>
 #include <fstream>
@@ -116,27 +115,6 @@ namespace mrg_client
             }
         }
 
-        void ImportLegacySkin(OptionValues &values)
-        {
-            PWSTR folder = nullptr;
-            if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &folder)))
-                return;
-            const auto path = std::filesystem::path(folder) / L"FingerDrum" / L"skin-set.txt";
-            CoTaskMemFree(folder);
-            std::ifstream file(path, std::ios::binary);
-            std::string line;
-            if (std::getline(file, line) && line.size() <= 4096 && !Trim(line).empty())
-            {
-                try
-                {
-                    OptionValues candidate = values;
-                    candidate.skinSet = DecodeUtf8(Trim(line));
-                    Validate(candidate);
-                    values = std::move(candidate);
-                }
-                catch (const std::exception &) { /* Invalid legacy data keeps the default. */ }
-            }
-        }
     }
 
     OptionSettings::OptionSettings(std::filesystem::path path) : path_(std::move(path)) {}
@@ -154,7 +132,6 @@ namespace mrg_client
             OptionValues candidate;
             if (!std::filesystem::exists(path_))
             {
-                ImportLegacySkin(candidate);
                 if (!Save(candidate, error))
                     throw std::runtime_error(error);
                 return true;

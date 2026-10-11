@@ -1,3 +1,7 @@
+#include "Note/Submodules/RuleBasedNote.h"
+#include "Note/Submodules/TapInputRule.h"
+#include "Note/Submodules/CountedHitInputRule.h"
+#include "Note/Submodules/SequenceInputRule.h"
 #include "TaikoSessionBuilder.h"
 #include "TaikoBuildSupport.h"
 
@@ -9,6 +13,12 @@ namespace finger_drum::mode
                                                       const chart::EffectDocument &effects)
     {
         ModeLoadResult result;
+        if (pattern.mode != "Taiko")
+        {
+            result.diagnostics.push_back({chart::DiagnosticSeverity::Error, {pattern.sourcePath, 1, 1},
+                                          "Taiko charts must explicitly specify Mode: Taiko."});
+            return result;
+        }
         auto session = std::make_unique<PlaySession>();
         rhythm::Lane &lane = session->Gear().CreateLane();
         auto defaultRange = std::make_shared<const rhythm::AccuracyRange>("Taiko.Default", pattern.judgementLevel);
@@ -36,7 +46,7 @@ namespace finger_drum::mode
                 note.note.hitSound = ChartSoundId(note.note.hitSound);
             }
         }
-        // The legacy RPG Lane treated a long note as one active head/tail
+        // The Taiko Lane treats a long note as one active head/tail
         // transaction per lane. Keeping that rule prevents a stray second
         // LNStart from replacing the real head before its matching tail.
         std::optional<chart::CompiledPatternNote> longNoteHead;

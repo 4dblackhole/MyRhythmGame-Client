@@ -1,9 +1,10 @@
 #pragma once
 #include "Catalog/SongCatalog.h"
-#include "Judgement/JudgementProfile.h"
+#include "Judgement/AccuracyRange.h"
 #include "Lane/Lane.h"
 #include "Mode/PlayGameMode.h"
-#include "Note/Note.h"
+#include "Note/Submodules/RuleBasedNote.h"
+#include "Note/Submodules/TapInputRule.h"
 #include "Parsing/ChartParser.h"
 #include "Taiko/TaikoMode.h"
 #include "Time/RhythmTimer.h"
@@ -31,7 +32,7 @@ namespace finger_drum::tests
 
     [[nodiscard]] inline std::unique_ptr<rhythm::INote> MakeTap(
         rhythm::NoteId id, rhythm::RhythmTime time,
-        const std::shared_ptr<const rhythm::JudgementProfile> &profile)
+        const std::shared_ptr<const rhythm::AccuracyRange> &profile)
     {
         return std::make_unique<rhythm::RuleBasedNote>(id, time, profile,
                                                        std::make_unique<rhythm::TapInputRule>(1));

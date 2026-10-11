@@ -1,10 +1,12 @@
+#include "Note/Submodules/HoldInputRule.h"
+#include "Note/Submodules/TimedSequenceInputRule.h"
 #include "TestSupport.h"
 
 namespace finger_drum::tests
 {
     void TestJudgementScalingAndInterpolation()
     {
-        rhythm::JudgementProfile profile("default", 50);
+        rhythm::AccuracyRange profile("default", 50);
         Require(profile.HalfWindow(rhythm::JudgementGrade::Max).count() == 4'500,
                 "Level 50 Max window must be 4.5 ms.");
         profile.SetLevel(100);
@@ -12,14 +14,14 @@ namespace finger_drum::tests
                     profile.HalfWindow(rhythm::JudgementGrade::Perfect).count() == 4'750,
                 "Level 100 windows must be exactly half of level 50.");
 
-        const std::array<rhythm::JudgementBand, rhythm::JudgementProfile::BandCount> bands{{
+        const std::array<rhythm::JudgementBand, rhythm::AccuracyRange::BandCount> bands{{
             {rhythm::JudgementGrade::Max, rhythm::RhythmDuration{5'000}, 1.0},
             {rhythm::JudgementGrade::Perfect, rhythm::RhythmDuration{9'000}, 0.9},
             {rhythm::JudgementGrade::Great, rhythm::RhythmDuration{20'000}, 0.8},
             {rhythm::JudgementGrade::Good, rhythm::RhythmDuration{50'000}, 0.5},
             {rhythm::JudgementGrade::Bad, rhythm::RhythmDuration{90'000}, 0.0},
         }};
-        rhythm::JudgementProfile interpolation("linear", 50, bands);
+        rhythm::AccuracyRange interpolation("linear", 50, bands);
         const rhythm::JudgementResult result =
             interpolation.Evaluate(rhythm::RhythmTime::zero(), rhythm::RhythmTime{7'000});
         Require(result.grade == rhythm::JudgementGrade::Perfect &&
@@ -40,7 +42,7 @@ namespace finger_drum::tests
 
     void TestLaneFocusRules()
     {
-        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        auto profile = std::make_shared<rhythm::AccuracyRange>();
         rhythm::Lane lane;
         lane.AddNote(MakeTap(1, rhythm::RhythmTime::zero(), profile));
         lane.AddNote(MakeTap(2, rhythm::RhythmTime{100'000}, profile));
@@ -94,7 +96,7 @@ namespace finger_drum::tests
 
     void TestHoldTicksAreExactlyOnce()
     {
-        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        auto profile = std::make_shared<rhythm::AccuracyRange>();
         auto sound = std::make_shared<rhythm::MappedNoteSoundPolicy>();
         sound->Bind(rhythm::SoundBinding{.eventType = rhythm::NoteEventType::TickAccepted,
                                          .cue = rhythm::AudioCueRequest{.sound = "tick"}});
@@ -117,7 +119,7 @@ namespace finger_drum::tests
 
     void TestLongNoteRemainsInScrollSnapshotUntilItsTail()
     {
-        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        auto profile = std::make_shared<rhythm::AccuracyRange>();
         rhythm::ScrollGear gear;
         rhythm::Lane &lane = gear.CreateLane();
         lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(
@@ -150,7 +152,7 @@ namespace finger_drum::tests
 
     void TestOverlappingLongTrailIsNotHiddenByShorterNote()
     {
-        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        auto profile = std::make_shared<rhythm::AccuracyRange>();
         rhythm::ScrollGear gear;
         rhythm::Lane &lane = gear.CreateLane();
         lane.AddNote(std::make_unique<rhythm::RuleBasedNote>(

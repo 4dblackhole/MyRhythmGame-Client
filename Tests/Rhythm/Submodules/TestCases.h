@@ -35,7 +35,7 @@ namespace finger_drum::tests
     void TestSongCatalogIsolatesInvalidFiles();
     void TestInvalidNumericFieldsReportDiagnostics();
     void TestNumericFieldsRejectEmbeddedNulls();
-    void TestLegacyParsingAndMicroseconds();
+    void TestTimingMicrosecondsAndEffects();
     void TestIndexedHitSoundChanges();
     void TestSpecialNoteSoundOverridePriority();
     void TestChartEditingAndSave();

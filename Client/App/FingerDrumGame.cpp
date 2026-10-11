@@ -62,9 +62,6 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
         launchRequest_->Set({song->patterns.front().patternPath, song->patterns.front().effectPath,
                              song->audioPath, song->patterns.front().pattern.mode});
     }
-    // FingerDrum's title Scene is intentionally registered separately from
-    // the archived examples. Future title/menu routes stay in this Client
-    // catalog instead of reviving the ColoredCube sample as a dependency.
     if (!scenes.RegisterScene<FingerDrumLogoScene>(std::string(finger_drum::scene_ids::Logo),
                                                    mrg::scene::SceneRetention::KeepAlive,
                                                    std::ref(ScreenVisuals()), std::ref(texts_), std::ref(optionSettings_)) ||

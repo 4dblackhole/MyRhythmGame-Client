@@ -1,5 +1,5 @@
 #pragma once
-#include "Model/ChartDocument.h"
+#include "Model/Submodules/EffectDocument.h"
 #include <array>
 #include <variant>
 

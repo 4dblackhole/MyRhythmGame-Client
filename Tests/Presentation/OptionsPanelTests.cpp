@@ -155,6 +155,9 @@ namespace
         mrg_client::OptionSettings settings(folder / "Option.ini");
         Check(settings.Load(error), error.c_str());
         Check(std::filesystem::exists(settings.Path()), "First load must create Option.ini.");
+        Check(settings.Values().skinSet == L"Default Skin" && settings.Values().driverIndex == -1 &&
+                  settings.Values().audioOutput == a::AudioOutputBackend::Automatic,
+              "First-run settings must use only the current defaults.");
         auto values = settings.Values();
         values.skinSet = L"한국어 Skin";
         values.language = finger_drum::texts::Language::English;

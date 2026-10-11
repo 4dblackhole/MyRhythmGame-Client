@@ -14,8 +14,6 @@
     <ClInclude Include="Catalog\SongCatalog.h"><Filter>Catalog</Filter></ClInclude>
     <ClCompile Include="Editing\ChartEditor.cpp"><Filter>Editing</Filter></ClCompile>
     <ClInclude Include="Editing\ChartEditor.h"><Filter>Editing</Filter></ClInclude>
-    <ClCompile Include="Model\ChartDocument.cpp"><Filter>Model</Filter></ClCompile>
-    <ClInclude Include="Model\ChartDocument.h"><Filter>Model</Filter></ClInclude>
     <ClInclude Include="Model\Submodules\ChartTypes.h"><Filter>Model\Submodules</Filter></ClInclude>
     <ClInclude Include="Model\Submodules\CompiledChart.h"><Filter>Model\Submodules</Filter></ClInclude>
     <ClInclude Include="Model\Submodules\EffectDocument.h"><Filter>Model\Submodules</Filter></ClInclude>

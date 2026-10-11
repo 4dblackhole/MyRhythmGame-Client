@@ -24,10 +24,11 @@
 | 엔진 API 자체 수정 | 엔진 AGENTS, EngineOverview의 해당 기능 | `Dependencies/MRG-Engine` |
 | Penpot 디자인 찾기 | [DesignReferences](DesignReferences.md) | 해당 화면 문서 |
 | Claude 리뷰 반영·정적 분석·테스트 실행기/CI | [리뷰 반영 기록](Reviews/ClaudeReview-2026-10-11.md), [검증](Verification.md) | `Tests/Rhythm`, `Tests/Presentation`, `.github/workflows/domain-tests.yml` |
+| 레거시 제거·예제 폐기 범위 | [레거시 제거 기록](Reviews/LegacyAudit-2026-10-11.md) | Main/OptionSettings, EditorModeFactory, PatternTiming; 직접 계약 헤더 |
 
 [변경 영향 지도](ChangeImpactMap.md)는 소유 파일과 테스트를,
 [검증](Verification.md)은 빌드·실행 명령을 제공합니다.
-예제 작업일 때만 [ColoredCube](Examples/ColoredCube/README.md)를 읽습니다.
+엔진 검증은 엔진 저장소의 SDK 단위 테스트를 사용합니다.
 
 전체 문서/엔진 SDK/과거 채팅은 필독이 아닙니다. 계약과 이유는 기능 문서 한 곳에만
 기록하고 색인에서는 링크를 유지합니다. API 목록과 구현을 문서에 복제하지 않습니다.

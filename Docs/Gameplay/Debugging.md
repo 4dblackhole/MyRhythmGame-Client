@@ -36,7 +36,7 @@ Debug 빌드에서는 실행 인자와 무관하게 좌측 상단에 현재 포�
 상세 YMM, YMP와 롱노트 옵션은 [차트 문법](../ChartFormats.md)을 참고합니다.
 
 순수 로직 회귀 테스트는 `FingerDrum.Rhythm.Tests.exe`이며 판정 scaling,
-보간 점수, Lane focus, 큰 노트 사운드, tick 중복 방지, legacy YMP와 YME를
+보간 점수, Lane focus, 큰 노트 사운드, tick 중복 방지, YMP 타이밍과 YME를
 검증합니다. `--catalog-root <Songs 경로>`를 붙이면 번들된 AngelDream YMM/YMP와
 선택적 로컬 곡·패턴의 연관,
 음악 파일 존재 여부와 모든 패턴의 단일-Lane 세션 생성까지 검증합니다.

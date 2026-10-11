@@ -1,10 +1,12 @@
+#include "Note/Submodules/CountedHitInputRule.h"
+#include "Note/Submodules/HoldInputRule.h"
 #include "TestSupport.h"
 
 namespace finger_drum::tests
 {
     void TestTimingAccuracyAndSessionAggregation()
     {
-        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        auto profile = std::make_shared<rhythm::AccuracyRange>();
         mode::PlaySession session;
         session.SetInputMapping({{'F', 1}, {'J', 1}});
         auto &lane = session.Gear().CreateLane();
@@ -52,6 +54,7 @@ namespace finger_drum::tests
     void TestPurpleNoteBothOrders()
     {
         chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
         pattern.baseBpm = 120.0;
         pattern.notes.push_back(
             chart::PatternNote{.position = {0, chart::Rational{0, 1}},
@@ -171,7 +174,7 @@ namespace finger_drum::tests
         Require(tickRoll.session->AccuracyRate() == 0.25,
                 "Two accepted ticks of eight must score 25 percent.");
 
-        auto profile = std::make_shared<rhythm::JudgementProfile>();
+        auto profile = std::make_shared<rhythm::AccuracyRange>();
         std::vector<rhythm::RhythmTime> ticks;
         for (int tick = 1; tick <= 100; ++tick)
         {

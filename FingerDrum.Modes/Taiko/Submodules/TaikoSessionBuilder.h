@@ -14,7 +14,7 @@ namespace finger_drum::mode
         static void AddLongNote(const chart::CompiledPatternNote &head,
                                 const chart::CompiledPatternNote &tail,
                                 const chart::MusicalTimeline &timeline,
-                                const std::shared_ptr<const rhythm::JudgementProfile> &profile,
+                                const std::shared_ptr<const rhythm::AccuracyRange> &profile,
                                 rhythm::Lane &lane, PlaySession &session, rhythm::NoteId &nextId,
                                 std::vector<chart::Diagnostic> &diagnostics);
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy> MakeTapSoundPolicy(

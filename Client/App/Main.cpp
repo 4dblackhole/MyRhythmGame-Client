@@ -7,10 +7,6 @@
 #endif
 
 #include "App/FingerDrumGame.h"
-#ifdef _DEBUG
-#include "Examples/ColoredCube/App/ColoredCubeGame.h"
-#include "Examples/ColoredCube/GameFlow/SceneIds.h"
-#endif
 #include "FingerDrumAssets.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 
@@ -20,7 +16,6 @@
 #include <algorithm>
 #include <exception>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -39,28 +34,6 @@ namespace
 #endif
     }
 
-#ifdef _DEBUG
-    [[nodiscard]] std::optional<std::string> SelectEngineExampleScene(
-        const std::wstring_view commandLine)
-    {
-        if (commandLine.find(L"--example=mesh") !=
-            std::wstring_view::npos)
-        {
-            return std::string(game::scene_ids::MeshExample);
-        }
-        if (commandLine.find(L"--example=collision") !=
-            std::wstring_view::npos)
-        {
-            return std::string(game::scene_ids::CollisionExample);
-        }
-        if (commandLine.find(L"--example=widgets") !=
-            std::wstring_view::npos)
-        {
-            return std::string(game::scene_ids::WidgetExample);
-        }
-        return std::nullopt;
-    }
-#endif
 }
 
 int WINAPI wWinMain(
@@ -87,19 +60,6 @@ int WINAPI wWinMain(
     const std::wstring_view commandLine = GetCommandLineW();
     const bool basicSmokeTest =
         commandLine.find(L"--smoke-test") != std::wstring_view::npos;
-#ifdef _DEBUG
-    if (std::optional<std::string> exampleScene =
-            SelectEngineExampleScene(commandLine))
-    {
-        const bool showPerformanceOverlay =
-            commandLine.find(L"--show-performance-overlay") !=
-                std::wstring_view::npos;
-        return mrg::Run(std::make_unique<ColoredCubeGame>(
-            basicSmokeTest,
-            showPerformanceOverlay,
-            std::move(*exampleScene)));
-    }
-#endif
 
     const bool smokeLobby =
         commandLine.find(L"--smoke-lobby") != std::wstring_view::npos;

@@ -63,7 +63,7 @@ Debug/Release 로직·카탈로그를 검사합니다. 선택 실행(`--filter`)
 기존 하단 저장 버튼과 Ctrl+S도 같은 저장 동작을 사용합니다.
 에디터의 오디오 탭은 음악 파형·음악 FFT·예상 히트사운드 FFT를 별도로 표시하며,
 패턴/오디오 탭의 하단 타임라인을 드래그해 현재 편집 시각을 탐색합니다.
-Release는 ColoredCube 기술 예제를 포함하지 않습니다. 배포할 때는 깨끗한 폴더에
+Debug/Release 모두 게임 Scene만 포함합니다. 배포할 때는 깨끗한 폴더에
 `MyRhythmGame.exe`, `fmod.dll`, 제공할 `assets/Songs`만 복사합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는
 [실행 흐름](Docs/ExecutionFlow.md), 외부 파일 우선 및 내장 fallback/배포곡 정책은

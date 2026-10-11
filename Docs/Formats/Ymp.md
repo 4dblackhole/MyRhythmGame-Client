@@ -18,7 +18,6 @@ Pattern Name: Long Notes Test
 Tags: test,long-note
 
 Pattern Offset: 104
-Preview Time: 1,0/1
 Base BPM: 180
 
 [Difficulty]
@@ -35,9 +34,8 @@ JudgeLevel: 50
 | `Pattern Name` | 곡 선택 화면에 표시할 패턴 이름입니다. |
 | `Tags` | 쉼표로 구분한 패턴 태그입니다. |
 | `Pattern Offset` | 밀리초 단위 패턴 오프셋입니다. 양수이면 모든 노트가 늦어집니다. |
-| `Preview Time` | 기존 파일과의 호환을 위해 남아 있으나 현재 런타임은 사용하지 않습니다. |
 | `Base BPM` | 최초 BPM입니다. 0보다 커야 하며, 생략하면 120입니다. |
-| `Mode` | 현재 플레이 가능한 값은 `Taiko`입니다. |
+| `Mode` | 플레이/에디터 진입에 필요한 명시적 모드입니다. 현재 지원 값은 `Taiko`입니다. 빈 값을 Taiko로 대체하지 않습니다. |
 | `JudgeLevel` | 판정 창 크기를 정하는 양의 정수입니다. 생략하면 50입니다. 값이 커질수록 판정 창이 좁아집니다. |
 
 `Version`, `JudgeLevel`, BPM·offset 등의 숫자 형식이 잘못된 YMP는 진단을 남기고

@@ -1,5 +1,6 @@
 #include "Taiko/TaikoMode.h"
 #include "Taiko/Submodules/TaikoSessionBuilder.h"
+#include "Parsing/ChartParser.h"
 
 namespace finger_drum::mode
 {

@@ -188,17 +188,19 @@ namespace
 
     void TestTaikoEditing()
     {
-        Check(CreateEditorMode("")->Id() == "Taiko", "Legacy empty mode must select Taiko.");
-        bool rejected = false;
-        try
+        for (const std::string_view id : {"", "unsupported"})
         {
-            static_cast<void>(CreateEditorMode("unsupported"));
+            bool rejected = false;
+            try
+            {
+                static_cast<void>(CreateEditorMode(id));
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejected = true;
+            }
+            Check(rejected, "Empty or unknown modes must not silently use Taiko tools.");
         }
-        catch (const std::invalid_argument &)
-        {
-            rejected = true;
-        }
-        Check(rejected, "Unknown modes must not silently use Taiko tools.");
         for (const int id : {1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16, 17, 18})
         {
             EditorWorkspace state(CreateEditorMode("Taiko"),
@@ -325,10 +327,12 @@ namespace
                       markers[i].sound == mode::taiko_sound::KatHit,
                   "Preview Buzz ticks diverged from play times/action.");
         auto purple = chart::PatternDocument{};
+        purple.mode = "Taiko";
         purple.notes.push_back({{0, {}}, 5, 0});
         chart::ChartEditor purpleDocument(purple);
         const auto purpleMarkers = editorMode->AudioMarkers(purpleDocument);
         auto purplePlay = mode::TaikoMode{}.CreateSession(purple);
+        Check(purplePlay.Succeeded(), "Explicit Taiko Purple fixture failed to load.");
         const auto don = purplePlay.session->ProcessInput('F', rhythm::InputEdge::Pressed, {});
         const auto kat = purplePlay.session->ProcessInput('D', rhythm::InputEdge::Pressed, {});
         Check(purpleMarkers.size() == 2 && purpleMarkers[0].sound == don.audioCues.front().sound &&
@@ -343,6 +347,7 @@ namespace
         purpleDocument.Replace(purple, effects);
         const auto changed = editorMode->AudioMarkers(purpleDocument);
         auto changedPlay = mode::TaikoMode{}.CreateSession(purple, effects);
+        Check(changedPlay.Succeeded(), "Explicit Taiko sound override fixture failed to load.");
         const auto changedDon = changedPlay.session->ProcessInput('F', rhythm::InputEdge::Pressed, {});
         const auto changedKat = changedPlay.session->ProcessInput('D', rhythm::InputEdge::Pressed, {});
         Check(changed[0].sound == changedDon.audioCues.front().sound &&

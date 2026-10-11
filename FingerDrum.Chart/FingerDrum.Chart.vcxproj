@@ -17,8 +17,6 @@
     <ClInclude Include="Catalog\SongCatalog.h" />
     <ClCompile Include="Editing\ChartEditor.cpp" />
     <ClInclude Include="Editing\ChartEditor.h" />
-    <ClCompile Include="Model\ChartDocument.cpp" />
-    <ClInclude Include="Model\ChartDocument.h" />
     <ClInclude Include="Model\Submodules\ChartTypes.h" />
     <ClInclude Include="Model\Submodules\CompiledChart.h" />
     <ClInclude Include="Model\Submodules\EffectDocument.h" />

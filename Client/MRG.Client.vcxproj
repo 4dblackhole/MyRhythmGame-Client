@@ -152,19 +152,6 @@
     <ClInclude Include="EditorScene\Submodules\EditorVisual.h" />
     <ClCompile Include="EditorScene\Submodules\EditorWorkspace.cpp" />
     <ClInclude Include="EditorScene\Submodules\EditorWorkspace.h" />
-    <ClCompile Include="Examples\ColoredCube\App\ColoredCubeGame.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClInclude Include="Examples\ColoredCube\App\ColoredCubeGame.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClInclude Include="Examples\ColoredCube\GameFlow\SceneIds.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\BlankScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\BlankScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\ColoredCubeScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\ColoredCubeScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\CollisionExampleScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\MeshExampleScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClCompile Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.cpp" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <ClInclude Include="Examples\ColoredCube\GameScene\Examples\WidgetExampleScene.h" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
     <ClInclude Include="GameFlow\GameplayLaunchStore.h" />

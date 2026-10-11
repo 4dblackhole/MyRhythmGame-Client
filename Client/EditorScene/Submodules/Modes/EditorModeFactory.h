@@ -1,5 +1,5 @@
 #pragma once
 #include "IEditorMode.h"
 
-// Explicitly supported modes only. Empty IDs retain the legacy Taiko default.
+// Select only an explicitly named supported mode.
 std::unique_ptr<IEditorMode> CreateEditorMode(std::string_view id);

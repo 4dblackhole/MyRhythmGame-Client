@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Model/ChartDocument.h"
+#include "Model/Submodules/CompiledChart.h"
 #include "Mode/Submodules/NoteVisualKind.h"
-#include "Parsing/ChartParser.h"
 #include "Scroll/ScrollGear.h"
 #include "Timing/MusicalTimeline.h"
 

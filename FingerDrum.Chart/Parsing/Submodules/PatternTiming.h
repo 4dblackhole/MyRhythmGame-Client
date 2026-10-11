@@ -21,9 +21,7 @@ namespace finger_drum::chart::parsing
         if (command.name != "measure")
         {
             AddDiagnostic(result.diagnostics, source, lineNumber,
-                          "Legacy effect directive should be moved to a YME file: " +
-                              std::string(line.substr(0, line.find_first_of(" \t"))),
-                          DiagnosticSeverity::Warning);
+                          "Unsupported YMP timing command: #" + command.name);
             return;
         }
 
@@ -115,8 +113,7 @@ namespace finger_drum::chart::parsing
         else
         {
             AddDiagnostic(result.diagnostics, source, lineNumber,
-                          "Legacy effect directive should be moved to a YME file: #" + command.name,
-                          DiagnosticSeverity::Warning);
+                          "Unsupported YMP timing command: #" + command.name);
             return;
         }
         result.document.timing.push_back(std::move(directive));

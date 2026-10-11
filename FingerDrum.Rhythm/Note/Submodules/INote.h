@@ -17,7 +17,7 @@ namespace finger_drum::rhythm
 #if defined(_DEBUG)
         [[nodiscard]] virtual std::wstring DebugText() const = 0;
 #endif
-        [[nodiscard]] virtual const JudgementProfile &Profile() const noexcept = 0;
+        [[nodiscard]] virtual const AccuracyRange &Profile() const noexcept = 0;
         [[nodiscard]] virtual JudgementResult Preview(
             const RhythmInputEvent &input) const noexcept = 0;
         [[nodiscard]] virtual bool CanAccept(const RhythmInputEvent &input) const noexcept = 0;

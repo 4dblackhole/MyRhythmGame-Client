@@ -279,5 +279,4 @@ context.visual2DRendering->SubmitScreen(audioCanvas, context, {}, 1); // 전체�
 월드·곡면·render texture Canvas는 화면 관리자 대상이 아니므로 해당 Scene이
 명시적인 pass와 자원 수명을 유지한다.
 
-보관된 실제 사용 코드는 `Client/Examples/ColoredCube/GameScene/ColoredCubeScene.cpp`와
-`Client/Examples/ColoredCube/GameScene/Examples/WidgetExampleScene.cpp`에 있다.
+실제 화면 구성은 `Client/Presentation/OptionsPanel.cpp`와 각 게임 Scene의 View에서 확인한다.

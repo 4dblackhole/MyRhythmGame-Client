@@ -1,4 +1,5 @@
 #include "TaikoEditorMode.h"
+#include "Parsing/ChartParser.h"
 #include "../../EditorSupport.h"
 #include "TaikoEditorTool.h"
 #include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
@@ -58,7 +59,7 @@ std::unique_ptr<chart::IEditorDocument> TaikoEditorMode::OpenDocument(
         e = parser.ParseEffectFile(request.patternPath.parent_path() / p.document.effectFile);
     if (!p.Succeeded() || !e.Succeeded())
         throw std::runtime_error("Editor could not parse the selected chart.");
-    if (!p.document.mode.empty() && p.document.mode != Id())
+    if (p.document.mode != Id())
         throw std::invalid_argument("Selected chart is not a Taiko chart.");
     return std::make_unique<chart::ChartEditor>(std::move(p.document), std::move(e.document));
 }

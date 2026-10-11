@@ -65,7 +65,7 @@ int main(const int argumentCount, char *arguments[])
         {"TestScrollBeatCoordinatesAcrossTempoAndDelay", TestScrollBeatCoordinatesAcrossTempoAndDelay},
         {"TestYmpSystemBreaksAdvanceAndRemainAvailable", TestYmpSystemBreaksAdvanceAndRemainAvailable},
         {"TestOutOfMeasureEntriesAreIgnored", TestOutOfMeasureEntriesAreIgnored},
-        {"TestLegacyParsingAndMicroseconds", TestLegacyParsingAndMicroseconds},
+        {"TestTimingMicrosecondsAndEffects", TestTimingMicrosecondsAndEffects},
         {"TestInvalidNumericFieldsReportDiagnostics", TestInvalidNumericFieldsReportDiagnostics},
         {"TestNumericFieldsRejectEmbeddedNulls", TestNumericFieldsRejectEmbeddedNulls},
         {"TestSongCatalogIsolatesInvalidFiles", TestSongCatalogIsolatesInvalidFiles},

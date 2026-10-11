@@ -291,6 +291,14 @@ Mode: Taiko
                 "Taiko must expose one input binding for every playfield key.");
 
         mode::TaikoMode taiko;
+        for (const std::string id : {"", "unsupported"})
+        {
+            chart::PatternDocument invalid;
+            invalid.mode = id;
+            const auto rejected = taiko.CreateSession(invalid);
+            Require(!rejected.Succeeded() && !rejected.session && !rejected.diagnostics.empty(),
+                    "Taiko session construction must require an explicitly supported mode.");
+        }
         for (std::size_t index = 0; index < mode::TaikoInputBindings.size(); ++index)
         {
             const mode::TaikoInputBinding &binding = mode::TaikoInputBindings[index];

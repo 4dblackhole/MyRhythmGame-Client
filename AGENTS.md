@@ -12,9 +12,8 @@ This file applies to the entire repository except the independently versioned
   read engine `Docs/EngineOverview.md` only for engine API/ownership work.
 - Use `Docs/ChangeImpactMap.md` for the smallest implementation/test boundary.
   Read declarations and direct callers before expanding the search.
-- Use `Docs/Examples/ColoredCube/EngineFeatureExamples.md` for archived
-  mesh/collision/widget recipes and the Visual2D documents for Sprite, Canvas,
-  input, PNG, and Z-order work.
+- Use the Visual2D documents for Sprite, Canvas, input, PNG, and Z-order work.
+  Technical example Scenes are not part of this Client repository.
 - Keep `README.md`, `Docs/README.md`, and affected feature documents in sync
   when a major Client flow, example, control, or engine integration changes.
 
@@ -55,8 +54,7 @@ This file applies to the entire repository except the independently versioned
 
 ## Client rules
 
-- Keep FingerDrum Scene IDs in `Client/GameFlow/FingerDrumSceneIds.h`; retain
-  archived example routes under `Client/Examples/ColoredCube/GameFlow/`.
+- Keep FingerDrum Scene IDs in `Client/GameFlow/FingerDrumSceneIds.h`.
 - Register Scene factories through `SceneManager::RegisterScene` with explicit
   `KeepAlive` or `DestroyOnExit` retention and use deferred `ChangeScene` for
   all transitions.
@@ -91,8 +89,8 @@ This file applies to the entire repository except the independently versioned
   the same giant class into several files is not sufficient. Keep the same
   physical/filter tree for domain families such as `Note/Submodules/`.
   Put shared contracts above leaves; never include implementation `.cpp` files.
-- Preserve umbrella headers where needed for compatibility; new leaf code
-  should include only the contracts it uses.
+- Include the specific contracts each file uses. Do not restore retired
+  compatibility aliases, facade headers, configuration imports, or example routes.
 - Bundle each redistributed font license beside the font asset.
 - Keep game option behavior in Client code. Compose it from engine
   `Visual2DNode` components, Canvas actions, and surface mapping rather than
@@ -158,7 +156,7 @@ This file applies to the entire repository except the independently versioned
 
 Use `Docs/Verification.md` for canonical commands. Code changes require
 Debug/Release x64 solution builds, logic tests and all four Client smoke routes.
-Engine changes additionally require the relevant `ColoredCubeGame` route.
+Engine changes additionally require the engine repository's relevant SDK tests.
 Report automated checks separately from actual visual/manual validation.
 Completion reports must also brief the changed classes/files, their responsibility
 boundaries, effects on existing behavior, and verification results.
