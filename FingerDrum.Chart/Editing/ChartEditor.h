@@ -45,6 +45,8 @@ namespace finger_drum::chart
             return revision_;
         }
         void Replace(PatternDocument pattern, EffectDocument effects) override;
+        void ReplaceTiming(std::vector<TimingDirective> timing) override;
+        void ReplaceEffects(EffectDocument effects) override;
         void AddNote(MusicalPosition position, int keyType, std::optional<MusicalPosition> end = {},
                      std::vector<std::string> extra = {}) override;
         void DeleteNote(std::size_t sourceOrder) override;

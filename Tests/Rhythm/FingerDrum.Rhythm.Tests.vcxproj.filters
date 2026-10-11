@@ -7,6 +7,7 @@
     <ClCompile Include="Submodules\BuzzReplayTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\ChartEditorTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\ChartParserTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\ChartReviewRegressionTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\EditorAudioAnalysisTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\RhythmCoreTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\SceneStateTests.cpp"><Filter>Submodules</Filter></ClCompile>

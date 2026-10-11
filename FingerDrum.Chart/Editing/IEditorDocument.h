@@ -16,9 +16,10 @@ namespace finger_drum::chart
         virtual const EffectDocument &Effects() const = 0;
         virtual const MusicalTimeline &Timeline() const noexcept = 0;
         virtual const std::vector<CompiledPatternNote> &Notes() const = 0;
-        // Adapters may retain the full projection; indexed documents override these queries.
-        virtual std::vector<CompiledPatternNote> NotesInMeasures(std::int64_t, std::int64_t) const { return Notes(); }
-        virtual std::vector<CompiledPatternNote> NotesInTimeRange(rhythm::RhythmTime, rhythm::RhythmTime) const { return Notes(); }
+        // Queries include long-note partners spanning the requested viewport.
+        // Each adapter must implement its own indexed projection and pairing policy.
+        virtual std::vector<CompiledPatternNote> NotesInMeasures(std::int64_t, std::int64_t) const = 0;
+        virtual std::vector<CompiledPatternNote> NotesInTimeRange(rhythm::RhythmTime, rhythm::RhythmTime) const = 0;
         virtual const std::vector<TimingDirective> &Timing() const { return Pattern().timing; }
         virtual std::pair<rhythm::RhythmTime, rhythm::RhythmTime> NoteTimeRange() const
         {
@@ -35,6 +36,8 @@ namespace finger_drum::chart
         virtual bool Dirty() const noexcept = 0;
         virtual std::uint64_t Revision() const noexcept = 0;
         virtual void Replace(PatternDocument pattern, EffectDocument effects) = 0;
+        virtual void ReplaceTiming(std::vector<TimingDirective> timing) = 0;
+        virtual void ReplaceEffects(EffectDocument effects) = 0;
         virtual void AddNote(MusicalPosition position, int keyType, std::optional<MusicalPosition> end = {},
                              std::vector<std::string> extra = {}) = 0;
         virtual void DeleteNote(std::size_t sourceOrder) = 0;

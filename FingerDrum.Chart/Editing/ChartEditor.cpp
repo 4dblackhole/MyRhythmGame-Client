@@ -30,6 +30,8 @@ std::string Utf8(const std::filesystem::path &path)
 void Advance(std::ostream &out, std::int64_t &measure, std::int64_t destination,
              const std::vector<std::int64_t> &breaks = {})
 {
+    if (destination < 0 || destination >= MaximumMeasureCount)
+        throw std::invalid_argument("A chart may contain at most 100,000 measures.");
     while (measure < destination)
     {
         ++measure;
@@ -47,6 +49,8 @@ void WriteFile(const std::filesystem::path &path, const std::string &text)
 
 void WritePosition(std::ostream &out, MusicalPosition p)
 {
+    if (p.measure < 0 || p.measure >= MaximumMeasureCount)
+        throw std::invalid_argument("An effect must use a measure in 0..99,999.");
     out << p.measure + 1 << ", " << Fraction(p.fraction);
 }
 std::string_view EffectSection(EffectCommandType type)
@@ -105,18 +109,43 @@ void CompileDocumentInterpolations(EffectDocument &effects)
             ResolveInterpolation(command, compiled);
 }
 
+double IndexedEffectValue(const auto &index, const MusicalTimeline &timeline, EffectCommandType type,
+                          MusicalPosition position, double fallback = 1)
+{
+    const auto next = index.upper_bound({type, position});
+    if (next == index.begin() || std::prev(next)->first.first != type)
+        return fallback;
+    return timeline.EffectValueAt(*std::prev(next)->second, position);
+}
+
+double ValidatedNoteSpeed(double speed)
+{
+    if (!std::isfinite(speed) || speed <= 0)
+        throw std::invalid_argument("Combined note speed must be positive and finite.");
+    return speed;
+}
+
+bool IsValidPosition(MusicalPosition position, const MusicalTimeline &timeline)
+{
+    return position.measure >= 0 && position.measure < MaximumMeasureCount && position.fraction >= Rational{} &&
+        position.fraction < timeline.MeasureLength(position.measure);
+}
+
+void ValidateNote(const PatternNote &note, const EffectDocument &effects, const MusicalTimeline &timeline)
+{
+    if (!IsValidPosition(note.position, timeline))
+        throw std::invalid_argument("Note is outside its measure.");
+    if (!note.hitSound.empty() && !effects.hitSounds.contains(note.hitSound))
+        throw std::invalid_argument("Note references an undefined YME hit sound index.");
+}
+
 void Validate(const PatternDocument &pattern, const EffectDocument &effects, const MusicalTimeline &timeline)
 {
     const auto validPosition = [&timeline](MusicalPosition p) {
-        return p.measure >= 0 && p.fraction >= Rational{} && p.fraction < timeline.MeasureLength(p.measure);
+        return IsValidPosition(p, timeline);
     };
     for (const auto &note : pattern.notes)
-    {
-        if (!validPosition(note.position))
-            throw std::invalid_argument("Note is outside its measure.");
-        if (!note.hitSound.empty() && !effects.hitSounds.contains(note.hitSound))
-            throw std::invalid_argument("Note references an undefined YME hit sound index.");
-    }
+        ValidateNote(note, effects, timeline);
     for (const auto &directive : pattern.timing)
         if (!validPosition(directive.position))
             throw std::invalid_argument("Move the out-of-measure timing directive before changing this signature.");
@@ -269,13 +298,11 @@ std::map<std::size_t, std::size_t> ChartEditor::BuildLongPartners(
 
 CompiledPatternNote ChartEditor::CompileNote(PatternNote note) const
 {
-    if (note.position.measure < 0 || note.position.fraction < Rational{} ||
+    if (note.position.measure < 0 || note.position.measure >= MaximumMeasureCount || note.position.fraction < Rational{} ||
         note.position.fraction >= timeline_.MeasureLength(note.position.measure))
         throw std::invalid_argument("Note is outside its measure.");
     const auto time = timeline_.Compile(note.position);
-    const auto speed = EffectValueAt(EffectCommandType::NoteSpeed, note.position);
-    if (!std::isfinite(speed) || speed <= 0)
-        throw std::invalid_argument("Combined note speed must be positive and finite.");
+    const auto speed = ValidatedNoteSpeed(EffectValueAt(EffectCommandType::NoteSpeed, note.position));
     return {std::move(note), time, speed};
 }
 
@@ -343,10 +370,7 @@ const std::vector<CompiledPatternNote> &ChartEditor::Notes() const
 
 double ChartEditor::EffectValueAt(EffectCommandType type, MusicalPosition position, double fallback) const
 {
-    const auto next = effectIndex_.upper_bound({type, position});
-    if (next == effectIndex_.begin() || std::prev(next)->first.first != type)
-        return fallback;
-    return timeline_.EffectValueAt(*std::prev(next)->second, position);
+    return IndexedEffectValue(effectIndex_, timeline_, type, position, fallback);
 }
 
 std::pair<rhythm::RhythmTime, rhythm::RhythmTime> ChartEditor::NoteTimeRange() const
@@ -430,6 +454,101 @@ void ChartEditor::Replace(PatternDocument pattern, EffectDocument effects)
     *this = std::move(replacement);
 }
 
+void ChartEditor::ReplaceTiming(std::vector<TimingDirective> timing)
+{
+    // Only the timing map and timestamp-dependent caches change. Note IDs,
+    // musical-position trees, long-note pairs and sound sources keep their ownership.
+    PatternDocument timingPattern;
+    timingPattern.baseBpm = pattern_.baseBpm;
+    timingPattern.patternOffsetMilliseconds = pattern_.patternOffsetMilliseconds;
+    timingPattern.timing = std::move(timing);
+    if (!noteTree_.empty())
+        timingPattern.notes.push_back({noteTree_.rbegin()->first.first});
+    MusicalTimeline timeline(timingPattern);
+    const auto &effects = Effects();
+    Validate(timingPattern, effects, timeline);
+    ScrollAutomation scroll(timeline.CompileEffects(effects));
+    decltype(timingTree_) timingTree;
+    for (const auto &directive : timingPattern.timing)
+        timingTree.emplace(directive.position, directive);
+
+    struct NoteUpdate { CompiledPatternNote *note; rhythm::RhythmTime time; double speed; };
+    std::vector<NoteUpdate> updates;
+    updates.reserve(noteTree_.size());
+    decltype(timeIndex_) times;
+    for (auto &[key, note] : noteTree_)
+    {
+        ValidateNote(note.note, effects, timeline);
+        const auto time = timeline.Compile(note.note.position);
+        const auto speed = ValidatedNoteSpeed(IndexedEffectValue(effectIndex_, timeline,
+            EffectCommandType::NoteSpeed, note.note.position));
+        times.emplace(TimeKey{time, key.second}, key);
+        updates.push_back({&note, time, speed});
+    }
+
+    // Publication performs no allocation; failed preparation leaves the edit untouched.
+    timingTree_.swap(timingTree);
+    timeIndex_.swap(times);
+    timeline_ = std::move(timeline);
+    scroll_ = std::move(scroll);
+    for (const auto &update : updates)
+    {
+        update.note->timing = update.time;
+        update.note->scrollMultiplier = update.speed;
+    }
+    timingDirty_ = notesDirty_ = dirty_ = true;
+    ++revision_;
+}
+
+void ChartEditor::ReplaceEffects(EffectDocument effects)
+{
+    CompileDocumentInterpolations(effects);
+    if (effects.sourcePath.empty())
+        effects.sourcePath = effects_.sourcePath;
+    Validate(Pattern(), effects, timeline_);
+    ScrollAutomation scroll(timeline_.CompileEffects(effects));
+    decltype(effectTree_) commands;
+    decltype(effectIndex_) index;
+    decltype(soundChangeTree_) changes;
+    double minimumSpeed = 1;
+    for (auto &command : effects.commands)
+    {
+        if (command.type == EffectCommandType::NoteSpeed)
+            minimumSpeed = std::min({minimumSpeed, command.beginValue, command.endValue});
+        const auto entry = commands.emplace(command.position, std::move(command));
+        index.insert_or_assign({entry->second.type, entry->first}, &entry->second);
+    }
+    for (auto &change : effects.hitSoundChanges)
+        changes.emplace(change.position, std::move(change));
+    std::vector<std::pair<CompiledPatternNote *, double>> speeds;
+    speeds.reserve(noteTree_.size());
+    for (auto &[key, note] : noteTree_)
+    {
+        const auto speed = ValidatedNoteSpeed(IndexedEffectValue(index, timeline_, EffectCommandType::NoteSpeed, key.first));
+        speeds.emplace_back(&note, speed);
+    }
+    const bool sourcesChanged = effects.sourcePath != effects_.sourcePath || effects.hitSounds != effects_.hitSounds;
+
+    // Swap the owning trees with their lookup index as one transaction. std::map
+    // node addresses survive swap, so no pointers reference the old command tree.
+    effectTree_.swap(commands);
+    effectIndex_.swap(index);
+    soundChangeTree_.swap(changes);
+    effects_.version = effects.version;
+    effects_.sourcePath.swap(effects.sourcePath);
+    effects_.hitSounds.swap(effects.hitSounds);
+    effects_.interpolations.swap(effects.interpolations);
+    effects_.commands.clear();
+    effects_.hitSoundChanges.clear();
+    scroll_ = std::move(scroll);
+    minimumScrollMultiplier_ = minimumSpeed;
+    for (const auto &[note, speed] : speeds)
+        note->scrollMultiplier = speed;
+    effectsDirty_ = notesDirty_ = dirty_ = true;
+    audioSourceRevision_ += sourcesChanged;
+    ++revision_;
+}
+
 void ChartEditor::AddNote(MusicalPosition position, int keyType, std::optional<MusicalPosition> end,
                           std::vector<std::string> extra)
 {
@@ -505,7 +624,7 @@ void ChartEditor::DeleteNote(std::size_t sourceOrder)
 
 void ChartEditor::SetMeasureLength(std::int64_t measure, Rational length)
 {
-    if (measure < 0 || length <= Rational{})
+    if (measure < 0 || measure >= MaximumMeasureCount || length <= Rational{})
         throw std::invalid_argument("Invalid measure length.");
     auto pattern = Pattern();
     std::erase_if(pattern.timing, [measure](const TimingDirective &d) {
@@ -592,7 +711,6 @@ std::string ChartEditor::WriteEffects(const EffectDocument &effects)
     for (const auto &[index, path] : effects.hitSounds) out << index << ": " << Utf8(path) << '\n';
     auto commands = effects.commands;
     std::ranges::stable_sort(commands, {}, &EffectCommand::position);
-    const auto position = [&out](MusicalPosition p) { out << p.measure + 1 << ", " << Fraction(p.fraction); };
     for (const auto group : {"Speed", "Sounds", "Zone"})
     {
         out << '[' << group << "]\n";
@@ -604,7 +722,7 @@ std::string ChartEditor::WriteEffects(const EffectDocument &effects)
         if (std::string_view(group) == "Sounds")
             for (const auto &c : effects.hitSoundChanges)
             {
-                position(c.position);
+                WritePosition(out, c.position);
                 out << ", #HitSound " << (c.keyType == 1 ? "Don" : "Kat") << ' ' << c.soundIndex << '\n';
             }
     }
@@ -618,7 +736,11 @@ void ChartEditor::Save()
     auto savedPattern = Pattern();
     if (savedPattern.effectFile.empty())
         savedPattern.effectFile = pattern_.sourcePath.stem().wstring() + L".yme";
-    const auto effectPath = (pattern_.sourcePath.parent_path() / savedPattern.effectFile).lexically_normal();
+    auto effectPath = (pattern_.sourcePath.parent_path() / savedPattern.effectFile).lexically_normal();
+    if (effectPath == pattern_.sourcePath.lexically_normal() ||
+        (std::filesystem::exists(effectPath) && std::filesystem::exists(pattern_.sourcePath) &&
+         std::filesystem::equivalent(effectPath, pattern_.sourcePath)))
+        throw std::invalid_argument("YMP and YME must have different save paths.");
     const std::string patternText = WritePattern(savedPattern);
     const std::string effectText = WriteEffects(Effects());
     ChartParser parser;
@@ -642,11 +764,13 @@ void ChartEditor::Save()
     for (const auto &path : {patternTemp, effectTemp, patternBackup, effectBackup})
         if (std::filesystem::exists(path))
             throw std::runtime_error("Editor recovery files exist; recover/remove them before saving.");
-    WriteFile(patternTemp, patternText);
-    WriteFile(effectTemp, effectText);
     bool backedPattern = false, backedEffect = false, installedPattern = false, installedEffect = false;
     try
     {
+        // Staging can fail after creating either temporary file. It belongs to
+        // the same rollback boundary as installing the two completed files.
+        WriteFile(patternTemp, patternText);
+        WriteFile(effectTemp, effectText);
         if (std::filesystem::exists(pattern_.sourcePath))
         {
             std::filesystem::rename(pattern_.sourcePath, patternBackup);
@@ -673,6 +797,8 @@ void ChartEditor::Save()
             std::filesystem::rename(patternBackup, pattern_.sourcePath, ignored);
         if (backedEffect)
             std::filesystem::rename(effectBackup, effectPath, ignored);
+        std::filesystem::remove(patternTemp, ignored);
+        std::filesystem::remove(effectTemp, ignored);
         throw;
     }
     std::error_code ignored;
@@ -680,8 +806,9 @@ void ChartEditor::Save()
         std::filesystem::remove(patternBackup, ignored);
     if (backedEffect)
         std::filesystem::remove(effectBackup, ignored);
-    pattern_.effectFile = savedPattern.effectFile;
-    effects_.sourcePath = effectPath;
+    // Publication cannot allocate after the on-disk transaction has committed.
+    pattern_.effectFile.swap(savedPattern.effectFile);
+    effects_.sourcePath.swap(effectPath);
     dirty_ = false;
 }
 } // namespace finger_drum::chart

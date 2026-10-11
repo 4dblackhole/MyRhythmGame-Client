@@ -1,5 +1,6 @@
 #pragma once
 #include "Timing/MusicalTimeline.h"
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -19,14 +20,16 @@ namespace editor_time
     inline std::int64_t MeasureNearTime(const finger_drum::chart::MusicalTimeline &timeline, double milliseconds)
     {
         static_cast<void>(Microseconds(milliseconds));
-        // Preserve the existing seek range and prefix-sum search, including pre-roll.
+        // Bound the exponential search without evaluating an unnecessarily distant
+        // timestamp (very low BPM can overflow the clock at the final measure).
         std::int64_t low = 0, high = 1;
         const auto at = [&](std::int64_t measure) { return timeline.Compile({measure, {}}).count() / 1000.0; };
         while (at(high) <= milliseconds)
         {
-            if (high > 1'000'000)
-                throw std::invalid_argument("Editor time is beyond the supported measure range.");
-            high *= 2;
+            if (high == finger_drum::chart::MaximumMeasureCount)
+                throw std::invalid_argument("Editor time is beyond 100,000 measures.");
+            low = high;
+            high = std::min(high * 2, finger_drum::chart::MaximumMeasureCount);
         }
         while (low + 1 < high)
         {

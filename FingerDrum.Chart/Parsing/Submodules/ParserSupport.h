@@ -18,10 +18,14 @@ namespace finger_drum::chart::parsing
         std::ifstream stream(path, std::ios::binary);
         if (!stream)
         {
-            throw std::runtime_error("Unable to open chart file: " + path.string());
+            const auto utf8 = path.u8string();
+            throw std::runtime_error("Unable to open chart file: " +
+                std::string(reinterpret_cast<const char *>(utf8.data()), utf8.size()));
         }
-        return std::string(std::istreambuf_iterator<char>(stream),
-                           std::istreambuf_iterator<char>());
+        std::string text(std::istreambuf_iterator<char>(stream), {});
+        if (stream.bad())
+            throw std::runtime_error("Unable to finish reading chart file.");
+        return text;
     }
 
     [[nodiscard]] inline std::string_view Trim(std::string_view value) noexcept
@@ -145,8 +149,10 @@ namespace finger_drum::chart::parsing
     }
 
     [[nodiscard]] inline std::vector<std::pair<std::size_t, std::string_view>> EnumerateLines(
-        const std::string_view text)
+        std::string_view text)
     {
+        if (text.starts_with("\xEF\xBB\xBF"))
+            text.remove_prefix(3);
         std::vector<std::pair<std::size_t, std::string_view>> lines;
         std::size_t lineNumber = 1;
         std::size_t begin = 0;

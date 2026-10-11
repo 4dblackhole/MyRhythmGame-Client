@@ -39,5 +39,9 @@ namespace finger_drum::tests
     void TestIndexedHitSoundChanges();
     void TestSpecialNoteSoundOverridePriority();
     void TestChartEditingAndSave();
+    void TestChartEditorIndices();
+    void TestChartSaveFailureRecovery();
+    void TestChartParserBoundaries();
+    void TestChartPartialEdits();
     void TestEditorAudioAnalysis(const std::filesystem::path &songsRoot);
 } // namespace finger_drum::tests

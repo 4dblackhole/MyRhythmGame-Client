@@ -60,8 +60,8 @@ void EditorWorkspace::Seek(double milliseconds)
 }
 void EditorWorkspace::SetFirstMeasure(std::int64_t measure)
 {
-    if (measure < 0)
-        throw std::invalid_argument("First measure must be non-negative.");
+    if (measure < 0 || measure >= chart::MaximumMeasureCount)
+        throw std::invalid_argument("First measure must be in 0..99,999.");
     score_.firstMeasure = measure;
     RequestRebuild();
 }
@@ -92,28 +92,30 @@ void EditorWorkspace::SelectTimingPosition(chart::MusicalPosition p)
 }
 void EditorWorkspace::RemoveTiming(std::size_t row)
 {
-    auto pattern = Document().Pattern();
-    if (row >= pattern.timing.size())
+    auto timing = Document().Timing();
+    if (row >= timing.size())
         throw std::out_of_range("Timing row no longer exists.");
-    pattern.timing.erase(pattern.timing.begin() + row);
-    Replace(std::move(pattern), Document().Effects());
+    timing.erase(timing.begin() + row);
+    editor_->ReplaceTiming(std::move(timing));
+    DocumentChanged();
 }
 void EditorWorkspace::ApplyBpm()
 {
-    auto pattern = Document().Pattern();
+    auto timing = Document().Timing();
     const auto position = Position(timingForm.measure, timingForm.fraction);
     const auto bpm = Number(timingForm.bpm);
     if (bpm <= 0)
         throw std::invalid_argument("BPM must be positive.");
-    std::erase_if(pattern.timing, [position](const auto &d) {
+    std::erase_if(timing, [position](const auto &d) {
         return d.position == position && d.type == chart::TimingDirectiveType::Bpm;
     });
-    pattern.timing.push_back({position, chart::TimingDirectiveType::Bpm, bpm});
-    Replace(std::move(pattern), Document().Effects());
+    timing.push_back({position, chart::TimingDirectiveType::Bpm, bpm});
+    editor_->ReplaceTiming(std::move(timing));
+    DocumentChanged();
 }
 void EditorWorkspace::ApplyMeasureLength()
 {
-    SetMeasureLength(Integer(timingForm.measure) - 1, Position("1", timingForm.measureLength).fraction);
+    SetMeasureLength(Position(timingForm.measure, "0/1").measure, Position("1", timingForm.measureLength).fraction);
 }
 void EditorWorkspace::RemoveEffect(std::size_t row)
 {
@@ -127,11 +129,13 @@ void EditorWorkspace::RemoveEffect(std::size_t row)
             throw std::out_of_range("Effect row no longer exists.");
         effects.hitSoundChanges.erase(effects.hitSoundChanges.begin() + row);
     }
-    Replace(Document().Pattern(), std::move(effects));
+    editor_->ReplaceEffects(std::move(effects));
+    DocumentChanged();
 }
 void EditorWorkspace::ApplyEffect()
 {
-    Replace(Document().Pattern(), effectForm.Apply(Document().Effects()));
+    editor_->ReplaceEffects(effectForm.Apply(Document().Effects()));
+    DocumentChanged();
 }
 std::pair<double, double> EditorWorkspace::TimelineRangeMilliseconds() const
 {

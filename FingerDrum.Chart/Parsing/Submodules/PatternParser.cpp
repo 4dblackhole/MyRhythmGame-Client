@@ -40,6 +40,12 @@ namespace finger_drum::chart
                 }
                 if (nextMeasure != nullptr)
                 {
+                    if (*nextMeasure >= MaximumMeasureCount - 1)
+                    {
+                        AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
+                                      "A chart may contain at most 100,000 measures.");
+                        return result;
+                    }
                     ++*nextMeasure;
                     if (line == "---")
                     {
@@ -147,6 +153,9 @@ namespace finger_drum::chart
             {
                 AddDiagnostic(result.diagnostics, sourcePath, lineNumber, "Hit sound tables belong in YME [HitSounds].");
             }
+            else if (key != "Pattern Maker Count")
+                AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
+                              "Unknown pattern field: " + std::string(key), DiagnosticSeverity::Warning);
         }
 
         if (result.document.baseBpm <= 0.0)

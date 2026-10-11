@@ -2,7 +2,7 @@
 
 namespace finger_drum::tests
 {
-    void TestChartEditingAndSave()
+    void TestChartEditorIndices()
     {
         using namespace finger_drum;
         {
@@ -55,6 +55,11 @@ namespace finger_drum::tests
             Require(copied.EffectValueAt(chart::EffectCommandType::NoteSpeed, {3, {}}) == .5,
                     "Copied event trees must own independent effect lookup pointers.");
         }
+    }
+
+    void TestChartEditingAndSave()
+    {
+        using namespace finger_drum;
         chart::PatternDocument p;
         p.baseBpm = 120;
         p.musicMetadataFile = "../Music/test.ymm";
@@ -154,7 +159,9 @@ namespace finger_drum::tests
                 "Saving must preserve Unicode metadata, hit sound table and exact compiled note "
                 "timing.");
         editor.Save();
-        Require(!std::filesystem::exists(pattern.sourcePath.string() + ".editor.bak"),
+        auto backup = pattern.sourcePath;
+        backup += L".editor.bak";
+        Require(!std::filesystem::exists(backup),
                 "Successful save must clean its own backup.");
     }
 } // namespace finger_drum::tests

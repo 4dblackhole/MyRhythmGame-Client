@@ -44,7 +44,8 @@ namespace finger_drum::mode::taiko_build
         for (const auto &change : effects.hitSoundChanges)
         {
             if ((change.keyType != 1 && change.keyType != 2) || !effects.hitSounds.contains(change.soundIndex) ||
-                change.position.measure < 0 || change.position.fraction < chart::Rational{} ||
+                change.position.measure < 0 || change.position.measure >= chart::MaximumMeasureCount ||
+                change.position.fraction < chart::Rational{} ||
                 change.position.fraction >= timeline.MeasureLength(change.position.measure))
             {
                 diagnostics.push_back({chart::DiagnosticSeverity::Error, change.source,

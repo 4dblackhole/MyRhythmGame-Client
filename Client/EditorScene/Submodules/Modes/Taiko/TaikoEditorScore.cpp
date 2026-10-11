@@ -8,6 +8,9 @@ using namespace editor_ui;
 namespace
 {
     constexpr v::Rect RealtimeLane{164, 351, 1684, 228};
+    constexpr float ScoreLeft = 205, MeasureWidth = 401, RowTop = 150, RowHeight = 100, StaffHeight = 48;
+    constexpr int MeasuresPerRow = 4, VisibleRows = 6;
+    constexpr float ScoreRight = ScoreLeft + MeasureWidth * MeasuresPerRow;
     constexpr v::Color Don{1, .33F, .43F, 1}, Kat{.10F, .76F, .82F, 1}, Gold{.96F, .80F, .29F, 1};
 
     std::pair<finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmTime> GridTimeRange(
@@ -47,7 +50,8 @@ namespace
 
 void TaikoEditorMode::ScrollScore(IEditorContext &state, int direction)
 {
-    state.SetFirstMeasure(std::max<std::int64_t>(0, state.Score().firstMeasure + direction * 4));
+    state.SetFirstMeasure(std::clamp<std::int64_t>(state.Score().firstMeasure + direction * MeasuresPerRow,
+                                                 0, chart::MaximumMeasureCount - 1));
 }
 
 void TaikoEditorMode::DrawChart(IEditorModeCanvas &canvas, IEditorContext &state)
@@ -66,64 +70,66 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
     const auto &timeline = state.Document().Timeline();
     const int subdivisionsPerWholeNote = state.Score().division * 4;
     const auto xAt = [&](chart::MusicalPosition p) {
-        return 205.0F + static_cast<float>((p.measure - state.Score().firstMeasure) % 4) * 401 +
-               static_cast<float>(p.fraction.Value() / timeline.MeasureLength(p.measure).Value()) * 401;
+        return ScoreLeft + static_cast<float>((p.measure - state.Score().firstMeasure) % MeasuresPerRow) * MeasureWidth +
+               static_cast<float>(p.fraction.Value() / timeline.MeasureLength(p.measure).Value()) * MeasureWidth;
     };
     // Rational score grid, followed by note intervals and BPM labels.
-    for (int row = 0; row < 6; ++row)
+    for (int row = 0; row < VisibleRows; ++row)
     {
-        const float y = 150.0F + row * 100;
-        canvas.Box({164, y, 1684, 48}, {.957F, .984F, 1, 1}, 3);
-        for (int col = 0; col < 4; ++col)
+        const float y = RowTop + row * RowHeight;
+        canvas.Box({164, y, 1684, StaffHeight}, {.957F, .984F, 1, 1}, 3);
+        for (int col = 0; col < MeasuresPerRow; ++col)
         {
-            const auto m = state.Score().firstMeasure + row * 4 + col;
-            const float x = 205.0F + col * 401;
+            const auto m = state.Score().firstMeasure + row * MeasuresPerRow + col;
+            if (m >= chart::MaximumMeasureCount)
+                break;
+            const float x = ScoreLeft + col * MeasureWidth;
             canvas.Text({x, y - 25, 140, 22},
                         std::to_wstring(m + 1) + L"  " + Wide(Fraction(timeline.MeasureLength(m))), 13);
             const auto count = static_cast<int>(
                 std::min(4096.0L, std::ceil(timeline.MeasureLength(m).Value() * subdivisionsPerWholeNote)));
             // Subpixel helper lines share a visible line; snapping still uses the full division.
-            const int drawStride = std::max(1, static_cast<int>(std::ceil(count / 401.0)));
+            const int drawStride = std::max(1, static_cast<int>(std::ceil(count / static_cast<double>(MeasureWidth))));
             for (int i = 0; i < count; i += drawStride)
             {
                 const float gx = x + static_cast<float>(chart::Rational{i, subdivisionsPerWholeNote}.Value() /
                                                         timeline.MeasureLength(m).Value()) *
-                                         401;
-                canvas.Box({gx, y, i == 0 ? 2.0F : 1.0F, 48}, i == 0 ? Blue : Pale);
+                                         MeasureWidth;
+                canvas.Box({gx, y, i == 0 ? 2.0F : 1.0F, StaffHeight}, i == 0 ? Blue : Pale);
             }
         }
     }
     std::optional<chart::PatternNote> head;
-    for (const auto &note : state.Document().NotesInMeasures(state.Score().firstMeasure, state.Score().firstMeasure + 24))
+    for (const auto &note : state.Document().NotesInMeasures(state.Score().firstMeasure, state.Score().firstMeasure + MeasuresPerRow * VisibleRows))
     {
         const auto &n = note.note;
         if (n.actionType == 1 && !head)
             head = n;
         if (n.actionType == 2 && head && head->keyType == n.keyType)
         {
-            for (int row = 0; row < 6; ++row)
+            for (int row = 0; row < VisibleRows; ++row)
             {
-                const auto begin = state.Score().firstMeasure + row * 4, end = begin + 4;
+                const auto begin = state.Score().firstMeasure + row * MeasuresPerRow, end = begin + MeasuresPerRow;
                 if (n.position.measure < begin || head->position.measure >= end)
                     continue;
-                const float left = head->position.measure < begin ? 205 : xAt(head->position),
-                            right = n.position.measure >= end ? 1809 : xAt(n.position);
-                canvas.Box({left, 166.0F + row * 100, std::max(0.0F, right - left), 16}, Gold, 8);
+                const float left = head->position.measure < begin ? ScoreLeft : xAt(head->position),
+                            right = n.position.measure >= end ? ScoreRight : xAt(n.position);
+                canvas.Box({left, 166.0F + row * RowHeight, std::max(0.0F, right - left), 16}, Gold, 8);
             }
             head.reset();
         }
-        if (n.position.measure < state.Score().firstMeasure || n.position.measure >= state.Score().firstMeasure + 24)
+        if (n.position.measure < state.Score().firstMeasure || n.position.measure >= state.Score().firstMeasure + MeasuresPerRow * VisibleRows)
             continue;
         const float x = xAt(n.position),
-                    y = 174 + static_cast<float>((n.position.measure - state.Score().firstMeasure) / 4) * 100;
+                    y = 174 + static_cast<float>((n.position.measure - state.Score().firstMeasure) / MeasuresPerRow) * RowHeight;
         Circle(canvas, x, y, n.keyType, (n.keyType >= 3 && n.keyType <= 5) ? 15.0F : 10.0F);
         noteHits_.push_back({{x, y}, n.sourceOrder});
     }
     for (const auto &t : state.Document().Timing())
         if (t.type == chart::TimingDirectiveType::Bpm && t.position.measure >= state.Score().firstMeasure &&
-            t.position.measure < state.Score().firstMeasure + 24)
+            t.position.measure < state.Score().firstMeasure + MeasuresPerRow * VisibleRows)
             canvas.Text({xAt(t.position),
-                         200 + static_cast<float>((t.position.measure - state.Score().firstMeasure) / 4) * 100, 140,
+                         200 + static_cast<float>((t.position.measure - state.Score().firstMeasure) / MeasuresPerRow) * RowHeight, 140,
                          24},
                         L"BPM " + std::to_wstring(static_cast<int>(t.value)), 15, Blue);
 }
@@ -154,7 +160,7 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     const auto visibleEnd = BoundedTime(currentTime.count() +
         (RealtimeLane.x + RealtimeLane.width - 230.0L + 110) / (pixelsPerMicrosecond * minimumSpeed));
     // Drawing and input share the same visible snap positions.
-    for (std::int64_t m = gridBegin; m < currentMeasure + 32; ++m)
+    for (std::int64_t m = gridBegin; m < std::min(currentMeasure + 32, chart::MaximumMeasureCount); ++m)
     {
         const int count = static_cast<int>(
             std::min(4096.0L, std::ceil(timeline.MeasureLength(m).Value() * subdivisionsPerWholeNote)));
@@ -239,14 +245,16 @@ void TaikoEditorMode::EditScore(IEditorContext &state, v::Point point, bool eras
     }
     else
     {
-        const int row = static_cast<int>((point.y - 150) / 100), col = static_cast<int>((point.x - 205) / 401);
-        if (point.x < 205 || point.x >= 1809 || point.y < 150 || row >= 6 || point.y - (150 + row * 100) > 48)
+        const int row = static_cast<int>((point.y - RowTop) / RowHeight), col = static_cast<int>((point.x - ScoreLeft) / MeasureWidth);
+        if (point.x < ScoreLeft || point.x >= ScoreRight || point.y < RowTop || row >= VisibleRows || point.y - (RowTop + row * RowHeight) > StaffHeight)
             return;
-        p.measure = state.Score().firstMeasure + row * 4 + col;
+        p.measure = state.Score().firstMeasure + row * MeasuresPerRow + col;
+        if (p.measure >= chart::MaximumMeasureCount)
+            return;
         const auto length = state.Document().Timeline().MeasureLength(p.measure);
         const int subdivisionsPerWholeNote = state.Score().division * 4;
         const auto tick = static_cast<std::int64_t>(
-            std::llround((point.x - 205 - col * 401) / 401.0 * length.Value() * subdivisionsPerWholeNote));
+            std::llround((point.x - ScoreLeft - col * MeasureWidth) / static_cast<double>(MeasureWidth) * length.Value() * subdivisionsPerWholeNote));
         p.fraction = chart::Rational{tick, subdivisionsPerWholeNote};
         if (p.fraction >= length)
             p.fraction = chart::Rational{std::max<std::int64_t>(0, tick - 1), subdivisionsPerWholeNote};

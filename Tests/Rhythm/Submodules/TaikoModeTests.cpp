@@ -204,6 +204,19 @@ Mode: Taiko
         const auto &notes = loaded.session->Gear().Lanes().front()->Notes();
         Require(notes.size() == 1 && notes.front()->Timing() == rhythm::RhythmTime::zero(),
                 "A duplicate LNStart must not replace the first active head.");
+        Require(loaded.diagnostics.size() == 1 && loaded.diagnostics.front().severity == chart::DiagnosticSeverity::Warning,
+                "Every ignored duplicate head must produce a nonfatal diagnostic.");
+        pattern.notes.push_back({{0, {3, 4}}, type, end, {}, {}, {{}, 40, 1}});
+        pattern.notes.push_back({{0, {1, 8}}, 1, 0, {}, {}, {{}, 50, 1}});
+        pattern.notes.push_back({{0, {3, 8}}, 11, end, {}, {}, {{}, 60, 1}});
+        pattern.notes.push_back({{1, {}}, type, start, {}, {}, {{}, 70, 1}});
+        const auto malformed = taiko.CreateSession(pattern);
+        Require(malformed.Succeeded() && malformed.diagnostics.size() == 5 &&
+                    malformed.session->Gear().Lanes().front()->Notes().size() == 1,
+                "Orphan/mismatched ends, swallowed taps and unclosed heads must each be diagnosed without changing play policy.");
+        for (const auto line : {40u, 50u, 60u, 70u})
+            Require(std::ranges::any_of(malformed.diagnostics, [line](const auto &d) { return d.location.line == line; }),
+                    "Discard warnings must retain the authored source location.");
     }
 
     void TestTaikoUsesOneLaneForEveryNoteType()

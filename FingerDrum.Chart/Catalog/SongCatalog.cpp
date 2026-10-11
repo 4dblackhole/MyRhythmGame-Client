@@ -36,7 +36,7 @@ namespace finger_drum::chart
             const SongCatalogEntry& song)
         {
             std::string value = song.music.names.empty()
-                ? song.metadataPath.stem().string()
+                ? PathKey(song.metadataPath.stem())
                 : song.music.names.front();
             std::ranges::transform(
                 value,

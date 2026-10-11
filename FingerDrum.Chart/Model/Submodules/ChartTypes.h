@@ -14,6 +14,9 @@
 
 namespace finger_drum::chart
 {
+    // File positions are limited to 100,000 measures (internal indices 0..99,999).
+    inline constexpr std::int64_t MaximumMeasureCount = 100'000;
+
     struct MusicalPosition
     {
         std::int64_t measure{};

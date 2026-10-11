@@ -60,6 +60,11 @@ namespace
         {
             return score.Dirty();
         }
+        std::vector<chart::CompiledPatternNote> NotesInMeasures(std::int64_t begin, std::int64_t end) const override
+        { return score.NotesInMeasures(begin, end); }
+        std::vector<chart::CompiledPatternNote> NotesInTimeRange(finger_drum::rhythm::RhythmTime begin,
+                                                               finger_drum::rhythm::RhythmTime end) const override
+        { return score.NotesInTimeRange(begin, end); }
         std::uint64_t Revision() const noexcept override
         {
             return score.Revision();
@@ -73,6 +78,10 @@ namespace
         {
             score.AddNote(p, key, end, std::move(extra));
         }
+        void ReplaceTiming(std::vector<chart::TimingDirective> timing) override
+        { score.ReplaceTiming(std::move(timing)); }
+        void ReplaceEffects(chart::EffectDocument effects) override
+        { score.ReplaceEffects(std::move(effects)); }
         void DeleteNote(std::size_t order) override
         {
             score.DeleteNote(order);
@@ -250,6 +259,50 @@ namespace
         Check(state.Document().Notes().empty(), "Selection tool must not place a note.");
     }
 
+    void TestTaikoPlacementConflicts()
+    {
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+        state.SelectTool(11);
+        state.PlaceNote({1, {}});
+        state.PlaceNote({3, {}});
+        const auto revision = state.Document().Revision();
+        const auto reject = [&state, revision](chart::MusicalPosition position) {
+            bool rejected = false;
+            try { state.PlaceNote(position); }
+            catch (const std::invalid_argument &) { rejected = true; }
+            Check(rejected && state.Document().Revision() == revision && state.Document().Notes().size() == 2,
+                  "Conflicting placement must preserve the document and its revision.");
+        };
+        state.SelectTool(1);
+        reject({1, {}});
+        reject({2, {}});
+        state.SelectTool(12);
+        state.PlaceNote({2, {}});
+        reject({4, {}});
+        Check(state.Mode().HasPendingPlacement(), "Failed second endpoint must remain available for correction/cancel.");
+        state.Mode().CancelInteraction();
+        state.SelectTool(11);
+        state.PlaceNote({3, {}});
+        state.PlaceNote({4, {}});
+        Check(state.Document().Notes().size() == 4, "Adjacent long notes must still be placeable.");
+        state.SelectTool(1);
+        state.PlaceNote({5, {}});
+        state.SelectTool(11);
+        state.PlaceNote({4, {1, 2}});
+        bool rejected = false;
+        try { state.PlaceNote({6, {}}); }
+        catch (const std::invalid_argument &) { rejected = true; }
+        Check(rejected && state.Document().Notes().size() == 5,
+              "New long notes must not swallow already-authored ordinary notes.");
+        state.Mode().CancelInteraction();
+        state.SetFirstMeasure(chart::MaximumMeasureCount - 1);
+        RecordingCanvas canvas;
+        state.Mode().DrawChart(canvas, state);
+        state.SetRealtime(true);
+        state.Seek(state.Document().Timeline().Compile({chart::MaximumMeasureCount - 1, {}}).count() / 1000.0);
+        state.Mode().DrawChart(canvas, state);
+    }
+
     void TestPreviewMatchesPlay()
     {
         namespace rhythm = finger_drum::rhythm;
@@ -393,6 +446,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
                      const std::function<const std::vector<v::DrawPacket> &()> &packets)
 {
     TestTaikoEditing();
+    TestTaikoPlacementConflicts();
     TestPreviewMatchesPlay();
     TestSeekAndEffectEdits();
     auto mode = std::make_unique<ProbeMode>();

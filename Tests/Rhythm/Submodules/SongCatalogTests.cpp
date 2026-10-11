@@ -11,7 +11,8 @@ namespace finger_drum::tests
             {
                 if (diagnostic.severity == chart::DiagnosticSeverity::Error)
                 {
-                    std::cerr << diagnostic.location.file.string() << ':'
+                    const auto file = diagnostic.location.file.u8string();
+                    std::cerr << std::string(reinterpret_cast<const char *>(file.data()), file.size()) << ':'
                               << diagnostic.location.line << ": " << diagnostic.message << '\n';
                 }
             }
@@ -61,7 +62,7 @@ namespace finger_drum::tests
                                 chart::ChartEditor::WritePattern(editing.Pattern()),
                         "Every provided chart must save/reload without source-data loss (using a "
                         "temporary copy).");
-                if (pattern.patternPath.filename().string() == "Rapbit - Saika [test].ymp")
+                if (pattern.patternPath.filename() == "Rapbit - Saika [test].ymp")
                 {
                     const chart::MusicalTimeline timeline(pattern.pattern);
                     const rhythm::RhythmTime firstChange =

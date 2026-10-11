@@ -13,6 +13,10 @@
 파서 경로는 `FingerDrum.Chart/Parsing/Submodules`입니다.
 `ChartParser.h/.cpp`는 파일 입출력 facade, `ParserSupport.h`는 공통 토큰/숫자 처리입니다.
 모델도 `Model/Submodules` 아래 YMM/YMP/YME별로 나뉩니다.
+세 형식 모두 UTF-8 BOM을 허용합니다. YMM/YMP의 알 수 없는 metadata 항목은
+행 번호가 있는 Warning으로 반환합니다. `Parse*File`의 파일 읽기 실패도 해당 경로의
+Error 진단으로 반환하며, 경로 문자열은 UTF-8을 사용합니다. 메모리 할당 등 예기치 않은
+실패까지 정상 파싱 오류로 숨기지는 않습니다. 마디 상한은 [Timing](Formats/Timing.md)이 기준입니다.
 저장 문법 변경 시 `Editing/ChartEditor.cpp`와 왕복 테스트를 함께 확인합니다.
 YMP가 `Effect file`로 YME를 참조하고 YME가 사운드 표를 소유합니다.
 YME의 효과 명령은 Speed/Sounds/Zone 세 섹션이며 음악 볼륨 명령은 지원하지 않습니다.

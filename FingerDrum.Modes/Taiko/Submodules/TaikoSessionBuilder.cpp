@@ -55,12 +55,17 @@ namespace finger_drum::mode
                 {
                     longNoteHead = compiledNote;
                 }
+                else
+                    result.diagnostics.push_back({chart::DiagnosticSeverity::Warning, source.source,
+                        "Ignored overlapping long-note start; the active long note keeps its original head."});
                 continue;
             }
             if (action == TaikoPatternAction::LongNoteEnd)
             {
                 if (!longNoteHead.has_value() || longNoteHead->note.keyType != source.keyType)
                 {
+                    result.diagnostics.push_back({chart::DiagnosticSeverity::Warning, source.source,
+                        "Ignored long-note end without a matching active head."});
                     continue;
                 }
                 const auto longNoteId = nextId;
@@ -73,6 +78,8 @@ namespace finger_drum::mode
             }
             if (action != TaikoPatternAction::Down)
             {
+                result.diagnostics.push_back({chart::DiagnosticSeverity::Warning, source.source,
+                    "Ignored unsupported Taiko note action."});
                 continue;
             }
             // Match the original RPG Lane transaction: while a long-note
@@ -80,6 +87,8 @@ namespace finger_drum::mode
             // lane do not create a second focus target inside the roll.
             if (longNoteHead.has_value())
             {
+                result.diagnostics.push_back({chart::DiagnosticSeverity::Warning, source.source,
+                    "Ignored ordinary note inside an active long note."});
                 continue;
             }
 
@@ -116,6 +125,10 @@ namespace finger_drum::mode
             session->SetNotePresentation(noteId, {TapVisualId(type), {}, false});
             session->SetNoteScrollMultiplier(noteId, compiledNote.scrollMultiplier);
         }
+
+        if (longNoteHead)
+            result.diagnostics.push_back({chart::DiagnosticSeverity::Warning, longNoteHead->note.source,
+                "Ignored long-note head without a matching end."});
 
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping;
         for (const TaikoInputBinding &binding : TaikoInputBindings)

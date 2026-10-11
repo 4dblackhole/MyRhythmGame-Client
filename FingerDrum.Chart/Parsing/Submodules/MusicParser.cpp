@@ -47,6 +47,9 @@ namespace finger_drum::chart
                     result.document.tags.emplace_back(tag);
                 }
             }
+            else if (key != "Music Name Count" && key != "Artist Count")
+                AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
+                              "Unknown music field: " + std::string(key), DiagnosticSeverity::Warning);
         }
         if (result.document.audioFile.empty())
         {

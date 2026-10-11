@@ -3,9 +3,48 @@
 #include "TaikoEditorTool.h"
 #include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
 #include <algorithm>
+#include <limits>
 using namespace editor_ui;
 
 #include "Editing/ChartEditor.h"
+
+namespace
+{
+    void ValidatePlacement(const chart::IEditorDocument &document, chart::MusicalPosition position,
+                           int keyType, std::optional<chart::MusicalPosition> end = {})
+    {
+        const auto beginTime = document.Timeline().Compile(position);
+        const auto endTime = end ? document.Timeline().Compile(*end) : beginTime;
+        if (end && (*end <= position || endTime <= beginTime))
+            throw std::invalid_argument("Long note end must follow its start in musical and playback time.");
+
+        // The range query includes both endpoints of every intersecting long note.
+        // New IDs follow existing IDs, matching the play session's equal-time order.
+        auto notes = document.NotesInTimeRange(beginTime, endTime);
+        notes.push_back({{position, keyType, end ? 1 : 0, {}, {}, {},
+                          std::numeric_limits<std::size_t>::max() - 1}, beginTime});
+        if (end)
+            notes.push_back({{*end, keyType, 2, {}, {}, {}, std::numeric_limits<std::size_t>::max()}, endTime});
+        std::ranges::sort(notes, [](const auto &a, const auto &b) {
+            return std::pair{a.timing, a.note.sourceOrder} < std::pair{b.timing, b.note.sourceOrder};
+        });
+        std::optional<int> activeLongType;
+        for (const auto &compiled : notes)
+        {
+            const auto &note = compiled.note;
+            if (note.actionType == 1)
+            {
+                if (activeLongType)
+                    throw std::invalid_argument("Taiko long notes cannot overlap another long note.");
+                activeLongType = note.keyType;
+            }
+            else if (note.actionType == 2 && activeLongType == note.keyType)
+                activeLongType.reset();
+            else if (note.actionType == 0 && activeLongType)
+                throw std::invalid_argument("A Taiko ordinary note cannot be placed inside a long note.");
+        }
+    }
+}
 
 std::unique_ptr<chart::IEditorDocument> TaikoEditorMode::OpenDocument(
     const finger_drum::GameplayLaunchRequest &request) const
@@ -91,11 +130,15 @@ void TaikoEditorMode::PlaceNote(IEditorContext &state, chart::MusicalPosition p)
             pending_ = p;
         else
         {
+            ValidatePlacement(state.Document(), std::min(*pending_, p), noteId, std::max(*pending_, p));
             state.AddNote(std::min(*pending_, p), noteId, std::max(*pending_, p), editor_tools::ExtraData(*selected));
             pending_.reset();
         }
     }
     else
+    {
+        ValidatePlacement(state.Document(), p, noteId);
         state.AddNote(p, noteId);
+    }
     state.RequestRebuild();
 }

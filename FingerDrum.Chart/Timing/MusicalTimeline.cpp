@@ -77,6 +77,9 @@ namespace finger_drum::chart
         result.reserve(effects.commands.size());
         for (const EffectCommand& command : effects.commands)
         {
+            if (command.position.measure < 0 || command.position.measure >= MaximumMeasureCount ||
+                (command.endPosition && (command.endPosition->measure < 0 || command.endPosition->measure >= MaximumMeasureCount)))
+                throw std::invalid_argument("An effect must use a measure in 0..99,999.");
             if (command.endPosition && Compile(*command.endPosition) <= Compile(command.position))
                 throw std::invalid_argument("Area duration must be positive in compiled time.");
             result.push_back(CompiledEffectCommand{
@@ -194,10 +197,10 @@ namespace finger_drum::chart
         std::map<std::int64_t, Rational> measureChanges;
         for (const TimingDirective& directive : directives_)
         {
-            if (directive.position.measure < 0)
+            if (directive.position.measure < 0 || directive.position.measure >= MaximumMeasureCount)
             {
                 throw std::invalid_argument(
-                    "A timing directive cannot use a negative measure.");
+                    "A timing directive must use a measure in 0..99,999.");
             }
             maximumMeasure = std::max(
                 maximumMeasure,
@@ -214,10 +217,10 @@ namespace finger_drum::chart
         }
         for (const PatternNote& note : pattern.notes)
         {
-            if (note.position.measure < 0)
+            if (note.position.measure < 0 || note.position.measure >= MaximumMeasureCount)
             {
                 throw std::invalid_argument(
-                    "A note cannot use a negative measure.");
+                    "A note must use a measure in 0..99,999.");
             }
             maximumMeasure = std::max(maximumMeasure, note.position.measure);
         }
@@ -310,10 +313,11 @@ namespace finger_drum::chart
     Rational MusicalTimeline::PositionToWholeNotes(
         const MusicalPosition position) const
     {
-        if (position.measure < 0)
+        // The end sentinel is needed for measure-boundary queries, but not file entries.
+        if (position.measure < 0 || position.measure > MaximumMeasureCount)
         {
             throw std::invalid_argument(
-                "A musical position cannot use a negative measure.");
+                "A musical position exceeds the supported measure range.");
         }
 
         const std::size_t measure = static_cast<std::size_t>(position.measure);
@@ -341,12 +345,15 @@ namespace finger_drum::chart
         // Extrapolated measures use the last known signature. Binary search
         // keeps seeking sparse/long charts exact without a per-measure loop.
         std::int64_t low = static_cast<std::int64_t>(measureLengths_.size());
+        if (low >= MaximumMeasureCount)
+            throw std::out_of_range("Beat is beyond 100,000 measures.");
         std::int64_t high = low + 1;
         while (PositionToWholeNotes({high, {}}) <= beat)
         {
-            if (high > std::numeric_limits<std::int64_t>::max() / 2)
-                throw std::overflow_error("Beat is beyond the supported measure range.");
-            high *= 2;
+            if (high == MaximumMeasureCount)
+                throw std::out_of_range("Beat is beyond 100,000 measures.");
+            low = high;
+            high = std::min(high * 2, MaximumMeasureCount);
         }
         while (low + 1 < high)
         {
