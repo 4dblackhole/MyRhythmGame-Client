@@ -4,6 +4,12 @@
 모드 조립: `FingerDrum.Modes/Taiko/Submodules/TaikoSessionBuilder`, `TaikoLongNoteFactory`.
 검증: `RhythmCoreTests`, `AccuracyTests`, `TaikoModeTests`.
 
+Taiko는 한 레인에서 먼저 열린 롱노트 head를 유지합니다. 열린 동안의 중복 head/일반
+노트, 짝 없는 tail 및 끝까지 닫히지 않은 head는 `ModeLoadResult.diagnostics`에
+원래 파일/행의 Warning을 남깁니다. 유효 노트의 기존 플레이 결과는 유지합니다.
+새 배치의 겹침 거부는 [Taiko 에디터](../ChartEditor.md)가 담당합니다.
+유지 중인 물리 키의 action 목록은 바인딩 설정 시 예약한 버퍼를 재사용합니다.
+
 ## 한 개의 타이머
 
 `RhythmTimer` 하나가 QPC와 리듬 시간을 연결합니다. `AnchorDspClock`은 같은

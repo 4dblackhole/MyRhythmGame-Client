@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <set>
 #include <stdexcept>
 #include <utility>
 
@@ -33,6 +32,7 @@ namespace finger_drum::mode
 
     void PlaySession::SetInputMapping(std::map<rhythm::PhysicalKey, rhythm::NoteAction> mapping)
     {
+        heldActions_.reserve(mapping.size());
         inputMapping_ = std::move(mapping);
     }
 
@@ -166,18 +166,17 @@ namespace finger_drum::mode
     rhythm::NoteProcessResult PlaySession::Update(
         const rhythm::RhythmTime time, const std::span<const rhythm::PhysicalKey> heldPhysicalKeys)
     {
-        std::set<rhythm::NoteAction> uniqueActions;
-        for (const rhythm::PhysicalKey key : heldPhysicalKeys)
+        heldActions_.clear();
+        // Iterate bindings so repeated physical keys cannot exceed the reserved buffer.
+        for (const auto &[key, action] : inputMapping_)
         {
-            const auto mapping = inputMapping_.find(key);
-            if (mapping != inputMapping_.end())
-            {
-                uniqueActions.insert(mapping->second);
-            }
+            if (std::ranges::find(heldPhysicalKeys, key) != heldPhysicalKeys.end())
+                heldActions_.push_back(action);
         }
-        const std::vector<rhythm::NoteAction> heldActions(uniqueActions.begin(),
-                                                          uniqueActions.end());
-        rhythm::NoteProcessResult result = gear_.Update(time, heldActions);
+        std::ranges::sort(heldActions_);
+        const auto duplicates = std::ranges::unique(heldActions_);
+        heldActions_.erase(duplicates.begin(), duplicates.end());
+        rhythm::NoteProcessResult result = gear_.Update(time, heldActions_);
         AccumulateAccuracy(result);
         ResolveSoundOverrides(result);
         return result;

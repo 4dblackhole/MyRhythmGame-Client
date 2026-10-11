@@ -55,6 +55,7 @@ namespace finger_drum::mode
         rhythm::ScrollGear gear_;
         std::optional<chart::MusicalTimeline> timeline_;
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping_;
+        std::vector<rhythm::NoteAction> heldActions_;
         std::map<rhythm::NoteAction, rhythm::AudioCueRequest> freeInputCues_;
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;

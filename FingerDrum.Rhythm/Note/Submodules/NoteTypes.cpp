@@ -11,15 +11,22 @@ namespace finger_drum::rhythm
 {
     using namespace detail;
 
+    namespace
+    {
+        template <typename Value> void AppendMoved(std::vector<Value> &target, std::vector<Value> &source)
+        {
+            if (target.empty() && target.capacity() == 0)
+                target.swap(source); // First contribution transfers its allocation through Lane/Gear aggregation.
+            else
+                target.insert(target.end(), std::make_move_iterator(source.begin()), std::make_move_iterator(source.end()));
+        }
+    }
+
     void NoteProcessResult::Append(NoteProcessResult other)
     {
-        events.insert(events.end(), std::make_move_iterator(other.events.begin()),
-                      std::make_move_iterator(other.events.end()));
-        audioCues.insert(audioCues.end(), std::make_move_iterator(other.audioCues.begin()),
-                         std::make_move_iterator(other.audioCues.end()));
-        finalizedAccuracies.insert(finalizedAccuracies.end(),
-                                   std::make_move_iterator(other.finalizedAccuracies.begin()),
-                                   std::make_move_iterator(other.finalizedAccuracies.end()));
+        AppendMoved(events, other.events);
+        AppendMoved(audioCues, other.audioCues);
+        AppendMoved(finalizedAccuracies, other.finalizedAccuracies);
     }
 
     double NoteAccuracy::ScoreRate() const noexcept

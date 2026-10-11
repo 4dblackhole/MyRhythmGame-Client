@@ -1,9 +1,6 @@
 #include "Note/Submodules/TickRollInputRule.h"
 #include "Note/Submodules/RuleHelpers.h"
 #include <algorithm>
-#include <format>
-#include <iterator>
-#include <numeric>
 #include <stdexcept>
 #include <utility>
 
