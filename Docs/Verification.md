@@ -79,14 +79,44 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
-## 2026-10-12 에디터 노트 속성·롤 표시 진행분
+## 2026-10-12 노트 마디·박자 입력
+
+- 사용자 선택에 따라 노트 정보 패널의 시작·끝은 마디(1부터)/박자(N/D, 온음표 기준)만
+  입력합니다. ms는 저장된 노트의 컴파일 결과를 읽기 전용으로 표시합니다. 일반 노트에서
+  롱노트로 바꿀 때 끝점을 명시적으로 입력하고, 일반 노트로 돌아오면 연결된 끝점만 제거합니다.
+- TaikoEditorNoteInspector가 선택 snapshot과 미적용 초안/입력 UI를 소유합니다.
+  기존 Position 파서, Taiko 배치 검증, Workspace UpdateNote와 ChartEditor의 부분 수정
+  트랜잭션을 재사용합니다. 추가 시간 API·객체·엔진 변경이나 파일 문법 변경은 없습니다.
+  문구는 TaikoEditorTexts의 한국어/영어 표에 추가했습니다.
+- Debug/Release x64 전체 solution Rebuild 성공(일반 빌드 경고/오류 0).
+  각각 로직·실제 카탈로그 44개/실패 0, 네 smoke route 총 8개 exit 0.
+  두 구성 Editor audio/mode/menu 회귀 성공: 시작/끝 입력, 일반↔롱노트 변환,
+  안정 ID/구간 인덱스, 빈 끝점·0/100,001 마디·마디 밖 분수·ms 입력·동일 끝점의
+  원본/revision 보존, BPM 수정 후 위치/ID 보존과 시간 갱신, 한국어/영어 필드와
+  ms 버튼이 없는 것을 검사했습니다.
+- MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 MRG.Client의 실제 x64
+  Debug/Release include/define/C++20/PCH로 실행했습니다. BuildProjectReferences=false로
+  엔진/SDK 재분석을 제외했습니다. 세 Editor 회귀 테스트 단위도 두 구성 /analyze 통과.
+  파싱/컴파일 오류와 새 경고 0. 기존 C26115(EditorAnalysisController.cpp:51),
+  C28020(GameplaySessionController.cpp:64), Release C6236(GameplayInput.cpp:60)는
+  이번 수정 범위 밖이며 억제하지 않았습니다.
+- CheckArchitecture(11개 프로젝트), git diff --check 통과. 실행 전후 Option.ini SHA256 동일.
+  사용자 곡/스킨 및 기존 LaneKeyBeam.cpp 작업은 보존했습니다.
+- 실제 화면 픽셀 배치·물리 키보드/마우스 조작은 수행하지 않았습니다. 위 회귀는
+  자동 입력/Canvas draw packet과 실제 Client 실행 검사입니다.
+- 추가 delay 요청은 아직 적용하지 않았습니다. 이전 마디 증감은 적용 위치, 마디 밖으로
+  밀린 항목 처리, 0 이하 길이의 정책에 대한 사용자 답변을 기다립니다. 현재 누적 지연
+  방식이 유지되며, 답변 뒤 공유 timeline/파서·편집·플레이 경계를 별도로 검증해야 합니다.
+- 원시 로그: ignored `build/editor-timing-2026-10-12/`의 rebuild, analysis, logic, editor,
+  architecture와 diff-check 로그. 재현 실행기: `build/VerifyEditorTiming.ps1`.
+
+## 2026-10-12 에디터 노트 속성·롤 표시
 
 - 현재 구현한 범위: 선택 스킨의 서클/overlay·풍선·뎅뎅, 여섯 도구 묶음과 W/E/R/T/Y/U
   순환, 롤 종류/요구 연타·틱 간격, 우측 노트 선택/속성 영역, 처리된 틱 숨김,
   성공 OK/실패 MISS와 사용하지 않는 기본 JudgeImage PNG 7개 제거입니다.
-- **미완료:** 타이밍 입력 형식(마디·박자만 / ms 직접 입력도 포함)에 대한 사용자 답변 대기.
-  현재 타이밍은 읽기 전용이며 끝점이 없는 일반 노트→롱노트의 UI 변환도 보류입니다.
-  확정 뒤 타이밍 필드를 연결하고 그 변경을 별도로 검증해야 전체 요청이 완료됩니다.
+- 이 검사 당시 타이밍은 읽기 전용이었습니다. 후속 사용자 결정과 시작/끝 입력 및
+  일반↔롱노트 변환의 완료 검증은 위의 노트 마디·박자 입력 절에 기록했습니다.
 - TaikoEditorNoteInspector는 선택 ID/초안을 소유하고 Workspace가 UpdateNote를 연결합니다.
   ChartEditor는 선택한 시작/끝과 시간/속도 인덱스만 준비한 뒤 교체하며 실패 시 원본을 보존합니다.
   본체 Scene, 음악 clock·판정·점수·오디오 및 파일 문법은 바꾸지 않았습니다.
@@ -116,7 +146,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - **수동 확인:** 실제 화면 픽셀 배치·물리 키보드/마우스·청음은 수행하지 않았습니다.
   draw packet/노드·자동 입력/실행 검사 및 생성 이미지 관찰과 구분합니다.
 - 원시 로그: ignored `build/editor-notes-2026-10-12/`의 rebuild/analysis/final/selection/
-  completion 검사 로그. 다음 타이밍 구현은 이 진행분을 완료로 오인하지 말고 이어서 수행합니다.
+  completion 검사 로그. 후속 마디·박자 입력의 원시 로그는 위 절의 별도 폴더에 있습니다.
 
 ## 2026-10-12 코드 품질 재검토 수정
 

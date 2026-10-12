@@ -25,6 +25,7 @@ namespace
         std::vector<std::function<void()>> actions;
         std::vector<std::filesystem::path> images;
         std::vector<std::wstring> labels;
+        std::vector<std::wstring> buttonLabels;
         void Box(v::Rect r, v::Color, float) override
         {
             rectangles.push_back(r);
@@ -41,6 +42,7 @@ namespace
         void Button(v::Rect, std::wstring text, std::function<void()> action, bool) override
         {
             actions.push_back(std::move(action));
+            buttonLabels.push_back(text);
             labels.push_back(std::move(text));
         }
     };
@@ -488,6 +490,104 @@ namespace
         Check(state.Document().Pattern().timing.empty(), "Timing deletion failed.");
     }
 
+    void TestInspectorMusicalTiming()
+    {
+        EditorWorkspace state(CreateEditorMode("Taiko"),
+                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+        state.AddNote({0, {}}, 1);
+        const auto id = state.Document().Notes().front().note.sourceOrder;
+        TaikoEditorNoteInspector inspector;
+        inspector.Select(state.Document(), id);
+        inspector.Form().tool = 12;
+        const auto initialRevision = state.Document().Revision();
+        bool missingEnd = false;
+        try
+        {
+            inspector.Apply(state);
+        }
+        catch (const std::exception &)
+        {
+            missingEnd = true;
+        }
+        Check(missingEnd && state.Document().Revision() == initialRevision && state.Document().Notes().size() == 1,
+              "Converting a tap must require an explicit musical end and preserve the source on failure.");
+        inspector.Form().startMeasure = "2";
+        inspector.Form().startBeat = "1/8";
+        inspector.Form().endMeasure = "3";
+        inspector.Form().endBeat = "1/4";
+        inspector.Apply(state);
+        const auto selected = *state.Document().FindNote(id);
+        Check(selected.head.note.position == chart::MusicalPosition{1, {1, 8}} && selected.tail &&
+                  selected.tail->note.position == chart::MusicalPosition{2, {1, 4}} &&
+                  selected.head.note.keyType == 12 && selected.tail->note.keyType == 12 &&
+                  selected.head.timing == finger_drum::rhythm::RhythmTime{2'250'000} &&
+                  selected.tail->timing == finger_drum::rhythm::RhythmTime{4'500'000},
+              "Musical input must use one-based measures, exact whole-note fractions and allocate a paired end.");
+        for (const auto language : {finger_drum::texts::Language::Korean, finger_drum::texts::Language::English})
+        {
+            RecordingCanvas panel;
+            inspector.Draw(panel, state, language);
+            const auto &text = finger_drum::texts::TaikoEditor(language);
+            Check(std::ranges::find(panel.labels, std::wstring(text.beatPosition)) != panel.labels.end() &&
+                      std::ranges::find(panel.labels, L"2250.000 ms") != panel.labels.end() &&
+                      std::ranges::none_of(panel.buttonLabels,
+                                           [](const auto &label) { return label.find(L"ms") != std::wstring::npos; }),
+                  "The inspector must localize musical fields and leave derived milliseconds read-only.");
+        }
+        // BPM edits recompile time without changing the selected musical source or its IDs.
+        state.timingForm.measure = "2";
+        state.timingForm.fraction = "0/1";
+        state.timingForm.bpm = "180";
+        state.ApplyBpm();
+        RecordingCanvas refreshed;
+        inspector.Draw(refreshed, state, finger_drum::texts::Language::English);
+        Check(inspector.Form().startMeasure == "2" && inspector.Form().startBeat == "1/8" &&
+                  state.Document().FindNote(id)->tail->note.sourceOrder == selected.tail->note.sourceOrder &&
+                  state.Document().FindNote(id)->head.timing == finger_drum::rhythm::RhythmTime{2'166'667},
+              "Timeline changes must refresh derived times while retaining source coordinates and paired IDs.");
+        const auto revision = state.Document().Revision();
+        for (int invalid = 0; invalid < 5; ++invalid)
+        {
+            inspector.Select(state.Document(), id);
+            auto &draft = inspector.Form();
+            if (invalid == 0)
+                draft.startMeasure = "0";
+            if (invalid == 1)
+                draft.startMeasure = "100001";
+            if (invalid == 2)
+                draft.startBeat = "1/1";
+            if (invalid == 3)
+                draft.startBeat = "250ms";
+            if (invalid == 4)
+            {
+                draft.endMeasure = draft.startMeasure;
+                draft.endBeat = draft.startBeat;
+            }
+            bool rejected = false;
+            try
+            {
+                inspector.Apply(state);
+            }
+            catch (const std::exception &)
+            {
+                rejected = true;
+            }
+            Check(rejected && state.Document().Revision() == revision &&
+                      state.Document().FindNote(id)->head.note.position == selected.head.note.position &&
+                      state.Document().FindNote(id)->tail->note.position == selected.tail->note.position,
+                  "Invalid musical fields must preserve both endpoints and all document caches.");
+        }
+        inspector.Select(state.Document(), id);
+        inspector.Form().tool = 2;
+        inspector.Form().startMeasure = "4";
+        inspector.Form().startBeat = "3/8";
+        inspector.Apply(state);
+        Check(state.Document().Notes().size() == 1 && !state.Document().FindNote(id)->tail &&
+                  state.Document().FindNote(id)->head.note.position == chart::MusicalPosition{3, {3, 8}} &&
+                  state.Document().NotesInMeasures(1, 3).empty() && state.Document().NotesInMeasures(3, 4).size() == 1,
+              "Converting back to a tap must discard only the paired end and move the stable head in the index.");
+    }
+
     void TestCustomSeparateRealtimeVisibility()
     {
         auto pattern = chart::PatternDocument{};
@@ -635,6 +735,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     TestTaikoPlacementConflicts();
     TestPreviewMatchesPlay();
     TestSeekAndEffectEdits();
+    TestInspectorMusicalTiming();
     TestCustomSeparateRealtimeVisibility();
     auto mode = std::make_unique<ProbeMode>();
     auto *probe = mode.get();

@@ -18,6 +18,7 @@ namespace finger_drum::texts
         std::wstring_view beats;
         std::wstring_view noteInfo, selectNoteHelp, startPosition, endPosition, hitCount, tickDivision, hitSound, apply,
             resetDraft, tickCount;
+        std::wstring_view measure, beatPosition;
     };
     const TaikoEditorTextSet &TaikoEditor(Language language) noexcept;
 } // namespace finger_drum::texts

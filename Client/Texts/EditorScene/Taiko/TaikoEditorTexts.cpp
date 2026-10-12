@@ -24,7 +24,9 @@ namespace finger_drum::texts
                                                    L"히트사운드 ID (빈칸: 기본)",
                                                    L"적용",
                                                    L"초안 취소",
-                                                   L"틱 수"};
+                                                   L"틱 수",
+                                                   L"마디",
+                                                   L"박자 (온음표 기준)"};
         static constexpr TaikoEditorTextSet English{
             {L"SELECT", L"DON", L"BIG DON", L"ROLL", L"BALLOON", L"BPM", L"MEASURE"},
             {L"Don", L"Kat", L"Big Don", L"Big Kat", L"Purple Note", L"Roll", L"Tick Roll", L"Big Roll",
@@ -47,7 +49,9 @@ namespace finger_drum::texts
             L"Hit sound ID (empty: default)",
             L"Apply",
             L"Reset fields",
-            L"Tick count"};
+            L"Tick count",
+            L"measure",
+            L"Beat (whole note)"};
         return language == Language::Korean ? Korean : English;
     }
 } // namespace finger_drum::texts

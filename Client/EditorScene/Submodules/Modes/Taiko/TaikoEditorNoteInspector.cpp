@@ -63,6 +63,10 @@ void TaikoEditorNoteInspector::Refresh(const chart::IEditorDocument &document)
     if (!selected_ || draftChanged_)
         return;
     const auto &note = selected_->head.note;
+    draft_.startMeasure = std::to_string(note.position.measure + 1);
+    draft_.startBeat = Fraction(note.position.fraction);
+    draft_.endMeasure = selected_->tail ? std::to_string(selected_->tail->note.position.measure + 1) : "";
+    draft_.endBeat = selected_->tail ? Fraction(selected_->tail->note.position.fraction) : "";
     draft_.tool = note.keyType;
     if (note.keyType == 17)
     {
@@ -83,11 +87,11 @@ void TaikoEditorNoteInspector::Refresh(const chart::IEditorDocument &document)
 }
 void TaikoEditorNoteInspector::Field(IEditorModeCanvas &canvas, IEditorContext &state,
                                      finger_drum::texts::Language language, float y, std::wstring_view label,
-                                     std::string &value)
+                                     std::string &value, float x, float width)
 {
-    canvas.Text({1530, y, 330, 24}, std::wstring(label), 17);
-    canvas.Button({1530, y + 26, 340, 34}, Wide(value),
-                  [this, &state, language, label, &value]
+    canvas.Text({x, y, width, 24}, std::wstring(label), 17);
+    canvas.Button({x, y + 26, width, 34}, Wide(value),
+                  [this, &state, language, label = std::wstring(label), &value]
                   {
                       if (const auto edited =
                               EditText(std::wstring(label), value, finger_drum::texts::Editor(language)))
@@ -97,6 +101,14 @@ void TaikoEditorNoteInspector::Field(IEditorModeCanvas &canvas, IEditorContext &
                           state.RequestRebuild();
                       }
                   });
+}
+void TaikoEditorNoteInspector::PositionFields(IEditorModeCanvas &canvas, IEditorContext &state,
+                                              finger_drum::texts::Language language, float y, std::wstring_view label,
+                                              std::string &measure, std::string &beat)
+{
+    const auto &text = finger_drum::texts::TaikoEditor(language);
+    Field(canvas, state, language, y, std::wstring(label) + L" " + std::wstring(text.measure), measure, 1530, 110);
+    Field(canvas, state, language, y, text.beatPosition, beat, 1658, 212);
 }
 void TaikoEditorNoteInspector::Draw(IEditorModeCanvas &canvas, IEditorContext &state,
                                     finger_drum::texts::Language language)
@@ -121,22 +133,20 @@ void TaikoEditorNoteInspector::Draw(IEditorModeCanvas &canvas, IEditorContext &s
                       state.RequestRebuild();
                   });
     const auto &head = selected_->head;
-    canvas.Text({1530, 235, 340, 32},
-                std::wstring(text.startPosition) + L" " + std::to_wstring(head.note.position.measure + 1) + L", " +
-                    Wide(Fraction(head.note.position.fraction)),
-                17);
-    canvas.Text({1530, 267, 340, 28}, std::format(L"{:.3f} ms", head.timing.count() / 1000.0), 16);
-    if (selected_->tail)
-        canvas.Text({1530, 302, 340, 32},
-                    std::wstring(text.endPosition) + L" " +
-                        std::to_wstring(selected_->tail->note.position.measure + 1) + L", " +
-                        Wide(Fraction(selected_->tail->note.position.fraction)),
-                    17);
+    PositionFields(canvas, state, language, 238, text.startPosition, draft_.startMeasure, draft_.startBeat);
+    canvas.Text({1530, 302, 340, 24}, std::format(L"{:.3f} ms", head.timing.count() / 1000.0), 16);
+    const auto *tool = editor_tools::Find(draft_.tool);
+    if (tool && finger_drum::mode::FindTaikoNote(static_cast<int>(tool->note))->longNote)
+    {
+        PositionFields(canvas, state, language, 332, text.endPosition, draft_.endMeasure, draft_.endBeat);
+        if (selected_->tail)
+            canvas.Text({1530, 396, 340, 24}, std::format(L"{:.3f} ms", selected_->tail->timing.count() / 1000.0), 16);
+    }
     if (editor_tools::UsesHitCount(draft_.tool))
-        Field(canvas, state, language, 368, text.hitCount, draft_.hitCount);
+        Field(canvas, state, language, 430, text.hitCount, draft_.hitCount);
     if (editor_tools::UsesTickDivision(draft_.tool))
-        Field(canvas, state, language, 368, text.tickDivision, draft_.tickDivision);
-    Field(canvas, state, language, 446, text.hitSound, draft_.hitSound);
+        Field(canvas, state, language, 430, text.tickDivision, draft_.tickDivision);
+    Field(canvas, state, language, 508, text.hitSound, draft_.hitSound);
     if (selected_->tail && editor_tools::UsesTickDivision(head.note.keyType))
     {
         std::vector<chart::Diagnostic> diagnostics;
@@ -147,7 +157,7 @@ void TaikoEditorNoteInspector::Draw(IEditorModeCanvas &canvas, IEditorContext &s
                                                                        selected_->tail->note.position, *division);
             if (head.note.keyType == 17 && count != 0)
                 --count;
-            canvas.Text({1530, 524, 340, 30}, std::wstring(text.tickCount) + L" " + std::to_wstring(count), 17);
+            canvas.Text({1530, 586, 340, 30}, std::wstring(text.tickCount) + L" " + std::to_wstring(count), 17);
         }
     }
     canvas.Button({1530, 716, 160, 40}, std::wstring(text.apply), [this, &state] { Apply(state); }, true);
@@ -167,14 +177,15 @@ void TaikoEditorNoteInspector::Apply(IEditorContext &state)
     if (!tool)
         throw std::invalid_argument("Unknown Taiko note type.");
     auto head = selected_->head.note;
+    head.position = Position(draft_.startMeasure, draft_.startBeat);
     head.keyType = static_cast<int>(tool->note);
     head.hitSound = draft_.hitSound;
     std::optional<chart::MusicalPosition> end;
     if (finger_drum::mode::FindTaikoNote(head.keyType)->longNote)
     {
-        if (!selected_->tail)
-            throw std::invalid_argument("A long note requires an end position.");
-        end = selected_->tail->note.position;
+        if (draft_.endMeasure.empty() || draft_.endBeat.empty())
+            throw std::invalid_argument("A long note requires an end measure and beat.");
+        end = Position(draft_.endMeasure, draft_.endBeat);
     }
     if (editor_tools::UsesHitCount(draft_.tool))
     {

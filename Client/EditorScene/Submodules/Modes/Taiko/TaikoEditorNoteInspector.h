@@ -17,6 +17,8 @@ class TaikoEditorNoteInspector final
     struct Draft
     {
         int tool{};
+        // UI measures are one-based; beat fractions use the YMP whole-note unit.
+        std::string startMeasure, startBeat, endMeasure, endBeat;
         std::string hitCount, tickDivision, hitSound;
     };
     Draft &Form() noexcept
@@ -28,7 +30,9 @@ class TaikoEditorNoteInspector final
   private:
     void Refresh(const finger_drum::chart::IEditorDocument &);
     void Field(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language, float y, std::wstring_view label,
-               std::string &value);
+               std::string &value, float x = 1530, float width = 340);
+    void PositionFields(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language, float y,
+                        std::wstring_view label, std::string &measure, std::string &beat);
     std::optional<finger_drum::chart::EditorNoteSelection> selected_;
     std::uint64_t revision_{};
     Draft draft_;
