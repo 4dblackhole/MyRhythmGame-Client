@@ -32,6 +32,10 @@ namespace finger_drum::tests
     void TestTimingCommandWhitespaceGrammar();
     void TestAbsoluteMeasurePositionsAndTempoAnchors();
     void TestScrollBeatCoordinatesAcrossTempoAndDelay();
+    void TestDelayTimeAnchors();
+    void TestNegativeDelayOverwritesEvents();
+    void TestDelayEffectTimeConsistency();
+    void TestNegativeDelayLongsAndAreas();
     void TestYmpSystemBreaksAdvanceAndRemainAvailable();
     void TestOutOfMeasureEntriesAreIgnored();
     void TestSongCatalog(const std::filesystem::path &songsRoot);

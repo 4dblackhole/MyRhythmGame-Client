@@ -3,6 +3,7 @@
 #include "Taiko/TaikoMode.h"
 #include "TaikoChartAudio.h"
 #include "TaikoNoteOptions.h"
+#include "Timing/MusicalTimeline.h"
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -16,12 +17,10 @@ namespace finger_drum::mode::taiko_build
 {
     using namespace taiko_options;
     using taiko_audio::ChartSoundId;
-    inline bool UsesSyncopation(const chart::EffectDocument &effects, chart::MusicalPosition position)
+    inline bool UsesSyncopation(const chart::EffectDocument &effects, const chart::MusicalTimeline &timeline,
+                                chart::MusicalPosition position)
     {
-        const chart::EffectCommand *selected = nullptr;
-        for (const auto &c : effects.commands)
-            if (c.type == chart::EffectCommandType::SyncopationZone && c.position <= position &&
-                (!selected || selected->position <= c.position)) selected = &c;
+        const auto *selected = timeline.FindEffectAt(effects, chart::EffectCommandType::SyncopationZone, position);
         if (!selected || selected->endValue < .5) return false;
         for (const auto division : selected->excludedDivisions)
             if ((position.fraction * static_cast<std::int64_t>(division * 4)).Denominator() == 1)
@@ -53,6 +52,8 @@ namespace finger_drum::mode::taiko_build
                                        "invalid key ID, or a position outside its measure."});
                 continue;
             }
+            if (!timeline.IsPositionActive(change.position))
+                continue;
             auto &changes = change.keyType == 1 ? donChanges : katChanges;
             changes.push_back({timeline.Compile(change.position), ChartSoundId(change.soundIndex)});
         }

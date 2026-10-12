@@ -1,5 +1,7 @@
 #include "Automation/InterpolationExpression.h"
 #include "Automation/ScrollAutomation.h"
+#include "Taiko/Submodules/TaikoAudioPreview.h"
+#include "Taiko/Submodules/TaikoChartNotes.h"
 #include "TestSupport.h"
 #include <limits>
 
@@ -21,6 +23,175 @@ namespace finger_drum::tests
             return pattern;
         }
     } // namespace
+
+    void TestDelayEffectTimeConsistency()
+    {
+        auto pattern = RegressionPattern();
+        pattern.patternOffsetMilliseconds = 125;
+        pattern.timing = {{{0, {1, 2}}, chart::TimingDirectiveType::Bpm, 240},
+                          {{0, {1, 2}}, chart::TimingDirectiveType::DelayMilliseconds, 300},
+                          {{0, {1, 2}}, chart::TimingDirectiveType::DelayMilliseconds, 50},
+                          {{0, {3, 4}}, chart::TimingDirectiveType::DelayMilliseconds, -100},
+                          {{1, {}}, chart::TimingDirectiveType::Bpm, 180},
+                          {{1, {}}, chart::TimingDirectiveType::MeasureLength, 0, {3, 4}}};
+        pattern.notes = {{{0, {1, 4}}, 1}, {{0, {1, 2}}, 2}, {{0, {3, 4}}, 1}, {{2, {}}, 1}};
+        const auto effects = ParseRegressionEffects(R"([Interpolation]
+Ramp: From+(To-From)*u
+[HitSounds]
+1: hit.wav
+[Speed]
+1,1/4,Area,2,1/4,#ScrollSpeed Separate,From=1,To=3,Curve=Ramp
+[Sounds]
+1,1/4,Area,2,1/4,#Volume HitSound,From=0.2,To=0.8,Curve=Ramp
+1,3/4,#HitSound Don 1
+[Zone]
+1,3/4,#Kiai ON
+)");
+        chart::ChartEditor editor(pattern, effects);
+        auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+        Require(loaded.Succeeded(), "The mixed BPM/signature/delay effect fixture must load.");
+        const auto &timeline = editor.Timeline();
+        Require(timeline.Compile({0, {1, 2}}) == rhythm::RhythmTime{1'475'000} &&
+                    timeline.Compile({0, {3, 4}}) == rhythm::RhythmTime{1'625'000} &&
+                    timeline.Compile({1, {}}) == rhythm::RhythmTime{1'875'000} &&
+                    timeline.Compile({2, {}}) == rhythm::RhythmTime{2'875'000},
+                "Every BPM prefix and measure time must include prior delays exactly once.");
+        const auto compiled = timeline.CompileEffects(effects);
+        Require(compiled[0].timing == rhythm::RhythmTime{625'000} &&
+                    compiled[0].duration == rhythm::RhythmDuration{1'583'333},
+                "YME Area endpoints must use delayed real time while retaining their musical source.");
+        const double u = 850'000.0 / 1'583'333.0;
+        Require(
+            std::abs(editor.Notes()[1].scrollMultiplier - (1 + 2 * u)) < 1e-12 &&
+                std::abs(timeline.EffectValueAt(effects, chart::EffectCommandType::BusVolume, {0, {1, 2}}) -
+                         (.2 + .6 * u)) < 1e-12,
+            "Separate speed and authored interpolation must evaluate actual elapsed microseconds, not beat ratios.");
+        const auto &values = loaded.session->EvaluateAutomation(rhythm::RhythmTime{1'475'000});
+        const auto volume = std::ranges::find(values, std::string("HitSound"), &mode::AutomationValue::target);
+        Require(volume != values.end() && std::abs(volume->value - (.2 + .6 * u)) < 1e-12 &&
+                    !loaded.session->IsKiaiActive(rhythm::RhythmTime{1'624'999}) &&
+                    loaded.session->IsKiaiActive(rhythm::RhythmTime{1'625'000}),
+                "Runtime volume and zone changes must follow the same delayed endpoint times as the editor.");
+        editor.ReplaceTiming({});
+        Require(std::abs(editor.EffectValueAt(chart::EffectCommandType::NoteSpeed, {0, {1, 2}}) - 1.5) < 1e-12,
+                "Timing replacement must rebuild the compiled effect lookup together with note times.");
+
+        // A valid negative delay may cross an earlier effect, without crossing a source note.
+        pattern = RegressionPattern();
+        pattern.timing = {{{0, {3, 4}}, chart::TimingDirectiveType::DelayMilliseconds, -750}};
+        pattern.notes = {{{0, {}}, 1}, {{0, {3, 4}}, 1}};
+        const auto reordered = ParseRegressionEffects(R"([Speed]
+1,1/2,#ScrollSpeed Separate,Value=2
+[Zone]
+1,1/2,#Syncopation ON
+)");
+        chart::ChartEditor moved(pattern, reordered);
+        loaded = mode::TaikoMode{}.CreateSession(pattern, reordered);
+        Require(loaded.Succeeded() && moved.Notes().back().timing == rhythm::RhythmTime{750'000} &&
+                    moved.Notes().back().scrollMultiplier == 1 && loaded.session->MinimumScrollMultiplier() == 1 &&
+                    moved.EffectValueAt(chart::EffectCommandType::NoteSpeed, {0, {3, 4}}) == 1 &&
+                    !moved.Timeline().FindEffectAt(reordered, chart::EffectCommandType::SyncopationZone, {0, {3, 4}}),
+                "An effect whose real start is still in the future must not apply merely because its beat is earlier.");
+        moved.ReplaceTiming({});
+        Require(moved.Notes().back().scrollMultiplier == 2,
+                "Removing delay must restore the effect's real-time ordering.");
+        moved.ReplaceEffects(reordered);
+        const chart::ChartEditor copied(moved);
+        Require(copied.Notes().back().scrollMultiplier == 2 &&
+                    copied.EffectValueAt(chart::EffectCommandType::NoteSpeed, {0, {3, 4}}) == 2,
+                "Effect replacement/copy must preserve ownership of the compiled-time lookup pointers.");
+    }
+
+    void TestNegativeDelayLongsAndAreas()
+    {
+        auto pattern = RegressionPattern();
+        pattern.timing = {{{1, {1, 4}}, chart::TimingDirectiveType::DelayMilliseconds, -1500}};
+        const std::array<std::pair<chart::MusicalPosition, chart::MusicalPosition>, 5> endpoints{{
+            {{0, {3, 4}}, {1, {3, 4}}}, // masked head, surviving tail
+            {{0, {1, 4}}, {0, {3, 4}}}, // masked tail
+            {{0, {3, 4}}, {1, {}}},     // both masked
+            {{0, {1, 2}}, {1, {1, 4}}}, // equal compiled endpoints
+            {{0, {3, 4}}, {1, {1, 4}}}  // reversed compiled endpoints
+        }};
+        for (int type : {11, 12, 13, 14, 15, 16, 17})
+            for (std::size_t i = 0; i < endpoints.size(); ++i)
+            {
+                const auto [begin, end] = endpoints[i];
+                pattern.notes = {{begin, type, 1, {}, {"HitCount=2", "TickDivision=16", "Action=Kat"}, {}, 10},
+                                 {end, type, 2, {}, {}, {}, 11}};
+                chart::ChartEditor editor(pattern);
+                const auto playable = mode::taiko_notes::PlayableInSourceOrder(editor.Notes());
+                auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+                Require(loaded.Succeeded(), "All Taiko long types must support negative-delay endpoint rules.");
+                const auto &notes = loaded.session->Gear().Lanes().front()->Notes();
+                const auto preview = mode::BuildTaikoAudioPreview(pattern, {}, editor.Timeline(), editor.Notes());
+                if (i == 4)
+                {
+                    Require(playable.empty() && notes.empty() && preview.empty() && editor.Pattern().notes.size() == 2,
+                            "Only reversed compiled longs disappear, while both authored endpoints remain saved.");
+                    continue;
+                }
+                const auto oldHeadTime = editor.Timeline().Compile(begin), oldTailTime = editor.Timeline().Compile(end);
+                Require(playable.size() == 2 && notes.size() == 1 && notes.front()->Timing() == oldHeadTime &&
+                            loaded.session->FindNotePresentation(notes.front()->Id())->endTime == oldTailTime &&
+                            std::ranges::any_of(preview, [&](const auto &cue) { return cue.time == oldHeadTime; }),
+                        "Masked/equal long endpoints must keep their historical time in play, editor and preview.");
+            }
+        // Auto-count longs also remain valid when their entire source body is cut.
+        pattern.notes = {{{0, {1, 2}}, 11, 1}, {{1, {1, 4}}, 11, 2}};
+        Require(mode::TaikoMode{}.CreateSession(pattern).Succeeded(),
+                "A zero-length retained auto-count roll must keep a valid minimum hit requirement.");
+
+        pattern.notes = {{{1, {3, 4}}, 1}};
+        const auto effects = ParseRegressionEffects(R"([HitSounds]
+1: old.wav
+2: overwritten.wav
+3: new.wav
+[Speed]
+1,3/4,Area,2,3/4,#ScrollSpeed Separate,From=1,To=3,Curve=Linear
+1,3/4,Area,2,1/4,#ScrollSpeed Whole,From=1,To=2,Curve=Linear
+1,3/4,#ScrollSpeed Separate,Value=4
+[Sounds]
+1,1/2,Area,2,1/4,#Volume HitSound,From=0.2,To=0.8,Curve=Linear
+1,1/4,Area,1,3/4,#Volume TickSound,From=0.3,To=0.9,Curve=Linear
+1,1/4,#HitSound Don 1
+1,3/4,#HitSound Don 2
+2,1/4,#HitSound Don 3
+[Zone]
+1,3/4,#Kiai ON
+1,3/4,#Syncopation ON
+)");
+        chart::ChartEditor editor(pattern, effects);
+        const auto compiled = editor.Timeline().CompileEffects(effects);
+        auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+        Require(loaded.Succeeded() && compiled.size() == 3 && loaded.session->Effects().size() == compiled.size(),
+                "Areas retain masked endpoints, reversed Areas disappear, and masked point commands disappear.");
+        const auto equal = std::ranges::find(
+            compiled, chart::EffectCommandType::BusVolume, [](const auto &effect)
+            { return effect.command.target == "HitSound" ? effect.command.type : chart::EffectCommandType::Custom; });
+        Require(equal != compiled.end() && equal->duration == rhythm::RhythmDuration{},
+                "An Area whose compiled endpoints are equal must remain an instantaneous change.");
+        Require(editor.EffectValueAt(chart::EffectCommandType::NoteSpeed, {1, {3, 4}}) == 3 &&
+                    loaded.session->FindNotePresentation(1)->scrollMultiplier == 3 &&
+                    !loaded.session->IsKiaiActive(rhythm::RhythmTime{3'000'000}),
+                "Retained Areas and excluded point state must agree between editor and gameplay.");
+        const auto hit = loaded.session->ProcessInput('F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{2'000'000});
+        const auto preview = mode::BuildTaikoAudioPreview(pattern, effects, editor.Timeline(), editor.Notes());
+        Require(!hit.audioCues.empty() && hit.audioCues.front().sound == "Chart.HitSound.3" && preview.size() == 1 &&
+                    preview.front().sound == hit.audioCues.front().sound,
+                "A masked hit-sound change must not override the surviving point in play or audio preview.");
+        const chart::ChartEditor copy(editor);
+        Require(copy.EffectValueAt(chart::EffectCommandType::NoteSpeed, {1, {3, 4}}) == 3,
+                "Copying must preserve ownership of the retained Area's indexed command.");
+        editor.ReplaceTiming({});
+        Require(editor.Timeline().CompileEffects(editor.Effects()).size() == effects.commands.size(),
+                "Removing the cut must restore all authored Areas and point commands.");
+        editor.ReplaceTiming(pattern.timing);
+        editor.ReplaceEffects(effects);
+        Require(editor.Timeline().CompileEffects(editor.Effects()).size() == 3 &&
+                    editor.EffectValueAt(chart::EffectCommandType::NoteSpeed, {1, {3, 4}}) == 3,
+                "Timing/effect replacement must recompute Area validity and point visibility atomically.");
+    }
 
     void TestRuntimeAutomationRecovery()
     {

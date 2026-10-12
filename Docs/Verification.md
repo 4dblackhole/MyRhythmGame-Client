@@ -79,6 +79,47 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 delay 무효 구간·롱노트/Area 끝점
+
+- 음수 delay가 덮는 일반 노트·틱·BPM·delay·YME 지점/히트사운드 변경을 컴파일 결과에서
+  제외하고 원본 마디·박자·ID를 보존합니다. 롱노트와 Area는 기존 끝점 시각을 유지하고,
+  끝이 시작보다 앞설 때만 제외합니다. 같은 시각이면 유지하며 0길이 Area는 To를 적용합니다.
+  원본 박자 기준 끝점의 순서는 여전히 검증합니다. 엔진이나 파일 버전은 변경하지 않았습니다.
+- MusicalTimeline은 원본 위치 prefix와 실제 시간 기준점, 살아남은 BPM 상태, 무효 구간,
+  표시용 마디 범위를 분리합니다. 침범된 BPM/delay를 되돌린 상태로 이후 시간을 계산하고,
+  Area 보간과 효과 조회는 실제 us를 사용합니다. 소스 무효 구간은 이진 검색하며,
+  틱 개수는 제거될 틱 시각 배열을 만들지 않고 구간 인덱스로 계산합니다.
+- ChartEditor는 원본 균형 트리/롱 연결/안정 ID를 유지합니다. 시간 변경 때 유효성·시간·속도·
+  효과 시간 인덱스를 후보에서 계산하고 함께 반영합니다. 효과 인덱스의 포인터는 소유 map의
+  노드를 참조하며 교체·복사 회귀로 수명을 확인했습니다.
+- TaikoChartNotes는 플레이 생성·오디오 예측·에디터 표시/배치에서 source 순서의 롱 결합과
+  같은 제외 규칙을 공유합니다. TaikoEditorScore의 악보 표시와 스냅은 표시 마디 시간을 쓰고,
+  실시간 마디선은 Whole 거리만 사용합니다. Scene/오디오 backend의 소유권은 변경하지 않았습니다.
+- Debug/Release x64 최종 전체 solution Rebuild 성공: 일반 빌드 경고/오류 0.
+  각각 로직·실제 카탈로그 48개/실패 0, 네 Client smoke route 총 8개 exit 0.
+  각 구성 Editor audio/mode/menu와 Gameplay judgement 회귀 성공.
+- 새 회귀는 2/4→3/4→4/4 예시와 원본 1/4 위치 보존, 경계/마디 중간의 양·음수 delay,
+  닫힌 마디 끝, 여러 마디/중첩 침범, BPM/delay 상태 복원, 양수 gap의 남은 시간,
+  시작 전 시간 조회, 무효 틱/count 일치, 저장/편집/복사 후 원본/ID/인덱스 복원을 검사합니다.
+  7종 Taiko 롱 타입에서 시작만·끝만·양쪽 무효 및 같은/역전 시각을 검사했습니다.
+  Area의 동일 정책과 실제 시간 보간, 지점·히트사운드 무효화, 에디터 표시/스냅 일치도 검사했습니다.
+- 각 구성 실제 D3D12/FMOD 숨김 자동 replay 성공: 전체 노트 19개 완료/85.1694%/1557프레임,
+  효과 채보 15개 완료/97.8897%/1302프레임. 밀집 Buzz의 +50ms GOOD 헤드 입력과
+  기존 missed-tick 기대값도 유지했습니다.
+- MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 Chart, Modes, Rhythm.Tests,
+  MRG.Client의 실제 x64 Debug/Release include/define/C++20/PCH 설정으로 실행했습니다.
+  BuildProjectReferences=false로 엔진/SDK 재분석을 제외했습니다. Editor 회귀 테스트의
+  3개 번역 단위도 두 구성 /analyze 성공. 파싱/컴파일 오류와 최종 새 경고 0.
+  초기 C26820 시간 기준점 복사는 참조로 수정하고 최종 분석을 재실행했습니다.
+  기존 C26115(EditorAnalysisController.cpp:51), C28020(GameplaySessionController.cpp:64),
+  Release C6236(GameplayInput.cpp:60)는 범위 밖으로 구분했고 억제하지 않았습니다.
+- CheckArchitecture(11개 프로젝트), git diff --check 통과. 실행 전후 기존 Option.ini SHA256 동일.
+  사용자 곡/스킨과 기존 LaneKeyBeam.cpp 작업을 보존했습니다.
+- 실제 픽셀 배치·물리 키보드/마우스 입력·청음은 수동 확인하지 않았습니다.
+  자동 Canvas/입력 회귀와 실제 GPU/오디오 실행 결과를 수동 확인으로 간주하지 않습니다.
+- 원시 로그: ignored `build/delay-2026-10-12/`의 Release 검사와 `final-Debug/`의 최종 Debug 검사.
+  재현 실행기: `build/VerifyDelay.ps1`, 마지막 수정 후 Debug 재검증은 `build/VerifyDelayFinalDebug.ps1`.
+
 ## 2026-10-12 노트 마디·박자 입력
 
 - 사용자 선택에 따라 노트 정보 패널의 시작·끝은 마디(1부터)/박자(N/D, 온음표 기준)만
@@ -104,9 +145,8 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   사용자 곡/스킨 및 기존 LaneKeyBeam.cpp 작업은 보존했습니다.
 - 실제 화면 픽셀 배치·물리 키보드/마우스 조작은 수행하지 않았습니다. 위 회귀는
   자동 입력/Canvas draw packet과 실제 Client 실행 검사입니다.
-- 추가 delay 요청은 아직 적용하지 않았습니다. 이전 마디 증감은 적용 위치, 마디 밖으로
-  밀린 항목 처리, 0 이하 길이의 정책에 대한 사용자 답변을 기다립니다. 현재 누적 지연
-  방식이 유지되며, 답변 뒤 공유 timeline/파서·편집·플레이 경계를 별도로 검증해야 합니다.
+- 이 검사 당시 delay 후속 요청은 미적용이었습니다. 이후 확정된 정책의 구현과 검증은
+  위의 delay 무효 구간·롱노트/Area 끝점 절에 기록했습니다.
 - 원시 로그: ignored `build/editor-timing-2026-10-12/`의 rebuild, analysis, logic, editor,
   architecture와 diff-check 로그. 재현 실행기: `build/VerifyEditorTiming.ps1`.
 

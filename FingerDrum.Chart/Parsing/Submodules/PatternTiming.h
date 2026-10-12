@@ -169,17 +169,22 @@ namespace finger_drum::chart::parsing
             return true;
         });
 
-        std::erase_if(result.document.timing, [&result, &isOutsideMeasure](
-                                                  const TimingDirective &directive) {
-            if (directive.type == TimingDirectiveType::MeasureLength ||
-                !isOutsideMeasure(directive.position))
-            {
-                return false;
-            }
-            AddDiagnostic(result.diagnostics, directive.source.file, directive.source.line,
-                          "The timing directive lies outside the current measure and was ignored.",
-                          DiagnosticSeverity::Warning);
-            return true;
-        });
+        std::erase_if(result.document.timing,
+                      [&result, &isOutsideMeasure, &measureLengths](const TimingDirective &directive)
+                      {
+                          const bool closedDelayEnd =
+                              directive.type == TimingDirectiveType::DelayMilliseconds &&
+                              directive.position.fraction ==
+                                  measureLengths.at(static_cast<std::size_t>(directive.position.measure));
+                          if (directive.type == TimingDirectiveType::MeasureLength || closedDelayEnd ||
+                              !isOutsideMeasure(directive.position))
+                          {
+                              return false;
+                          }
+                          AddDiagnostic(result.diagnostics, directive.source.file, directive.source.line,
+                                        "The timing directive lies outside the current measure and was ignored.",
+                                        DiagnosticSeverity::Warning);
+                          return true;
+                      });
     }
 } // namespace finger_drum::chart::parsing

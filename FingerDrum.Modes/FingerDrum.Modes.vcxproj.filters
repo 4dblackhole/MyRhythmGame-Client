@@ -15,6 +15,9 @@
     <ClInclude Include="Taiko\Submodules\TaikoChartAudio.h">
       <Filter>Taiko\Submodules</Filter>
     </ClInclude>
+    <ClInclude Include="Taiko\Submodules\TaikoChartNotes.h">
+      <Filter>Taiko\Submodules</Filter>
+    </ClInclude>
     <ClInclude Include="Taiko\Submodules\TaikoNoteOptions.h">
       <Filter>Taiko\Submodules</Filter>
     </ClInclude>

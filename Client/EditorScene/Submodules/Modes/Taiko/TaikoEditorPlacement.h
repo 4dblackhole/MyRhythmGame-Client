@@ -1,5 +1,6 @@
 #pragma once
 #include "Editing/IEditorDocument.h"
+#include "Taiko/Submodules/TaikoChartNotes.h"
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
@@ -13,13 +14,13 @@ namespace taiko_editor
     {
         const auto beginTime = document.Timeline().Compile(position);
         const auto endTime = end ? document.Timeline().Compile(*end) : beginTime;
-        if (end && (*end <= position || endTime <= beginTime))
-            throw std::invalid_argument("Long note end must follow its start in musical and playback time.");
+        if (end && *end <= position)
+            throw std::invalid_argument("Long note end must follow its start in musical position.");
 
         // The range query includes both endpoints of every intersecting long note.
         // Edits keep their stable IDs; new notes follow existing equal-time notes.
         const auto edited = editedId ? document.FindNote(*editedId) : std::nullopt;
-        auto notes = document.NotesInTimeRange(beginTime, endTime);
+        auto notes = document.NotesInTimeRange(std::min(beginTime, endTime), std::max(beginTime, endTime));
         if (edited)
             std::erase_if(notes,
                           [&](const auto &note)
@@ -34,7 +35,9 @@ namespace taiko_editor
                           {},
                           {},
                           edited ? edited->head.note.sourceOrder : std::numeric_limits<std::size_t>::max() - 1},
-                         beginTime});
+                         beginTime,
+                         1,
+                         document.Timeline().IsPositionActive(position)});
         if (end)
             notes.push_back(
                 {{*end,
@@ -44,10 +47,10 @@ namespace taiko_editor
                   {},
                   {},
                   edited && edited->tail ? edited->tail->note.sourceOrder : std::numeric_limits<std::size_t>::max()},
-                 endTime});
-        std::ranges::sort(
-            notes, [](const auto &a, const auto &b)
-            { return std::pair{a.timing, a.note.sourceOrder} < std::pair{b.timing, b.note.sourceOrder}; });
+                 endTime,
+                 1,
+                 document.Timeline().IsPositionActive(*end)});
+        notes = finger_drum::mode::taiko_notes::PlayableInSourceOrder(std::move(notes));
         std::optional<int> activeLongType;
         for (const auto &compiled : notes)
         {

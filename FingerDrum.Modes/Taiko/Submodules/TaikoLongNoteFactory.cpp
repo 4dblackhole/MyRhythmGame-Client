@@ -21,10 +21,10 @@ namespace finger_drum::mode
         const chart::PatternNote &tail = compiledTail.note;
         const rhythm::RhythmTime begin = compiledHead.timing;
         const rhythm::RhythmTime end = compiledTail.timing;
-        if (end <= begin)
+        if (end < begin)
         {
-            diagnostics.push_back(
-                {chart::DiagnosticSeverity::Error, tail.source, "A long-note end must be later than its start."});
+            diagnostics.push_back({chart::DiagnosticSeverity::Warning, tail.source,
+                                   "Ignored a long note whose compiled end precedes its start."});
             return;
         }
 
@@ -39,8 +39,9 @@ namespace finger_drum::mode
         {
         case TaikoNoteType::Roll:
         case TaikoNoteType::BigRoll: {
-            const auto hitCount =
-                ReadHitCount(head, timeline.CountSubdivisions(head.position, tail.position, 12), diagnostics);
+            const auto hitCount = ReadHitCount(
+                head, std::max(std::size_t{1}, timeline.CountSubdivisions(head.position, tail.position, 12)),
+                diagnostics);
             if (!hitCount.has_value())
             {
                 break;
@@ -64,8 +65,9 @@ namespace finger_drum::mode
             }
             break;
         case TaikoNoteType::Balloon:
-            if (const auto hitCount =
-                    ReadHitCount(head, timeline.CountSubdivisions(head.position, tail.position, 12), diagnostics))
+            if (const auto hitCount = ReadHitCount(
+                    head, std::max(std::size_t{1}, timeline.CountSubdivisions(head.position, tail.position, 12)),
+                    diagnostics))
             {
                 rule = std::make_unique<rhythm::TimedSequenceInputRule>(
                     std::vector<rhythm::NoteAction>{ActionValue(TaikoAction::Don)}, *hitCount, end);
@@ -73,8 +75,9 @@ namespace finger_drum::mode
             }
             break;
         case TaikoNoteType::DengDeng:
-            if (const auto hitCount =
-                    ReadHitCount(head, timeline.CountSubdivisions(head.position, tail.position, 12), diagnostics))
+            if (const auto hitCount = ReadHitCount(
+                    head, std::max(std::size_t{1}, timeline.CountSubdivisions(head.position, tail.position, 12)),
+                    diagnostics))
             {
                 rule = std::make_unique<rhythm::TimedSequenceInputRule>(
                     std::vector<rhythm::NoteAction>{ActionValue(TaikoAction::Don), ActionValue(TaikoAction::Kat)},
@@ -90,7 +93,7 @@ namespace finger_drum::mode
             {
                 tickTimes = timeline.CompileSubdivisions(head.position, tail.position, *division);
                 // The head has its own timing score, not a body tick.
-                if (!tickTimes.empty())
+                if (compiledHead.positionActive && !tickTimes.empty() && tickTimes.front() == begin)
                 {
                     tickTimes.erase(tickTimes.begin());
                 }

@@ -64,6 +64,7 @@ class TaikoEditorMode final : public IEditorMode
     std::vector<NoteBodyHit> bodyHits_;
     TaikoEditorNoteInspector inspector_;
     std::vector<NoteHit> noteHits_;
+    std::vector<std::pair<mrg::visual2d::Point, finger_drum::chart::MusicalPosition>> overviewGrid_;
     std::vector<std::pair<float, finger_drum::chart::MusicalPosition>> realtimeGrid_;
     std::optional<finger_drum::chart::MusicalPosition> pending_;
     int tool_{1}, popup_{-1};

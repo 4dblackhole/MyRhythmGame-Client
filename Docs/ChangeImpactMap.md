@@ -36,7 +36,7 @@
 | YME 보간·Whole/Separate | `FingerDrum.Chart/Automation/InterpolationExpression.*`, `ScrollAutomation.*` | MusicalTimeline / PlaySession / GameplayPresenter / TaikoEditorScore; YmeEffectsTests, 실제 -Effects replay |
 | 효과 검증·런타임 실패 복구 | `FingerDrum.Chart/Automation/EffectValidation.*`, `PlaySession.*` | EffectParser / ChartEditor / TaikoMode; GameplaySessionController / Presenter 오류 HUD; YmeEffectsTests |
 | 싱코페이션 판정 범위·Kiai 상태 | `FingerDrum.Rhythm/Judgement/AccuracyRange.*`, `FingerDrum.Modes/Taiko/Submodules/TaikoBuildSupport.h` | TaikoSessionBuilder / RuleBasedNote / PlaySession; YmeEffectsTests |
-| BPM/마디 시간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | Formats/Timing; ChartParser/ChartEditorTests |
+| BPM/마디 시간·delay 무효 구간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | CompiledChart의 유효성 snapshot, TaikoChartNotes의 롱 결합; Formats/Timing; ChartParser/YmeEffects/EditorModeTests |
 | 편집 원본 트리·안정 ID·구간 조회·저장 실패 복구 | `FingerDrum.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests/ChartReviewRegressionTests; TaikoEditorScore, EditorWorkspace |
 | 플레이 자동화 검색·DSP 준비 | `FingerDrum.Modes/Mode/Submodules/PlaySession.*`, `Client/Audio/GameplayAudioRouter.*` | TaikoModeTests; GameplayAudio, 전체 노트 replay |
 

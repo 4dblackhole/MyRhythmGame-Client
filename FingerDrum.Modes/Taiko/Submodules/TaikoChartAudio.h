@@ -45,7 +45,7 @@ namespace finger_drum::mode::taiko_audio
         std::optional<rhythm::RhythmTime> lastTime;
         for (const auto &change : effects.hitSoundChanges)
         {
-            if (change.keyType != key)
+            if (change.keyType != key || !timeline.IsPositionActive(change.position))
                 continue;
             const auto changeTime = timeline.Compile(change.position);
             if (changeTime <= time && (!lastTime || changeTime >= *lastTime))

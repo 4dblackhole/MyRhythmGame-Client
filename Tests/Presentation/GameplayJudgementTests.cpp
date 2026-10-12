@@ -308,9 +308,14 @@ namespace
         pattern.notes.front().extraData = {"TickDivision=8"};
         pattern.timing.push_back({{0, {1, 2}}, finger_drum::chart::TimingDirectiveType::DelayMilliseconds, -750});
         loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
-        Check(loaded.Succeeded(), "Non-monotonic tick fixture must load.");
+        Check(loaded.Succeeded(), "Negative-delay tick fixture must load.");
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &delayedRoot = visuals.FindCanvas(2)->Root();
+        const auto visibleDelayedTicks = [&]
+        {
+            return std::ranges::count_if(Node(delayedRoot, "Lane.Note.1").Children(), [](const auto &child)
+                                         { return child->Name() == "LongNote.Tick" && child->IsVisible(); });
+        };
         const auto minimumTickY = [&]
         {
             float minimum = std::numeric_limits<float>::infinity();
@@ -323,15 +328,13 @@ namespace
             {.keyPressed = true, .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{})});
         presenter.UpdatePresentation(r::RhythmTime{200'000});
         const auto firstY = minimumTickY();
-        presenter.ApplyFeedback(
-            {.keyPressed = true,
-             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{200'000})});
+        Check(visibleDelayedTicks() == 4, "Overwritten ticks must not be presented or judged.");
         presenter.ApplyFeedback(
             {.keyPressed = true,
              .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{200'000})});
         presenter.UpdatePresentation(r::RhythmTime{200'000});
-        Check(std::isfinite(firstY) && minimumTickY() > firstY,
-              "Both coincident processed ticks must disappear even when authored times are non-monotonic.");
+        Check(std::isfinite(firstY) && minimumTickY() > firstY && visibleDelayedTicks() == 3,
+              "Surviving processed ticks must disappear after overwritten ticks have been excluded.");
         presenter.Shutdown();
     }
 } // namespace

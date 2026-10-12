@@ -5,6 +5,7 @@
 #include "Note/Submodules/SequenceInputRule.h"
 #include "Note/Submodules/TapInputRule.h"
 #include "TaikoBuildSupport.h"
+#include "TaikoChartNotes.h"
 
 namespace finger_drum::mode
 {
@@ -28,7 +29,7 @@ namespace finger_drum::mode
 
         chart::MusicalTimeline timeline(pattern);
         chart::ValidateEffectPositions(effects, timeline);
-        std::vector<chart::CompiledPatternNote> compiled = timeline.CompileNotes(pattern);
+        auto compiled = taiko_notes::PlayableInSourceOrder(timeline.CompileNotes(pattern));
         ConfigureHitSounds(*session, effects, timeline, result.diagnostics);
         if (!result.diagnostics.empty())
             return result;
@@ -57,7 +58,7 @@ namespace finger_drum::mode
         for (const chart::CompiledPatternNote &compiledNote : compiled)
         {
             const chart::PatternNote &source = compiledNote.note;
-            const auto profile = UsesSyncopation(effects, source.position) ? syncopationRange : defaultRange;
+            const auto profile = UsesSyncopation(effects, timeline, source.position) ? syncopationRange : defaultRange;
             const TaikoNoteType type = static_cast<TaikoNoteType>(source.keyType);
             const TaikoPatternAction action = static_cast<TaikoPatternAction>(source.actionType);
 
@@ -82,7 +83,9 @@ namespace finger_drum::mode
                 }
                 const auto longNoteId = nextId;
                 AddLongNote(*longNoteHead, compiledNote, timeline,
-                    UsesSyncopation(effects, longNoteHead->note.position) ? syncopationRange : defaultRange, lane, *session, nextId, result.diagnostics);
+                            UsesSyncopation(effects, timeline, longNoteHead->note.position) ? syncopationRange
+                                                                                            : defaultRange,
+                            lane, *session, nextId, result.diagnostics);
                 if (nextId > longNoteId)
                     session->SetNoteScrollMultiplier(longNoteId, longNoteHead->scrollMultiplier);
                 longNoteHead.reset();

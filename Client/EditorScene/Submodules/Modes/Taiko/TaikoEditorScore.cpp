@@ -1,12 +1,15 @@
 #include "../../EditorSupport.h"
 #include "../../EditorTime.h"
 #include "App/AssetPaths.h"
+#include "Taiko/Submodules/TaikoChartNotes.h"
 #include "Taiko/Submodules/TaikoNoteOptions.h"
 #include "TaikoEditorMode.h"
 #include "TaikoEditorTool.h"
 #include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
 #include <algorithm>
 #include <limits>
+#include <locale>
+#include <sstream>
 using namespace editor_ui;
 
 namespace
@@ -17,28 +20,22 @@ namespace
     constexpr float ScoreRight = ScoreLeft + MeasureWidth * MeasuresPerRow;
     constexpr v::Color Don{1, .33F, .43F, 1}, Kat{.10F, .76F, .82F, 1}, Gold{.96F, .80F, .29F, 1};
 
-    std::pair<finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmTime> GridTimeRange(
-        const chart::IEditorDocument &document, std::int64_t measure, int subdivisions, int count)
+    float OverviewX(const chart::MusicalTimeline &timeline, std::int64_t firstMeasure, std::int64_t measure,
+                    finger_drum::rhythm::RhythmTime time)
     {
-        const auto at = [&](int index) { return document.Timeline().Compile({measure, {index, subdivisions}}); };
-        auto low = at(0), high = at(count - 1);
-        if (low > high)
-            std::swap(low, high);
-        // Tempo/delay discontinuities can lie inside a measure, including negative delays.
-        for (const auto &directive : document.Timing())
-            if (directive.position.measure == measure)
-            {
-                const auto nearestIndex =
-                    static_cast<int>(std::clamp(std::floor(directive.position.fraction.Value() * subdivisions), 0.0L,
-                                                static_cast<long double>(count - 1)));
-                for (int index = std::max(0, nearestIndex - 1); index <= std::min(count - 1, nearestIndex + 1); ++index)
-                {
-                    const auto time = at(index);
-                    low = std::min(low, time);
-                    high = std::max(high, time);
-                }
-            }
-        return {low, high};
+        const auto span = timeline.MeasureSpan(measure);
+        const long double duration = static_cast<long double>(span.end.count()) - span.begin.count();
+        const long double elapsed = static_cast<long double>(time.count()) - span.begin.count();
+        return ScoreLeft + static_cast<float>((measure - firstMeasure) % MeasuresPerRow) * MeasureWidth +
+               static_cast<float>(elapsed / std::max(1.0L, duration)) * MeasureWidth;
+    }
+
+    std::wstring MeasureCaption(std::int64_t measure, long double wholeNotes)
+    {
+        std::wostringstream text;
+        text.imbue(std::locale::classic());
+        text << measure + 1 << L"  " << wholeNotes * 4 << L"/4";
+        return text.str();
     }
 
     finger_drum::rhythm::RhythmTime BoundedTime(long double value)
@@ -64,6 +61,7 @@ void TaikoEditorMode::DrawChart(IEditorModeCanvas &canvas, IEditorContext &state
     noteHits_.clear();
     bodyHits_.clear();
     realtimeGrid_.clear();
+    overviewGrid_.clear();
     if (state.Score().realtime)
         DrawRealtime(canvas, state, language);
     else
@@ -77,12 +75,13 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
     const auto &timeline = state.Document().Timeline();
     const int subdivisionsPerWholeNote = state.Score().division * 4;
     const auto xAt = [&](chart::MusicalPosition p)
+    { return OverviewX(timeline, state.Score().firstMeasure, p.measure, timeline.Compile(p)); };
+    const auto displayPosition = [&](const chart::CompiledPatternNote &note)
     {
-        return ScoreLeft +
-               static_cast<float>((p.measure - state.Score().firstMeasure) % MeasuresPerRow) * MeasureWidth +
-               static_cast<float>(p.fraction.Value() / timeline.MeasureLength(p.measure).Value()) * MeasureWidth;
+        const auto measure = editor_time::MeasureNearTime(timeline, note.timing.count() / 1000.0);
+        return std::pair{measure, OverviewX(timeline, state.Score().firstMeasure, measure, note.timing)};
     };
-    // Rational score grid, followed by note intervals and BPM labels.
+    // Source fractions stay exact; screen positions use the surviving measure clock.
     for (int row = 0; row < VisibleRows; ++row)
     {
         const float y = RowTop + row * RowHeight;
@@ -93,63 +92,73 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
             if (m >= chart::MaximumMeasureCount)
                 break;
             const float x = ScoreLeft + col * MeasureWidth;
-            canvas.Text({x, y - 25, 140, 22},
-                        std::to_wstring(m + 1) + L"  " + Wide(Fraction(timeline.MeasureLength(m))), 13);
+            const auto span = timeline.MeasureSpan(m);
+            canvas.Text({x, y - 25, 140, 22}, MeasureCaption(m, span.wholeNotes), 13);
+            if (span.end <= span.begin)
+                continue;
+            canvas.Box({x, y, 2, StaffHeight}, Blue);
             const auto count = static_cast<int>(
                 std::min(4096.0L, std::ceil(timeline.MeasureLength(m).Value() * subdivisionsPerWholeNote)));
             // Subpixel helper lines share a visible line; snapping still uses the full division.
             const int drawStride = std::max(1, static_cast<int>(std::ceil(count / static_cast<double>(MeasureWidth))));
-            for (int i = 0; i < count; i += drawStride)
+            for (int i = 0; i < count; ++i)
             {
-                const float gx = x + static_cast<float>(chart::Rational{i, subdivisionsPerWholeNote}.Value() /
-                                                        timeline.MeasureLength(m).Value()) *
-                                         MeasureWidth;
-                canvas.Box({gx, y, i == 0 ? 2.0F : 1.0F, StaffHeight}, i == 0 ? Blue : Pale);
+                const chart::MusicalPosition p{m, {i, subdivisionsPerWholeNote}};
+                if (!timeline.IsPositionActive(p))
+                    continue;
+                const float gx = xAt(p);
+                overviewGrid_.push_back({{gx, y}, p});
+                if (i % drawStride == 0 && gx > x)
+                    canvas.Box({gx, y, 1, StaffHeight}, Pale);
             }
         }
     }
-    std::optional<chart::PatternNote> head;
-    const auto visibleNotes = state.Document().NotesInMeasures(
-        state.Score().firstMeasure, state.Score().firstMeasure + MeasuresPerRow * VisibleRows);
+    std::optional<chart::CompiledPatternNote> head;
+    const auto visibleNotes = finger_drum::mode::taiko_notes::PlayableInSourceOrder(state.Document().NotesInTimeRange(
+        timeline.MeasureSpan(state.Score().firstMeasure).begin,
+        timeline
+            .MeasureSpan(
+                std::min(state.Score().firstMeasure + MeasuresPerRow * VisibleRows, chart::MaximumMeasureCount))
+            .begin));
     // Interval bodies precede skin heads so the body cannot cover their artwork.
     for (const auto &note : visibleNotes)
     {
         const auto &n = note.note;
         if (n.actionType == 1 && !head)
-            head = n;
-        if (n.actionType == 2 && head && head->keyType == n.keyType)
+            head = note;
+        if (n.actionType == 2 && head && head->note.keyType == n.keyType)
         {
+            const auto [headMeasure, headAt] = displayPosition(*head);
+            const auto [tailMeasure, tailAt] = displayPosition(note);
             for (int row = 0; row < VisibleRows; ++row)
             {
                 const auto begin = state.Score().firstMeasure + row * MeasuresPerRow, end = begin + MeasuresPerRow;
-                if (n.position.measure < begin || head->position.measure >= end)
+                if (tailMeasure < begin || headMeasure >= end)
                     continue;
-                const float left = head->position.measure < begin ? ScoreLeft : xAt(head->position),
-                            right = n.position.measure >= end ? ScoreRight : xAt(n.position);
+                const float left = headMeasure < begin ? ScoreLeft : headAt,
+                            right = tailMeasure >= end ? ScoreRight : tailAt;
                 const v::Rect body{left, 166.0F + row * RowHeight, std::max(0.0F, right - left), 16};
                 canvas.Box(body, Gold, 8);
-                bodyHits_.push_back({body, head->sourceOrder});
+                bodyHits_.push_back({body, head->note.sourceOrder});
             }
-            if (head->position.measure >= state.Score().firstMeasure &&
-                head->position.measure < state.Score().firstMeasure + MeasuresPerRow * VisibleRows)
+            if (headMeasure >= state.Score().firstMeasure &&
+                headMeasure < state.Score().firstMeasure + MeasuresPerRow * VisibleRows)
                 canvas.Text(
-                    {xAt(head->position) + 16,
-                     150 + static_cast<float>((head->position.measure - state.Score().firstMeasure) / MeasuresPerRow) *
-                               RowHeight,
-                     std::max(0.0F, ScoreRight - xAt(head->position) - 18), 22},
-                    LongNoteCaption(state.Document(), *head, n, language), 13);
+                    {headAt + 16,
+                     150 + static_cast<float>((headMeasure - state.Score().firstMeasure) / MeasuresPerRow) * RowHeight,
+                     std::max(0.0F, ScoreRight - headAt - 18), 22},
+                    LongNoteCaption(state.Document(), head->note, n, language), 13);
             head.reset();
         }
     }
     for (const auto &note : visibleNotes)
     {
         const auto &n = note.note;
-        if (n.position.measure < state.Score().firstMeasure ||
-            n.position.measure >= state.Score().firstMeasure + MeasuresPerRow * VisibleRows)
+        const auto [measure, x] = displayPosition(note);
+        if (measure < state.Score().firstMeasure ||
+            measure >= state.Score().firstMeasure + MeasuresPerRow * VisibleRows)
             continue;
-        const float x = xAt(n.position),
-                    y = 174 + static_cast<float>((n.position.measure - state.Score().firstMeasure) / MeasuresPerRow) *
-                                  RowHeight;
+        const float y = 174 + static_cast<float>((measure - state.Score().firstMeasure) / MeasuresPerRow) * RowHeight;
         if (inspector_.IsSelected(n.sourceOrder))
             canvas.Box({x - 19, y - 19, 38, 38}, Blue, 19);
         Circle(canvas, x, y, VisualTool(n),
@@ -157,7 +166,8 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
         noteHits_.push_back({{x, y}, n.sourceOrder});
     }
     for (const auto &t : state.Document().Timing())
-        if (t.type == chart::TimingDirectiveType::Bpm && t.position.measure >= state.Score().firstMeasure &&
+        if (t.type == chart::TimingDirectiveType::Bpm && timeline.IsPositionActive(t.position) &&
+            t.position.measure >= state.Score().firstMeasure &&
             t.position.measure < state.Score().firstMeasure + MeasuresPerRow * VisibleRows)
             canvas.Text({xAt(t.position),
                          200 + static_cast<float>((t.position.measure - state.Score().firstMeasure) / MeasuresPerRow) *
@@ -190,9 +200,10 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     const long double pixelsPerMicrosecond = timeline.BaseBpm() / 240'000'000.0L * pixelsPerWholeNote;
     const auto minimumSpeed = state.Document().MinimumScrollMultiplier();
     const bool customGridSpeed = std::ranges::any_of(state.Document().Effects().commands,
-                                                     [](const auto &command)
+                                                     [&timeline](const auto &command)
                                                      {
-                                                         return command.type == chart::EffectCommandType::NoteSpeed &&
+                                                         return timeline.IsEffectActive(command) &&
+                                                                command.type == chart::EffectCommandType::NoteSpeed &&
                                                                 command.curve == chart::AutomationCurve::Expression;
                                                      });
     const auto visibleBegin =
@@ -208,22 +219,28 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
         // notes. Keep the bounded grid traversal and clip by its actual X.
         if (!customGridSpeed)
         {
-            const auto [firstTime, lastTime] = GridTimeRange(state.Document(), m, subdivisionsPerWholeNote, count);
-            if (lastTime < visibleBegin || firstTime > visibleEnd)
+            const auto span = timeline.MeasureSpan(m);
+            if (span.end < visibleBegin || span.begin > visibleEnd)
                 continue;
         }
+        const auto span = timeline.MeasureSpan(m);
+        const float barX = xAtTime(span.begin, 1);
+        if (span.end > span.begin && barX >= RealtimeLane.x && barX <= RealtimeLane.x + RealtimeLane.width &&
+            state.Document().EffectValueAt(chart::EffectCommandType::MeasureLineVisible, span.sourceBegin) >= .5)
+            canvas.Box({barX, 361, 3, 202}, {.3F, .34F, .42F, 1});
         float lastDrawnX = -std::numeric_limits<float>::infinity();
         for (int i = 0; i < count; ++i)
         {
             chart::MusicalPosition p{m, {i, subdivisionsPerWholeNote}};
+            if (!timeline.IsPositionActive(p))
+                continue;
             const auto speed = state.Document().EffectValueAt(chart::EffectCommandType::NoteSpeed, p);
             const float x = xAtTime(timeline.Compile(p), speed);
             if (x < RealtimeLane.x || x > RealtimeLane.x + RealtimeLane.width)
                 continue;
-            if ((i == 0 || std::abs(x - lastDrawnX) >= 1) &&
-                (i != 0 || state.Document().EffectValueAt(chart::EffectCommandType::MeasureLineVisible, p) >= .5))
+            if (std::abs(x - lastDrawnX) >= 1)
             {
-                canvas.Box({x, 361, i == 0 ? 3.0F : 1.0F, 202}, {.3F, .34F, .42F, i == 0 ? 1.0F : .45F});
+                canvas.Box({x, 361, 1, 202}, {.3F, .34F, .42F, .45F});
                 lastDrawnX = x;
             }
             realtimeGrid_.push_back({x, p});
@@ -233,20 +250,21 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     std::optional<float> headX;
     double headSpeed = 1;
     std::optional<chart::PatternNote> realtimeHead;
-    const auto visibleNotes = state.Document().NotesInTimeRange(visibleBegin, visibleEnd);
+    const auto visibleNotes = finger_drum::mode::taiko_notes::PlayableInSourceOrder(
+        state.Document().NotesInTimeRange(visibleBegin, visibleEnd));
     // Borrow from this frame's snapshot only until the head pass below.
     std::vector<std::pair<const chart::CompiledPatternNote *, float>> heads;
     for (const auto &n : visibleNotes)
     {
         const auto speed = n.note.actionType == 2 && headX ? headSpeed : n.scrollMultiplier;
         const float x = xAtTime(n.timing, speed);
-        if (n.note.actionType == 1)
+        if (n.note.actionType == 1 && !headX)
         {
             headX = x;
             realtimeHead = n.note;
             headSpeed = n.scrollMultiplier;
         }
-        if (n.note.actionType == 2 && headX)
+        if (n.note.actionType == 2 && headX && realtimeHead->keyType == n.note.keyType)
         {
             const float left = std::max(*headX, RealtimeLane.x),
                         right = std::min(x, RealtimeLane.x + RealtimeLane.width);
@@ -279,7 +297,7 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     }
     for (const auto &t : state.Document().Timing())
     {
-        if (t.type != chart::TimingDirectiveType::Bpm)
+        if (t.type != chart::TimingDirectiveType::Bpm || !timeline.IsPositionActive(t.position))
             continue;
         const float x = xAtTime(timeline.Compile(t.position), 1.0);
         if (x >= 164 && x <= 1360)
@@ -340,14 +358,16 @@ void TaikoEditorMode::EditScore(IEditorContext &state, v::Point point, bool eras
         p.measure = state.Score().firstMeasure + row * MeasuresPerRow + col;
         if (p.measure >= chart::MaximumMeasureCount)
             return;
-        const auto length = state.Document().Timeline().MeasureLength(p.measure);
-        const int subdivisionsPerWholeNote = state.Score().division * 4;
-        const auto tick = static_cast<std::int64_t>(std::llround((point.x - ScoreLeft - col * MeasureWidth) /
-                                                                 static_cast<double>(MeasureWidth) * length.Value() *
-                                                                 subdivisionsPerWholeNote));
-        p.fraction = chart::Rational{tick, subdivisionsPerWholeNote};
-        if (p.fraction >= length)
-            p.fraction = chart::Rational{std::max<std::int64_t>(0, tick - 1), subdivisionsPerWholeNote};
+        const auto nearestGrid = std::ranges::min_element(overviewGrid_, {},
+                                                          [&](const auto &g)
+                                                          {
+                                                              return g.second.measure == p.measure
+                                                                         ? std::abs(g.first.x - point.x)
+                                                                         : std::numeric_limits<float>::infinity();
+                                                          });
+        if (nearestGrid == overviewGrid_.end() || nearestGrid->second.measure != p.measure)
+            return;
+        p = nearestGrid->second;
     }
     PlaceNote(state, p);
 }
@@ -383,7 +403,8 @@ std::wstring TaikoEditorMode::LongNoteCaption(const chart::IEditorDocument &docu
                          : L"?");
     }
     const auto count = taiko_options::ReadHitCount(
-        head, document.Timeline().CountSubdivisions(head.position, tail.position, 12), diagnostics);
+        head, std::max(std::size_t{1}, document.Timeline().CountSubdivisions(head.position, tail.position, 12)),
+        diagnostics);
     return name + L" | " + (count ? std::to_wstring(*count) : L"?") + L" " + std::wstring(text.hits);
 }
 

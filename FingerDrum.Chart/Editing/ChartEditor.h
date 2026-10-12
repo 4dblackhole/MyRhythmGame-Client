@@ -88,7 +88,8 @@ namespace finger_drum::chart
         std::multimap<MusicalPosition, TimingDirective> timingTree_;
         std::multimap<MusicalPosition, EffectCommand> effectTree_;
         std::multimap<MusicalPosition, HitSoundChange> soundChangeTree_;
-        std::map<std::pair<EffectCommandType, MusicalPosition>, const EffectCommand *> effectIndex_;
+        // Compiled-time lookup is independent of the owning musical-position tree.
+        std::map<std::pair<EffectCommandType, rhythm::RhythmTime>, const EffectCommand *> effectIndex_;
         mutable PatternDocument pattern_;
         mutable EffectDocument effects_;
         MusicalTimeline timeline_;

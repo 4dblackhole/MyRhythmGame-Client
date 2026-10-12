@@ -99,11 +99,11 @@ void WriteEffect(std::ostream &out, const EffectCommand &c)
     out << '\n';
 }
 
-double MinimumEndpointSpeed(const auto &commands)
+double MinimumEndpointSpeed(const auto &commands, const MusicalTimeline &timeline)
 {
     double minimum = 1;
     for (const auto &[position, command] : commands)
-        if (command.type == EffectCommandType::NoteSpeed)
+        if (command.type == EffectCommandType::NoteSpeed && timeline.IsEffectActive(command))
             minimum = std::min({minimum, command.beginValue, command.endValue});
     return minimum;
 }
@@ -111,7 +111,7 @@ double MinimumEndpointSpeed(const auto &commands)
 double IndexedEffectValue(const auto &index, const MusicalTimeline &timeline, EffectCommandType type,
                           MusicalPosition position, double fallback = 1)
 {
-    const auto next = index.upper_bound({type, position});
+    const auto next = index.upper_bound({type, timeline.Compile(position)});
     if (next == index.begin() || std::prev(next)->first.first != type)
         return fallback;
     return timeline.EffectValueAt(*std::prev(next)->second, position);
@@ -146,7 +146,10 @@ void Validate(const PatternDocument &pattern, const EffectDocument &effects, con
     for (const auto &note : pattern.notes)
         ValidateNote(note, effects, timeline);
     for (const auto &directive : pattern.timing)
-        if (!validPosition(directive.position))
+        if (!validPosition(directive.position) &&
+            !(directive.type == TimingDirectiveType::DelayMilliseconds && directive.position.measure >= 0 &&
+              directive.position.measure < MaximumMeasureCount &&
+              directive.position.fraction == timeline.MeasureLength(directive.position.measure)))
             throw std::invalid_argument("Move the out-of-measure timing directive before changing this signature.");
     ValidateEffectDocument(effects);
     ValidateEffectPositions(effects, timeline);
@@ -172,12 +175,13 @@ void ChartEditor::InitializeEventTrees()
     for (auto &command : effects_.commands)
     {
         const auto entry = effectTree_.emplace(command.position, std::move(command));
-        effectIndex_.insert_or_assign({entry->second.type, entry->first}, &entry->second);
+        if (timeline_.IsEffectActive(entry->second))
+            effectIndex_.insert_or_assign({entry->second.type, timeline_.Compile(entry->first)}, &entry->second);
     }
     for (auto &change : effects_.hitSoundChanges)
         soundChangeTree_.emplace(change.position, std::move(change));
     // Endpoints bound built-in curves; the speed index also covers custom curves.
-    minimumScrollMultiplier_ = MinimumEndpointSpeed(effectTree_);
+    minimumScrollMultiplier_ = MinimumEndpointSpeed(effectTree_, timeline_);
     pattern_.timing.clear();
     effects_.commands.clear();
     effects_.hitSoundChanges.clear();
@@ -281,7 +285,8 @@ CompiledPatternNote ChartEditor::CompileNote(PatternNote note) const
         throw std::invalid_argument("Note is outside its measure.");
     const auto time = timeline_.Compile(note.position);
     const auto speed = ValidatedNoteSpeed(EffectValueAt(EffectCommandType::NoteSpeed, note.position));
-    return {std::move(note), time, speed};
+    const bool active = timeline_.IsPositionActive(note.position);
+    return {std::move(note), time, speed, active};
 }
 
 const std::vector<TimingDirective> &ChartEditor::Timing() const
@@ -440,8 +445,9 @@ void ChartEditor::ReplaceTiming(std::vector<TimingDirective> timing)
     timingPattern.baseBpm = pattern_.baseBpm;
     timingPattern.patternOffsetMilliseconds = pattern_.patternOffsetMilliseconds;
     timingPattern.timing = std::move(timing);
+    // Only the final source position is needed to bound the measure cache.
     if (!noteTree_.empty())
-        timingPattern.notes.push_back({noteTree_.rbegin()->first.first});
+        timingPattern.notes.push_back({noteTree_.rbegin()->second.note.position});
     MusicalTimeline timeline(timingPattern);
     const auto &effects = Effects();
     Validate(timingPattern, effects, timeline);
@@ -449,8 +455,18 @@ void ChartEditor::ReplaceTiming(std::vector<TimingDirective> timing)
     decltype(timingTree_) timingTree;
     for (const auto &directive : timingPattern.timing)
         timingTree.emplace(directive.position, directive);
+    decltype(effectIndex_) effectsByTime;
+    for (const auto &[position, command] : effectTree_)
+        if (timeline.IsEffectActive(command))
+            effectsByTime.insert_or_assign({command.type, timeline.Compile(position)}, &command);
 
-    struct NoteUpdate { CompiledPatternNote *note; rhythm::RhythmTime time; double speed; };
+    struct NoteUpdate
+    {
+        CompiledPatternNote *note;
+        rhythm::RhythmTime time;
+        double speed;
+        bool active;
+    };
     std::vector<NoteUpdate> updates;
     updates.reserve(noteTree_.size());
     decltype(timeIndex_) times;
@@ -459,23 +475,26 @@ void ChartEditor::ReplaceTiming(std::vector<TimingDirective> timing)
     {
         ValidateNote(note.note, effects, timeline);
         const auto time = timeline.Compile(note.note.position);
-        const auto speed = ValidatedNoteSpeed(IndexedEffectValue(effectIndex_, timeline,
-            EffectCommandType::NoteSpeed, note.note.position));
+        const auto speed = ValidatedNoteSpeed(
+            IndexedEffectValue(effectsByTime, timeline, EffectCommandType::NoteSpeed, note.note.position));
         times.emplace(TimeKey{time, key.second}, key);
         speedIndex.emplace(speed, key.second);
-        updates.push_back({&note, time, speed});
+        updates.push_back({&note, time, speed, timeline.IsPositionActive(note.note.position)});
     }
 
     // Publication performs no allocation; failed preparation leaves the edit untouched.
     timingTree_.swap(timingTree);
     timeIndex_.swap(times);
     noteSpeedIndex_.swap(speedIndex);
+    effectIndex_.swap(effectsByTime);
     timeline_ = std::move(timeline);
     scroll_ = std::move(scroll);
+    minimumScrollMultiplier_ = MinimumEndpointSpeed(effectTree_, timeline_);
     for (const auto &update : updates)
     {
         update.note->timing = update.time;
         update.note->scrollMultiplier = update.speed;
+        update.note->positionActive = update.active;
     }
     timingDirty_ = notesDirty_ = dirty_ = true;
     ++revision_;
@@ -494,7 +513,8 @@ void ChartEditor::ReplaceEffects(EffectDocument effects)
     for (auto &command : effects.commands)
     {
         const auto entry = commands.emplace(command.position, std::move(command));
-        index.insert_or_assign({entry->second.type, entry->first}, &entry->second);
+        if (timeline_.IsEffectActive(entry->second))
+            index.insert_or_assign({entry->second.type, timeline_.Compile(entry->first)}, &entry->second);
     }
     for (auto &change : effects.hitSoundChanges)
         changes.emplace(change.position, std::move(change));
@@ -522,7 +542,7 @@ void ChartEditor::ReplaceEffects(EffectDocument effects)
     effects_.commands.clear();
     effects_.hitSoundChanges.clear();
     scroll_ = std::move(scroll);
-    minimumScrollMultiplier_ = MinimumEndpointSpeed(effectTree_);
+    minimumScrollMultiplier_ = MinimumEndpointSpeed(effectTree_, timeline_);
     for (const auto &[note, speed] : speeds)
         note->scrollMultiplier = speed;
     effectsDirty_ = notesDirty_ = dirty_ = true;
@@ -633,8 +653,8 @@ void ChartEditor::UpdateNote(std::size_t id, PatternNote head, std::optional<Mus
         tail.sourceOrder = oldTail.value_or(nextNoteId_);
         ValidateNote(tail, Effects(), timeline_);
         changed.push_back(CompileNote(std::move(tail)));
-        if (*end <= changed.front().note.position || changed.back().timing <= changed.front().timing)
-            throw std::invalid_argument("Long note end must follow its start in musical and playback time.");
+        if (*end <= changed.front().note.position)
+            throw std::invalid_argument("Long note end must follow its start in musical position.");
     }
     // All allocation/validation precedes publication. These maps contain only
     // the edited head/tail; map::merge transfers their nodes without allocating.

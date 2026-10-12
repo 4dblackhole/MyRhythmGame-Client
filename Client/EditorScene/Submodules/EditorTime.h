@@ -23,7 +23,7 @@ namespace editor_time
         // Bound the exponential search without evaluating an unnecessarily distant
         // timestamp (very low BPM can overflow the clock at the final measure).
         std::int64_t low = 0, high = 1;
-        const auto at = [&](std::int64_t measure) { return timeline.Compile({measure, {}}).count() / 1000.0; };
+        const auto at = [&](std::int64_t measure) { return timeline.MeasureSpan(measure).begin.count() / 1000.0; };
         while (at(high) <= milliseconds)
         {
             if (high == finger_drum::chart::MaximumMeasureCount)

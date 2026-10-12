@@ -350,6 +350,47 @@ namespace
         state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
     }
 
+    void TestDelayViewsAndSnapping()
+    {
+        chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
+        pattern.baseBpm = 120;
+        pattern.notes = {{{0, {3, 4}}, 1}, {{1, {1, 4}}, 2}};
+        pattern.timing = {{{0, {3, 4}}, chart::TimingDirectiveType::Bpm, 120},
+                          {{1, {1, 4}}, chart::TimingDirectiveType::DelayMilliseconds, -1500}};
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        state.SelectTool(0);
+        RecordingCanvas overview;
+        state.Mode().DrawChart(overview, state, finger_drum::texts::Language::English);
+        Check(overview.images.size() == 2 && std::ranges::find(overview.labels, L"1  2/4") != overview.labels.end() &&
+                  std::ranges::find(overview.labels, L"2  3/4") != overview.labels.end() &&
+                  std::ranges::none_of(overview.labels, [](const auto &label) { return label.starts_with(L"BPM"); }),
+              "Overview must show effective bar lengths, exclude overwritten taps/BPM, and retain the new endpoint.");
+        state.Mode().EditScore(state, {520, 174}, false);
+        RecordingCanvas selected;
+        state.Mode().DrawChart(selected, state, finger_drum::texts::Language::English);
+        Check(std::ranges::find(selected.labels, L"1/4") != selected.labels.end(),
+              "A note at the shortened measure start must select its unchanged source fraction.");
+        state.Mode().CancelInteraction();
+        state.SelectTool(-1);
+        state.Mode().EditScore(state, {520, 174}, false);
+        Check(state.TimeMilliseconds() == 1000 && state.timingForm.measure == "2" && state.timingForm.fraction == "1/4",
+              "Overview snapping must use the visible delayed grid rather than the original uniform source spacing.");
+        state.SetRealtime(true);
+        chart::EffectDocument effects;
+        effects.commands.push_back(
+            {.position = {0, {}}, .type = chart::EffectCommandType::MeasureLineVisible, .endValue = 1});
+        state.Replace(state.Document().Pattern(), effects);
+        RecordingCanvas realtime;
+        state.Mode().DrawChart(realtime, state, finger_drum::texts::Language::English);
+        Check(std::ranges::any_of(realtime.rectangles, [](const auto &rect)
+                                  { return std::abs(rect.x - 230) < .01F && rect.y == 361 && rect.width == 3; }),
+              "Realtime must draw the clipped measure start at the judgement line.");
+        state.Mode().EditScore(state, {230, 465}, false);
+        Check(state.timingForm.measure == "2" && state.timingForm.fraction == "1/4" && state.TimeMilliseconds() == 1000,
+              "Realtime and overview must select the same surviving beat at the clipped bar boundary.");
+    }
+
     void TestPreviewMatchesPlay()
     {
         namespace rhythm = finger_drum::rhythm;
@@ -734,6 +775,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     TestTaikoEditing();
     TestTaikoPlacementConflicts();
     TestPreviewMatchesPlay();
+    TestDelayViewsAndSnapping();
     TestSeekAndEffectEdits();
     TestInspectorMusicalTiming();
     TestCustomSeparateRealtimeVisibility();

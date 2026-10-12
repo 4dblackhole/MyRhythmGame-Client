@@ -1,5 +1,6 @@
 #include "TaikoAudioPreview.h"
 #include "TaikoChartAudio.h"
+#include "TaikoChartNotes.h"
 #include "TaikoNoteOptions.h"
 #include <algorithm>
 #include <stdexcept>
@@ -39,7 +40,7 @@ namespace finger_drum::mode
                 {time, taiko_audio::ResolveSound(taiko_audio::NoteSound(note, action, big), time, effects, timeline)});
         };
         std::optional<chart::CompiledPatternNote> head;
-        for (const auto &compiled : notes)
+        for (const auto &compiled : taiko_notes::PlayableInSourceOrder(notes))
         {
             const auto &note = compiled.note;
             const auto type = static_cast<TaikoNoteType>(note.keyType);
@@ -63,7 +64,9 @@ namespace finger_drum::mode
                         timeline.CompileSubdivisions(head->note.position, note.position, TickDivision(head->note));
                     // The first tick/head was emitted once above. TickRoll's
                     // freely chosen input is represented by Don in the preview.
-                    for (std::size_t i = 1; i < ticks.size(); ++i)
+                    const std::size_t firstBodyTick =
+                        head->positionActive && !ticks.empty() && ticks.front() == head->timing ? 1 : 0;
+                    for (std::size_t i = firstBodyTick; i < ticks.size(); ++i)
                         append(head->note, input, ticks[i]);
                 }
                 head.reset();
