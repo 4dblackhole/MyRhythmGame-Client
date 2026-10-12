@@ -17,6 +17,7 @@ class GameplayJudgementView final
                     finger_drum::texts::TextCatalog &texts);
     void OnResize(float logicalWidth);
     void Present(const finger_drum::rhythm::NoteEvent &event);
+    void PresentCompletion(bool success);
     void Update(double deltaSeconds);
     void Reset() noexcept;
     void Shutdown() noexcept;
@@ -31,6 +32,7 @@ class GameplayJudgementView final
     void CreateJudgementImages(mrg::visual2d::ScreenVisual2DManager &visuals,
                                mrg::visual2d::Visual2DNode &judgementCircle);
     void UpdateMarkerPosition();
+    void ShowImage(std::size_t);
 
     std::array<finger_drum::rhythm::RhythmDuration,
                finger_drum::rhythm::AccuracyRange::BandCount> halfWindows_{};
@@ -43,7 +45,7 @@ class GameplayJudgementView final
                finger_drum::rhythm::AccuracyRange::BandCount> bands_{};
     std::array<mrg::visual2d::Visual2DNode *, 3> labels_{};
     mrg::visual2d::Visual2DNode *marker_{};
-    std::array<mrg::visual2d::Visual2DNode *, 7> judgementImages_{};
+    std::array<mrg::visual2d::Visual2DNode *, 8> judgementImages_{};
     mrg::visual2d::Visual2DNode *activeJudgement_{};
     double markerElapsedSeconds_{FeedbackSeconds};
     double judgementElapsedSeconds_{FeedbackSeconds};

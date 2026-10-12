@@ -41,6 +41,11 @@ void EditorWorkspace::AddNote(chart::MusicalPosition position, int keyType, std:
     editor_->AddNote(position, keyType, end, std::move(extra));
     DocumentChanged();
 }
+void EditorWorkspace::UpdateNote(std::size_t id, chart::PatternNote note, std::optional<chart::MusicalPosition> end)
+{
+    editor_->UpdateNote(id, std::move(note), end);
+    DocumentChanged();
+}
 void EditorWorkspace::DeleteNote(std::size_t order)
 {
     editor_->DeleteNote(order);

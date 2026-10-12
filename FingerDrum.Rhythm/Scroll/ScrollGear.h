@@ -19,6 +19,7 @@ namespace finger_drum::rhythm
         float normalizedTravel{};
         NoteState state{NoteState::Pending};
         std::optional<NoteProgress> progress;
+        std::size_t processedTicks{};
     };
 
     struct ScrollGearSnapshot

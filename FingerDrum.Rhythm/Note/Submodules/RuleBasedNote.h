@@ -20,6 +20,7 @@ namespace finger_drum::rhythm
         [[nodiscard]] RhythmTime ExpireTime() const noexcept override;
         [[nodiscard]] NoteState State() const noexcept override;
         [[nodiscard]] std::optional<NoteProgress> Progress() const noexcept override;
+        [[nodiscard]] std::size_t ProcessedTickCount() const noexcept override;
 #if defined(_DEBUG)
         [[nodiscard]] std::wstring DebugText() const override;
 #endif

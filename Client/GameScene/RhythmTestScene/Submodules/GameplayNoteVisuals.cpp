@@ -32,13 +32,16 @@ void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
 }
 
 void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
-    const finger_drum::mode::NotePresentationInfo &presentation,
-    finger_drum::rhythm::RhythmTime time, finger_drum::rhythm::RhythmDuration horizon, finger_drum::rhythm::RhythmTime anchor)
+                                          const finger_drum::mode::NotePresentationInfo &presentation,
+                                          finger_drum::rhythm::RhythmTime time,
+                                          finger_drum::rhythm::RhythmDuration horizon,
+                                          finger_drum::rhythm::RhythmTime anchor, std::size_t processedTicks)
 {
     std::size_t used = 0;
     const auto &ticks = presentation.tickTimes;
     const float speed = static_cast<float>(presentation.scrollMultiplier);
-    for (auto it = std::ranges::lower_bound(ticks, time - MissedTravelDuration);
+    const auto first = ticks.begin() + static_cast<std::ptrdiff_t>(std::min(processedTicks, ticks.size()));
+    for (auto it = std::lower_bound(first, ticks.end(), time - MissedTravelDuration);
          it != ticks.end() && *it <= time + horizon; ++it)
     {
         if (*it <= layers.timing)
@@ -372,7 +375,7 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         if (presentation != nullptr && presentation->hasEndTime && layers.body != nullptr &&
             layers.tail != nullptr)
         {
-            UpdateTickVisuals(layers, *presentation, time, horizon, targetTime);
+            UpdateTickVisuals(layers, *presentation, time, horizon, targetTime, note.processedTicks);
             const float tailTravel = std::clamp(TravelPixelsAt(layers.endTime, time, speed),
                                                 -0.05F * noteTravelDistance_,
                                                 1.65F * noteTravelDistance_);

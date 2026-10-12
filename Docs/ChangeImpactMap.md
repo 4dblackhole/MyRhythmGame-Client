@@ -19,12 +19,13 @@
 | 플레이 Clock·pause·reset·입력 | `RhythmTestScene/Submodules/GameplaySessionController.*`, GameplayInput.cpp | RhythmCoreTests; gameplay smoke |
 | 노트 이미지·롱노트 | 같은 폴더 `GameplayNoteVisuals.cpp` | GameplayPresenter.h, NoteVisualKind; gameplay smoke |
 | Lane·기어·resize | 같은 폴더 `GameplayLayout.cpp`, GameplaySupport.h | GameplayPresenter.h; gameplay smoke |
-| 정확도/특수 노트 표시 | 같은 폴더 `GameplayFeedbackVisuals.cpp` | NoteTypes.h의 이벤트/정확도; AccuracyTests |
+| 정확도/특수 노트 표시 | 같은 폴더 `GameplayFeedbackVisuals.cpp` | NoteTypes.h의 이벤트/정확도; AccuracyTests/GameplayJudgementTests |
 | 판정 구간·타이밍 마커·링/문구 | 같은 폴더 `GameplayJudgementView.*`, GameplayFeedbackVisuals.cpp | AccuracyRange, LaneKeyBeam의 색상/입력 응답; GameplayJudgementTests |
 | 키 불빛 | 같은 폴더 `GameplayKeys.cpp`, `Client/Presentation/LaneKeyBeam.*` | GameplayFeedback.h; gameplay smoke |
 | 에디터 모드 추가/파일 교체 | `Client/EditorScene/Submodules/Modes/IEditorMode.h`, EditorModeFactory; `FingerDrum.Chart/Editing/IEditorDocument.h` | ChartEditor의 교체 경계; EditorModeTests, editor smoke |
 | 에디터 상단 메뉴·저장 입력 | `Client/EditorScene/Submodules/EditorMenuBar.*`, EditorView / EditorInput | EditorWorkspace Save, EditorTexts; EditorMenuTests / EditorAudioViewTests, editor smoke |
 | 에디터 도구/배치 취소 | `Modes/Taiko/TaikoEditorMode.*`, TaikoEditorTool.h / TaikoEditorTools.cpp | ChartEditorTests, SceneStateTests, EditorModeTests |
+| 에디터 노트 선택/속성 | `Modes/Taiko/TaikoEditorNoteInspector.*`, TaikoEditorPlacement.h | IEditorContext/Workspace UpdateNote, IEditorDocument FindNote/UpdateNote, ChartEditor 인덱스/ID; ChartEditorTests/EditorModeTests |
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
 | BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace/ReplaceTiming/ReplaceEffects, 저장 왕복 |
 | 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |

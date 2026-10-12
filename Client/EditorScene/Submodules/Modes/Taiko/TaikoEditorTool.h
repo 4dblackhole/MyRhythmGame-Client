@@ -3,6 +3,7 @@
 #include "Taiko/Submodules/TaikoSoundIds.h"
 #include <array>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace editor_tools
@@ -12,7 +13,9 @@ namespace editor_tools
         Small,
         Big,
         Roll,
-        Focus
+        TickRoll,
+        Focus,
+        Buzz
     };
     struct Tool
     {
@@ -34,13 +37,13 @@ namespace editor_tools
         Define(Type::BigKat, Group::Big),
         Define(Type::Purple, Group::Big),
         Define(Type::Roll, Group::Roll),
-        Define(Type::TickRoll, Group::Roll),
+        Define(Type::TickRoll, Group::TickRoll),
         Define(Type::BigRoll, Group::Roll),
-        Define(Type::BigTickRoll, Group::Roll),
+        Define(Type::BigTickRoll, Group::TickRoll),
         Define(Type::Balloon, Group::Focus),
         Define(Type::DengDeng, Group::Focus),
-        Define(Type::Buzz, Group::Roll),
-        Tool{18, Type::Buzz, Group::Roll, finger_drum::mode::TaikoAction::Kat},
+        Define(Type::Buzz, Group::Buzz),
+        Tool{18, Type::Buzz, Group::Buzz, finger_drum::mode::TaikoAction::Kat},
     };
     constexpr const Tool *Find(int id) noexcept
     {
@@ -48,6 +51,24 @@ namespace editor_tools
             if (tool.id == id)
                 return &tool;
         return nullptr;
+    }
+    inline std::wstring_view Name(int id, const std::array<std::wstring_view, Tools.size()> &names) noexcept
+    {
+        for (std::size_t i = 0; i < Tools.size(); ++i)
+            if (Tools[i].id == id)
+                return names[i];
+        return {};
+    }
+    inline bool UsesHitCount(int id) noexcept
+    {
+        const auto *tool = Find(id);
+        return tool && (tool->note == Type::Roll || tool->note == Type::BigRoll || tool->note == Type::Balloon ||
+                        tool->note == Type::DengDeng);
+    }
+    inline bool UsesTickDivision(int id) noexcept
+    {
+        const auto *tool = Find(id);
+        return tool && (tool->note == Type::TickRoll || tool->note == Type::BigTickRoll || tool->note == Type::Buzz);
     }
     inline std::vector<std::string> ExtraData(const Tool &tool)
     {

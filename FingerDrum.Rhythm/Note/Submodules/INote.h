@@ -14,6 +14,7 @@ namespace finger_drum::rhythm
         [[nodiscard]] virtual RhythmTime ExpireTime() const noexcept = 0;
         [[nodiscard]] virtual NoteState State() const noexcept = 0;
         [[nodiscard]] virtual std::optional<NoteProgress> Progress() const noexcept = 0;
+        [[nodiscard]] virtual std::size_t ProcessedTickCount() const noexcept = 0;
 #if defined(_DEBUG)
         [[nodiscard]] virtual std::wstring DebugText() const = 0;
 #endif

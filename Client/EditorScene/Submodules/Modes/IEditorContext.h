@@ -26,5 +26,7 @@ class IEditorContext
     virtual void AddNote(finger_drum::chart::MusicalPosition, int keyType,
                          std::optional<finger_drum::chart::MusicalPosition> end = {},
                          std::vector<std::string> extra = {}) = 0;
+    virtual void UpdateNote(std::size_t, finger_drum::chart::PatternNote,
+                            std::optional<finger_drum::chart::MusicalPosition>) = 0;
     virtual void DeleteNote(std::size_t sourceOrder) = 0;
 };

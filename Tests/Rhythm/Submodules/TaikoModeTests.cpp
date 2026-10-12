@@ -34,6 +34,16 @@ namespace finger_drum::tests
                     HasEvent(insideGood, rhythm::NoteEventType::TickAccepted),
                 "TickRoll must cap each tick to one hit and use the Good window.");
 
+        Require(tickRoll.session->Gear().Lanes().front()->Notes().front()->ProcessedTickCount() == 2,
+                "An accepted early tick must count as processed before its scheduled time.");
+        const auto tickSnapshot =
+            tickRoll.session->Gear().BuildSnapshot(rhythm::RhythmTime{71'000}, rhythm::RhythmDuration{2'000'000});
+        Require(tickSnapshot.notes.front().processedTicks == 2,
+                "Rendering must receive the rule's processed tick prefix.");
+        tickRoll.session->Reset();
+        Require(tickRoll.session->Gear().Lanes().front()->Notes().front()->ProcessedTickCount() == 0,
+                "Reset must restore all tick markers.");
+
         mode::ModeLoadResult bigTickRoll = taiko.CreateSession(
             MakeLongPattern(mode::TaikoNoteType::BigTickRoll, {"TickDivision=16"}));
         mode::ModeLoadResult bigRoll =

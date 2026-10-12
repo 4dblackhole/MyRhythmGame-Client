@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <fstream>
 #include <map>
+#include <limits>
 #include <stdexcept>
 
 namespace
@@ -93,7 +94,7 @@ namespace
     }
     void CheckOverlay(v::Visual2DNode &root, const std::string_view word)
     {
-        constexpr std::array names{"MAX", "PERFECT", "GREAT", "GOOD", "BAD", "MISS", "POOR"};
+        constexpr std::array names{"MAX", "PERFECT", "GREAT", "GOOD", "BAD", "MISS", "POOR", "OK"};
         for (const auto name : names)
             Check(Node(root, "Lane.Judgement." + std::string(name)).IsVisible() == (word == name),
                   "Exactly the expected judgement image must be visible.");
@@ -244,7 +245,96 @@ namespace
         CheckOverlay(root, "POOR");
         presenter.Shutdown();
     }
-}
+    void TestRollCompletionAndProcessedTicks()
+    {
+        AssetRenderer renderer;
+        v::ScreenVisual2DManager visuals;
+        visuals.Initialize(renderer, {1280, 720});
+        finger_drum::chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
+        pattern.baseBpm = 120;
+        pattern.notes = {{{0, {}}, 12, 1, {}, {"TickDivision=16"}}, {{0, {1, 4}}, 12, 2}};
+        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        Check(loaded.Succeeded(), "Tick presentation fixture must load.");
+        mrg::graphics::MeshRenderSystem meshes;
+        mrg::graphics::TextRenderSystem textRendering;
+        mrg::audio::AudioSystem audio;
+        finger_drum::texts::TextCatalog texts;
+        GameplayPresenter presenter(visuals, texts);
+        presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
+        auto &root = visuals.FindCanvas(1)->Root();
+        const auto visibleTicks = [&]
+        {
+            std::size_t count = 0;
+            const auto visit = [&](const auto &self, const v::Visual2DNode &node) -> void
+            {
+                if (node.Name() == "LongNote.Tick" && node.IsVisible())
+                    ++count;
+                for (const auto &child : node.Children())
+                    self(self, *child);
+            };
+            visit(visit, root);
+            return count;
+        };
+        presenter.UpdatePresentation(r::RhythmTime{});
+        Check(visibleTicks() == 3, "All body ticks must start visible.");
+        presenter.ApplyFeedback(
+            {.keyPressed = true, .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{})});
+        presenter.ApplyFeedback(
+            {.keyPressed = true,
+             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{75'000})});
+        presenter.UpdatePresentation(r::RhythmTime{75'000});
+        Check(visibleTicks() == 2, "An early accepted tick must disappear before its scheduled time.");
+        presenter.ApplyFeedback(
+            {.keyPressed = true,
+             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{250'000})});
+        presenter.ApplyFeedback(
+            {.keyPressed = true,
+             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{375'000})});
+        presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{500'000})});
+        CheckOverlay(root, "OK");
+        presenter.AdvanceEffects(.2);
+        CheckOverlay(root, "");
+        loaded.session->Reset();
+        presenter.ApplyFeedback({.reset = true});
+        presenter.UpdatePresentation(r::RhythmTime{});
+        Check(visibleTicks() == 3, "Reset must restore consumed tick sprites.");
+        presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{500'000})});
+        CheckOverlay(root, "MISS");
+        presenter.UpdatePresentation(r::RhythmTime{500'000});
+        Check(visibleTicks() == 0, "Expired/missed ticks must also be hidden.");
+        presenter.Shutdown();
+        pattern.notes.back().position = {0, {1, 1}};
+        pattern.notes.front().extraData = {"TickDivision=8"};
+        pattern.timing.push_back({{0, {1, 2}}, finger_drum::chart::TimingDirectiveType::DelayMilliseconds, -750});
+        loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        Check(loaded.Succeeded(), "Non-monotonic tick fixture must load.");
+        presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
+        auto &delayedRoot = visuals.FindCanvas(2)->Root();
+        const auto minimumTickY = [&]
+        {
+            float minimum = std::numeric_limits<float>::infinity();
+            for (const auto &child : Node(delayedRoot, "Lane.Note.1").Children())
+                if (child->Name() == "LongNote.Tick" && child->IsVisible())
+                    minimum = std::min(minimum, child->Bounds().y);
+            return minimum;
+        };
+        presenter.ApplyFeedback(
+            {.keyPressed = true, .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{})});
+        presenter.UpdatePresentation(r::RhythmTime{200'000});
+        const auto firstY = minimumTickY();
+        presenter.ApplyFeedback(
+            {.keyPressed = true,
+             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{200'000})});
+        presenter.ApplyFeedback(
+            {.keyPressed = true,
+             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{200'000})});
+        presenter.UpdatePresentation(r::RhythmTime{200'000});
+        Check(std::isfinite(firstY) && minimumTickY() > firstY,
+              "Both coincident processed ticks must disappear even when authored times are non-monotonic.");
+        presenter.Shutdown();
+    }
+} // namespace
 
 int main()
 {
@@ -254,6 +344,7 @@ int main()
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
         TestGuideAndOverlays();
         TestPresenterEventPriority();
+        TestRollCompletionAndProcessedTicks();
         std::puts("Gameplay judgement guide/marker/overlay tests passed.");
         return 0;
     }

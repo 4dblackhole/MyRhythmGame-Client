@@ -76,6 +76,8 @@ class EditorWorkspace final : public IEditorContext
     void AddNote(finger_drum::chart::MusicalPosition, int keyType,
                  std::optional<finger_drum::chart::MusicalPosition> end = {},
                  std::vector<std::string> extra = {}) override;
+    void UpdateNote(std::size_t, finger_drum::chart::PatternNote,
+                    std::optional<finger_drum::chart::MusicalPosition>) override;
     void DeleteNote(std::size_t sourceOrder) override;
     void SetMeasureLength(std::int64_t, finger_drum::chart::Rational);
     void RemoveTiming(std::size_t);

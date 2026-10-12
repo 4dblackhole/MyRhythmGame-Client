@@ -31,8 +31,9 @@ namespace
         std::vector<v::DrawPacket> packets;
         v::ImageHandle LoadImage(const std::filesystem::path &) override
         {
-            return {};
+            return {++imageId};
         }
+        std::uint64_t imageId{};
         v::Size GetImageSize(v::ImageHandle) const noexcept override
         {
             return {};

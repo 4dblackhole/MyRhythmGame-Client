@@ -53,5 +53,11 @@ namespace finger_drum::rhythm
         {
             return std::nullopt;
         }
+        // Prefix of accepted or missed ticks. Rendering must not infer this
+        // from elapsed time because tick input may be accepted early.
+        [[nodiscard]] virtual std::size_t ProcessedTickCount() const noexcept
+        {
+            return 0;
+        }
     };
 } // namespace finger_drum::rhythm

@@ -20,6 +20,16 @@
   효과 테스트 YME 1개·WAV 2개는 외부 `assets/Songs`입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
+## 진행 중: 에디터 노트 속성/롤 판정 (2026-10-12)
+
+현재 작업 트리에 선택 스킨 서클, 6개 도구 묶음(W/E/R/T/Y/U)과 순환, 롤 종류/연타·틱 간격,
+우측 노트 정보/속성, 처리된 틱 숨김과 OK/MISS 표시 및 JudgeImage 제거가 있습니다.
+OK는 모든 요구 연타/틱을 채운 성공 완료에만 표시하는 것으로 사용자가 확정했습니다.
+노트 타이밍 편집을 마디·박자로만 할지 ms도 직접 입력하게 할지는 답변 대기입니다.
+해당 UI 구현은 AGENTS의 모호한 동작/설계 변경 규칙에 따라 중단했고 현재 읽기 전용입니다.
+타이밍 선택 후 끝점 입력을 연결해야 일반 노트→롱노트 변환도 완료됩니다.
+소유 경계/현재 조작은 [ChartEditor](ChartEditor.md), 검증 상태는 [Verification](Verification.md)를 확인합니다.
+
 ## 현재 범위와 주의점
 
 - 기본 진입은 로고 → 플레이 또는 에디터 곡 선택 → 플레이/에디터입니다.
@@ -49,7 +59,7 @@
 - AngelDream `All Notes Verification`은 전 노트 및 밀집 Don/Kat Buzz를 재현합니다.
   채보 위치와 +50ms GOOD 입력의 틱 기대값은 [Gameplay Debugging](Gameplay/Debugging.md)을 참고합니다.
 - 고정 문구와 언어별 글꼴은 `Client/Texts`의 사용 위치별 표가 소유합니다.
-  플레이의 판정 구간/타이밍 마커와 7종 링·문구는 `GameplayJudgementView`가 소유하며,
+  플레이의 판정 구간/타이밍 마커와 8종 링·문구는 `GameplayJudgementView`가 소유하며,
   기본 범위를 세션 중 유지합니다. 동작/스킨 경로는 [Presentation](Gameplay/Presentation.md) 참고.
   로고와 곡 선택은 공통 `OptionsPanel`에서 언어·스킨·FMOD·자동/WASAPI/ASIO·드라이버를 선택합니다.
   출력 방식/드라이버는 즉시 적용하고 모든 옵션은 EXE 옆 `Option.ini`에 유지합니다.

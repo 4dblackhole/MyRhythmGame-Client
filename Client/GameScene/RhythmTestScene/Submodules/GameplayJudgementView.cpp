@@ -13,8 +13,9 @@ namespace
     namespace r = finger_drum::rhythm;
     constexpr float ReferencePixelsPerMicrosecond = 400.0F / 180'000.0F;
     constexpr float BarHeight = 8.0F;
-    constexpr std::array<std::string_view, 7> ImageNames{
-        "MAX", "PERFECT", "GREAT", "GOOD", "BAD", "MISS", "POOR"};
+    constexpr std::array<std::string_view, 8> ImageNames{"MAX", "PERFECT", "GREAT", "GOOD",
+                                                         "BAD", "MISS",    "POOR",  "OK"};
+    constexpr std::size_t PoorImageIndex = 6, OkImageIndex = 7;
     constexpr v::Color Ink{0.06F, 0.09F, 0.16F, 1.0F};
 
     void Tint(v::Visual2DNode &node, const v::Color color)
@@ -166,16 +167,12 @@ void GameplayJudgementView::Present(const r::NoteEvent &event)
     const bool miss = event.type == r::NoteEventType::Missed;
     if (!hasTiming && !miss)
         return;
-    const std::size_t index = poor ? ImageNames.size() - 1 : miss
-        ? static_cast<std::size_t>(r::JudgementGrade::Miss) : static_cast<std::size_t>(event.judgement.grade);
+    const std::size_t index = poor   ? PoorImageIndex
+                              : miss ? static_cast<std::size_t>(r::JudgementGrade::Miss)
+                                     : static_cast<std::size_t>(event.judgement.grade);
     if (index >= judgementImages_.size())
         return;
-    if (activeJudgement_ != nullptr)
-        activeJudgement_->SetVisible(false);
-    activeJudgement_ = judgementImages_[index];
-    judgementElapsedSeconds_ = 0.0;
-    Tint(*activeJudgement_, {1.0F, 1.0F, 1.0F, 1.0F});
-    activeJudgement_->SetVisible(true);
+    ShowImage(index);
     if (hasTiming)
     {
         markerError_ = event.judgement.signedError;
@@ -183,6 +180,22 @@ void GameplayJudgementView::Present(const r::NoteEvent &event)
         UpdateMarkerPosition();
         marker_->SetVisible(true);
     }
+}
+
+void GameplayJudgementView::ShowImage(std::size_t index)
+{
+    if (activeJudgement_ != nullptr)
+        activeJudgement_->SetVisible(false);
+    activeJudgement_ = judgementImages_[index];
+    judgementElapsedSeconds_ = 0.0;
+    Tint(*activeJudgement_, {1.0F, 1.0F, 1.0F, 1.0F});
+    activeJudgement_->SetVisible(true);
+}
+
+void GameplayJudgementView::PresentCompletion(bool success)
+{
+    if (guide_ != nullptr)
+        ShowImage(success ? OkImageIndex : static_cast<std::size_t>(r::JudgementGrade::Miss));
 }
 
 void GameplayJudgementView::Update(const double deltaSeconds)

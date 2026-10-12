@@ -7,7 +7,7 @@ void EditorView::DrawScore()
 {
     const auto &text = Texts();
     DrawTools();
-    state_.Mode().DrawChart(*this, state_);
+    state_.Mode().DrawChart(*this, state_, texts_.CurrentLanguage());
     if (state_.Mode().HasPendingPlacement())
         Text({180, 740, 1550, 32}, std::wstring(text.finishLongNote), 22, Blue);
     DrawTimeline();

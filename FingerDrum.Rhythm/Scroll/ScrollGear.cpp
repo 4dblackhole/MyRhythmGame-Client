@@ -116,18 +116,10 @@ namespace finger_drum::rhythm
                     continue;
                 }
                 snapshot.notes.push_back(ScrollNoteSnapshot{
-                    note->Id(),
-                    laneIndex,
-                    note->Timing(),
-                    expireTime,
-                    delta,
-                    std::clamp(
-                        static_cast<float>(delta.count()) /
-                        static_cast<float>(approachDuration.count()),
-                        -1.0F,
-                        1.0F),
-                    note->State(),
-                    note->Progress()});
+                    note->Id(), laneIndex, note->Timing(), expireTime, delta,
+                    std::clamp(static_cast<float>(delta.count()) / static_cast<float>(approachDuration.count()), -1.0F,
+                               1.0F),
+                    note->State(), note->Progress(), note->ProcessedTickCount()});
             }
         }
         return snapshot;

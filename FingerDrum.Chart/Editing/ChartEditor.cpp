@@ -231,21 +231,40 @@ ChartEditor &ChartEditor::operator=(const ChartEditor &source)
 }
 
 std::map<std::size_t, std::size_t> ChartEditor::BuildLongPartners(
-    std::optional<std::size_t> excluded, std::optional<std::size_t> excludedPartner) const
+    std::optional<std::size_t> excluded, std::optional<std::size_t> excludedPartner,
+    std::span<const CompiledPatternNote> replacements) const
 {
     std::map<std::size_t, std::size_t> pairs;
     std::optional<std::size_t> head;
+    // Property edits stage only long endpoints. The existing add/delete paths
+    // traverse their source tree directly and allocate no endpoint copy.
+    decltype(longEndpoints_) changedEndpoints;
+    const auto *endpoints = &longEndpoints_;
+    if (!replacements.empty())
+    {
+        changedEndpoints = longEndpoints_;
+        std::erase_if(changedEndpoints,
+                      [&](const auto &entry) { return entry.second == excluded || entry.second == excludedPartner; });
+        for (const auto &note : replacements)
+            if (note.note.actionType != 0)
+                changedEndpoints.emplace(NoteKey{note.note.position, note.note.sourceOrder}, note.note.sourceOrder);
+        endpoints = &changedEndpoints;
+    }
+    const auto source = [&](std::size_t id) -> const PatternNote &
+    {
+        const auto changed = std::ranges::find(replacements, id, [](const auto &n) { return n.note.sourceOrder; });
+        return changed != replacements.end() ? changed->note : noteTree_.at(noteKeys_.at(id)).note;
+    };
     // Match the serialized/playback endpoint order, including overlapping edits.
     // Ordinary notes never require this traversal.
-    for (const auto &[key, id] : longEndpoints_)
+    for (const auto &[key, id] : *endpoints)
     {
-        if (id == excluded || id == excludedPartner)
+        if (replacements.empty() && (id == excluded || id == excludedPartner))
             continue;
-        const auto &note = noteTree_.at(key).note;
+        const auto &note = source(id);
         if (note.actionType == 1 && !head)
             head = id;
-        else if (note.actionType == 2 && head &&
-                 noteTree_.at(noteKeys_.at(*head)).note.keyType == note.keyType)
+        else if (note.actionType == 2 && head && source(*head).keyType == note.keyType)
         {
             pairs.emplace(*head, id);
             pairs.emplace(id, *head);
@@ -567,6 +586,88 @@ void ChartEditor::EraseNote(std::size_t id) noexcept
     longEndpoints_.erase(key->second);
     noteKeys_.erase(key);
     longPartners_.erase(id);
+}
+
+std::optional<EditorNoteSelection> ChartEditor::FindNote(std::size_t id) const
+{
+    if (!noteKeys_.contains(id))
+        return {};
+    auto note = noteTree_.at(noteKeys_.at(id));
+    if (note.note.actionType == 2)
+    {
+        const auto partner = longPartners_.find(id);
+        if (partner == longPartners_.end())
+            return {};
+        id = partner->second;
+        note = noteTree_.at(noteKeys_.at(id));
+    }
+    EditorNoteSelection result{std::move(note), {}};
+    if (const auto partner = longPartners_.find(id); partner != longPartners_.end())
+        result.tail = noteTree_.at(noteKeys_.at(partner->second));
+    return result;
+}
+
+void ChartEditor::UpdateNote(std::size_t id, PatternNote head, std::optional<MusicalPosition> end)
+{
+    const auto selected = FindNote(id);
+    if (!selected)
+        throw std::out_of_range("Selected note no longer exists.");
+    id = selected->head.note.sourceOrder;
+    head.sourceOrder = id;
+    head.source = selected->head.note.source;
+    head.actionType = end ? 1 : 0;
+    ValidateNote(head, Effects(), timeline_);
+    std::vector<CompiledPatternNote> changed{CompileNote(std::move(head))};
+    std::optional<std::size_t> oldTail;
+    if (selected->tail)
+        oldTail = selected->tail->note.sourceOrder;
+    const bool needsId = end && !oldTail;
+    if (needsId && nextNoteId_ == std::numeric_limits<std::size_t>::max())
+        throw std::overflow_error("Note ID space exhausted.");
+    if (end)
+    {
+        auto tail = selected->tail ? selected->tail->note : PatternNote{};
+        tail.position = *end;
+        tail.keyType = changed.front().note.keyType;
+        tail.actionType = 2;
+        tail.sourceOrder = oldTail.value_or(nextNoteId_);
+        ValidateNote(tail, Effects(), timeline_);
+        changed.push_back(CompileNote(std::move(tail)));
+        if (*end <= changed.front().note.position || changed.back().timing <= changed.front().timing)
+            throw std::invalid_argument("Long note end must follow its start in musical and playback time.");
+    }
+    // All allocation/validation precedes publication. These maps contain only
+    // the edited head/tail; map::merge transfers their nodes without allocating.
+    decltype(noteTree_) notes;
+    decltype(noteKeys_) keys;
+    decltype(timeIndex_) times;
+    decltype(noteSpeedIndex_) speeds;
+    decltype(longEndpoints_) endpoints;
+    for (const auto &note : changed)
+    {
+        const auto noteId = note.note.sourceOrder;
+        const NoteKey key{note.note.position, noteId};
+        notes.emplace(key, note);
+        keys.emplace(noteId, key);
+        times.emplace(TimeKey{note.timing, noteId}, key);
+        speeds.emplace(note.scrollMultiplier, noteId);
+        if (note.note.actionType != 0)
+            endpoints.emplace(key, noteId);
+    }
+    const bool affectsPairs = selected->head.note.actionType != 0 || end.has_value();
+    auto pairs = affectsPairs ? BuildLongPartners(id, oldTail, changed) : decltype(longPartners_){};
+    EraseNote(id);
+    if (oldTail)
+        EraseNote(*oldTail);
+    noteTree_.merge(notes);
+    noteKeys_.merge(keys);
+    timeIndex_.merge(times);
+    noteSpeedIndex_.merge(speeds);
+    longEndpoints_.merge(endpoints);
+    if (affectsPairs)
+        longPartners_.swap(pairs);
+    nextNoteId_ += needsId;
+    InvalidateNoteSnapshots();
 }
 
 void ChartEditor::DeleteNote(std::size_t sourceOrder)

@@ -33,3 +33,13 @@ Edit this game judgement overlay asset. Change ONLY the word MAX to exact upperc
 | BAD | violet |
 | MISS | muted grey |
 | POOR | red |
+
+## OK 추가 (2026-10-12)
+
+built-in image_gen의 편집으로 GREAT.png를 참조하여 OK.png를 추가했습니다.
+CLI fallback을 사용하지 않았으며 생성 원본을 변경 없이 동일 Judgements 폴더에 복사했습니다.
+1254×1254 RGBA, 중앙/모서리 alpha 0을 확인했습니다. 런타임은 다른 링과 같은 크기로 맞춥니다.
+
+```text
+Edit the reference rhythm-game judgement overlay. Change ONLY the word GREAT to the exact uppercase text "OK". Preserve the exact canvas size, circular ring center, radius, stroke widths, transparent hollow interior and transparent background, margins, vivid green ring and text, dark navy text outline, upright bold condensed typography and text position over the top arc. No icons, extra rings, specks, background, or other text. All judgement sprites align over the same circle. Export PNG with actual alpha transparency. Keep the ring completely visible.
+```

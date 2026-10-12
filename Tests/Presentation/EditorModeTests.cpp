@@ -2,7 +2,10 @@
 #include "Editing/ChartEditor.h"
 #include "EditorScene/Submodules/EditorView.h"
 #include "EditorScene/Submodules/Modes/EditorModeFactory.h"
+#include "EditorScene/Submodules/Modes/Taiko/TaikoEditorMode.h"
+#include "EditorScene/Submodules/Modes/Taiko/TaikoEditorNoteInspector.h"
 #include "Taiko/TaikoMode.h"
+#include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
 #include <limits>
 #include <stdexcept>
 
@@ -20,16 +23,25 @@ namespace
       public:
         std::vector<v::Rect> rectangles;
         std::vector<std::function<void()>> actions;
+        std::vector<std::filesystem::path> images;
+        std::vector<std::wstring> labels;
         void Box(v::Rect r, v::Color, float) override
         {
             rectangles.push_back(r);
         }
-        void Text(v::Rect, std::wstring, float, v::Color) override
+        void Text(v::Rect, std::wstring text, float, v::Color) override
         {
+            labels.push_back(std::move(text));
         }
-        void Button(v::Rect, std::wstring, std::function<void()> action, bool) override
+        void Image(v::Rect rect, const std::filesystem::path &path, v::Color) override
+        {
+            rectangles.push_back(rect);
+            images.push_back(path);
+        }
+        void Button(v::Rect, std::wstring text, std::function<void()> action, bool) override
         {
             actions.push_back(std::move(action));
+            labels.push_back(std::move(text));
         }
     };
 
@@ -61,10 +73,14 @@ namespace
             return score.Dirty();
         }
         std::vector<chart::CompiledPatternNote> NotesInMeasures(std::int64_t begin, std::int64_t end) const override
-        { return score.NotesInMeasures(begin, end); }
+        {
+            return score.NotesInMeasures(begin, end);
+        }
         std::vector<chart::CompiledPatternNote> NotesInTimeRange(finger_drum::rhythm::RhythmTime begin,
-                                                               finger_drum::rhythm::RhythmTime end) const override
-        { return score.NotesInTimeRange(begin, end); }
+                                                                 finger_drum::rhythm::RhythmTime end) const override
+        {
+            return score.NotesInTimeRange(begin, end);
+        }
         std::uint64_t Revision() const noexcept override
         {
             return score.Revision();
@@ -79,9 +95,21 @@ namespace
             score.AddNote(p, key, end, std::move(extra));
         }
         void ReplaceTiming(std::vector<chart::TimingDirective> timing) override
-        { score.ReplaceTiming(std::move(timing)); }
+        {
+            score.ReplaceTiming(std::move(timing));
+        }
         void ReplaceEffects(chart::EffectDocument effects) override
-        { score.ReplaceEffects(std::move(effects)); }
+        {
+            score.ReplaceEffects(std::move(effects));
+        }
+        std::optional<chart::EditorNoteSelection> FindNote(std::size_t id) const override
+        {
+            return score.FindNote(id);
+        }
+        void UpdateNote(std::size_t id, chart::PatternNote note, std::optional<chart::MusicalPosition> end) override
+        {
+            score.UpdateNote(id, std::move(note), end);
+        }
         void DeleteNote(std::size_t order) override
         {
             score.DeleteNote(order);
@@ -138,7 +166,7 @@ namespace
         {
             canvas.Button({30, 130, 60, 40}, L"PROBE TOOL", [&state] { state.SelectTool(70); });
         }
-        void DrawChart(IEditorModeCanvas &canvas, IEditorContext &) override
+        void DrawChart(IEditorModeCanvas &canvas, IEditorContext &, finger_drum::texts::Language) override
         {
             ++chartCalls;
             if (failDrawing)
@@ -229,22 +257,22 @@ namespace
         EditorWorkspace state(CreateEditorMode("Taiko"),
                               std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state);
-        state.Mode().EditScore(state, {305.25F, 174}, false);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().EditScore(state, {283.75F, 174}, false);
         Check(state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
               "Score click no longer snaps using quarter-note division.");
-        state.Mode().DrawChart(canvas, state);
-        state.Mode().EditScore(state, {305.25F, 174}, true);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().EditScore(state, {283.75F, 174}, true);
         Check(state.Document().Notes().empty(), "Mode-owned note hit testing did not delete the note.");
         state.SetRealtime(true);
         state.SelectTool(1);
-        state.Mode().DrawChart(canvas, state);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
         for (const v::Point outside : {v::Point{120, 465}, {1849, 465}, {230, 350}, {230, 580}})
             state.Mode().EditScore(state, outside, false);
         Check(state.Document().Notes().empty(), "Clicks outside the realtime lane must not place notes.");
         state.Mode().EditScore(state, {230, 465}, false);
         Check(state.Document().Notes().size() == 1, "A realtime lane click must still place a snapped note.");
-        state.Mode().DrawChart(canvas, state);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
         state.Mode().EditScore(state, {120, 465}, true);
         Check(state.Document().Notes().size() == 1, "Outside-lane deletion must not affect nearby notes.");
         state.Mode().EditScore(state, {230, 465}, true);
@@ -263,15 +291,23 @@ namespace
 
     void TestTaikoPlacementConflicts()
     {
-        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+        EditorWorkspace state(CreateEditorMode("Taiko"),
+                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
         state.SelectTool(11);
         state.PlaceNote({1, {}});
         state.PlaceNote({3, {}});
         const auto revision = state.Document().Revision();
-        const auto reject = [&state, revision](chart::MusicalPosition position) {
+        const auto reject = [&state, revision](chart::MusicalPosition position)
+        {
             bool rejected = false;
-            try { state.PlaceNote(position); }
-            catch (const std::invalid_argument &) { rejected = true; }
+            try
+            {
+                state.PlaceNote(position);
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejected = true;
+            }
             Check(rejected && state.Document().Revision() == revision && state.Document().Notes().size() == 2,
                   "Conflicting placement must preserve the document and its revision.");
         };
@@ -281,7 +317,8 @@ namespace
         state.SelectTool(12);
         state.PlaceNote({2, {}});
         reject({4, {}});
-        Check(state.Mode().HasPendingPlacement(), "Failed second endpoint must remain available for correction/cancel.");
+        Check(state.Mode().HasPendingPlacement(),
+              "Failed second endpoint must remain available for correction/cancel.");
         state.Mode().CancelInteraction();
         state.SelectTool(11);
         state.PlaceNote({3, {}});
@@ -292,17 +329,23 @@ namespace
         state.SelectTool(11);
         state.PlaceNote({4, {1, 2}});
         bool rejected = false;
-        try { state.PlaceNote({6, {}}); }
-        catch (const std::invalid_argument &) { rejected = true; }
+        try
+        {
+            state.PlaceNote({6, {}});
+        }
+        catch (const std::invalid_argument &)
+        {
+            rejected = true;
+        }
         Check(rejected && state.Document().Notes().size() == 5,
               "New long notes must not swallow already-authored ordinary notes.");
         state.Mode().CancelInteraction();
         state.SetFirstMeasure(chart::MaximumMeasureCount - 1);
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
         state.SetRealtime(true);
         state.Seek(state.Document().Timeline().Compile({chart::MaximumMeasureCount - 1, {}}).count() / 1000.0);
-        state.Mode().DrawChart(canvas, state);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
     }
 
     void TestPreviewMatchesPlay()
@@ -461,7 +504,7 @@ Dip: 1-3*u*(1-u)
         state.SetRealtime(true);
         state.SelectTool(1);
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
         const auto drawn = std::ranges::any_of(
             canvas.rectangles, [](const auto &rect)
             { return std::abs(rect.x + rect.width / 2 - 1209.2F) < .01F && rect.width == 72 && rect.height == 72; });
@@ -471,7 +514,7 @@ Dip: 1-3*u*(1-u)
         // With no authored slow note left, the endpoint bound becomes 1.
         // The same custom curve's visible grid still needs to be selectable.
         canvas.rectangles.clear();
-        state.Mode().DrawChart(canvas, state);
+        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
         state.Mode().EditScore(state, {1209.2F, 465}, false);
         Check(state.Document().Notes().size() == 1 &&
                   state.Document().Notes().front().note.position == chart::MusicalPosition{4, {}},
@@ -483,6 +526,111 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
                      finger_drum::texts::TextCatalog &texts,
                      const std::function<const std::vector<v::DrawPacket> &()> &packets)
 {
+    {
+        constexpr std::array keys{'W', 'E', 'R', 'T', 'Y', 'U'};
+        const std::array<std::vector<int>, 6> groups{{{1, 2}, {3, 4, 5}, {11, 13}, {12, 14}, {15, 16}, {17, 18}}};
+        for (std::size_t group = 0; group < groups.size(); ++group)
+        {
+            EditorWorkspace state(CreateEditorMode("Taiko"),
+                                  std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+            state.SelectTool(0);
+            for (std::size_t variant = 0; variant <= groups[group].size(); ++variant)
+            {
+                Check(static_cast<TaikoEditorMode &>(state.Mode())
+                          .HandleToolKey(state, static_cast<std::uint16_t>(keys[group])),
+                      "A grouped hotkey must be handled by the mode.");
+                state.PlaceNote({static_cast<std::int64_t>(variant), {}});
+                const int expected = groups[group][variant % groups[group].size()];
+                if (expected >= 11)
+                    state.PlaceNote({static_cast<std::int64_t>(variant), {1, 4}});
+                const auto notes = state.Document().NotesInMeasures(static_cast<std::int64_t>(variant),
+                                                                    static_cast<std::int64_t>(variant + 1));
+                Check(notes.front().note.keyType == (expected == 18 ? 17 : expected),
+                      "Group cycling selected the wrong persisted note type.");
+                if (expected == 18)
+                    Check(notes.front().note.extraData[0] == "Action=Kat", "Kat Buzz cycle lost its action.");
+            }
+            state.SelectTool(groups[group].front());
+            RecordingCanvas palette;
+            state.Mode().DrawTools(palette, state, texts.CurrentLanguage());
+            palette.actions[1 + group]();
+            const auto measure = static_cast<std::int64_t>(groups[group].size() + 1);
+            state.PlaceNote({measure, {}});
+            const auto expected = groups[group][1];
+            if (expected >= 11)
+                state.PlaceNote({measure, {1, 4}});
+            const auto head = state.Document().NotesInMeasures(measure, measure + 1).front().note;
+            Check(head.keyType == (expected == 18 ? 17 : expected),
+                  "Pressing an active tool button must cycle its group.");
+        }
+        EditorWorkspace state(CreateEditorMode("Taiko"),
+                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+        state.AddNote({0, {}}, 15, chart::MusicalPosition{0, {1, 2}}, {"HitCount=4", "Custom=keep"});
+        const auto id = state.Document().Notes().front().note.sourceOrder;
+        TaikoEditorNoteInspector inspector;
+        inspector.Select(state.Document(), id + 1);
+        inspector.Form().tool = 16;
+        inspector.Form().hitCount = "6";
+        inspector.Apply(state);
+        Check(state.Document().FindNote(id)->head.note.keyType == 16 &&
+                  state.Document().FindNote(id)->tail->note.keyType == 16 &&
+                  state.Document().FindNote(id)->head.note.extraData ==
+                      std::vector<std::string>{"Custom=keep", "HitCount=6"},
+              "The inspector must update the paired type/count and preserve unrelated options.");
+        state.SelectTool(0);
+        RecordingCanvas score;
+        state.Mode().DrawChart(score, state, finger_drum::texts::Language::Korean);
+        state.Mode().EditScore(state, {205, 174}, false);
+        score.labels.clear();
+        state.Mode().DrawChart(score, state, finger_drum::texts::Language::Korean);
+        Check(std::ranges::find(
+                  score.labels,
+                  std::wstring(finger_drum::texts::TaikoEditor(finger_drum::texts::Language::Korean).noteInfo)) !=
+                  score.labels.end(),
+              "Selecting a note must expose the note inspector.");
+        Check(std::ranges::any_of(score.images, [](const auto &path) { return path.filename() == L"DengDeng.png"; }),
+              "Score must draw the focus-note skin sprite.");
+        state.SetRealtime(true);
+        state.Mode().DrawChart(score, state, finger_drum::texts::Language::Korean);
+        Check(std::ranges::any_of(score.labels,
+                                  [](const auto &label) { return label.find(L"6 연타") != std::wstring::npos; }),
+              "A long-note head must show its required hit count in both views.");
+        inspector.Form().hitCount = "0";
+        const auto revision = state.Document().Revision();
+        bool rejected = false;
+        try
+        {
+            inspector.Apply(state);
+        }
+        catch (const std::invalid_argument &)
+        {
+            rejected = true;
+        }
+        Check(rejected && state.Document().Revision() == revision,
+              "Invalid inspector edits must preserve the document.");
+    }
+    {
+        chart::PatternDocument pattern;
+        pattern.notes = {{{0, {}}, 11, 1, {}, {"HitCount=6"}}, {{40, {}}, 11, 2}};
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        state.SelectTool(0);
+        state.SetFirstMeasure(4);
+        RecordingCanvas score;
+        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        state.Mode().EditScore(state, {800, 174}, false);
+        score.labels.clear();
+        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        Check(std::ranges::find(score.labels, L"6") != score.labels.end() && state.TimeMilliseconds() == 0,
+              "A long body spanning the viewport must select its source without moving the cursor.");
+        state.SetRealtime(true);
+        state.Seek(8000);
+        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        state.Mode().EditScore(state, {800, 465}, false);
+        score.labels.clear();
+        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        Check(std::ranges::find(score.labels, L"6") != score.labels.end() && state.TimeMilliseconds() == 8000,
+              "Realtime body selection must preserve the audio cursor and resolve the head.");
+    }
     TestTaikoEditing();
     TestTaikoPlacementConflicts();
     TestPreviewMatchesPlay();
@@ -512,9 +660,8 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     Check(probe->markerCalls == 2, "An edit must invalidate the mode marker cache.");
     EditorView view(visuals, state, texts);
     view.Initialize(services);
-    const auto hasText = [&](std::wstring_view text) {
-        return std::ranges::any_of(packets(), [text](const auto &p) { return p.text == text; });
-    };
+    const auto hasText = [&](std::wstring_view text)
+    { return std::ranges::any_of(packets(), [text](const auto &p) { return p.text == text; }); };
     visuals.Render({});
     Check(hasText(L"PROBE TOOL") && hasText(L"PROBE CHART") && !hasText(L"DON"),
           "Common view rendered Taiko instead of the selected mode.");

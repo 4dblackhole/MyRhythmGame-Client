@@ -7,6 +7,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 
 namespace finger_drum::chart
@@ -57,6 +58,8 @@ namespace finger_drum::chart
         void ReplaceEffects(EffectDocument effects) override;
         void AddNote(MusicalPosition position, int keyType, std::optional<MusicalPosition> end = {},
                      std::vector<std::string> extra = {}) override;
+        std::optional<EditorNoteSelection> FindNote(std::size_t sourceOrder) const override;
+        void UpdateNote(std::size_t sourceOrder, PatternNote head, std::optional<MusicalPosition> end) override;
         void DeleteNote(std::size_t sourceOrder) override;
         void SetMeasureLength(std::int64_t measure, Rational length) override;
         void Save() override;
@@ -69,7 +72,8 @@ namespace finger_drum::chart
         void InvalidateNoteSnapshots() noexcept;
         void EraseNote(std::size_t) noexcept;
         std::map<std::size_t, std::size_t> BuildLongPartners(
-            std::optional<std::size_t> excluded = {}, std::optional<std::size_t> excludedPartner = {}) const;
+            std::optional<std::size_t> excluded = {}, std::optional<std::size_t> excludedPartner = {},
+            std::span<const CompiledPatternNote> replacements = {}) const;
         std::vector<CompiledPatternNote> IncludeLongNotePartners(std::map<std::size_t, const CompiledPatternNote *>) const;
         using NoteKey = std::pair<MusicalPosition, std::size_t>;
         using TimeKey = std::pair<rhythm::RhythmTime, std::size_t>;

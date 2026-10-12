@@ -79,6 +79,45 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 에디터 노트 속성·롤 표시 진행분
+
+- 현재 구현한 범위: 선택 스킨의 서클/overlay·풍선·뎅뎅, 여섯 도구 묶음과 W/E/R/T/Y/U
+  순환, 롤 종류/요구 연타·틱 간격, 우측 노트 선택/속성 영역, 처리된 틱 숨김,
+  성공 OK/실패 MISS와 사용하지 않는 기본 JudgeImage PNG 7개 제거입니다.
+- **미완료:** 타이밍 입력 형식(마디·박자만 / ms 직접 입력도 포함)에 대한 사용자 답변 대기.
+  현재 타이밍은 읽기 전용이며 끝점이 없는 일반 노트→롱노트의 UI 변환도 보류입니다.
+  확정 뒤 타이밍 필드를 연결하고 그 변경을 별도로 검증해야 전체 요청이 완료됩니다.
+- TaikoEditorNoteInspector는 선택 ID/초안을 소유하고 Workspace가 UpdateNote를 연결합니다.
+  ChartEditor는 선택한 시작/끝과 시간/속도 인덱스만 준비한 뒤 교체하며 실패 시 원본을 보존합니다.
+  본체 Scene, 음악 clock·판정·점수·오디오 및 파일 문법은 바꾸지 않았습니다.
+  스킨 경로는 선택 revision별로 캐시하고 이미지는 공통 renderer가 소유합니다.
+- Debug/Release x64 전체 solution Rebuild 및 마지막 변경의 solution Build 성공.
+  최종 일반 빌드 경고/오류 0. 각 구성 로직·카탈로그 44개, 실패 0(실제 1곡/5패턴),
+  smoke-test/lobby/gameplay/editor 총 8개 exit 0. 기존 Option.ini SHA256 보존.
+- Editor audio/mode/menu 회귀 두 구성 성공. 버튼/단축키의 6개 묶음 순환·복귀,
+  기본 PNG 경로/종류·연타 라벨, 시작/끝 ID 및 무관 옵션 보존, 유효하지 않은 수정의
+  원본/revision 보존과 직렬화 왕복, 화면 밖 시작/끝을 가진 몸통의 선택과 커서 보존을 검사했습니다.
+- Gameplay judgement 회귀 두 구성 성공. 조기 수용된 미래 틱의 즉시 숨김, Reset 복원,
+  모든 틱 성공의 OK/누락 틱의 MISS와 200ms 페이드 및 기존 입력 우선순위를 검사했습니다.
+  음수 delay로 틱의 작성/시간 순서가 달라지고 동일 시각의 틱이 둘 있는 채보에서도
+  두 틱 처리 후 다음 위치의 마커만 남는 것을 검사했습니다. 표시 목록은 규칙과 같은 시간순입니다.
+- 실제 D3D12/FMOD 자동 전체 노트 replay 두 구성 성공: 19개 완료, 정확도 85.1694%,
+  각각 1,557 렌더 프레임. 기존 점수/틱 성공·실패 결과와 같고 오디오 오류가 없습니다.
+- MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 실제 x64 Debug/Release의
+  include/define/C++20/PCH로 Rhythm, Chart, Modes, Rhythm.Tests, MRG.Client에 실행했습니다.
+  마지막 Modes/Client 수정도 재분석했고 테스트 C++ 단위도 /analyze를 통과했습니다.
+  파싱/컴파일 오류와 새 경고 0. 새 C4244/C26829는 키 코드 타입/명시적 끝점 검증으로 수정했고
+  억제하지 않았습니다. 기존 C26115(EditorAnalysisController.cpp:51), C28020
+  (GameplaySessionController.cpp:64), Release C6236(GameplayInput.cpp:60)는 범위 밖으로 남겼습니다.
+- CheckArchitecture(11개 프로젝트), 물리 폴더/필터/엔진 경계와 git diff --check 통과.
+  엔진 및 사용자 곡/외부 스킨/Option.ini를 변경하지 않았습니다.
+  OK는 built-in image_gen으로 GREAT를 참조해 만들고 원본 그대로 복사했으며,
+  1254×1254 RGBA와 중앙/모서리 alpha 0을 확인했습니다. 프롬프트는 JudgementAssets에 있습니다.
+- **수동 확인:** 실제 화면 픽셀 배치·물리 키보드/마우스·청음은 수행하지 않았습니다.
+  draw packet/노드·자동 입력/실행 검사 및 생성 이미지 관찰과 구분합니다.
+- 원시 로그: ignored `build/editor-notes-2026-10-12/`의 rebuild/analysis/final/selection/
+  completion 검사 로그. 다음 타이밍 구현은 이 진행분을 완료로 오인하지 말고 이어서 수행합니다.
+
 ## 2026-10-12 코드 품질 재검토 수정
 
 - [품질 수정 기록](Reviews/QualityFixes-2026-10-12.md)에 따라 보간식의 런타임 실패 복구,

@@ -24,7 +24,7 @@ class EditorVisual final : public v::Visual2DComponent
         }
         pendingRectangles_->push_back({bounds, color, radius});
     }
-    void AddText(v::DrawPacket packet)
+    void AddPacket(v::DrawPacket packet)
     {
         pendingRectangles_.reset();
         packets_.push_back(std::move(packet));

@@ -145,4 +145,7 @@
   <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorTools.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
   <ItemGroup><ClCompile Include="Texts\EditorScene\Taiko\TaikoEditorTexts.cpp"><Filter>Texts\EditorScene\Taiko</Filter></ClCompile></ItemGroup>
   <ItemGroup><ClInclude Include="Texts\EditorScene\Taiko\TaikoEditorTexts.h"><Filter>Texts\EditorScene\Taiko</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorPlacement.h"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.h"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
 </Project>

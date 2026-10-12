@@ -119,6 +119,8 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
     const bool controlDown = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
     if (controlDown && input.WasKeyPressed('S'))
         state_.Save();
+    if (state_.Tab() == EditorTab::Pattern && !controlDown && !input.IsKeyDown(VK_LMENU) && !input.IsKeyDown(VK_RMENU))
+        state_.Mode().HandleToolKeys(state_, input);
     if (input.WasKeyPressed(VK_LEFT))
     {
         state_.Seek(state_.TimeMilliseconds() - 1);

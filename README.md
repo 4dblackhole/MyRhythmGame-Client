@@ -39,7 +39,8 @@ YMP의 `Effect file`이 참조하는 [YME](Docs/Formats/Yme.md)는 히트사운�
 Speed/Sounds/Zone 명령을 소유합니다. Whole/Separate, 세 기본 보간·사용자 식·3차 베지어,
 히트사운드 볼륨, 싱코페이션 판정 보정과 Kiai 상태를 지원합니다.
 플레이 화면은 기본 판정 범위의 색 구간·입력 타이밍 마커와
-MAX/PERFECT/GREAT/GOOD/BAD/MISS/POOR 링·문구를 표시합니다.
+MAX/PERFECT/GREAT/GOOD/BAD/MISS/POOR와 롤 성공의 OK 링·문구를 표시합니다.
+에디터는 선택 스킨과 W/E/R/T/Y/U 도구 묶음, 우측 노트 정보/속성 영역을 제공합니다.
 동작과 스킨 경로는 [플레이 표시](Docs/Gameplay/Presentation.md)에 있습니다.
 
 ## 빌드·실행

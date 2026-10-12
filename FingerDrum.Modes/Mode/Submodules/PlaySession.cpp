@@ -107,14 +107,15 @@ namespace finger_drum::mode
         return measureLines_;
     }
 
-    void PlaySession::SetNotePresentation(const rhythm::NoteId noteId,
-                                          NotePresentationInfo presentation)
+    void PlaySession::SetNotePresentation(const rhythm::NoteId noteId, NotePresentationInfo presentation)
     {
+        // Tick rules process chronological indices, including duplicate times
+        // and negative-delay maps. Rendering uses the same processed prefix.
+        std::ranges::sort(presentation.tickTimes);
         notePresentation_.insert_or_assign(noteId, std::move(presentation));
     }
 
-    const NotePresentationInfo *PlaySession::FindNotePresentation(
-        const rhythm::NoteId noteId) const noexcept
+    const NotePresentationInfo *PlaySession::FindNotePresentation(const rhythm::NoteId noteId) const noexcept
     {
         const auto found = notePresentation_.find(noteId);
         return found == notePresentation_.end() ? nullptr : &found->second;

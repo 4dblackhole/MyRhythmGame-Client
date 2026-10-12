@@ -5,6 +5,12 @@
 
 namespace finger_drum::chart
 {
+    struct EditorNoteSelection
+    {
+        CompiledPatternNote head;
+        std::optional<CompiledPatternNote> tail;
+    };
+
     // Common editable score projection. A format adapter keeps its original
     // source data and owns validation/serialization; Save must not discard it.
     class IEditorDocument
@@ -40,6 +46,9 @@ namespace finger_drum::chart
         virtual void ReplaceEffects(EffectDocument effects) = 0;
         virtual void AddNote(MusicalPosition position, int keyType, std::optional<MusicalPosition> end = {},
                              std::vector<std::string> extra = {}) = 0;
+        // Returns copies with stable IDs; selecting a tail resolves its head.
+        virtual std::optional<EditorNoteSelection> FindNote(std::size_t sourceOrder) const = 0;
+        virtual void UpdateNote(std::size_t sourceOrder, PatternNote head, std::optional<MusicalPosition> end) = 0;
         virtual void DeleteNote(std::size_t sourceOrder) = 0;
         virtual void SetMeasureLength(std::int64_t measure, Rational length) = 0;
         virtual void Save() = 0;

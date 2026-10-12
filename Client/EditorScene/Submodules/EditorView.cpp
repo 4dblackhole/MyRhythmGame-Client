@@ -78,6 +78,18 @@ void EditorView::Box(v::Rect r, v::Color color, float radius)
     visual->AddRectangle({r.x - 960, 540 - r.y - r.height, r.width, r.height}, color, radius);
 }
 
+void EditorView::Image(v::Rect r, const std::filesystem::path &path, v::Color tint)
+{
+    v::DrawPacket packet{};
+    packet.type = v::DrawPacketType::Image;
+    packet.bounds = {r.x - 960, 540 - r.y - r.height, r.width, r.height};
+    packet.image = visuals.RegisterImage(path);
+    if (packet.image.value == 0)
+        throw std::runtime_error("Editor skin image could not be loaded.");
+    packet.color = tint;
+    visual->AddPacket(std::move(packet));
+}
+
 void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
 {
     v::DrawPacket p{};
@@ -87,7 +99,7 @@ void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
     p.text = std::move(text);
     p.font = texts_.CurrentProfile().font;
     p.fontSize = size;
-    visual->AddText(std::move(p));
+    visual->AddPacket(std::move(p));
 }
 
 const finger_drum::texts::EditorTextSet &EditorView::Texts() const noexcept

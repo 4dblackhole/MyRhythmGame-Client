@@ -17,6 +17,7 @@ class IEditorModeCanvas
     virtual void Box(mrg::visual2d::Rect, mrg::visual2d::Color, float radius = 0) = 0;
     virtual void Text(mrg::visual2d::Rect, std::wstring, float size = 20,
                       mrg::visual2d::Color color = {.17F, .34F, .47F, 1}) = 0;
+    virtual void Image(mrg::visual2d::Rect, const std::filesystem::path &, mrg::visual2d::Color) = 0;
     virtual void Button(mrg::visual2d::Rect, std::wstring, std::function<void()>, bool selected = false) = 0;
 };
 
@@ -35,13 +36,16 @@ class IEditorMode : public IEditorAudioSource
     virtual std::unique_ptr<finger_drum::chart::IEditorDocument> OpenDocument(
         const finger_drum::GameplayLaunchRequest &) const = 0;
     virtual void SelectTool(int) = 0;
+    virtual void HandleToolKeys(IEditorContext &, const mrg::platform::InputState &)
+    {
+    }
     virtual void PlaceNote(IEditorContext &, finger_drum::chart::MusicalPosition) = 0;
     virtual bool HasPendingPlacement() const noexcept = 0;
     virtual bool CancelInteraction() noexcept = 0;
     virtual void CloseToolMenu() noexcept = 0;
     virtual bool OpenToolMenu(mrg::visual2d::Point) = 0;
     virtual void DrawTools(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
-    virtual void DrawChart(IEditorModeCanvas &, IEditorContext &) = 0;
+    virtual void DrawChart(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
     virtual void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
     virtual void EditScore(IEditorContext &, mrg::visual2d::Point, bool erase) = 0;
     virtual void ScrollScore(IEditorContext &, int direction) = 0;

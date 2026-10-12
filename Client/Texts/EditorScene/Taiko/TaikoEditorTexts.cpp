@@ -11,7 +11,20 @@ namespace finger_drum::texts
                                                    L"동",
                                                    L"캇",
                                                    L"동 사운드",
-                                                   L"캇 사운드"};
+                                                   L"캇 사운드",
+                                                   L"연타",
+                                                   L"틱 간격",
+                                                   L"박",
+                                                   L"노트 정보",
+                                                   L"선택 도구로 노트를 클릭하세요.",
+                                                   L"시작",
+                                                   L"끝",
+                                                   L"연타 수 (빈칸: 자동)",
+                                                   L"틱 분할 (온음표 기준)",
+                                                   L"히트사운드 ID (빈칸: 기본)",
+                                                   L"적용",
+                                                   L"초안 취소",
+                                                   L"틱 수"};
         static constexpr TaikoEditorTextSet English{
             {L"SELECT", L"DON", L"BIG DON", L"ROLL", L"BALLOON", L"BPM", L"MEASURE"},
             {L"Don", L"Kat", L"Big Don", L"Big Kat", L"Purple Note", L"Roll", L"Tick Roll", L"Big Roll",
@@ -21,7 +34,20 @@ namespace finger_drum::texts
             L"Don",
             L"Kat",
             L"DON SOUND",
-            L"KAT SOUND"};
+            L"KAT SOUND",
+            L"hits",
+            L"tick interval",
+            L"beats",
+            L"NOTE INFO",
+            L"Click a note with the selection tool.",
+            L"Start",
+            L"End",
+            L"Hit count (empty: auto)",
+            L"Tick division (whole note)",
+            L"Hit sound ID (empty: default)",
+            L"Apply",
+            L"Reset fields",
+            L"Tick count"};
         return language == Language::Korean ? Korean : English;
     }
 } // namespace finger_drum::texts

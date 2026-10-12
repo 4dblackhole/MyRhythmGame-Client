@@ -235,4 +235,7 @@
   <ItemGroup><ClInclude Include="Texts\EditorScene\Taiko\TaikoEditorTexts.h" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorPlacement.h" /></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.cpp" /></ItemGroup>
 </Project>

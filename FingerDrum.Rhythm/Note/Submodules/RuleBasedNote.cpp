@@ -63,6 +63,11 @@ namespace finger_drum::rhythm
         return rule_->Progress();
     }
 
+    std::size_t RuleBasedNote::ProcessedTickCount() const noexcept
+    {
+        return rule_->ProcessedTickCount();
+    }
+
 #if defined(_DEBUG)
     std::wstring RuleBasedNote::DebugText() const
     {

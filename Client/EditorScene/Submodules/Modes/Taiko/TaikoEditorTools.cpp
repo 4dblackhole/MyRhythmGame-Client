@@ -5,57 +5,79 @@
 #include <algorithm>
 using namespace editor_ui;
 
+namespace
+{
+    constexpr std::array<std::uint16_t, 6> ToolKeys{'W', 'E', 'R', 'T', 'Y', 'U'};
+
+}
+
+void TaikoEditorMode::ActivateGroup(IEditorContext &state, std::size_t group)
+{
+    int next = groupTools_.at(group);
+    if (tool_ == next)
+    {
+        // Cycle only within the active set; returning to another set keeps its variant.
+        std::vector<int> members;
+        for (const auto &tool : editor_tools::Tools)
+            if (static_cast<std::size_t>(tool.group) == group)
+                members.push_back(tool.id);
+        const auto current = std::ranges::find(members, next);
+        next = current + 1 == members.end() ? members.front() : *(current + 1);
+    }
+    state.SelectTool(next);
+}
+
+void TaikoEditorMode::HandleToolKeys(IEditorContext &state, const mrg::platform::InputState &input)
+{
+    for (const auto key : ToolKeys)
+        if (input.WasKeyPressed(key))
+            HandleToolKey(state, key);
+}
+
+bool TaikoEditorMode::HandleToolKey(IEditorContext &state, std::uint16_t key)
+{
+    const auto found = std::ranges::find(ToolKeys, key);
+    if (found == ToolKeys.end())
+        return false;
+    ActivateGroup(state, static_cast<std::size_t>(found - ToolKeys.begin()));
+    return true;
+}
+
 void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, IEditorContext &state, finger_drum::texts::Language language)
 {
     const auto &text = finger_drum::texts::TaikoEditor(language);
     canvas.Box({24, 76, 70, 918}, Paper, 18);
     canvas.Text({38, 86, 55, 25}, std::wstring(finger_drum::texts::Editor(language).tools), 16);
-    const auto toolName = [&text](const int id) -> std::wstring {
-        for (std::size_t index = 0; index < editor_tools::Tools.size(); ++index)
-        {
-            if (editor_tools::Tools[index].id == id)
-                return std::wstring(text.toolVariants[index]);
-        }
-        return {};
-    };
-    const std::array<std::wstring, 7> names{std::wstring(text.toolGroups[0]),
-                                            toolName(smallTool_),
-                                            toolName(bigTool_),
-                                            toolName(rollTool_),
-                                            toolName(focusTool_),
-                                            std::wstring(text.toolGroups[5]),
-                                            std::wstring(text.toolGroups[6])};
-    const std::array<int, 7> ids{0, smallTool_, bigTool_, rollTool_, focusTool_, -2, -3};
-    for (std::size_t i = 0; i < ids.size(); ++i)
+    canvas.Button({35, 122, 48, 48}, L"", [&state] { state.SelectTool(0); }, tool_ == 0);
+    canvas.Text({27, 171, 67, 25}, std::wstring(text.toolGroups[0]), 13);
+    for (std::size_t i = 0; i < groupTools_.size(); ++i)
     {
-        const float y = 122 + static_cast<float>(i) * 80;
+        const float y = 202 + static_cast<float>(i) * 80;
+        const int id = groupTools_[i];
+        canvas.Button({35, y, 48, 48}, L"", [this, &state, i] { ActivateGroup(state, i); }, tool_ == id);
+        Circle(canvas, 59, y + 24, id, i == 1 ? 15.0F : 10.0F);
+        canvas.Text({27, y + 49, 67, 25}, std::wstring(editor_tools::Name(id, text.toolVariants)), 11);
+        canvas.Text({75, y + 3, 16, 18}, std::wstring(1, static_cast<wchar_t>(ToolKeys[i])), 12);
+    }
+    for (int i = 0; i < 2; ++i)
+    {
+        const int id = -2 - i;
+        const float y = 682 + static_cast<float>(i) * 80;
         canvas.Button(
-            {35, y, 48, 48}, i < 5 ? L"" : names[i], [&state, id = ids[i]] { state.SelectTool(id); }, tool_ == ids[i]);
-        if (i > 0 && i < 5)
-            Circle(canvas, 59, y + 24, ids[i], i == 2 ? 15.0F : 10.0F);
-        canvas.Text({27, y + 49, 67, 25}, names[i], 13);
+            {35, y, 48, 48}, std::wstring(text.toolGroups[5 + i]), [&state, id] { state.SelectTool(id); }, tool_ == id);
     }
 }
 
 void TaikoEditorMode::DrawToolMenu(IEditorModeCanvas &canvas, IEditorContext &state,
                                    finger_drum::texts::Language language)
 {
-    if (popup_ >= 0)
-    {
-        std::vector<std::pair<std::wstring, int>> choices;
-        const auto &text = finger_drum::texts::TaikoEditor(language);
-        for (std::size_t toolIndex = 0; toolIndex < editor_tools::Tools.size(); ++toolIndex)
-        {
-            const auto &tool = editor_tools::Tools[toolIndex];
-            using Group = editor_tools::Group;
-            const bool matches = popup_ == 1   ? tool.group == Group::Small
-                                 : popup_ == 2 ? tool.group == Group::Big
-                                               : tool.group == Group::Roll || tool.group == Group::Focus;
-            if (matches)
-                choices.emplace_back(text.toolVariants[toolIndex], tool.id);
-        }
-        for (std::size_t i = 0; i < choices.size(); ++i)
-            canvas.Button({105, 200 + static_cast<float>(i) * 40, 220, 38}, choices[i].first,
-                          [&state, id = choices[i].second] { state.SelectTool(id); });
-    }
+    if (popup_ < 0)
+        return;
+    std::size_t row = 0;
+    for (const auto &tool : editor_tools::Tools)
+        if (static_cast<int>(tool.group) == popup_)
+            canvas.Button(
+                {105, 202 + static_cast<float>(row++) * 40, 220, 38},
+                std::wstring(editor_tools::Name(tool.id, finger_drum::texts::TaikoEditor(language).toolVariants)),
+                [&state, id = tool.id] { state.SelectTool(id); });
 }

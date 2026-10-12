@@ -28,6 +28,10 @@ namespace finger_drum::rhythm
         void MarkMissed(const NoteRuleContext &context, RhythmTime time,
                         NoteProcessResult &output) override;
         [[nodiscard]] RhythmTime ExpireTime(const NoteRuleContext &context) const noexcept override;
+        [[nodiscard]] std::size_t ProcessedTickCount() const noexcept override
+        {
+            return nextTickIndex_;
+        }
 
       private:
         NoteAction requiredAction_{};

@@ -66,6 +66,7 @@ class EditorView final : public IEditorModeCanvas
                            double minimumHz, double maximumHz);
     void DrawTimeline();
     void SyncTimelineSlider();
+    void Image(v::Rect, const std::filesystem::path &, v::Color) override;
     void Box(v::Rect r, v::Color color, float radius = 0) override;
     void Text(v::Rect r, std::wstring text, float size = 20, v::Color color = editor_ui::Ink) override;
     void Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected = false) override;

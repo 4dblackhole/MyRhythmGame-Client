@@ -60,7 +60,7 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 
 풍선 완료 효과음은 `HitSounds/TaikoMode/pop.wav`입니다. 다른 스킨에서 이 파일을
 제공하면 해당 파일을 사용하고, 없으면 내장 기본 스킨의 소리로 대체합니다.
-판정 링·문구 7종도 `InGame/Judgements/MAX.png`부터 `POOR.png`까지 같은 파일별
+판정 링·문구 8종도 `InGame/Judgements/MAX.png`부터 `POOR.png`, `OK.png`까지 같은 파일별
 fallback을 사용합니다. 인디케이터는 별도 색 구간 요소로 구성합니다.
 판정별 파일명과 표시 계약은 [Presentation](Gameplay/Presentation.md)에 있습니다.
 
@@ -78,3 +78,6 @@ source group을 함께 갱신합니다. Scene에는 물리 경로를 새로 하�
 
 현재 캐시는 새 팩마다 새 hash 디렉터리를 만들며 이전 버전 디렉터리를 자동으로
 삭제하지 않습니다. 사용자 곡과 스킨 선택 UI는 Client의 책임입니다.
+
+기본 스킨의 사용되지 않는 `JudgeImage` PNG 7개와 resolver는 제거했습니다.
+현재 판정 자산은 `InGame/Judgements`가 소유합니다. 사용자 외부 스킨은 삭제하지 않습니다.

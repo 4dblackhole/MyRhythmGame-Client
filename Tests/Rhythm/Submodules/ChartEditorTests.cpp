@@ -6,6 +6,65 @@ namespace finger_drum::tests
     {
         using namespace finger_drum;
         {
+            chart::PatternDocument pattern;
+            pattern.mode = "Taiko";
+            pattern.musicMetadataFile = "fixture.ymm";
+            pattern.notes = {{{0, {}}, 11, 1, {}, {"HitCount=3", "Custom=keep"}, {}, 10},
+                             {{0, {1, 2}}, 11, 2, {}, {}, {}, 11},
+                             {{2, {}}, 1, 0, {}, {}, {}, 12}};
+            chart::ChartEditor document(pattern);
+            auto selected = document.FindNote(11);
+            Require(selected && selected->head.note.sourceOrder == 10 && selected->tail->note.sourceOrder == 11,
+                    "Tail selection must resolve a stable head/tail pair.");
+            auto head = selected->head.note;
+            head.keyType = 17;
+            head.position = {1, {1, 4}};
+            head.extraData = {"Action=Kat", "TickDivision=64", "Custom=keep"};
+            document.UpdateNote(11, head, chart::MusicalPosition{1, {3, 4}});
+            selected = document.FindNote(10);
+            Require(selected->head.note.sourceOrder == 10 && selected->tail->note.sourceOrder == 11 &&
+                        selected->tail->note.keyType == 17 && document.FindNote(12)->head.note.position.measure == 2 &&
+                        document.NotesInMeasures(0, 1).empty() && document.NotesInMeasures(1, 2).size() == 2,
+                    "Property edits must preserve IDs/unrelated notes and update both endpoints and range indices.");
+            const auto revision = document.Revision();
+            auto invalid = selected->head.note;
+            invalid.hitSound = "undefined";
+            bool rejected = false;
+            try
+            {
+                document.UpdateNote(10, invalid, selected->tail->note.position);
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejected = true;
+            }
+            Require(rejected && document.Revision() == revision && document.FindNote(10)->head.note.hitSound.empty(),
+                    "An invalid property edit must preserve the document and revision.");
+            rejected = false;
+            try
+            {
+                document.UpdateNote(10, selected->head.note, selected->head.note.position);
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejected = true;
+            }
+            Require(rejected && document.Revision() == revision, "A zero-duration property edit must be atomic.");
+            const auto reparsed =
+                chart::ChartParser{}.ParsePattern(chart::ChartEditor::WritePattern(document.Pattern()));
+            Require(reparsed.Succeeded() && reparsed.document.notes[0].extraData == head.extraData,
+                    "Updated note options must survive serialization.");
+            head.keyType = 2;
+            document.UpdateNote(10, head, {});
+            Require(!document.FindNote(11) && !document.FindNote(10)->tail && document.FindNote(12),
+                    "Converting a long note to a tap must remove only its tail.");
+            head.keyType = 11;
+            document.UpdateNote(10, head, chart::MusicalPosition{1, {3, 4}});
+            Require(document.FindNote(10)->tail->note.sourceOrder > 12,
+                    "Converting a tap back to a long note must not reuse the old tail ID.");
+        }
+
+        {
             chart::PatternDocument source;
             source.baseBpm = 120;
             source.notes = {{{0, {}}, 11, 1, {}, {}, {}, 90},

@@ -38,13 +38,6 @@ namespace mrg_client::asset_paths
                 std::filesystem::path(L"InGame") / file);
         }
 
-        [[nodiscard]] inline std::filesystem::path JudgeImage(
-            const std::filesystem::path& file)
-        {
-            return SkinSetSelection::Instance().Resolve(
-                std::filesystem::path(L"JudgeImage") / file);
-        }
-
         [[nodiscard]] inline std::filesystem::path NumberImage(
             const std::filesystem::path& file)
         {
