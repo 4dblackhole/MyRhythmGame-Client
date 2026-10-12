@@ -4,6 +4,12 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $problems = [System.Collections.Generic.List[string]]::new()
 $projectPaths = @(& rg --files $repoRoot -g '*.vcxproj' -g '!Dependencies/**' -g '!build/**' -g '!bin/**' |
     Where-Object { $_ -notmatch '[\\/]Dependencies[\\/]' })
+$converterRoot = Join-Path (Split-Path -Parent $repoRoot) 'OsuTaikoConverter'
+foreach ($name in 'OsuTaikoConverter.Core', 'OsuTaikoConverter', 'OsuTaikoConverter.Tests') {
+    $projectPath = Join-Path $converterRoot "$name.vcxproj"
+    if (Test-Path -LiteralPath $projectPath) { $projectPaths += $projectPath }
+    else { $problems.Add("Missing converter project: $projectPath (clone the sibling repository).") }
+}
 $edges = @{}
 foreach ($projectPath in $projectPaths) {
     $directory = Split-Path -Parent $projectPath
@@ -46,6 +52,9 @@ foreach ($projectPath in $edges.Keys) { Visit-Project $projectPath @() }
 
 $sources = @(& rg --files $repoRoot -g '*.cpp' -g '*.h' -g '!Dependencies/**' -g '!build/**' -g '!bin/**' |
     Where-Object { $_ -notmatch '[\\/](Dependencies|build|bin)[\\/]' })
+if (Test-Path -LiteralPath $converterRoot) {
+    $sources += @(& rg --files $converterRoot -g '*.cpp' -g '*.h')
+}
 foreach ($source in $sources) {
     $body = Get-Content -Raw -LiteralPath $source
     if ($body -match '#include\s*[<"][^">]+\.cpp[">]') { $problems.Add("Implementation include: $source") }

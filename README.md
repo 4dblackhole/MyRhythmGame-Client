@@ -23,6 +23,7 @@
 | `FingerDrum.Assets/` | 기본 스킨/글꼴 RCDATA와 외부 기본 제공곡 |
 | `Tests/Rhythm/` | 분야별 로직·파일·선택 상태 회귀 테스트 |
 | `Dependencies/MRG-Engine/` | 독립 저장소의 재사용 엔진 |
+| `../OsuTaikoConverter/` | 별도 C++ 저장소의 osu!taiko → YMM/YMP/YME 변환기 EXE |
 
 Scene마다 전용 폴더와 `Submodules/`를 둡니다. Scene은 작은 호출로 책임 클래스를
 조립하며, UI·세션·분석 상태는 각 클래스가 관리합니다. Note도 계약·규칙별 트리를
@@ -49,9 +50,14 @@ Visual Studio 2022 / MSVC v143 / Windows SDK / FMOD Studio API for Windows가
 ```powershell
 git clone --recurse-submodules https://github.com/4dblackhole/MyRhythmGame-Client.git
 cd MyRhythmGame-Client
+git clone https://github.com/4dblackhole/OsuTaikoConverter.git ../OsuTaikoConverter
 msbuild MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
 msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 ```
+
+전체 솔루션 빌드에는 형제 폴더의 비공개 변환기 저장소도 필요합니다.
+`OsuTaikoConverter.exe`는 게임 EXE 옆에 복사됩니다. 인자와 격자/omit 규칙,
+지원 범위는 [변환기 문서](Docs/OsuTaikoConverter.md)를 참고합니다.
 
 도메인 테스트만 빌드할 때는 `Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접
 빌드할 수 있으며 엔진 checkout/FMOD SDK가 필요하지 않습니다. Windows CI가

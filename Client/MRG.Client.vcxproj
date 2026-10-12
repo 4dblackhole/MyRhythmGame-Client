@@ -67,6 +67,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\OsuTaikoConverter\OsuTaikoConverter.vcxproj">
+      <Project>{C2222222-2222-4222-8222-222222222222}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
     <ProjectReference Include="..\Dependencies\MRG-Engine\Engine\SDK\MRG.Core.vcxproj">
       <Project>{78888888-8888-4888-8888-888888888888}</Project>
     </ProjectReference>
@@ -108,6 +113,8 @@
     <Copy SourceFiles="@(DefaultSong)" DestinationFiles="@(DefaultSong->'$(OutDir)assets\Songs\%(RuntimeDirectory)\%(Filename)%(Extension)')"
           Condition="!Exists('$(OutDir)assets\Songs\%(DefaultSong.RuntimeDirectory)\%(DefaultSong.Filename)%(DefaultSong.Extension)')" />
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(ProjectDir)..\..\OsuTaikoConverter\bin\$(Platform)\$(Configuration)\OsuTaikoConverter.exe"
+          DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <MakeDir Directories="$(OutDir)assets" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">

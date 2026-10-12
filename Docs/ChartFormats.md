@@ -1,5 +1,7 @@
 # 차트 문법 진입점
 
+외부 osu!taiko 채보 가져오기는 별도 [변환기 EXE](OsuTaikoConverter.md)를 사용합니다.
+
 YMP의 타이밍 명령은 `#measure`, `#bpm`, `#delay`만 허용합니다.
 효과 명령은 YME에 작성하며 YMP의 알 수 없는 명령은 오류로 처리합니다.
 

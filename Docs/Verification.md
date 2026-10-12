@@ -19,6 +19,16 @@ msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platfo
 .\bin\x64\Debug\MyRhythmGame.exe --smoke-editor
 ```
 
+osu!taiko 변환기 변경은 같은 부모 폴더의 독립 저장소에서 아래 검사도 두 구성으로 실행합니다.
+실제 맵/오디오는 해당 저장소의 ignored `TestData`에 복사하고 Git에 포함하지 않습니다.
+
+```powershell
+..\OsuTaikoConverter\bin\x64\Debug\OsuTaikoConverter.Tests.exe
+..\OsuTaikoConverter\Tests\CliTests.ps1 -Configuration Debug -MapPath ..\OsuTaikoConverter\TestData\Pandora\map.osu
+```
+
+변환기의 Core/EXE/Tests 프로젝트에도 실제 구성의 MSVC Code Analysis를 실행합니다.
+
 PowerShell에서 Windows GUI 실행 파일을 직접 호출하면 `$LASTEXITCODE`가 비어
 있을 수 있습니다. 종료 코드를 판정할 때는 다음처럼 실행하고 `Debug`를
 `Release`로 바꿔 같은 경로를 반복합니다.
@@ -443,3 +453,35 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   Run*Tests/keybeam/replay/effects 및 final-smokes 로그. 앞선 실패 로그 대신 최종 구성별 로그를 기준으로 합니다.
 - **수동 확인:** 실제 화면 배치·물리 키/마우스 조작·청취는 수행하지 않았습니다.
   위 D3D12/FMOD replay와 UI 입력/좌표 검사는 자동 검증입니다.
+
+## 2026-10-12 osu!taiko 독립 변환기
+
+- 같은 부모 폴더의 private `OsuTaikoConverter` 저장소에 C++20 Core/EXE/Tests를
+  추가했습니다. Client는 EXE 프로젝트를 빌드하고 실행 폴더에 복사합니다.
+  기존 파서/게임플레이/엔진 구현과 사용자 곡/스킨은 변경하지 않았습니다.
+- Debug/Release x64 전체 Client 솔루션 Rebuild 성공, 일반 빌드 경고·오류 없음.
+  변환기 회귀 테스트와 실제 EXE CLI 테스트도 두 구성 모두 통과했습니다.
+  1..32 모든 분모, 추가 격자/동률/무제한 스냅, omit/변칙마디/미터 변경,
+  빨강·초록 동시점/SV 초기화/볼륨/Kiai, 노트·틱롤·뎅뎅과 오류 경계를 검사했습니다.
+  CLI 검사는 한글 경로, JSON/종료 코드, 기존 출력 보존 및 잘못된 인자를 포함합니다.
+- D 드라이브 osu!의 `PANDORA PARADOXXX (Firce777) [Firce777's Taiko]`와 오디오를
+  변환기 `TestData/Pandora`에 복사했습니다. 원본/복사본 osu SHA256은
+  `DF4B13E78047F0DE652B0AB965D84C38106D1F549E95CAA033CB368F9A68D7FE`로 같습니다.
+  기본 격자와 추가 48로 변환한 원본 오브젝트 1,233개를 실제 SongCatalog와
+  TaikoMode 세션에서 모두 읽었습니다. 출력 노트 행 1,236개(롱노트 끝 포함),
+  스냅 이벤트 352개, 최대 이동 약 1.333334ms입니다.
+  생성 YMP/YME는 기존 파서·직렬화 왕복 및 실제 MusicalTimeline의 2us 오차 검사도 통과합니다.
+- 기존 로직·카탈로그 테스트 두 구성 각각 44개, 실패 0.
+  smoke-test/lobby/gameplay/editor 두 구성 총 8개 종료 코드 0.
+- MSVC 14.44 Code Analysis, 실제 include/define/C++20 및 Debug/Release x64로
+  변환기 Core/EXE/Tests(구성별 새 C++ 번역 단위 6개)와 MRG.Client를 분석했습니다.
+  변환기 경고·오류와 Client 새 경고는 없습니다. 기존 Client 진단은
+  EditorAnalysisController.cpp:51 C26115 및 GameplaySessionController.cpp:64 C28020
+  (두 구성), GameplayInput.cpp:60 C6236(Release)이며 범위 밖 수정을 하지 않았습니다.
+- CheckArchitecture의 11개 프로젝트 소스/필터/의존성 검사와 git diff --check 통과.
+  원시 로그는 `build/converter-logs/`의 solution/analysis/logic/cli 로그와
+  `real-map-Release.json`, 실제 출력은 변환기 `TestData/Songs/Pandora-Release`에 있습니다.
+  맵·오디오·생성 결과·빌드 산출물은 Git에서 제외합니다.
+- 배경/스토리보드/커스텀 샘플은 경고와 함께 생략하며 Client 스킨을 사용합니다.
+  실제 화면·물리 입력·청음은 수동 검증하지 않았습니다. CLI/포맷 통합이며
+  Client의 가져오기 UI나 프로세스 실행 Controller를 추가한 작업은 아닙니다.
