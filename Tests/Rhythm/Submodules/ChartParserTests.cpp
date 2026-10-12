@@ -180,15 +180,15 @@ Mode: Taiko
                 "The overwritten interval includes its earlier boundary, excludes its new endpoint, and removes taps.");
         const auto ticks = timeline.CompileSubdivisions({0, {}}, {2, {}}, 16);
         std::vector<rhythm::RhythmTime> expected;
-        for (int i = 0; i < 32; ++i)
+        for (int i = 0; i <= 32; ++i)
         {
             const chart::MusicalPosition position{i / 16, {i % 16, 16}};
             if (timeline.IsPositionActive(position))
                 expected.push_back(timeline.Compile(position));
         }
-        Require(ticks == expected && timeline.CountSubdivisions({0, {}}, {2, {}}, 16) == ticks.size(),
-                "Tick generation and counts without timestamp allocation must skip exactly the overwritten grid "
-                "positions.");
+        Require(ticks == expected && timeline.CountSubdivisions({0, {}}, {2, {}}, 16) + 1 == ticks.size(),
+                "Scheduled ticks must skip overwritten grid positions and include the active tail; automatic "
+                "hit counts exclude the tail.");
         const auto restored = chart::ChartParser{}.ParsePattern(chart::ChartEditor::WritePattern(editor.Pattern()));
         Require(restored.Succeeded() && restored.document.notes.size() == 6 &&
                     restored.document.notes[4].position == chart::MusicalPosition{1, {1, 4}} &&
@@ -219,7 +219,7 @@ Mode: Taiko
                 "Nested overwrites must discard earlier tempo/delay state and support inverse seeking.");
         const auto nestedTicks = nested.CompileSubdivisions({0, {}}, {2, {}}, 16);
         expected.clear();
-        for (int i = 0; i < 32; ++i)
+        for (int i = 0; i <= 32; ++i)
         {
             const chart::MusicalPosition p{i / 16, {i % 16, 16}};
             if (nested.IsPositionActive(p))

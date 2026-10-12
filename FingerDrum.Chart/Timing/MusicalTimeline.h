@@ -22,8 +22,10 @@ namespace finger_drum::chart
         [[nodiscard]] rhythm::RhythmTime Compile(MusicalPosition position) const;
         [[nodiscard]] std::vector<CompiledPatternNote> CompileNotes(const PatternDocument &pattern) const;
         [[nodiscard]] std::vector<CompiledEffectCommand> CompileEffects(const EffectDocument &effects) const;
+        // Scheduled ticks include an active end position only when it lies on the begin-anchored grid.
         [[nodiscard]] std::vector<rhythm::RhythmTime> CompileSubdivisions(MusicalPosition begin, MusicalPosition end,
                                                                           std::size_t divisionsPerWholeNote) const;
+        // Automatic hit-count targets use [begin, end), independently of scheduled ticks.
         [[nodiscard]] std::size_t CountSubdivisions(MusicalPosition begin, MusicalPosition end,
                                                     std::size_t divisionsPerWholeNote) const;
         [[nodiscard]] std::vector<rhythm::RhythmTime> CompileMeasureStarts() const;

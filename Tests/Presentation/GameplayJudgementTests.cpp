@@ -277,20 +277,27 @@ namespace
             return count;
         };
         presenter.UpdatePresentation(r::RhythmTime{});
-        Check(visibleTicks() == 3, "All body ticks must start visible.");
+        Check(visibleTicks() == 4, "All body ticks, including the aligned tail, must start visible.");
         presenter.ApplyFeedback(
             {.keyPressed = true, .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{})});
         presenter.ApplyFeedback(
             {.keyPressed = true,
              .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{75'000})});
         presenter.UpdatePresentation(r::RhythmTime{75'000});
-        Check(visibleTicks() == 2, "An early accepted tick must disappear before its scheduled time.");
+        Check(visibleTicks() == 3, "An early accepted tick must disappear before its scheduled time.");
         presenter.ApplyFeedback(
             {.keyPressed = true,
              .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{250'000})});
         presenter.ApplyFeedback(
             {.keyPressed = true,
              .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{375'000})});
+        presenter.UpdatePresentation(r::RhythmTime{375'000});
+        Check(visibleTicks() == 1, "The unprocessed tail tick must remain visible after the other ticks.");
+        presenter.ApplyFeedback(
+            {.keyPressed = true,
+             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{500'000})});
+        presenter.UpdatePresentation(r::RhythmTime{500'000});
+        Check(visibleTicks() == 0, "An accepted tail tick must disappear immediately.");
         presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{500'000})});
         CheckOverlay(root, "OK");
         presenter.AdvanceEffects(.2);
@@ -298,7 +305,7 @@ namespace
         loaded.session->Reset();
         presenter.ApplyFeedback({.reset = true});
         presenter.UpdatePresentation(r::RhythmTime{});
-        Check(visibleTicks() == 3, "Reset must restore consumed tick sprites.");
+        Check(visibleTicks() == 4, "Reset must restore consumed tick sprites, including the tail.");
         presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{500'000})});
         CheckOverlay(root, "MISS");
         presenter.UpdatePresentation(r::RhythmTime{500'000});
@@ -328,12 +335,13 @@ namespace
             {.keyPressed = true, .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{})});
         presenter.UpdatePresentation(r::RhythmTime{200'000});
         const auto firstY = minimumTickY();
-        Check(visibleDelayedTicks() == 4, "Overwritten ticks must not be presented or judged.");
+        Check(visibleDelayedTicks() == 5,
+              "Overwritten ticks must not be presented or judged; the active tail remains.");
         presenter.ApplyFeedback(
             {.keyPressed = true,
              .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{200'000})});
         presenter.UpdatePresentation(r::RhythmTime{200'000});
-        Check(std::isfinite(firstY) && minimumTickY() > firstY && visibleDelayedTicks() == 3,
+        Check(std::isfinite(firstY) && minimumTickY() > firstY && visibleDelayedTicks() == 4,
               "Surviving processed ticks must disappear after overwritten ticks have been excluded.");
         presenter.Shutdown();
     }

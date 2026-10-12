@@ -33,7 +33,7 @@ namespace finger_drum::tests
                 const auto &target = note->Accuracy().target;
                 if (target.kind == rhythm::NoteAccuracyKind::Hold)
                 {
-                    const bool dense = view.tickTimes.size() > 7;
+                    const bool dense = view.tickTimes.size() > RegularBuzzBodyTicks;
                     const auto press = note->Timing() + rhythm::RhythmDuration{dense ? 50'000 : 0};
                     inputs_.push_back({press, key, rhythm::InputEdge::Pressed});
                     inputs_.push_back({view.endTime + rhythm::RhythmDuration{1}, key, rhythm::InputEdge::Released});
@@ -107,7 +107,8 @@ namespace finger_drum::tests
                     continue;
                 }
                 const auto &view = *session.FindNotePresentation(note->Id());
-                const auto press = note->Timing() + rhythm::RhythmDuration{view.tickTimes.size() > 7 ? 50'000 : 0};
+                const auto press =
+                    note->Timing() + rhythm::RhythmDuration{view.tickTimes.size() > RegularBuzzBodyTicks ? 50'000 : 0};
                 std::size_t index = 0, missed = 0;
                 for (const auto &event : log_.events)
                 {
@@ -137,6 +138,9 @@ namespace finger_drum::tests
         }
 
       private:
+        // The ordinary fixture has eight body ticks after including its tail.
+        static constexpr std::size_t RegularBuzzBodyTicks = 8;
+
         void AddTap(rhythm::RhythmTime time, rhythm::PhysicalKey key)
         {
             inputs_.push_back({time, key, rhythm::InputEdge::Pressed});

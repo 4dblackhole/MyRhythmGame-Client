@@ -79,6 +79,37 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 테일 틱의 닫힌 구간
+
+- MusicalTimeline::CompileSubdivisions는 헤드 기준 유리수 격자에 테일이 정확히 맞고
+  그 위치가 유효할 때 마지막 틱을 추가합니다. us 변환 전에 판단하여 반올림으로 생긴
+  일치는 제외합니다. 같은 위치의 닫힌 구간은 한 틱이고 역전/0분할 구간은 비어 있습니다.
+  CountSubdivisions는 자유 연타의 자동 목표용으로 기존 끝 제외 개수를 유지합니다.
+- TaikoLongNoteFactory와 TaikoAudioPreview의 기존 공유 호출을 통해 플레이/오디오 예측에
+  함께 적용됩니다. Buzz 헤드는 별도 시작 판정이며 몸통 틱에 중복 포함되지 않습니다.
+  기존 RuleBasedNote/틱 규칙/Presenter가 테일의 성공·실패, 정확도 분모와 처리 후 숨김을
+  그대로 담당합니다. 종료 시점·파일 형식·Scene/엔진 소유권은 변경하지 않았습니다.
+- 회귀는 정렬/비정렬 테일, us 반올림, 헤드 기준 격자, BPM/마디 길이/양수 delay,
+  음수 delay의 무효 테일/유효 경계, TickRoll/BigTickRoll/Buzz의 테일 판정·중복 완료 방지,
+  표시/리셋/OK·MISS와 에디터 오디오 예측을 검사합니다. AllNotesReplay의 밀집 Buzz
+  기준도 테일이 포함된 일반 몸통 8틱에 맞춰 기존 늦은 헤드 입력 대상을 유지했습니다.
+- Debug/Release x64 전체 solution Rebuild 성공: 일반 빌드 경고/오류 0.
+  각 구성 로직·실제 카탈로그 49개/실패 0, 네 smoke route 총 8개 exit 0.
+  Editor audio/mode/menu 및 Gameplay judgement 회귀도 두 구성 성공했습니다.
+- 각 구성 실제 D3D12/FMOD 숨김 자동 replay 성공: 전체 노트 19개 완료/85.1837%/1557프레임,
+  효과 채보 15개 완료/97.8897%/1302프레임. 밀집 Buzz의 +50ms GOOD 헤드 실패 틱은
+  2/9/38개로 유지하며, 정렬된 테일을 포함한 몸통은 32/128/512개입니다.
+  테일이 정렬되지 않은 효과 채보의 몸통 37틱/실패 2개 결과는 유지됐습니다.
+- MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 Chart, Modes, Rhythm.Tests,
+  MRG.Client의 실제 x64 Debug/Release include/define/C++20/PCH 설정으로 실행했습니다.
+  BuildProjectReferences=false로 엔진/SDK 재분석을 제외했고 Editor 표시 3개 번역 단위와
+  GameplayJudgementTests도 두 구성 /analyze 성공했습니다. 파싱/컴파일 오류와 새 경고 0.
+  기존 C26115(EditorAnalysisController.cpp:51), C28020(GameplaySessionController.cpp:64),
+  Release C6236(GameplayInput.cpp:60)는 이번 수정 범위 밖이며 억제하지 않았습니다.
+- CheckArchitecture 성공(11개 프로젝트), git diff --check 성공.
+  사용자 LaneKeyBeam.cpp와 Debug/Release Option.ini의 파일 해시가 유지됐습니다.
+  엔진 변경은 없으며 실제 픽셀 배치·물리 키보드/마우스 입력·청음은 수동 확인하지 않았습니다.
+
 ## 2026-10-12 delay 무효 구간·롱노트/Area 끝점
 
 - 음수 delay가 덮는 일반 노트·틱·BPM·delay·YME 지점/히트사운드 변경을 컴파일 결과에서

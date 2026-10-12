@@ -157,13 +157,20 @@ namespace finger_drum::chart
         std::size_t count = 0;
         for (const auto &[first, last] : ranges)
             count += last - first;
-        std::vector<rhythm::RhythmTime> result;
-        result.reserve(count);
         const auto origin = PositionToWholeNotes(begin);
+        const auto length = PositionToWholeNotes(end) - origin;
+        // Decide alignment before conversion to microseconds: rounding must not create a tail tick.
+        const bool includeTail = divisions != 0 && length >= Rational{} &&
+                                 (length * static_cast<Rational::Representation>(divisions)).Denominator() == 1 &&
+                                 IsPositionActive(end);
+        std::vector<rhythm::RhythmTime> result;
+        result.reserve(count + (includeTail ? 1 : 0));
         for (const auto &[first, last] : ranges)
             for (std::size_t i = first; i < last; ++i)
                 result.push_back(CompileAbsolute(origin + Rational{static_cast<Rational::Representation>(i),
                                                                    static_cast<Rational::Representation>(divisions)}));
+        if (includeTail)
+            result.push_back(Compile(end));
         return result;
     }
 

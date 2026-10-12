@@ -55,6 +55,7 @@ int main(const int argumentCount, char *arguments[])
         {"TestTickAndHoldAccuracy", TestTickAndHoldAccuracy},
         {"TestDenseBuzzLateGoodHead", TestDenseBuzzLateGoodHead},
         {"TestMusicalSubdivisionTicksFollowTempo", TestMusicalSubdivisionTicksFollowTempo},
+        {"TestTaikoClosedTailTicks", TestTaikoClosedTailTicks},
         {"TestLongNoteKeepsFirstHead", TestLongNoteKeepsFirstHead},
         {"TestTaikoUsesOneLaneForEveryNoteType", TestTaikoUsesOneLaneForEveryNoteType},
         {"TestTaikoInputBindings", TestTaikoInputBindings},

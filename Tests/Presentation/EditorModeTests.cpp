@@ -249,7 +249,7 @@ namespace
                       "Kat Buzz options changed.");
             const auto markers = state.Mode().AudioMarkers(state.Document());
             const bool hasTicks = id == 12 || id == 14 || id == 17 || id == 18;
-            Check(markers.size() == (hasTicks ? 4 : id == 5 ? 2 : 1), "Taiko expected-hit count changed.");
+            Check(markers.size() == (hasTicks ? 5 : id == 5 ? 2 : 1), "Taiko expected-hit count changed.");
             Check(markers.front().sound == (id == 2 || id == 18 ? "Taiko.Kat.Hit"
                                             : id == 4           ? "Taiko.BigKat.FirstHit"
                                             : id == 3           ? "Taiko.BigDon.FirstHit"
@@ -405,7 +405,7 @@ namespace
         Check(play.Succeeded(), "Spaced options failed to load in play.");
         const auto hit = play.session->ProcessInput('D', rhythm::InputEdge::Pressed, {});
         const auto *presentation = play.session->FindNotePresentation(1);
-        Check(markers.size() == 32 && markers.size() == presentation->tickTimes.size() + 1 &&
+        Check(markers.size() == 33 && markers.size() == presentation->tickTimes.size() + 1 &&
                   markers.front().sound == hit.audioCues.front().sound,
               "Editor/play must share spaced/case-insensitive Action and TickDivision interpretation.");
         for (std::size_t i = 1; i < markers.size(); ++i)

@@ -20,7 +20,21 @@
   효과 테스트 YME 1개·WAV 2개는 외부 `assets/Songs`입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
-## 최근 완료: delay 의미 변경 (2026-10-12)
+## 최근 완료: 테일 틱의 닫힌 구간 (2026-10-12)
+
+TickRoll/BigTickRoll/Buzz의 헤드 기준 틱 격자에 테일 위치가 정확히 맞으면 마지막 틱도
+생성합니다. MusicalTimeline의 유리수 위치로 판단하므로 us 반올림만으로 일치한 테일은
+추가하지 않습니다. 음수 delay의 무효 구간은 테일에도 적용하고, Buzz 헤드는 별도 시작
+판정으로 유지합니다. 플레이의 틱 판정/정확도/처리 후 숨김과 에디터 오디오 예측은
+같은 컴파일 결과를 사용합니다. 종료 시점과 자유 연타의 자동 요구 횟수는 유지합니다.
+Debug/Release 전체 Rebuild·49개 로직/카탈로그·각 4개 smoke·에디터/판정 표시 회귀·
+실제 D3D12/FMOD 자동 replay를 통과했습니다. Client 소유 4개 프로젝트 및 표시 테스트의
+MSVC 분석에서 새 경고 0이며 기존 경고는 Verification에 구분했습니다.
+사용자 LaneKeyBeam.cpp와 Option.ini를 보존했고 엔진 변경은 없습니다.
+수동 화면/물리 입력/청음은 확인하지 않았습니다. 상세 계약은
+[판정 규칙](Gameplay/Rules.md), 결과는 [Verification](Verification.md)를 참고합니다.
+
+## 이전 완료: delay 의미 변경 (2026-10-12)
 
 선택 스킨 서클, 6개 도구 묶음(W/E/R/T/Y/U)과 순환, 롤 종류/연타·틱 간격,
 우측 노트 정보/속성, 처리된 틱 숨김과 OK/MISS 표시 및 JudgeImage 제거가 있습니다.

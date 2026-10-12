@@ -25,6 +25,7 @@ namespace finger_drum::tests
     void TestDenseBuzzLateGoodHead();
     void TestAngelDreamAllNotesReplay(const std::filesystem::path &songsRoot);
     void TestMusicalSubdivisionTicksFollowTempo();
+    void TestTaikoClosedTailTicks();
     void TestLongNoteKeepsFirstHead();
     void TestTaikoUsesOneLaneForEveryNoteType();
     void TestTaikoInputBindings();

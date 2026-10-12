@@ -171,8 +171,8 @@ namespace finger_drum::tests
                     "Each TickRoll tick, including head, is binary within inclusive Good.");
         }
         static_cast<void>(tickRoll.session->Update(rhythm::RhythmTime{1'000'000}));
-        Require(tickRoll.session->AccuracyRate() == 0.25,
-                "Two accepted ticks of eight must score 25 percent.");
+        Require(tickRoll.session->AccuracyRate() == 2.0 / 9.0,
+                "Two accepted ticks of nine must score 2/9, including the missed tail.");
 
         auto profile = std::make_shared<rhythm::AccuracyRange>();
         std::vector<rhythm::RhythmTime> ticks;
@@ -209,9 +209,8 @@ namespace finger_drum::tests
 
         auto buzz = mode::TaikoMode{}.CreateSession(
             MakeLongPattern(mode::TaikoNoteType::Buzz, {"Action=Don", "TickDivision=16"}));
-        Require(buzz.session->FindNotePresentation(1)->tickTimes.size() == 7 &&
-                    buzz.session->FindNotePresentation(1)->tickTimes.front() ==
-                        rhythm::RhythmTime{125'000},
+        Require(buzz.session->FindNotePresentation(1)->tickTimes.size() == 8 &&
+                    buzz.session->FindNotePresentation(1)->tickTimes.front() == rhythm::RhythmTime{125'000},
                 "Buzz body ticks must exclude the independently judged head.");
     }
 } // namespace finger_drum::tests

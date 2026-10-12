@@ -18,7 +18,7 @@ namespace finger_drum::tests
         mode::ModeLoadResult tickRoll = taiko.CreateSession(
             MakeLongPattern(mode::TaikoNoteType::TickRoll, {"TickDivision=16"}));
         Require(tickRoll.Succeeded(), "TickRoll must create a playable session.");
-        Require(tickRoll.session->FindNotePresentation(1)->tickTimes.size() == 8,
+        Require(tickRoll.session->FindNotePresentation(1)->tickTimes.size() == 9,
                 "TickRoll presentation must expose every authored tick to the scene.");
         const rhythm::NoteProcessResult first = tickRoll.session->ProcessInput(
             'F', rhythm::InputEdge::Pressed, rhythm::RhythmTime::zero());
@@ -185,12 +185,98 @@ Mode: Taiko
         const chart::MusicalTimeline timeline(pattern);
         const std::vector<rhythm::RhythmTime> ticks =
             timeline.CompileSubdivisions({0, chart::Rational{0, 1}}, {0, chart::Rational{1, 2}}, 4);
-        Require(ticks == std::vector<rhythm::RhythmTime>{rhythm::RhythmTime{0},
-                                                         rhythm::RhythmTime{500'000}},
-                "Musical subdivision ticks must follow BPM changes.");
+        Require(ticks == std::vector<rhythm::RhythmTime>{rhythm::RhythmTime{0}, rhythm::RhythmTime{500'000},
+                                                         rhythm::RhythmTime{750'000}},
+                "Musical subdivision ticks must follow BPM changes and include an aligned tail.");
+        Require(timeline.CompileSubdivisions({0, {}}, {0, {3, 8}}, 4) ==
+                    std::vector<rhythm::RhythmTime>{rhythm::RhythmTime{}, rhythm::RhythmTime{500'000}},
+                "An unaligned tail must not add a partial-interval tick.");
+        const chart::MusicalPosition roundedTail{0, {49'999'999'999, 100'000'000'000}};
+        Require(timeline.Compile(roundedTail) == ticks.back() &&
+                    timeline.CompileSubdivisions({0, {}}, roundedTail, 4).size() == 2,
+                "Microsecond rounding must not turn an unaligned tail into a scheduled tick.");
+        const chart::MusicalPosition head{0, {1, 10}}, tail{0, {7, 20}};
+        const auto shiftedTicks = timeline.CompileSubdivisions(head, tail, 16);
+        Require(shiftedTicks.size() == 5 && shiftedTicks.front() == timeline.Compile(head) &&
+                    shiftedTicks.back() == timeline.Compile(tail),
+                "Tail alignment must be relative to the head, independently of the global grid.");
+        Require(timeline.CompileSubdivisions(tail, head, 16).empty() &&
+                    timeline.CompileSubdivisions(head, tail, 0).empty() &&
+                    timeline.CompileSubdivisions(head, head, 16) ==
+                        std::vector<rhythm::RhythmTime>{timeline.Compile(head)},
+                "Closed subdivision ranges must handle reversed, disabled and singleton intervals.");
         Require(timeline.CountSubdivisions({0, chart::Rational{0, 1}}, {0, chart::Rational{1, 8}},
                                            12) == 2,
                 "Subdivision counts must use exact rational ceil(length * divisions).");
+        Require(timeline.CountSubdivisions({0, {}}, {0, {1, 2}}, 4) == 2,
+                "An aligned tail tick must not change automatic hit-count targets.");
+
+        pattern.timing = {{{0, {}}, chart::TimingDirectiveType::MeasureLength, 0, {3, 4}},
+                          {{1, {}}, chart::TimingDirectiveType::DelayMilliseconds, 100}};
+        const chart::MusicalTimeline measures(pattern);
+        const auto crossBarTicks = measures.CompileSubdivisions({0, {1, 2}}, {1, {1, 4}}, 4);
+        Require(crossBarTicks == std::vector<rhythm::RhythmTime>{rhythm::RhythmTime{1'000'000},
+                                                                 rhythm::RhythmTime{1'600'000},
+                                                                 rhythm::RhythmTime{2'100'000}},
+                "A tail tick must survive a changed measure length and positive delay across a bar.");
+        pattern.timing = {{{0, {1, 2}}, chart::TimingDirectiveType::DelayMilliseconds, -750}};
+        const chart::MusicalTimeline cut(pattern);
+        Require(!cut.IsPositionActive({0, {1, 4}}) &&
+                    cut.CompileSubdivisions({0, {}}, {0, {1, 4}}, 16) ==
+                        std::vector<rhythm::RhythmTime>{rhythm::RhythmTime{}, rhythm::RhythmTime{125'000}},
+                "A masked aligned tail must not be restored as a scheduled tick.");
+        const auto boundaryTicks = cut.CompileSubdivisions({0, {}}, {0, {1, 2}}, 16);
+        Require(boundaryTicks.size() == 3 && boundaryTicks.back() == cut.Compile({0, {1, 2}}),
+                "The active negative-delay boundary must still include its aligned tail tick.");
+    }
+
+    void TestTaikoClosedTailTicks()
+    {
+        for (const auto type :
+             {mode::TaikoNoteType::TickRoll, mode::TaikoNoteType::BigTickRoll, mode::TaikoNoteType::Buzz})
+            for (const bool missTail : {false, true})
+            {
+                auto loaded = mode::TaikoMode{}.CreateSession(MakeLongPattern(type, {"TickDivision=16", "Action=Don"}));
+                Require(loaded.Succeeded(), "Closed-tail fixture must load.");
+                auto &session = *loaded.session;
+                const auto &note = *session.Gear().Lanes().front()->Notes().front();
+                const auto &view = *session.FindNotePresentation(note.Id());
+                const bool buzz = type == mode::TaikoNoteType::Buzz;
+                Require(view.tickTimes.size() == (buzz ? 8 : 9) && view.tickTimes.back() == view.endTime,
+                        "TickRoll/BigTickRoll/Buzz must expose the aligned tail, with Buzz head excluded.");
+                rhythm::NoteProcessResult log;
+                if (buzz)
+                {
+                    log.Append(session.ProcessInput('F', rhythm::InputEdge::Pressed, note.Timing()));
+                    if (missTail)
+                        log.Append(session.ProcessInput('F', rhythm::InputEdge::Released, view.endTime));
+                    const std::array<rhythm::PhysicalKey, 1> held{'F'};
+                    log.Append(session.Update(view.endTime, missTail ? std::span<const rhythm::PhysicalKey>{} : held));
+                }
+                else
+                {
+                    for (std::size_t i = 0; i < view.tickTimes.size() - (missTail ? 1 : 0); ++i)
+                    {
+                        log.Append(session.Update(view.tickTimes[i] - rhythm::RhythmDuration{1}));
+                        log.Append(session.ProcessInput('F', rhythm::InputEdge::Pressed, view.tickTimes[i]));
+                    }
+                    log.Append(session.Update(view.endTime));
+                }
+                const auto tailEvent = std::ranges::find_if(
+                    log.events,
+                    [&](const auto &event)
+                    {
+                        return event.tickIndex == view.tickTimes.size() - 1 && event.eventTime == view.endTime &&
+                               event.type ==
+                                   (missTail ? rhythm::NoteEventType::TickMissed : rhythm::NoteEventType::TickAccepted);
+                    });
+                Require(tailEvent != log.events.end() && note.ProcessedTickCount() == view.tickTimes.size() &&
+                            note.Accuracy().acceptedTicks == view.tickTimes.size() - (missTail ? 1 : 0) &&
+                            log.finalizedAccuracies.size() == 1,
+                        "Tail ticks must be accepted/missed and included in finalized accuracy exactly once.");
+                Require(session.Update(view.endTime + rhythm::RhythmDuration{1}).events.empty(),
+                        "An already finalized tail must not emit another tick or completion.");
+            }
     }
 
     void TestLongNoteKeepsFirstHead()
