@@ -112,6 +112,7 @@ void EditorAnalysisController::Stop() noexcept
     }
     RetireAnalysis(std::move(analysis_));
     analysisFiles.clear();
+    ++filesRevision_;
     analysisDirty = true;
     ++analysisRevision_;
 }
@@ -142,6 +143,7 @@ bool EditorAnalysisController::Update(const chart::IEditorDocument &document, co
             });
             job_ = std::move(next);
             analysisFiles = std::move(files);
+            ++filesRevision_;
         }
     }
     if (!job_ || !job_->ready.load(std::memory_order_acquire))

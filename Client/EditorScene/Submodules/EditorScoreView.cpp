@@ -22,6 +22,17 @@ void EditorView::DrawTools()
         !state_.Score().realtime);
     Button(
         {292, 76, 180, 32}, std::wstring(text.realtime), [this] { state_.SetRealtime(true); }, state_.Score().realtime);
+    if (state_.Score().realtime)
+    {
+        Button({492, 76, 40, 32}, L"−", [this] {
+            state_.SetRealtimeZoom(std::max(EditorScoreState::MinimumRealtimeZoom, state_.Score().realtimeZoom / 2));
+        });
+        Button({542, 76, 40, 32}, L"+", [this] {
+            state_.SetRealtimeZoom(std::min(EditorScoreState::MaximumRealtimeZoom, state_.Score().realtimeZoom * 2));
+        });
+        Text({600, 76, 230, 32}, std::wstring(text.realtimeZoom) + L" " +
+            std::to_wstring(static_cast<int>(state_.Score().realtimeZoom * 100)) + L"%", 18, Blue);
+    }
     Text({1080, 5 + EditorMenuBar::Height, 150, 24}, std::wstring(text.beatDivider), 17);
     Text({1080, 29 + EditorMenuBar::Height, 150, 26}, L"1/" + std::to_wstring(state_.Score().division), 18, Blue);
     for (int d = 1; d <= 16; ++d)

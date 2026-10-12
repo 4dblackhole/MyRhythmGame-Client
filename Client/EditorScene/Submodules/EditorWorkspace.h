@@ -1,6 +1,7 @@
 #pragma once
 #include "EditorAnalysisController.h"
 #include "EditorForms.h"
+#include "EditorPlayback.h"
 #include "Modes/IEditorMode.h"
 
 class EditorWorkspace final : public IEditorContext
@@ -17,6 +18,12 @@ class EditorWorkspace final : public IEditorContext
     }
     void Initialize();
     void UpdateAnalysis();
+    void InitializePlayback(mrg::audio::AudioSystem &audio) noexcept { playback_.Initialize(audio); }
+    void ShutdownPlayback() noexcept { playback_.Shutdown(); }
+    void UpdatePlayback();
+    void TogglePlayback();
+    void SeekFirstNote();
+    void SetRealtimeZoom(double factor);
     void SelectTool(int value) override;
     void Save();
     void PlaceNote(finger_drum::chart::MusicalPosition position);
@@ -99,7 +106,10 @@ class EditorWorkspace final : public IEditorContext
     std::unique_ptr<finger_drum::chart::IEditorDocument> editor_;
     std::unique_ptr<IEditorMode> mode_;
     EditorAnalysisController analysis_;
+    EditorPlayback playback_;
     EditorScoreState score_;
     double timeMs_{};
+    finger_drum::rhythm::RhythmTime lastPlaybackPresentation_{};
+    bool nextZToZero_{};
     std::uint64_t audioSourceRevision_{};
 };

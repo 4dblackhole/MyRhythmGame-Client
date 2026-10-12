@@ -11,6 +11,8 @@ Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성�
 `EditorMenuBar`는 에디터 전용 Canvas 상단 메뉴와 열림/강조 상태를 맡고,
 저장 의도만 View로 반환합니다. 문서·모드·Scene을 참조하지 않습니다.
 `EditorAnalysisController`는 worker와 marker 캐시를 맡습니다.
+`EditorPlayback`은 에디터 전용 Voice/Clip과 DSP 기준 재생 시각을 소유합니다.
+모드가 제공하는 파일/예상 cue만 소비하며 문서·화면·노트 규칙은 참조하지 않습니다.
 PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
 문법 변경이 없으면 다른 형식 문서와 엔진 내부를 읽을 필요가 없습니다.
 
@@ -52,6 +54,13 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
   실시간 뷰의 마디선은 기준 좌표 두께 3,
   박자 분할 보조선은 두께 1로 표시합니다.
   입력 검사도 그리기와 같은 레인 사각형을 사용하며 레인 밖 클릭은 추가·삭제하지 않습니다.
+  실시간 뷰의 −/+ 버튼은 레인 크기와 서클 크기를 유지하고 시간축 배율만
+  25/50/100/200/400%로 바꿉니다. 기본은 100%이며 그리드·스냅·노트/마디선에 같은 배율을 씁니다.
+- Space는 현재 시간에서 음악과 예상 히트사운드를 재생하거나 일시정지합니다.
+  모든 탭에서 동작하며 Ctrl/Alt 조합과 열린 파일 메뉴에서는 실행하지 않습니다.
+  재생 중 Seek도 재생 상태를 유지합니다. Z는 첫 노트, 연속으로 다시 누르면 0ms,
+  다음 Z는 다시 첫 노트로 이동합니다. 다른 수동 Seek/Space는 이 순서를 초기화합니다.
+  음원 끝과 마지막 노트 테일 중 더 늦은 시각까지 재생합니다.
 - 패턴 탭의 기존 오디오 분석 영역은 긴 타임라인 슬라이더입니다. 트랙을 클릭하거나
   손잡이를 드래그해 현재 편집 시각을 ms 단위로 바꾸며 실시간 뷰와 공유합니다.
   범위는 음원 전체 길이와 차트 노트 시각을 포함하고 음수 노트 시각도 탐색합니다.
@@ -99,12 +108,13 @@ EditorScene
     IEditorDocument             공통 편집용 데이터와 파일 형식별 수정/저장
       ChartEditor               현재 YMP/YME 구현
     EditorAnalysisController    IEditorAudioSource의 파일/marker 비동기 분석
+    EditorPlayback              revision별 Clip/cue, DSP 기준 재생/seek/정지
   EditorView                    공통 탭/박자 디바이더/타임라인/FFT 화면
     EditorMenuBar               Canvas 상단 파일/저장 메뉴와 입력 점유 상태
     IEditorModeCanvas           모드에 제공하는 Box/Text/Image/Button 그리기 계약
 ```
 
-Workspace가 문서/모드/worker를 단독 소유합니다. 모드는 `IEditorContext`의 읽기 전용
+Workspace가 문서/모드/worker/재생 객체를 단독 소유합니다. 모드는 `IEditorContext`의 읽기 전용
 문서와 읽기 전용 악보 설정을 받고 Replace/AddNote/DeleteNote/Seek 등의 명령만 전달합니다.
 다른 모드·진입 요청·분석 worker·공통 탭의 내부 재구축 플래그를 참조하지 않습니다.
 문서 수정 성공 후 Workspace가 분석 갱신과 화면 재구축을 연결합니다. worker는
@@ -223,7 +233,15 @@ YMP의 `Music metadata`는 Songs 루트 기준으로 해석한 뒤 YMM이 가리
 같은 규칙으로 해석합니다. Purple은 같은 이상적 판정 시각의 Don·Kat 두 cue를 표시합니다.
 명시적 노트 사운드가 시각별 동·캇 변경보다 우선하며 변경은 컴파일된 cue 시각을 사용합니다.
 
-현재 오디오 영역은 분석과 수동 시간 탐색용이며 음악 재생·배속 컨트롤은 제공하지 않습니다.
+음악은 `StreamAsyncAccurate`로 한 번 열고 원본 PCM 프레임으로 현재 시간부터 탐색합니다.
+준비/비동기 seek가 끝난 후 20ms 앞의 DSP 시각에 음악·히트사운드 clock을 고정합니다.
+음수 편집 시각에서는 음악이 타임라인 0ms에 시작합니다. 표시 갱신은 최대 약 60Hz이며
+오디오 예약은 매 update에 진행합니다. source/document revision이 바뀔 때만 파일/cue 캐시를 갱신하고
+같은 파일의 히트사운드 ID는 Clip/Voice를 공유합니다. 아직 시작하지 않은 예약을 덮어쓰지 않으며,
+UI가 멈춰 지나간 cue를 몰아서 재생하지 않습니다. 정지/Scene 종료 시 자기 Voice만 중단하고
+해제할 Clip을 AudioSystem에 retire하여 native I/O가 끝날 때 해제합니다.
+재생음은 위의 이상적 head/tick cue를 사용하며 자유 롤 연타·풍선 파열 시각은 생성하지 않습니다.
+YME의 볼륨/DSP 효과를 미리 듣는 기능과 배속 제어는 제공하지 않습니다.
 Undo/Redo, 드래그 이동,
 다중 선택, 신규 곡 생성은 이번 요청에 포함되지 않아 구현하지 않았습니다.
 

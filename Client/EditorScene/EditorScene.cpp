@@ -16,6 +16,7 @@ EditorScene::~EditorScene() = default;
 void EditorScene::Initialize(const mrg::EngineServices &services)
 {
     workspace_->Initialize();
+    workspace_->InitializePlayback(services.audio);
     view_->Initialize(services);
 }
 void EditorScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
@@ -29,7 +30,11 @@ void EditorScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneMan
         workspace_->SetStatus(error.what());
     }
     if (view_->Update(context))
+    {
         static_cast<void>(scenes.ChangeScene(finger_drum::scene_ids::EditorSongSelect));
+        return;
+    }
+    workspace_->UpdatePlayback();
 }
 void EditorScene::OnResize(std::uint32_t width, std::uint32_t height)
 {
@@ -38,6 +43,7 @@ void EditorScene::OnResize(std::uint32_t width, std::uint32_t height)
 void EditorScene::Shutdown() noexcept
 {
     workspace_->Analysis().Stop();
+    workspace_->ShutdownPlayback();
     view_->Shutdown();
 }
 void EditorScene::Render(const mrg::graphics::RenderContext &)

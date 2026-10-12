@@ -85,6 +85,39 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 에디터 시간축 줌·DSP 재생
+
+- 실시간 레인/서클 크기는 유지하고 −/+로 시간축을 25~400% 조절합니다.
+  EditorPlayback은 음악/예상 head·tick의 source/cue 캐시, DSP 시각, 자기 Voice의 수명만 맡습니다.
+  Workspace가 Space 재생/일시정지와 Z 첫 노트→0ms 순서를 연결합니다.
+  다른 수동 Seek/Space는 Z 순서를 초기화하며 재생 중 Seek는 재생 의도를 유지합니다.
+  X 목적지(마지막 노트 테일 또는 음원 끝)는 사용자 답변 대기이므로 아직 연결하지 않았습니다.
+- Client/엔진 Debug·Release x64 전체 solution Rebuild 성공, 일반 빌드 경고/오류 0.
+  두 구성의 52개 로직·기본곡 카탈로그와 네 smoke 경로씩 총 8개 성공.
+  엔진 SDK 테스트는 길이/us 시작 위치/DSP 예약 전달, Loading Clip의 지연 해제와
+  Ready 후 해제를 검사했습니다. 엔진을 먼저 원격에 반영한 뒤 Client gitlink를 갱신합니다.
+- 두 구성의 EditorAudioViewTests/EditorModeTests/EditorMenuTests/EditorPlaybackTests 성공.
+  실제 View의 줌 버튼/배율 문구, 다섯 배율의 동일한 레인·헤드 크기/스냅,
+  source beat·컴파일 시각·문서 revision 보존, 연속 Z와 수동 Seek 초기화를 검사했습니다.
+  제어 가능한 DSP clock으로 음수 pre-roll/일시정지·재개/5ms 틱 예약/1,000회 캐시·Voice 재사용,
+  UI 정지 뒤 지난 cue 건너뛰기/종료 시각/오류 시 정지/범위 밖 Seek 보존을 확인했습니다.
+  실제 AngelDream MP3의 정확한 비동기 열기/길이 조회/끝부분 seek·종료/범위 밖 거부와
+  EditorPlayback의 음악 끝 도달은 FMOD NoSound로 검사했습니다.
+- OptionsPanelTests, 실제 D3D12/FMOD AllNotesGameplayTests와 ResultPresentationTests도
+  두 구성 성공. 기존 일반 재생·예약·설정/결과 전환 경로를 유지합니다.
+- MSVC 14.44.35207 Code Analysis: 실제 include/define/C++20 및 Debug·Release x64로
+  `MRG.Client.vcxproj /t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행.
+  Seek 검증 순서/한국어·영어 안내 문구의 최종 수정도 분석 Build로 확인했습니다.
+  파싱/컴파일 오류 및 새 분석 경고 0. 기존 C26115(EditorAnalysisController:51),
+  C28020(GameplaySessionController:98), Release C6236(GameplayInput:60)은 그대로 보고합니다.
+  위 presentation 테스트 소스도 `/analyze`로 분석했으며 새 경고가 없습니다.
+- CheckArchitecture(11프로젝트)와 양쪽 git diff --check 성공. 기존 LaneKeyBeam.cpp,
+  Debug·Release Option.ini는 SHA256이 같고 사용자 Songs/Skins를 수정하지 않았습니다.
+  로그는 ignored `build/editor-playback-2026-10-12`에 있습니다.
+- **수동 확인:** 실제 픽셀 배치·물리 키/마우스 조작·청취는 수행하지 않았습니다.
+  위 Canvas 좌표/문구/명령 검사는 자동이며, GPU smoke와 NoSound 재생도 자동 실행입니다.
+  YME 볼륨/DSP 효과 미리듣기와 자유 롤/풍선 파열 시각의 생성은 이 구현에 포함하지 않습니다.
+
 ## 2026-10-12 마지막 노트 기준 상단 진행바
 
 - GameplayProgressView가 유효한 노트의 마지막 head/tail 시각을 진입 때 캐시합니다.

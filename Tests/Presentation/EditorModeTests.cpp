@@ -24,6 +24,7 @@ namespace
         std::vector<v::Rect> rectangles;
         std::vector<std::function<void()>> actions;
         std::vector<std::filesystem::path> images;
+        std::vector<v::Rect> imageRectangles;
         std::vector<std::wstring> labels;
         std::vector<std::wstring> buttonLabels;
         void Box(v::Rect r, v::Color, float) override
@@ -38,6 +39,7 @@ namespace
         {
             rectangles.push_back(rect);
             images.push_back(path);
+            imageRectangles.push_back(rect);
         }
         void Button(v::Rect, std::wstring text, std::function<void()> action, bool) override
         {
@@ -389,6 +391,51 @@ namespace
         state.Mode().EditScore(state, {230, 465}, false);
         Check(state.timingForm.measure == "2" && state.timingForm.fraction == "1/4" && state.TimeMilliseconds() == 1000,
               "Realtime and overview must select the same surviving beat at the clipped bar boundary.");
+    }
+
+    void TestRealtimeZoomAndTransport()
+    {
+        for (const double zoom : {.25, .5, 1., 2., 4.})
+        {
+            chart::PatternDocument pattern;
+            pattern.baseBpm = 120;
+            EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+            state.SetRealtime(true);
+            state.SetRealtimeZoom(zoom);
+            RecordingCanvas empty;
+            state.Mode().DrawChart(empty, state, finger_drum::texts::Language::English);
+            Check(std::ranges::any_of(empty.rectangles, [](const auto &rect) {
+                      return rect.x == 164 && rect.y == 351 && rect.width == 1324 && rect.height == 228;
+                  }),
+                  "Time zoom must not resize the realtime lane.");
+            const float x = 230 + 244.8F * static_cast<float>(zoom);
+            state.Mode().EditScore(state, {x, 465}, false);
+            Check(state.Document().Notes().size() == 1 &&
+                  state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
+                  "Realtime snapping must use the same zoomed time coordinates as drawing.");
+            RecordingCanvas notes;
+            state.Mode().DrawChart(notes, state, finger_drum::texts::Language::English);
+            Check(!notes.imageRectangles.empty() && std::abs(notes.imageRectangles.front().x + 36 - x) < .1F &&
+                  notes.imageRectangles.front().width == 72,
+                  "Zoom must scale note spacing without scaling the selected skin head.");
+            const auto revision = state.Document().Revision();
+            state.SetRealtimeZoom(1);
+            Check(state.Document().Revision() == revision && state.Document().Notes().front().timing.count() == 500'000,
+                  "Zoom must not edit source beats or compiled note times.");
+            state.SeekFirstNote();
+            Check(state.TimeMilliseconds() == 500, "First Z must seek to the first note.");
+            state.SeekFirstNote();
+            Check(state.TimeMilliseconds() == 0, "Second Z must seek to zero.");
+            state.SeekFirstNote();
+            Check(state.TimeMilliseconds() == 500, "Subsequent Z must return to the first note.");
+            state.Seek(100);
+            state.SeekFirstNote();
+            Check(state.TimeMilliseconds() == 500, "A manual seek must reset the consecutive-Z toggle.");
+            bool rejected = false;
+            try { state.SetRealtimeZoom(std::numeric_limits<double>::infinity()); }
+            catch (const std::invalid_argument &) { rejected = true; }
+            Check(rejected && state.Score().realtimeZoom == 1, "Invalid zoom must preserve the current scale.");
+        }
     }
 
     void TestPreviewMatchesPlay()
@@ -775,6 +822,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     TestTaikoEditing();
     TestTaikoPlacementConflicts();
     TestPreviewMatchesPlay();
+    TestRealtimeZoomAndTransport();
     TestDelayViewsAndSnapping();
     TestSeekAndEffectEdits();
     TestInspectorMusicalTiming();

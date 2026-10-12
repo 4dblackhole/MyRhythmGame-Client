@@ -68,6 +68,8 @@
     <ClInclude Include="EditorScene\Submodules\EditorVisual.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
     <ClCompile Include="EditorScene\Submodules\EditorWorkspace.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
     <ClInclude Include="EditorScene\Submodules\EditorWorkspace.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="EditorScene\Submodules\EditorPlayback.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
+    <ClInclude Include="EditorScene\Submodules\EditorPlayback.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h"><Filter>GameFlow</Filter></ClInclude>
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h"><Filter>GameFlow</Filter></ClInclude>
     <ClInclude Include="GameFlow\GameplayLaunchStore.h"><Filter>GameFlow</Filter></ClInclude>

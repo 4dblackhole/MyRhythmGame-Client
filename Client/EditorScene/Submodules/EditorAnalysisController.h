@@ -40,6 +40,8 @@ class EditorAnalysisController final
     {
         return audioMarkers;
     }
+    const std::map<std::string, std::filesystem::path> &Files() const noexcept { return analysisFiles; }
+    std::uint64_t FilesRevision() const noexcept { return filesRevision_; }
     bool Running() const noexcept
     {
         return job_ != nullptr;
@@ -58,6 +60,7 @@ class EditorAnalysisController final
     std::shared_ptr<EditorAnalysisJob> job_;
     std::shared_ptr<const AnalysisBatch> analysis_;
     std::uint64_t analysisRevision_{};
+    std::uint64_t filesRevision_{};
     std::map<std::string, std::filesystem::path> analysisFiles;
     std::vector<AudioMarker> audioMarkers;
     std::uint64_t audioMarkerRevision{};

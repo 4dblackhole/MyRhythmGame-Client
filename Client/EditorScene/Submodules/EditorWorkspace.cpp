@@ -30,6 +30,54 @@ void EditorWorkspace::DocumentChanged()
     }
     RequestRebuild();
 }
+void EditorWorkspace::UpdatePlayback()
+{
+    if (!playback_.Active())
+        return;
+    try
+    {
+        analysis_.CacheAudioMarkers(Document(), *mode_);
+    }
+    catch (const std::exception &error)
+    {
+        playback_.Pause();
+        SetStatus(error.what());
+        return;
+    }
+    playback_.Update(analysis_.Files(), analysis_.FilesRevision(), analysis_.Markers(), Document().Revision(),
+                     Document().NoteTimeRange().second);
+    const auto time = playback_.Position();
+    timeMs_ = time.count() / 1000.0;
+    if (!playback_.Active() ||
+        std::abs(static_cast<long double>(time.count()) - lastPlaybackPresentation_.count()) >= 16'667)
+    {
+        lastPlaybackPresentation_ = time;
+        RequestRebuild();
+    }
+    if (!playback_.Error().empty() && status_ != playback_.Error())
+        SetStatus(playback_.Error());
+}
+void EditorWorkspace::TogglePlayback()
+{
+    playback_.Toggle();
+    timeMs_ = playback_.Position().count() / 1000.0;
+    nextZToZero_ = false;
+    RequestRebuild();
+}
+void EditorWorkspace::SeekFirstNote()
+{
+    const bool zero = nextZToZero_;
+    Seek(zero ? 0 : Document().NoteTimeRange().first.count() / 1000.0);
+    nextZToZero_ = !zero;
+}
+void EditorWorkspace::SetRealtimeZoom(const double factor)
+{
+    if (!std::isfinite(factor) || factor < EditorScoreState::MinimumRealtimeZoom ||
+        factor > EditorScoreState::MaximumRealtimeZoom)
+        throw std::invalid_argument("Realtime zoom must be within 0.25..4.");
+    score_.realtimeZoom = factor;
+    RequestRebuild();
+}
 void EditorWorkspace::Replace(chart::PatternDocument pattern, chart::EffectDocument effects)
 {
     editor_->Replace(std::move(pattern), std::move(effects));
@@ -60,7 +108,9 @@ void EditorWorkspace::Seek(double milliseconds)
 {
     // Validate before publishing; preserve grid seeking beyond music and negative pre-roll.
     static_cast<void>(editor_time::MeasureNearTime(Document().Timeline(), milliseconds));
+    playback_.Seek(editor_time::Microseconds(milliseconds));
     timeMs_ = milliseconds;
+    nextZToZero_ = false;
     RequestRebuild();
 }
 void EditorWorkspace::SetFirstMeasure(std::int64_t measure)
@@ -150,6 +200,8 @@ std::pair<double, double> EditorWorkspace::TimelineRangeMilliseconds() const
     end = std::max(end, last.count() / 1000.0);
     if (const auto music = analysis_.Data().sounds.find("Music"); music != analysis_.Data().sounds.end())
         end = std::max(end, music->second.durationSeconds * 1000.0);
+    if (const auto duration = playback_.MusicDuration())
+        end = std::max(end, duration->count() / 1000.0);
     return {begin, end};
 }
 void EditorWorkspace::SelectTool(int value)

@@ -119,6 +119,13 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
     const bool controlDown = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
     if (controlDown && input.WasKeyPressed('S'))
         state_.Save();
+    if (!controlDown && !input.IsKeyDown(VK_LMENU) && !input.IsKeyDown(VK_RMENU))
+    {
+        if (input.WasKeyPressed(VK_SPACE))
+            state_.TogglePlayback();
+        if (input.WasKeyPressed('Z'))
+            state_.SeekFirstNote();
+    }
     if (state_.Tab() == EditorTab::Pattern && !controlDown && !input.IsKeyDown(VK_LMENU) && !input.IsKeyDown(VK_RMENU))
         state_.Mode().HandleToolKeys(state_, input);
     if (input.WasKeyPressed(VK_LEFT))

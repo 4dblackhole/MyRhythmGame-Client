@@ -18,6 +18,7 @@ namespace finger_drum::texts
         std::wstring_view finishLongNote;
         std::wstring_view overview;
         std::wstring_view realtime;
+        std::wstring_view realtimeZoom;
         std::wstring_view beatDivider;
         std::wstring_view directInput;
         std::wstring_view beatDivisionDialog;

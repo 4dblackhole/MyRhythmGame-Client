@@ -63,7 +63,7 @@ The test source is compiled with MSVC `/analyze`; this is not a game startup rou
 ## Editor audio view regression
 
 After building both configurations, run in an x64 Visual Studio developer PowerShell.
-The script obtains the editor object list from the Client project and compiles the three
+The script obtains the editor object list from the Client project and compiles the four
 test translation units with MSVC Code Analysis. Set `FMOD_ROOT` for a custom SDK install.
 
 ```powershell
@@ -88,6 +88,10 @@ synthetic menu intents and draw geometry, not physical Raw Input or manual UI te
 The object list comes from the Client project so removed/stale objects are not linked.
 Immutable rectangle batches are expanded only in the recording renderer for visual assertions.
 It also checks actual asynchronous MP3 opening/playback with the FMOD NoSound output,
+accurate music duration/near-end seeking, editor DSP transport, pause/resume/negative pre-roll,
+dense cue deadlines, alias/voice reuse, expired-cue skipping and cleanup through EditorPlaybackTests.
+EditorModeTests checks time zoom at five scales, stable lane/head dimensions and zoomed snapping,
+unchanged chart timing/revision and consecutive Z/manual-seek behavior.
 preview failure retry suppression/selection recovery/owned voice cleanup and
 detaching a cancelled analysis job. Drawing assertions do not initialize a GPU;
 this does not replace visual inspection, listening or mouse testing in the app.

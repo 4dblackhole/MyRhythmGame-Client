@@ -94,6 +94,8 @@ namespace
     }
     class TestClip final : public a::IAudioClipBackend
     {
+        bool GetDurationMicroseconds(std::uint64_t& duration, std::string&) const override
+        { duration = 0; return true; }
         std::unique_ptr<a::IAudioVoiceBackend> Play(const a::AudioPlaybackSettings &,
             a::IAudioBusBackend *, std::string &) override { return {}; }
     };

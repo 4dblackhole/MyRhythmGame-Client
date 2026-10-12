@@ -20,6 +20,14 @@
   효과 테스트 WAV 2개는 외부 Songs입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
+## 진행 작업: 에디터 시간축 줌·재생 (2026-10-12)
+
+실시간 레인 크기를 유지하고 −/+로 시간축을 25~400% 조절합니다.
+EditorPlayback이 DSP 시각/음악 seek/예상 히트사운드의 Clip·Voice를 소유하며,
+Space 재생/일시정지와 Z 첫 노트→0ms 이동을 Workspace/Input에 연결했습니다.
+X의 목적지(마지막 노트 테일 또는 음원 끝)는 사용자 답변을 기다리고 있습니다.
+상세 책임·범위는 [ChartEditor](ChartEditor.md), 검증은 [Verification](Verification.md)에서 확인합니다.
+
 ## 최근 구현: 상단 진행바 (2026-10-12)
 
 `GameplayProgressView`는 세션 진입 시 컴파일된 마지막 head/tail 시각을 캐시하고
@@ -148,7 +156,7 @@ Verification에 구분했습니다. 실제 화면/물리 입력/청음은 수동
   YME는 Interpolation/HitSounds 기본 데이터와 Speed/Sounds/Zone 명령을 분리합니다.
   볼륨은 히트사운드 대상입니다. 문법·보간·Whole/Separate·싱코페이션/Kiai는
   [YME](Formats/Yme.md), 실제 AngelDream 효과 테스트는 Presentation의 -Effects를 참고합니다.
-- 영구 기록·리플레이 재생, 에디터 Undo/Redo·드래그·다중 선택·음악 재생은 미구현입니다.
+- 영구 기록·리플레이 재생, 에디터 Undo/Redo·드래그·다중 선택은 미구현입니다.
   이 목록은 추가 구현 지시가 아닙니다. 기능별 제한은 해당 문서가 기준입니다.
 - Scene 전용 폴더와 `Submodules`, Note 계약/규칙 트리를 사용합니다.
   파일 추가 시 프로젝트와 Visual Studio 필터도 같은 트리로 등록합니다.

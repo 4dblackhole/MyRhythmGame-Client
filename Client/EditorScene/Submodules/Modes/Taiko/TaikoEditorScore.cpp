@@ -186,7 +186,7 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
     canvas.Box(RealtimeLane, {.055F, .060F, .12F, 1});
     canvas.Box({230, 351, 3, 228}, White);
     constexpr float normalHeadRadius = 36.0F;
-    constexpr float pixelsPerWholeNote = normalHeadRadius * 2.0F * 16.0F * .85F;
+    const float pixelsPerWholeNote = normalHeadRadius * 2.0F * 16.0F * .85F * static_cast<float>(state.Score().realtimeZoom);
     const auto currentTime = editor_time::Microseconds(state.TimeMilliseconds());
     const auto xAtTime = [currentTime, pixelsPerWholeNote, &document = state.Document(),
                           baseBpm = timeline.BaseBpm()](const auto timing, const double speed)

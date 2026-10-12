@@ -6,6 +6,9 @@ struct EditorScoreState
     int division{4};
     std::int64_t firstMeasure{};
     bool realtime{};
+    static constexpr double MinimumRealtimeZoom = .25;
+    static constexpr double MaximumRealtimeZoom = 4;
+    double realtimeZoom{1};
 };
 
 // Modes can inspect the score and submit edits, but cannot access the worker,

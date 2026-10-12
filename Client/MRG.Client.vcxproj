@@ -150,6 +150,8 @@
     <ClInclude Include="EditorScene\Submodules\EditorVisual.h" />
     <ClCompile Include="EditorScene\Submodules\EditorWorkspace.cpp" />
     <ClInclude Include="EditorScene\Submodules\EditorWorkspace.h" />
+    <ClCompile Include="EditorScene\Submodules\EditorPlayback.cpp" />
+    <ClInclude Include="EditorScene\Submodules\EditorPlayback.h" />
     <ClInclude Include="GameFlow\FingerDrumSceneIds.h" />
     <ClInclude Include="GameFlow\GameplayLaunchRequest.h" />
     <ClInclude Include="GameFlow\GameplayLaunchStore.h" />

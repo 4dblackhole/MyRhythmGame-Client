@@ -32,6 +32,7 @@
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
 | BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace/ReplaceTiming/ReplaceEffects, 저장 왕복 |
 | 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
+| 에디터 재생·시간축 줌 | EditorPlayback / EditorWorkspace / EditorScoreView | EditorInput / EditorScene / TaikoEditorScore; EditorPlaybackTests / EditorModeTests; 엔진 AudioClip/Voice |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |

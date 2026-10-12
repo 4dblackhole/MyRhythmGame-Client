@@ -3,6 +3,7 @@
 #include "Editing/ChartEditor.h"
 #include "EditorModeTests.h"
 #include "EditorMenuTests.h"
+#include "EditorPlaybackTests.h"
 #include "EditorScene/Submodules/EditorView.h"
 #include "EditorScene/Submodules/Modes/EditorModeFactory.h"
 #include "GameScene/MusicSelectScene/Submodules/SongPreviewController.h"
@@ -76,6 +77,7 @@ int main()
         std::string assetError;
         Check(finger_drum::assets::InitializeBuiltInAssets(assetError), assetError.c_str());
         TestEditorMenu();
+        TestEditorPlayback();
         namespace chart = finger_drum::chart;
         chart::PatternDocument pattern;
         pattern.baseBpm = 120;
@@ -89,6 +91,7 @@ int main()
         const auto songs = chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
         Check(!songs.songs.empty() && !songs.songs.front().patterns.empty(), "Real catalog missing");
         const auto &song = songs.songs.front();
+        TestEditorPlaybackWithFmod(song.audioPath);
         const auto &selected = song.patterns.front();
         {
             mrg::audio::AudioSystem previewAudio;
@@ -245,6 +248,12 @@ int main()
         Check(state.TimelineRangeMilliseconds() == std::pair{begin, end}, "Resize changed time range");
         Check(menuBar->BoundsInCanvas().width == canvas->LogicalSize().width,
               "Editor view must resize the composed menu.");
+        state.SelectTab(EditorTab::Pattern);
+        state.SetRealtime(true);
+        view.Build();
+        visuals.Render({});
+        Check(hasText(L"−") && hasText(L"+") && hasText(L"TIME ZOOM 100%"),
+              "Realtime view must expose the time-axis zoom buttons and current scale.");
         view.Shutdown();
         Check(visuals.CanvasCount() == 0, "Editor Canvas survived shutdown");
         visuals.OnResize(1920, 1080);

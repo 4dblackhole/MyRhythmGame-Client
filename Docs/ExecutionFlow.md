@@ -104,6 +104,12 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 
 ## 프레임과 종료
 
+에디터 진입 시 Workspace의 EditorPlayback에 AudioSystem을 연결합니다.
+Space가 재생 의도를 설정하면 mode/analysis의 revision별 파일·cue를 받아 준비하고,
+매 update DSP 시각으로 음악·히트사운드 예약과 편집 cursor를 갱신합니다.
+Scene은 연결/Update/Shutdown만 호출합니다. 종료 시 에디터 Voice를 먼저 정지하고
+취소된 비동기 Clip을 AudioSystem에 넘겨 I/O가 끝난 뒤 해제하도록 합니다.
+
 매 update에서 엔진은 timestamp가 보존된 Raw Input 이벤트를 Client에
 전달합니다. 각 Scene은 논리와 관리자가 소유한 Visual2D tree만 갱신하며,
 화면 Canvas의 Update·resize·제출은 `ScreenVisual2DManager`가 수행합니다.
