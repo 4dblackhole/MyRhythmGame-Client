@@ -20,7 +20,22 @@
   효과 테스트 YME 1개·WAV 2개는 외부 `assets/Songs`입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
-## 최근 완료: 테일 틱의 닫힌 구간 (2026-10-12)
+## 최근 검증: Omoiyoshino 변환·실제 재생 (2026-10-12)
+
+osu! 설치 폴더 `D:/Rhythm Games/osu!/Songs`의 Omoiyoshino / Inner Oni /
+Konpaku Sariel(v14, Mode 1)을 변환기 Debug/Release EXE로 변환했습니다.
+861개 원본 객체가 864개 YMP 행, 861개 플레이 노트로 보존되며 최대 스냅 이동은
+약 1.143ms입니다. YMM/YMP/YME/음원은 변환기 ignored
+`TestData/Omoiyoshino-InnerOni-20261012`에 있고, 두 구성 실행 폴더의
+`assets/Songs/Imported/Omoiyoshino - Inner Oni (Konpaku Sariel)`에도 복사했습니다.
+원본과 사용자 설정은 보존했고 게임 기본곡이나 Git에 추가하지 않았습니다.
+변환기 Core/카탈로그 및 CLI 회귀는 두 구성 성공했고, Release 실제 D3D12/FMOD
+자동 재생으로 861개 노트 완료/100%/8,130프레임을 확인했습니다. 두 구성의 네 smoke도
+성공했습니다. 수동 화면·물리 입력·청음은 확인하지 않았습니다.
+변환기 JSON의 `exclude the tail` 안내는 구형 문구가 남은 상태입니다. 실제 플레이는
+닫힌 틱 구간을 사용합니다. 이번에는 제품 C++ 코드를 변경하지 않고 검증 결과만 기록했습니다.
+
+## 최근 구현: 테일 틱의 닫힌 구간 (2026-10-12)
 
 TickRoll/BigTickRoll/Buzz의 헤드 기준 틱 격자에 테일 위치가 정확히 맞으면 마지막 틱도
 생성합니다. MusicalTimeline의 유리수 위치로 판단하므로 us 반올림만으로 일치한 테일은

@@ -79,6 +79,37 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 Omoiyoshino / Inner Oni 실제 변환·재생
+
+- 입력은 설치된 osu!의 `1006535 loos feat Hiiragi Rian - Omoiyoshino` 폴더,
+  `loos feat. Hiiragi Rian - Omoiyoshino (Konpaku Sariel) [Inner Oni].osu`입니다.
+  v14/Mode 1, BeatmapID 2106494, 제작자/난이도를 확인했습니다.
+- 최신 Debug/Release OsuTaikoConverter.exe를 기본 분모 1~32로 실행했습니다.
+  양쪽 exit 0 / JSON success true. 원본 861개(일반 858, 슬라이더 1, 스피너 2)가
+  YMP 864행/실제 Taiko 861개 논리 노트로 보존됐습니다. 877개 이벤트를 스냅했고
+  최대 이동은 1.1428571428114083ms입니다. 두 구성의 생성 텍스트/음원은 동일합니다.
+- 결과는 변환기 ignored `TestData/Omoiyoshino-InnerOni-20261012/{Debug,Release}/Songs`
+  아래에 있습니다. 게임 두 구성의 `assets/Songs/Imported/Omoiyoshino - Inner Oni (Konpaku Sariel)`에도
+  YMM/YMP/YME/audio.mp3를 복사하고 파일 해시를 대조했습니다. 원본 osu/MP3의 해시도 유지됐습니다.
+  YMP→YMM은 Songs 기준, YMP→YME와 YMM→음원은 각 파일 폴더 기준으로 로드됐습니다.
+- 변환기 Core/실제 카탈로그·세션 테스트가 두 구성 성공했습니다.
+  CliTests.ps1도 해당 원본 복사본으로 두 구성 성공: 변환, 기존 출력 보존,
+  필수/중복/미지원 인자, 잘못된 격자, 출력 범위, 없는 입력과 미지원 Mode 종료 코드를 검사했습니다.
+- Release의 실제 D3D12/FMOD(출력 1, NoSound fallback 금지)에서 숨김 자동 재생 성공:
+  채보 끝까지 861개 완료, 자동 입력 정확도 100%, 8,130 렌더 프레임.
+  기존 GameplayPresenter/GameplayAudioRouter/카탈로그/PlaySession을 사용했습니다.
+  임시 replay는 두 스피너의 요구 입력을 각각의 실제 롱 구간 안에 분산했습니다.
+  오디오/자동화 오류, 중복 완료, 종료 후 노트 노드 누적 없이 완료했고 Reset 재생성도 검사했습니다.
+- 검증용 소스/로그는 Client ignored `build/omoiyoshino-2026-10-12`에만 둡니다.
+  임시 probe의 초기 C6011은 명시적 null 검증으로 수정하고 Release 실제 include/C++20/MD 설정의
+  MSVC 14.44.35207 `/W4 /c /analyze` 재실행에서 경고/오류 0을 확인했습니다.
+  제품 C++·프로젝트/엔진 코드는 변경하지 않았으며 기존 빌드 실행 파일을 사용했습니다.
+- Debug/Release 네 Client smoke 총 8개 exit 0. 기존 Option.ini와 사용자 LaneKeyBeam.cpp를
+  보존했습니다. 문서 변경의 git diff --check 성공. 실제 화면 픽셀·물리 입력·청음은 수동 확인하지 않았습니다.
+- 변환 경고의 배경/영상/스토리보드와 커스텀 샘플 미지원, JudgeLevel/스피너 판정 차이는
+  기존 변환 계약입니다. 추가로 `exclude the tail` 안내가 현재 Client의 닫힌 틱 구간과
+  다른 구형 문구임을 확인했습니다. 이번 검증에서는 경고 문구의 제품 코드를 변경하지 않았습니다.
+
 ## 2026-10-12 테일 틱의 닫힌 구간
 
 - MusicalTimeline::CompileSubdivisions는 헤드 기준 유리수 격자에 테일이 정확히 맞고
