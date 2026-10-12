@@ -69,6 +69,13 @@ BigKat, Purple, Roll, TickRoll, Balloon, DengDeng, Buzz를 모두 **한 Lane**�
 - `TimedSequenceInputRule`: Balloon의 반복 Don과 DengDeng의 Don/Kat 교대를
   제한 시간 및 필요 횟수로 처리하는 규칙
 
+Roll/BigRoll/Balloon/DengDeng은 헤드 타이밍 판정과 시작 입력을 요구하지 않습니다.
+`RuleBasedNote::Preview`는 HitCount 목표에서 Unjudged를 반환하며 각 구간 규칙이
+시작~종료 시각 안의 입력과 타격수를 처리합니다. 늦게 첫 입력을 해도 종료 전 요구 횟수를
+채우면 100%이며 부족하면 기존 횟수 비율 점수를 줍니다. Balloon의 Don 전용과 DengDeng의
+Don/Kat 교대는 유지합니다. 이 입력은 헤드 판정 문구/오차 마커/타이밍 통계를 만들지 않고
+키빔은 흰색입니다. 성공 완료의 OK, 실패의 MISS는 유지합니다. TickRoll/Buzz는 기존 시작 판정을 유지합니다.
+
 새 노트는 `INote` 전체를 다시 만들거나, 대부분의 경우 기존
 `RuleBasedNote`에 새 `INoteRule`만 주입해 추가합니다.
 

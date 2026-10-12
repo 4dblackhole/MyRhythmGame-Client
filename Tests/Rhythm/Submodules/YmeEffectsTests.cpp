@@ -24,6 +24,53 @@ namespace finger_drum::tests
         }
     } // namespace
 
+    void TestMeasureLineScrollEffects()
+    {
+        auto pattern = RegressionPattern();
+        pattern.notes = {{{4, {}}, 1}};
+        pattern.timing = {{{0, {1, 2}}, chart::TimingDirectiveType::DelayMilliseconds, 500}};
+        const auto effects = ParseRegressionEffects(R"([Speed]
+1,0/1,#ScrollSpeed Whole,Value=2
+1,0/1,Area,3,0/1,#ScrollSpeed Separate,From=1,To=0.25,Curve=Linear
+5,0/1,#ScrollSpeed Separate,Value=1
+)");
+        auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+        Require(loaded.Succeeded(), "Measure-line scroll fixture must load.");
+        auto &session = *loaded.session;
+        const auto &lines = session.MeasureLines();
+        const auto originalSize = lines.size();
+        Require(lines.size() >= 5 && lines[0].timing == rhythm::RhythmTime{} &&
+                    lines[1].timing == rhythm::RhythmTime{2'500'000} &&
+                    std::abs(lines[1].scrollMultiplier - (1 - .75 * 2.5 / 4.5)) < 1e-12 &&
+                    lines[2].scrollMultiplier == .25 && session.FindNotePresentation(1)->scrollMultiplier == 1,
+                "Measure lines must fix Separate at their compiled start, including delayed Area interpolation.");
+        Require(session.MinimumScrollMultiplier() <= .25 &&
+                    std::abs(session.ScrollDistance(lines[1].timing, {}) - 5'000'000) < 1e-9,
+                "Slow measure lines must extend the visible horizon and share Whole integration with notes.");
+        bool rejected = false;
+        try
+        {
+            session.SetMeasureLines({{rhythm::RhythmTime{}, std::numeric_limits<double>::quiet_NaN()}});
+        }
+        catch (const std::invalid_argument &)
+        {
+            rejected = true;
+        }
+        Require(rejected && session.MeasureLines().size() == originalSize &&
+                    session.MeasureLines()[2].scrollMultiplier == .25,
+                "Invalid bar multipliers must leave the previous compiled lines intact.");
+
+        pattern.timing = {{{1, {1, 4}}, chart::TimingDirectiveType::DelayMilliseconds, -1500}};
+        pattern.notes = {{{1, {1, 4}}, 1}, {{2, {}}, 1}};
+        const auto clipped = ParseRegressionEffects("[Speed]\n2,1/4,#ScrollSpeed Separate,Value=3\n");
+        loaded = mode::TaikoMode{}.CreateSession(pattern, clipped);
+        Require(loaded.Succeeded(), "Clipped measure-line fixture must load.");
+        const auto &line = loaded.session->MeasureLines()[1];
+        Require(line.timing == rhythm::RhythmTime{1'000'000} && line.scrollMultiplier == 3 &&
+                    loaded.session->FindNotePresentation(1)->scrollMultiplier == line.scrollMultiplier,
+                "A clipped bar and note at its surviving source start must use identical Separate speed.");
+    }
+
     void TestDelayEffectTimeConsistency()
     {
         auto pattern = RegressionPattern();

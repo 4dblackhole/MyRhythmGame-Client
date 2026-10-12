@@ -2,8 +2,9 @@
 #include "Audio/EditorAudioAnalysis.h"
 #include "GameFlow/GameplayLaunchRequest.h"
 #include "Modes/IEditorAudioSource.h"
-#include <memory>
 #include <map>
+#include <memory>
+#include <optional>
 #include <string>
 struct AnalysisBatch
 {
@@ -42,6 +43,7 @@ class EditorAnalysisController final
     }
     const std::map<std::string, std::filesystem::path> &Files() const noexcept { return analysisFiles; }
     std::uint64_t FilesRevision() const noexcept { return filesRevision_; }
+    [[nodiscard]] std::optional<double> MusicDurationSeconds() const;
     bool Running() const noexcept
     {
         return job_ != nullptr;
@@ -61,6 +63,7 @@ class EditorAnalysisController final
     std::shared_ptr<const AnalysisBatch> analysis_;
     std::uint64_t analysisRevision_{};
     std::uint64_t filesRevision_{};
+    std::uint64_t analyzedFilesRevision_{};
     std::map<std::string, std::filesystem::path> analysisFiles;
     std::vector<AudioMarker> audioMarkers;
     std::uint64_t audioMarkerRevision{};

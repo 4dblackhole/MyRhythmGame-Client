@@ -62,9 +62,18 @@ namespace finger_drum::mode
         automationError_.clear();
     }
 
-    void PlaySession::SetMeasureLines(std::vector<rhythm::RhythmTime> measureLines)
+    void PlaySession::SetMeasureLines(std::vector<MeasureLinePresentationInfo> measureLines)
     {
+        double minimum = 1;
+        for (const auto &line : measureLines)
+        {
+            if (!std::isfinite(line.scrollMultiplier) || line.scrollMultiplier <= 0)
+                throw std::invalid_argument("Measure-line scroll multiplier must be positive and finite.");
+            minimum = std::min(minimum, line.scrollMultiplier);
+        }
+        std::ranges::stable_sort(measureLines, {}, &MeasureLinePresentationInfo::timing);
         measureLines_ = std::move(measureLines);
+        minimumMeasureScrollMultiplier_ = minimum;
     }
 
     void PlaySession::SetHitSoundFiles(std::map<rhythm::SoundId, std::filesystem::path> files)
@@ -102,7 +111,7 @@ namespace finger_drum::mode
         }
     }
 
-    const std::vector<rhythm::RhythmTime> &PlaySession::MeasureLines() const noexcept
+    const std::vector<MeasureLinePresentationInfo> &PlaySession::MeasureLines() const noexcept
     {
         return measureLines_;
     }

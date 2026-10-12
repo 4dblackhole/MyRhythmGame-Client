@@ -23,6 +23,7 @@ class EditorWorkspace final : public IEditorContext
     void UpdatePlayback();
     void TogglePlayback();
     void SeekFirstNote();
+    void SeekLastNote();
     void SetRealtimeZoom(double factor);
     void SelectTool(int value) override;
     void Save();
@@ -111,5 +112,6 @@ class EditorWorkspace final : public IEditorContext
     double timeMs_{};
     finger_drum::rhythm::RhythmTime lastPlaybackPresentation_{};
     bool nextZToZero_{};
+    bool nextXToMusicEnd_{};
     std::uint64_t audioSourceRevision_{};
 };

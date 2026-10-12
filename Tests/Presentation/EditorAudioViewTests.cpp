@@ -1,8 +1,8 @@
 #include "App/AssetPaths.h"
 #include "Catalog/SongCatalog.h"
 #include "Editing/ChartEditor.h"
-#include "EditorModeTests.h"
 #include "EditorMenuTests.h"
+#include "EditorModeTests.h"
 #include "EditorPlaybackTests.h"
 #include "EditorScene/Submodules/EditorView.h"
 #include "EditorScene/Submodules/Modes/EditorModeFactory.h"
@@ -166,6 +166,35 @@ int main()
             state.UpdateAnalysis();
         }
         Check(!state.Analysis().Running() && state.Analysis().Data().errors.empty(), "Audio worker failed");
+        const auto musicDuration = state.Analysis().MusicDurationSeconds();
+        if (!musicDuration)
+            throw std::runtime_error("Current music duration is unavailable after analysis.");
+        const double musicEndMs = *musicDuration * 1000;
+        const double lastNoteMs = state.Document().NoteTimeRange().second.count() / 1000.0;
+        Check(std::abs(lastNoteMs - musicEndMs) > 1,
+              "The real chart must have distinct music/note ends for X testing.");
+        state.SeekLastNote();
+        Check(state.TimeMilliseconds() == lastNoteMs, "First X must seek the real chart's last note.");
+        state.SeekLastNote();
+        Check(state.TimeMilliseconds() == musicEndMs, "Second X must seek the music end.");
+        state.SeekLastNote();
+        Check(state.TimeMilliseconds() == lastNoteMs, "Third X must return to the last note.");
+        state.Analysis().Invalidate();
+        Check(!state.Analysis().MusicDurationSeconds(), "Invalidated analysis must not provide a stale end position.");
+        bool pending = false;
+        try
+        {
+            state.SeekLastNote();
+        }
+        catch (const std::runtime_error &)
+        {
+            pending = true;
+        }
+        Check(pending && state.TimeMilliseconds() == lastNoteMs, "An unavailable end must not move the cursor.");
+        state.UpdateAnalysis(); // Unchanged files can reuse their completed analysis.
+        state.SeekLastNote();
+        Check(state.TimeMilliseconds() == musicEndMs, "Retry must retain the second-X destination.");
+        state.Seek(0);
         const auto [begin, end] = state.TimelineRangeMilliseconds();
         Check(end >= state.Analysis().Data().sounds.at("Music").durationSeconds * 1000,
               "Timeline must include the entire music file.");

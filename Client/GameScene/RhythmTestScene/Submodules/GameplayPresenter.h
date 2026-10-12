@@ -1,10 +1,10 @@
 #pragma once
-#include "MRG_Core.h"
-#include "Mode/PlayGameMode.h"
-#include "Presentation/LaneKeyBeam.h"
 #include "GameplayFeedback.h"
 #include "GameplayJudgementView.h"
 #include "GameplayProgressView.h"
+#include "MRG_Core.h"
+#include "Mode/PlayGameMode.h"
+#include "Presentation/LaneKeyBeam.h"
 #include "Texts/TextCatalog.h"
 #include <array>
 #include <unordered_map>
@@ -93,7 +93,11 @@ class GameplayPresenter final
     void UpdateNoteTravelLayout();
     [[nodiscard]] float TravelPixels(finger_drum::rhythm::RhythmDuration duration,
                                      float multiplier = 1.0F) const noexcept;
-    float TravelPixelsAt(finger_drum::rhythm::RhythmTime target, finger_drum::rhythm::RhythmTime current, float multiplier = 1) const;
+    float TravelPixelsAt(finger_drum::rhythm::RhythmTime target, finger_drum::rhythm::RhythmTime current,
+                         float multiplier = 1) const;
+    [[nodiscard]] mrg::visual2d::Point LaneObjectPosition(finger_drum::rhythm::RhythmTime target,
+                                                          finger_drum::rhythm::RhythmTime current,
+                                                          float multiplier) const;
     [[nodiscard]] finger_drum::rhythm::RhythmDuration VisibleTravelDuration() const;
     void HideTransientNoteVisuals();
     void RemoveUnusedNoteVisuals();

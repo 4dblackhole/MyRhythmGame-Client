@@ -20,6 +20,8 @@ namespace finger_drum::tests
     void TestLongNoteRemainsInScrollSnapshotUntilItsTail();
     void TestOverlappingLongTrailIsNotHiddenByShorterNote();
     void TestTaikoRollAndTickRollRules();
+    void TestCountOnlyRollHeadJudgements();
+    void TestMeasureLineScrollEffects();
     void TestBalloonDengDengAndBuzzRules();
     void TestTimingAccuracyAndSessionAggregation();
     void TestPurpleNoteBothOrders();

@@ -438,6 +438,42 @@ namespace
         }
     }
 
+    void TestLastNoteSeeking()
+    {
+        chart::PatternDocument pattern;
+        pattern.baseBpm = 120;
+        pattern.notes = {{{0, {1, 8}}, 1, 0}, {{0, {1, 4}}, 11, 1}, {{1, {1, 2}}, 11, 2}};
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        const auto revision = state.Document().Revision();
+        state.SeekLastNote();
+        Check(state.TimeMilliseconds() == 3000, "First X must include the last long-note tail.");
+        bool unavailable = false;
+        try
+        {
+            state.SeekLastNote();
+        }
+        catch (const std::runtime_error &)
+        {
+            unavailable = true;
+        }
+        Check(unavailable && state.TimeMilliseconds() == 3000,
+              "Unavailable music duration must preserve the cursor and allow retrying the second X.");
+        state.SeekFirstNote();
+        Check(state.TimeMilliseconds() == 250, "Z must reset X and seek the first note.");
+        state.SeekLastNote();
+        Check(state.TimeMilliseconds() == 3000, "Changing from Z to X must restart at the last note.");
+        state.SeekFirstNote();
+        Check(state.TimeMilliseconds() == 250, "Changing from X to Z must restart at the first note.");
+        state.Seek(100);
+        state.SeekLastNote();
+        Check(state.TimeMilliseconds() == 3000 && state.Document().Revision() == revision,
+              "Manual seeking must reset X without editing the score.");
+        EditorWorkspace empty(CreateEditorMode("Taiko"),
+                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+        empty.SeekLastNote();
+        Check(empty.TimeMilliseconds() == 0, "An empty chart must have a zero last-note destination.");
+    }
+
     void TestPreviewMatchesPlay()
     {
         namespace rhythm = finger_drum::rhythm;
@@ -823,6 +859,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     TestTaikoPlacementConflicts();
     TestPreviewMatchesPlay();
     TestRealtimeZoomAndTransport();
+    TestLastNoteSeeking();
     TestDelayViewsAndSnapping();
     TestSeekAndEffectEdits();
     TestInspectorMusicalTiming();

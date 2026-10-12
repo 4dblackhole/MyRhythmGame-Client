@@ -1,16 +1,32 @@
 #include "TaikoSessionBuilder.h"
 #include "Automation/EffectValidation.h"
+#include "Mode/Submodules/PlaySessionTypes.h"
 #include "Note/Submodules/CountedHitInputRule.h"
 #include "Note/Submodules/RuleBasedNote.h"
 #include "Note/Submodules/SequenceInputRule.h"
 #include "Note/Submodules/TapInputRule.h"
+#include "Taiko/Results/TaikoResultCollector.h"
 #include "TaikoBuildSupport.h"
 #include "TaikoChartNotes.h"
-#include "Taiko/Results/TaikoResultCollector.h"
 
 namespace finger_drum::mode
 {
     using namespace taiko_build;
+
+    namespace
+    {
+        std::vector<MeasureLinePresentationInfo> BuildMeasureLines(const chart::MusicalTimeline &timeline,
+                                                                   const chart::EffectDocument &effects)
+        {
+            std::vector<MeasureLinePresentationInfo> result;
+            result.reserve(timeline.MeasureSpans().size());
+            for (const auto &span : timeline.MeasureSpans())
+                if (span.end > span.begin)
+                    result.push_back({span.begin, timeline.EffectValueAt(effects, chart::EffectCommandType::NoteSpeed,
+                                                                         span.sourceBegin)});
+            return result;
+        }
+    } // namespace
 
     ModeLoadResult TaikoSessionBuilder::CreateSession(const chart::PatternDocument &pattern,
                                                       const chart::EffectDocument &effects)
@@ -173,7 +189,7 @@ namespace finger_drum::mode
         session->SetFreeInputCue(ActionValue(TaikoAction::Kat),
                                  Cue(finger_drum::mode::taiko_sound::KatFreeInput, "UserInputFeedback"));
         session->SetEffects(timeline.CompileEffects(effects));
-        session->SetMeasureLines(timeline.CompileMeasureStarts());
+        session->SetMeasureLines(BuildMeasureLines(timeline, effects));
         session->SetTimeline(std::move(timeline));
         session->Gear().Finalize();
         session->SetResultCollector(std::move(collector));

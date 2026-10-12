@@ -1,15 +1,16 @@
+#include "FingerDrumAssets.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayJudgementView.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayPresenter.h"
+#include "Parsing/ChartParser.h"
 #include "Presentation/LaneKeyBeam.h"
 #include "Taiko/TaikoMode.h"
-#include "FingerDrumAssets.h"
 #include "Time/RhythmTimer.h"
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
-#include <map>
 #include <limits>
+#include <map>
 #include <stdexcept>
 
 namespace
@@ -320,6 +321,98 @@ namespace
         checkZeroDuration(false, 0);
         checkZeroDuration(false, -200);
     }
+    void TestMeasureLinesShareNoteMotion()
+    {
+        AssetRenderer renderer;
+        v::ScreenVisual2DManager visuals;
+        visuals.Initialize(renderer, {1280, 720});
+        finger_drum::chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
+        pattern.baseBpm = 120;
+        pattern.notes = {{{1, {}}, 1}};
+        const auto effects = finger_drum::chart::ChartParser{}.ParseEffect(
+            "[Speed]\n1,0/1,#ScrollSpeed Separate,Value=0.25\n"
+            "1,0/1,Area,3,0/1,#ScrollSpeed Whole,From=1,To=2,Curve=Linear\n",
+            "bar-motion.yme");
+        Check(effects.Succeeded(), "Bar motion effects must parse.");
+        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern, effects.document);
+        Check(loaded.Succeeded(), "Bar motion session must load.");
+        mrg::graphics::MeshRenderSystem meshes;
+        mrg::graphics::TextRenderSystem textRendering;
+        mrg::audio::AudioSystem audio;
+        finger_drum::texts::TextCatalog texts;
+        GameplayPresenter presenter(visuals, texts);
+        presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
+        auto &root = visuals.FindCanvas(1)->Root();
+        for (const auto viewport : {v::Size{1280, 720}, v::Size{1920, 1080}, v::Size{2560, 1080}})
+        {
+            visuals.OnResize(static_cast<std::uint32_t>(viewport.width), static_cast<std::uint32_t>(viewport.height));
+            presenter.OnResize(static_cast<std::uint32_t>(viewport.width), static_cast<std::uint32_t>(viewport.height));
+            for (const auto us : {0, 500'000, 1'500'000, 2'000'000})
+            {
+                presenter.UpdatePresentation(r::RhythmTime{us});
+                const auto &note = Node(root, "Lane.Note.1");
+                const auto centre = note.Position();
+                const auto &lane = Node(root, "ScrollGear.Lane");
+                const auto aligned = std::ranges::count_if(lane.Children(),
+                                                           [&](const auto &child)
+                                                           {
+                                                               const auto position = child->Position();
+                                                               return child->Name() == "Lane.MeasureLine" &&
+                                                                      child->IsVisible() &&
+                                                                      Near(position.x, centre.x) && Near(position.y, centre.y);
+                                                           });
+                Check(aligned == 1,
+                      "Coincident note and bar must stay centred together under Whole/Separate and resize.");
+            }
+        }
+        presenter.Shutdown();
+    }
+
+    void TestCountOnlyHeadsHaveNoFeedback()
+    {
+        for (const int type : {11, 13, 15, 16})
+        {
+            AssetRenderer renderer;
+            v::ScreenVisual2DManager visuals;
+            visuals.Initialize(renderer, {1280, 720});
+            finger_drum::chart::PatternDocument pattern;
+            pattern.mode = "Taiko";
+            pattern.baseBpm = 120;
+            pattern.patternOffsetMilliseconds = 500;
+            pattern.notes = {{{0, {}}, type, 1, {}, {"HitCount=3"}}, {{0, {1, 2}}, type, 2}};
+            auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+            Check(loaded.Succeeded(), "Ungraded head feedback fixture must load.");
+            mrg::graphics::MeshRenderSystem meshes;
+            mrg::graphics::TextRenderSystem textRendering;
+            mrg::audio::AudioSystem audio;
+            finger_drum::texts::TextCatalog texts;
+            GameplayPresenter presenter(visuals, texts);
+            presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
+            auto &root = visuals.FindCanvas(1)->Root();
+            for (int index = 0; index < 3; ++index)
+            {
+                const char key = type == 16 && index == 1 ? 'D' : 'F';
+                presenter.ApplyFeedback({.keyPressed = true,
+                                         .result = loaded.session->ProcessInput(
+                                             key, r::InputEdge::Pressed, r::RhythmTime{900'000 + index * 100'000})});
+                if (index < 2 || type == 11 || type == 13)
+                    CheckOverlay(root, "");
+                Check(!Node(root, "Judgement.Marker").IsVisible(), "Count-only hits must not create a timing marker.");
+                const auto beam = Node(root, "Lane.KeyBeam").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+                Check(Near(beam.red, 1) && Near(beam.green, 1) && Near(beam.blue, 1),
+                      "Count-only hits must use the ungraded white key beam.");
+            }
+            presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{1'500'000})});
+            CheckOverlay(root, "OK");
+            loaded.session->Reset();
+            presenter.ApplyFeedback({.reset = true});
+            presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{1'500'000})});
+            CheckOverlay(root, "MISS");
+            presenter.Shutdown();
+        }
+    }
+
     void TestPresenterEventPriority()
     {
         AssetRenderer renderer;
@@ -479,6 +572,8 @@ int main()
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
         TestGuideAndOverlays();
         TestGameplayProgress();
+        TestMeasureLinesShareNoteMotion();
+        TestCountOnlyHeadsHaveNoFeedback();
         TestPresenterEventPriority();
         TestRollCompletionAndProcessedTicks();
         std::puts("Gameplay progress and judgement guide/marker/overlay tests passed.");

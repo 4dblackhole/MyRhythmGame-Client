@@ -11,23 +11,26 @@ void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
         return;
     const auto &lines = session_->MeasureLines();
     std::size_t used = 0;
-    for (auto it = std::ranges::lower_bound(lines, time - MissedTravelDuration);
-         it != lines.end() && *it <= time + horizon; ++it)
+    for (auto it = std::ranges::lower_bound(lines, time - MissedTravelDuration, {},
+                                            &finger_drum::mode::MeasureLinePresentationInfo::timing);
+         it != lines.end() && it->timing <= time + horizon; ++it)
     {
-        const float y = judgementLocalY_ + TravelPixelsAt(*it, time);
-        if (y > judgementLocalY_ + noteTravelDistance_ || y < judgementLocalY_ - noteTravelDistance_)
+        const auto position = LaneObjectPosition(it->timing, time, static_cast<float>(it->scrollMultiplier));
+        if (position.y > judgementLocalY_ + noteTravelDistance_ || position.y < judgementLocalY_ - noteTravelDistance_)
             continue;
         if (used == measureLineVisuals_.size())
         {
             auto &line = mrg::visual2d::CreatePanel(*laneRoot_, {}, "Lane.MeasureLine");
+            line.SetPivot({0.5F, 0.5F});
             SetColor(line, {.78F, .85F, .90F, .72F});
             line.SetZIndex(1);
             measureLineVisuals_.push_back({{}, &line});
         }
         auto &visual = measureLineVisuals_[used++];
-        visual.timing = *it;
+        visual.timing = it->timing;
         visual.node->SetVisible(true);
-        visual.node->SetBounds({0, y, laneWidth_, 4});
+        visual.node->SetSize({laneWidth_, 4});
+        visual.node->SetPosition(position);
     }
 }
 
@@ -46,7 +49,7 @@ void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
     {
         if (*it <= layers.timing)
             continue;
-        const float y = judgementLocalY_ + TravelPixelsAt(*it, time, speed);
+        const float y = LaneObjectPosition(*it, time, speed).y;
         if (y < 0 || y > laneRoot_->NodeSize().height + layers.tickSize.height)
             continue;
         if (used == layers.ticks.size())
@@ -359,12 +362,11 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         {
             targetTime = note.expireTime;
         }
-        const float speed =
-            presentation != nullptr ? static_cast<float>(presentation->scrollMultiplier) : 1.0F;
-        const float localY = judgementLocalY_ + TravelPixelsAt(targetTime, time, speed);
-        layers.root->SetPosition({laneWidth_ * 0.5F, localY});
-        const bool showLaneHead =
-            focusNote ? !completed && (!processing || missed) : !completed && !missed;
+        const float speed = presentation != nullptr ? static_cast<float>(presentation->scrollMultiplier) : 1.0F;
+        const auto position = LaneObjectPosition(targetTime, time, speed);
+        const float localY = position.y;
+        layers.root->SetPosition(position);
+        const bool showLaneHead = focusNote ? !completed && (!processing || missed) : !completed && !missed;
         layers.root->SetVisible(showLaneHead);
 
         if (processing && !focusClaimed)

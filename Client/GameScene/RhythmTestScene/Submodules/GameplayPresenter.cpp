@@ -61,6 +61,15 @@ finger_drum::rhythm::RhythmDuration GameplayPresenter::VisibleTravelDuration() c
         static_cast<finger_drum::rhythm::RhythmDuration::rep>(std::ceil(microseconds))};
 }
 
+mrg::visual2d::Point GameplayPresenter::LaneObjectPosition(const finger_drum::rhythm::RhythmTime target,
+                                                           const finger_drum::rhythm::RhythmTime current,
+                                                           const float multiplier) const
+{
+    // Notes and measure lines are centred lane objects on the same time axis.
+    // Whole integrates the shared distance; Separate scales that distance per object.
+    return {laneWidth_ * 0.5F, judgementLocalY_ + TravelPixelsAt(target, current, multiplier)};
+}
+
 void GameplayPresenter::Shutdown() noexcept
 {
     keyBeam_.Shutdown();

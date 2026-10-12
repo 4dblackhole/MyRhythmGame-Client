@@ -125,6 +125,8 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
             state_.TogglePlayback();
         if (input.WasKeyPressed('Z'))
             state_.SeekFirstNote();
+        if (input.WasKeyPressed('X'))
+            state_.SeekLastNote();
     }
     if (state_.Tab() == EditorTab::Pattern && !controlDown && !input.IsKeyDown(VK_LMENU) && !input.IsKeyDown(VK_RMENU))
         state_.Mode().HandleToolKeys(state_, input);

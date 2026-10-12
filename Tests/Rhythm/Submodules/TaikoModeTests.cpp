@@ -2,6 +2,62 @@
 
 namespace finger_drum::tests
 {
+    void TestCountOnlyRollHeadJudgements()
+    {
+        for (const auto type : {mode::TaikoNoteType::Roll, mode::TaikoNoteType::BigRoll, mode::TaikoNoteType::Balloon,
+                                mode::TaikoNoteType::DengDeng})
+        {
+            auto pattern = MakeLongPattern(type, {"HitCount=3"});
+            pattern.patternOffsetMilliseconds = 500;
+            auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+            Require(loaded.Succeeded(), "Count-only interval fixture must load.");
+            auto &session = *loaded.session;
+            const auto &note = *session.Gear().Lanes().front()->Notes().front();
+            const auto ungraded = [](const rhythm::NoteProcessResult &result)
+            {
+                return std::ranges::all_of(result.events, [](const auto &event)
+                                           { return event.judgement.grade == rhythm::JudgementGrade::Unjudged; });
+            };
+            for (const auto us : {430'000, 500'000, 900'000, 1'500'000})
+                Require(note.Preview({rhythm::RhythmTime{us}, 1, 'F'}).grade == rhythm::JudgementGrade::Unjudged,
+                        "Count-only heads must never supply a timing grade.");
+            const auto before = session.ProcessInput('F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{430'000});
+            Require(ungraded(before) && note.Accuracy().acceptedHits == 0,
+                    "An early head input must be ungraded and must not count.");
+            // The first hit is far beyond BAD; only the remaining interval and count matter.
+            for (int index = 0; index < 3; ++index)
+            {
+                const char key = type == mode::TaikoNoteType::DengDeng && index == 1 ? 'D' : 'F';
+                const auto hit = session.ProcessInput(key, rhythm::InputEdge::Pressed,
+                                                      rhythm::RhythmTime{900'000 + index * 100'000});
+                Require(ungraded(hit), "Accepted count-only hits must not create head timing feedback.");
+            }
+            static_cast<void>(session.Update(rhythm::RhythmTime{1'500'000}));
+            Require(note.Accuracy().finalized && note.Accuracy().Score().Units() == 100'000'000,
+                    "A late start meeting the count before the tail must earn full accuracy.");
+            session.Reset();
+            static_cast<void>(session.ProcessInput('F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{500'000}));
+            const char second = type == mode::TaikoNoteType::DengDeng ? 'D' : 'F';
+            static_cast<void>(session.ProcessInput(second, rhythm::InputEdge::Pressed, rhythm::RhythmTime{1'500'000}));
+            static_cast<void>(session.Update(rhythm::RhythmTime{1'500'000}));
+            Require(note.Accuracy().Score().Units() == 66'666'666 && note.Accuracy().acceptedHits == 2,
+                    "Both interval boundaries count, and partial accuracy retains six decimal places.");
+            session.Reset();
+            static_cast<void>(session.ProcessInput('F', rhythm::InputEdge::Pressed, rhythm::RhythmTime{1'500'001}));
+            Require(note.Accuracy().acceptedHits == 0 && note.Accuracy().Score().Units() == 0,
+                    "Inputs after the tail must not count.");
+        }
+        for (const auto type : {mode::TaikoNoteType::TickRoll, mode::TaikoNoteType::Buzz})
+        {
+            auto loaded = mode::TaikoMode{}.CreateSession(MakeLongPattern(
+                type, type == mode::TaikoNoteType::Buzz ? std::vector<std::string>{"Action=Don"} : std::vector<std::string>{}));
+            Require(loaded.Succeeded(), "Timing-based long-note fixture must load.");
+            const auto &note = *loaded.session->Gear().Lanes().front()->Notes().front();
+            Require(note.Preview({rhythm::RhythmTime{20'000}, 1, 'F'}).grade == rhythm::JudgementGrade::Great,
+                    "TickRoll and Buzz must retain their start timing judgement.");
+        }
+    }
+
     void TestTaikoRollAndTickRollRules()
     {
         mode::TaikoMode taiko;
@@ -309,7 +365,8 @@ Mode: Taiko
         const auto malformed = taiko.CreateSession(pattern);
         Require(malformed.Succeeded() && malformed.diagnostics.size() == 5 &&
                     malformed.session->Gear().Lanes().front()->Notes().size() == 1,
-                "Orphan/mismatched ends, swallowed taps and unclosed heads must each be diagnosed without changing play policy.");
+                "Orphan/mismatched ends, swallowed taps and unclosed heads must each be diagnosed without changing "
+                "play policy.");
         for (const auto line : {40u, 50u, 60u, 70u})
             Require(std::ranges::any_of(malformed.diagnostics, [line](const auto &d) { return d.location.line == line; }),
                     "Discard warnings must retain the authored source location.");

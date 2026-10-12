@@ -53,7 +53,7 @@ namespace finger_drum::texts
             L"추가 / 같은 위치 수정",
             L"오디오 분석 / 히트사운드",
             L"현재 시간 (ms)",
-            L"Space: 재생/일시정지 · Z: 첫 노트/0ms · 휠: 마디 이동 · ←/→: 1ms · Ctrl+S: 저장",
+            L"Space: 재생/일시정지 · Z: 첫 노트/0ms · X: 마지막 노트/음원 끝 · 휠: 마디 이동 · ←/→: 1ms · Ctrl+S: 저장",
             L"오디오 분석 중…",
             L"타임라인",
             L"음악 파형",
@@ -114,7 +114,8 @@ namespace finger_drum::texts
             L"ADD / UPDATE AT POSITION",
             L"AUDIO ANALYSIS / HIT SOUNDS",
             L"CURRENT TIME (ms)",
-            L"Space: play/pause · Z: first note/0 ms · Wheel: measures · ←/→: 1 ms · Ctrl+S: save",
+            L"Space: play/pause · Z: first note/0 ms · X: last note/music end · Wheel: measures · ←/→: 1 ms · Ctrl+S: "
+            L"save",
             L"ANALYZING AUDIO…",
             L"TIMELINE",
             L"MUSIC WAVEFORM",

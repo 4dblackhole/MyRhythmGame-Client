@@ -29,6 +29,10 @@ namespace finger_drum::chart
         [[nodiscard]] std::size_t CountSubdivisions(MusicalPosition begin, MusicalPosition end,
                                                     std::size_t divisionsPerWholeNote) const;
         [[nodiscard]] std::vector<rhythm::RhythmTime> CompileMeasureStarts() const;
+        [[nodiscard]] const std::vector<MeasureTimeSpan> &MeasureSpans() const noexcept
+        {
+            return measureSpans_;
+        }
         [[nodiscard]] Rational MeasureLength(std::int64_t measure) const;
         [[nodiscard]] Rational PositionToWholeNotes(MusicalPosition position) const;
         [[nodiscard]] MusicalPosition PositionAtWholeNotes(const Rational &beat) const;

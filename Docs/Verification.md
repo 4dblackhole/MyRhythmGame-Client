@@ -85,13 +85,48 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 X 양끝 이동·마디선 스크롤 통일·횟수형 롤 헤드 판정 제거
+
+- Workspace/Input은 X를 마지막 노트(테일 포함)→음원 끝으로 연결합니다.
+  Z/X 변경·수동 Seek·Space는 이동 순서를 초기화합니다. AnalysisController가 현재 파일의
+  완료된 분석 길이만 제공하며, 준비되지 않았으면 현재 시간과 두 번째 X 재시도를 보존합니다.
+  X 입력에서 파일을 다시 읽거나 디코딩하지 않습니다.
+- TaikoSessionBuilder는 살아남은 표시 마디 시작의 Separate 배율을 컴파일하고 PlaySession은
+  시각/배율과 표시 범위의 최소 속도를 보관합니다. Presenter의 LaneObjectPosition으로
+  노트·마디선·틱을 같은 Whole 거리/Separate 배율/중심 좌표에 배치합니다.
+  마디선의 모양·표시 여부는 표시 책임으로 유지하며 판정/점수/오디오에는 참여하지 않습니다.
+- RuleBasedNote의 HitCount Preview는 Unjudged입니다. Roll/BigRoll/Balloon/DengDeng은
+  시작 입력/헤드 정확도 없이 구간 안의 타격수로 점수를 결정합니다. 동/캇 제한, 소수점 6자리
+  부분 점수와 OK/MISS 완료 표시는 유지하며 TickRoll/Buzz의 시작 판정은 그대로입니다.
+- Debug/Release x64 전체 solution Rebuild 성공, 일반 빌드 경고/오류 0.
+  각 구성 54개 로직·기본곡 카탈로그 검사와 네 smoke씩 총 8개 성공.
+  새 도메인 검사는 늦은 첫 타격의 100%, 양 끝 입력·2/3 점수·범위 밖 입력,
+  TickRoll/Buzz 시작 판정 보존, 마디선의 실제 시간 Area 보간·Whole 거리·느린 표시 범위,
+  음수 delay의 잘린 시작·잘못된 배율 교체 실패 시 기존 데이터 보존을 확인합니다.
+- 두 구성의 EditorAudioView/Mode/Menu/Playback 회귀 성공. 실제 음원 분석 캐시로 연속 X,
+  테일/음원 끝 구분, Z와의 전환·수동 Seek 초기화·분석 무효화 후 거부/재시도를 확인합니다.
+  두 구성의 GameplayJudgement 회귀는 여러 시각·해상도에서 노트/마디선 중심 일치와
+  네 횟수형 롤의 헤드 문구/마커 억제·백색 키빔·OK/MISS를 확인합니다.
+- 실제 숨김 D3D12/FMOD 자동 replay 성공: 각 구성 전체 종류 19개 노트(85.1837%),
+  효과 채보 15개 노트(97.8897%) 완료. 밀집 Buzz의 기존 GOOD 입력/미스 기대값도 유지합니다.
+  두 구성의 Result 회귀는 그래프·소수점 6자리·결과 소유권·실제 deferred Scene 전환을 확인합니다.
+- MSVC Code Analysis(`/analyze`, 실제 C++20/include/define/x64 설정)는 Rhythm, Chart, Modes,
+  Rhythm.Tests, MRG.Client를 Debug/Release로 Rebuild했습니다. 새 경고/오류 0.
+  기존 C26115(AudioAnalysisWorker의 scoped lock), C28020(GameplaySessionController의 tm),
+  Release C6236(GameplayInput)는 남아 있으며 이번 동작 변경으로 추가된 진단은 없습니다.
+  표시 회귀 테스트 소스도 각 스크립트의 MSVC `/analyze`로 컴파일했습니다.
+- CheckArchitecture(11개 프로젝트)·git diff --check 성공. 엔진 코드는 변경하지 않았습니다.
+  사용자 LaneKeyBeam.cpp·곡/스킨·현재 Option.ini를 보존했습니다. 실행 전후 INI 해시가 동일합니다.
+  자동 검사는 실제 픽셀 배치·물리 키/마우스 조작·청음을 수동 확인한 결과가 아닙니다.
+  로그는 ignored `build/editor-end-seek-2026-10-12`에 보관합니다.
+
 ## 2026-10-12 에디터 시간축 줌·DSP 재생
 
 - 실시간 레인/서클 크기는 유지하고 −/+로 시간축을 25~400% 조절합니다.
   EditorPlayback은 음악/예상 head·tick의 source/cue 캐시, DSP 시각, 자기 Voice의 수명만 맡습니다.
   Workspace가 Space 재생/일시정지와 Z 첫 노트→0ms 순서를 연결합니다.
   다른 수동 Seek/Space는 Z 순서를 초기화하며 재생 중 Seek는 재생 의도를 유지합니다.
-  X 목적지(마지막 노트 테일 또는 음원 끝)는 사용자 답변 대기이므로 아직 연결하지 않았습니다.
+  당시 미정이던 X는 위 후속 검증의 마지막 노트→음원 끝 이동으로 연결했습니다.
 - Client/엔진 Debug·Release x64 전체 solution Rebuild 성공, 일반 빌드 경고/오류 0.
   두 구성의 52개 로직·기본곡 카탈로그와 네 smoke 경로씩 총 8개 성공.
   엔진 SDK 테스트는 길이/us 시작 위치/DSP 예약 전달, Loading Clip의 지연 해제와

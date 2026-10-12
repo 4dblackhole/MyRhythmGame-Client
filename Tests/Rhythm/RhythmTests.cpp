@@ -51,6 +51,8 @@ int main(const int argumentCount, char *arguments[])
         {"TestLongNoteRemainsInScrollSnapshotUntilItsTail", TestLongNoteRemainsInScrollSnapshotUntilItsTail},
         {"TestOverlappingLongTrailIsNotHiddenByShorterNote", TestOverlappingLongTrailIsNotHiddenByShorterNote},
         {"TestTaikoRollAndTickRollRules", TestTaikoRollAndTickRollRules},
+        {"TestCountOnlyRollHeadJudgements", TestCountOnlyRollHeadJudgements},
+        {"TestMeasureLineScrollEffects", TestMeasureLineScrollEffects},
         {"TestBalloonDengDengAndBuzzRules", TestBalloonDengDengAndBuzzRules},
         {"TestTimingAccuracyAndSessionAggregation", TestTimingAccuracyAndSessionAggregation},
         {"TestPurpleNoteBothOrders", TestPurpleNoteBothOrders},

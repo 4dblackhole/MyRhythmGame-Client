@@ -34,6 +34,8 @@ and clamped markers, all seven overlays, MISS without invented input timing,
 POOR only on red-beam rejection, out-of-range/release/unjudged-tick suppression,
 200ms fade/retrigger/reset, inherited circle centre, resize, node/image reuse,
 and accepted-hit priority over a passive MISS.
+It checks coincident note/measure centres under Whole and Separate at several times and viewport sizes,
+and all four count-only roll heads for suppressed timing feedback, white beams and OK/MISS completion.
 It also verifies displaying an automation diagnostic in the shared error HUD and hiding it when cleared.
 The same executable tests the production gameplay progress view: last long-tail
 duration, pre/post-roll clamping, fill UV and marker position, current/total time,
@@ -91,7 +93,8 @@ It also checks actual asynchronous MP3 opening/playback with the FMOD NoSound ou
 accurate music duration/near-end seeking, editor DSP transport, pause/resume/negative pre-roll,
 dense cue deadlines, alias/voice reuse, expired-cue skipping and cleanup through EditorPlaybackTests.
 EditorModeTests checks time zoom at five scales, stable lane/head dimensions and zoomed snapping,
-unchanged chart timing/revision and consecutive Z/manual-seek behavior.
+unchanged chart timing/revision and consecutive Z/X, last-tail/music-end destinations,
+missing/stale duration rejection, retry and manual-seek/direction reset behavior.
 preview failure retry suppression/selection recovery/owned voice cleanup and
 detaching a cancelled analysis job. Drawing assertions do not initialize a GPU;
 this does not replace visual inspection, listening or mouse testing in the app.

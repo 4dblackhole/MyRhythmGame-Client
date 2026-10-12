@@ -20,13 +20,25 @@
   효과 테스트 WAV 2개는 외부 Songs입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
-## 진행 작업: 에디터 시간축 줌·재생 (2026-10-12)
+## 최근 구현: 에디터 시간축 줌·재생·양끝 이동 (2026-10-12)
 
 실시간 레인 크기를 유지하고 −/+로 시간축을 25~400% 조절합니다.
 EditorPlayback이 DSP 시각/음악 seek/예상 히트사운드의 Clip·Voice를 소유하며,
 Space 재생/일시정지와 Z 첫 노트→0ms 이동을 Workspace/Input에 연결했습니다.
-X의 목적지(마지막 노트 테일 또는 음원 끝)는 사용자 답변을 기다리고 있습니다.
+X는 마지막 노트(테일 포함)→음원 끝을 번갈아 이동합니다. 분석이 준비되지 않았으면
+현재 시간과 재시도 순서를 보존하고 상태 메시지를 표시합니다. Z/X 변경·수동 Seek·Space는
+이동 순서를 초기화합니다. 음악 길이는 현재 파일에 해당하는 분석 캐시만 사용합니다.
 상세 책임·범위는 [ChartEditor](ChartEditor.md), 검증은 [Verification](Verification.md)에서 확인합니다.
+
+## 최근 구현: 마디선 스크롤 통일·횟수형 롤 헤드 판정 제거 (2026-10-12)
+
+마디선의 Separate 배율을 표시 시작 위치에서 컴파일하고 노트와 같은
+GameplayPresenter::LaneObjectPosition으로 Whole 거리와 함께 배치합니다.
+음수 delay의 살아남은 마디 시작과 느린 마디선의 표시 시간 범위도 반영합니다.
+Roll/BigRoll/Balloon/DengDeng의 Preview는 Unjudged이며 구간·타격수로만 점수를
+계산합니다. 동/캇 제한과 OK/MISS 완료 표시는 유지하고 TickRoll/Buzz는 시작 판정을 유지합니다.
+계약은 [플레이 표시](Gameplay/Presentation.md)와 [판정 규칙](Gameplay/Rules.md),
+검증은 [Verification](Verification.md)를 참고합니다.
 
 ## 최근 구현: 상단 진행바 (2026-10-12)
 

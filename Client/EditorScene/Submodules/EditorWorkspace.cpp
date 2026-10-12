@@ -62,6 +62,7 @@ void EditorWorkspace::TogglePlayback()
     playback_.Toggle();
     timeMs_ = playback_.Position().count() / 1000.0;
     nextZToZero_ = false;
+    nextXToMusicEnd_ = false;
     RequestRebuild();
 }
 void EditorWorkspace::SeekFirstNote()
@@ -69,6 +70,20 @@ void EditorWorkspace::SeekFirstNote()
     const bool zero = nextZToZero_;
     Seek(zero ? 0 : Document().NoteTimeRange().first.count() / 1000.0);
     nextZToZero_ = !zero;
+}
+void EditorWorkspace::SeekLastNote()
+{
+    const bool musicEnd = nextXToMusicEnd_;
+    double milliseconds = Document().NoteTimeRange().second.count() / 1000.0;
+    if (musicEnd)
+    {
+        const auto duration = analysis_.MusicDurationSeconds();
+        if (!duration)
+            throw std::runtime_error("Music duration is not ready. Wait for audio analysis and press X again.");
+        milliseconds = *duration * 1000.0;
+    }
+    Seek(milliseconds);
+    nextXToMusicEnd_ = !musicEnd;
 }
 void EditorWorkspace::SetRealtimeZoom(const double factor)
 {
@@ -111,6 +126,7 @@ void EditorWorkspace::Seek(double milliseconds)
     playback_.Seek(editor_time::Microseconds(milliseconds));
     timeMs_ = milliseconds;
     nextZToZero_ = false;
+    nextXToMusicEnd_ = false;
     RequestRebuild();
 }
 void EditorWorkspace::SetFirstMeasure(std::int64_t measure)

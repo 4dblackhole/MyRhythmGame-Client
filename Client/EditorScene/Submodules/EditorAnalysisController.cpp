@@ -99,7 +99,7 @@ namespace
             // Resource release must remain safe during low-memory shutdown.
         }
     }
-}
+} // namespace
 
 void EditorAnalysisController::Stop() noexcept
 {
@@ -158,11 +158,22 @@ bool EditorAnalysisController::Update(const chart::IEditorDocument &document, co
     }
     RetireAnalysis(std::move(analysis_));
     analysis_ = std::move(job_->result);
+    analyzedFilesRevision_ = filesRevision_;
     ++analysisRevision_;
     job_.reset();
     if (!analysis_->errors.empty())
         status = analysis_->errors;
     return true;
+}
+
+std::optional<double> EditorAnalysisController::MusicDurationSeconds() const
+{
+    // Old FFT data may stay visible while a new source is analyzed, but it
+    // must never supply a seek destination for the replacement music file.
+    if (analysisDirty || job_ || !analysis_ || analyzedFilesRevision_ != filesRevision_)
+        return std::nullopt;
+    const auto music = analysis_->sounds.find("Music");
+    return music == analysis_->sounds.end() ? std::nullopt : std::optional{music->second.durationSeconds};
 }
 
 void EditorAnalysisController::CacheAudioMarkers(const chart::IEditorDocument &document, const IEditorAudioSource &mode)

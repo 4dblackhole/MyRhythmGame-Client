@@ -1,7 +1,8 @@
 #pragma once
-#include "Mode/Submodules/PlaySessionTypes.h"
 #include "Automation/ScrollAutomation.h"
 #include "Mode/Results/IPlayResultCollector.h"
+#include "Mode/Submodules/PlaySessionTypes.h"
+#include <algorithm>
 
 namespace finger_drum::mode
 {
@@ -20,15 +21,15 @@ namespace finger_drum::mode
         [[nodiscard]] const std::map<rhythm::SoundId, std::filesystem::path> &HitSoundFiles()
             const noexcept;
         void SetSoundOverrides(rhythm::SoundId source, std::vector<TimedSoundOverride> changes);
-        void SetMeasureLines(std::vector<rhythm::RhythmTime> measureLines);
-        [[nodiscard]] const std::vector<rhythm::RhythmTime> &MeasureLines() const noexcept;
+        void SetMeasureLines(std::vector<MeasureLinePresentationInfo> measureLines);
+        [[nodiscard]] const std::vector<MeasureLinePresentationInfo> &MeasureLines() const noexcept;
         void SetNotePresentation(rhythm::NoteId noteId, NotePresentationInfo presentation);
         [[nodiscard]] const NotePresentationInfo *FindNotePresentation(
             rhythm::NoteId noteId) const noexcept;
         void SetNoteScrollMultiplier(rhythm::NoteId noteId, double multiplier);
         [[nodiscard]] double MinimumScrollMultiplier() const noexcept
         {
-            return minimumScrollMultiplier_ * scroll_.MinimumMultiplier();
+            return std::min(minimumScrollMultiplier_, minimumMeasureScrollMultiplier_) * scroll_.MinimumMultiplier();
         }
         long double ScrollDistance(rhythm::RhythmTime target, rhythm::RhythmTime current) const
         { return scroll_.Distance(target, current); }
@@ -75,12 +76,13 @@ namespace finger_drum::mode
         mutable std::vector<std::pair<std::size_t, std::size_t>> automationIndices_;
         mutable std::vector<std::optional<double>> automationLastValues_;
         mutable std::string automationError_;
-        std::vector<rhythm::RhythmTime> measureLines_;
+        std::vector<MeasureLinePresentationInfo> measureLines_;
         std::map<rhythm::SoundId, std::filesystem::path> hitSoundFiles_;
         std::map<rhythm::SoundId, std::vector<TimedSoundOverride>, std::less<>> soundOverrides_;
         std::uint64_t accuracySum_{};
         std::unique_ptr<IPlayResultCollector> resultCollector_;
         double minimumScrollMultiplier_{1};
+        double minimumMeasureScrollMultiplier_{1};
         std::size_t finalizedNoteCount_{};
         std::optional<rhythm::NoteAccuracy> lastNoteAccuracy_;
     };

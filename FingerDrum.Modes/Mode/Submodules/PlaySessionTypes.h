@@ -32,6 +32,12 @@ namespace finger_drum::mode
         double value{};
     };
 
+    struct MeasureLinePresentationInfo
+    {
+        rhythm::RhythmTime timing{};
+        double scrollMultiplier{1};
+    };
+
     struct TimedSoundOverride
     {
         rhythm::RhythmTime time{};

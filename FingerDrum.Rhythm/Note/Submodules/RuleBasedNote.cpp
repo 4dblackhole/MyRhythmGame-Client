@@ -89,6 +89,10 @@ namespace finger_drum::rhythm
 
     JudgementResult RuleBasedNote::Preview(const RhythmInputEvent &input) const noexcept
     {
+        // Count-only interval rules own their start/end bounds. They have no
+        // head timing grade for Lane gating, POOR feedback or timing statistics.
+        if (accuracy_.target.kind == NoteAccuracyKind::HitCount)
+            return {JudgementGrade::Unjudged, {}, 1.0};
         return profile_->Evaluate(timing_, input.time);
     }
 
