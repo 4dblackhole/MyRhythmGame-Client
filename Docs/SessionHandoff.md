@@ -20,7 +20,19 @@
   효과 테스트 YME 1개·WAV 2개는 외부 `assets/Songs`입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
-## 최근 검증: Omoiyoshino 변환·실제 재생 (2026-10-12)
+## 최근 수정: 변환기 안내의 Client 문서 참조 (2026-10-12)
+
+변환기의 판정/틱롤/뎅뎅 안내와 README는 Client `main`의
+`Docs/Gameplay/Rules.md`를 최신 설명의 기준으로 링크합니다. Converter.cpp의
+ClientRulesNotice가 링크를 한 곳에서 붙이며 세부 플레이 규칙과 기본 판정 레벨 수치를
+따로 복제하지 않습니다. 객체 대응과 OD 기반 HitCount는 변환기 설명으로 유지합니다.
+변환 데이터/JSON 구조/플레이 규칙은 변경하지 않았습니다. Debug/Release 전체 빌드,
+변환기 3개 프로젝트 MSVC 분석(경고/오류 0), Core/CLI/실제 카탈로그,
+Client 49개 로직/카탈로그와 각 4개 smoke, 구조/차이 검사를 통과했습니다.
+Omoiyoshino 재변환에서 새 안내를 확인했고 기존 YMM/YMP/YME/음원의 해시가 동일했습니다.
+최신 변환기 EXE도 두 구성의 게임 EXE 옆에 반영했습니다. 상세는 Verification을 참고합니다.
+
+## 이전 검증: Omoiyoshino 변환·실제 재생 (2026-10-12)
 
 osu! 설치 폴더 `D:/Rhythm Games/osu!/Songs`의 Omoiyoshino / Inner Oni /
 Konpaku Sariel(v14, Mode 1)을 변환기 Debug/Release EXE로 변환했습니다.
@@ -32,7 +44,7 @@ Konpaku Sariel(v14, Mode 1)을 변환기 Debug/Release EXE로 변환했습니다
 변환기 Core/카탈로그 및 CLI 회귀는 두 구성 성공했고, Release 실제 D3D12/FMOD
 자동 재생으로 861개 노트 완료/100%/8,130프레임을 확인했습니다. 두 구성의 네 smoke도
 성공했습니다. 수동 화면·물리 입력·청음은 확인하지 않았습니다.
-변환기 JSON의 `exclude the tail` 안내는 구형 문구가 남은 상태입니다. 실제 플레이는
+이 검증 당시 변환기 JSON의 `exclude the tail` 안내는 구형 문구가 남은 상태였습니다. 실제 플레이는
 닫힌 틱 구간을 사용합니다. 이번에는 제품 C++ 코드를 변경하지 않고 검증 결과만 기록했습니다.
 
 ## 최근 구현: 테일 틱의 닫힌 구간 (2026-10-12)

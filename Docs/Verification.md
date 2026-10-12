@@ -79,6 +79,32 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 변환기 안내의 Client 최신 문서 참조
+
+- 변환기 Core/Converter.cpp의 ClientRulesNotice는 판정/슬라이더/스피너 안내에
+  Client `main`의 `Docs/Gameplay/Rules.md` 링크를 붙입니다. 세부 틱 끝점/입력/점수 규칙과
+  기본 JudgeLevel 수치를 별도 설명으로 복제하지 않습니다. Converter README와 Client
+  OsuTaikoConverter 문서도 같은 판정 문서를 기준으로 하고 구형 테일 제외 설명을 제거했습니다.
+- 경고 문자열 외 변환 로직, JSON 필드 구조, YMM/YMP/YME/음원과 플레이 코드/엔진은
+  변경하지 않았습니다. JSON의 warnings는 기존 배열 형식을 유지합니다. 공통 함수는
+  호출 중 메시지를 소유 string으로 복사해 반환하며 Scene/런타임 소유권에 영향이 없습니다.
+- Debug/Release x64 전체 solution Rebuild 성공: 경고/오류 0. 실제 구성의 include/define/C++20
+  설정으로 Converter.Core/EXE/Tests 3개 프로젝트의 MSVC 14.44.35207 Code Analysis를
+  각 구성 `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`로 실행했습니다.
+  파싱/컴파일 오류 및 분석 경고 0이며 억제는 추가하지 않았습니다.
+- 각 구성 변환기 Core/기존 Omoiyoshino 카탈로그·861개 세션 및 CliTests.ps1 성공.
+  게임 EXE 옆의 최신 변환기로 같은 원본 복사본을 새 ignored TestData 출력에 재변환했습니다.
+  두 구성 exit 0, 861개 객체/864행/최대 이동 1.1428571428114083ms 유지.
+  판정/롤/스피너 안내 3개에 최신 문서 링크가 있고 구형 테일 제외 안내는 없습니다.
+  새 YMM/YMP/YME/음원을 이전 검증 결과와 파일 해시로 대조해 모두 동일함을 확인했습니다.
+- 각 구성 Client 로직/기본 카탈로그 49개/실패 0, 네 smoke 총 8개 exit 0.
+  CheckArchitecture 성공(11개 프로젝트), Client/변환기 git diff --check 성공.
+  기존 runtime Omoiyoshino 파일과 Option.ini, 사용자 LaneKeyBeam.cpp를 보존했습니다.
+  실행 폴더의 변환기 EXE는 정적 분석 후 빌드된 최신 EXE로 갱신했습니다.
+- 이번 수정은 안내와 문서 변경이며 수동 UI/물리 입력/청음은 확인하지 않았습니다.
+  변환 데이터가 동일하므로 이전의 861개 실제 D3D12/FMOD replay 결과를 아래 기록에서
+  참고합니다. 이번 작업에서 곡 전체 replay를 다시 실행한 것으로 보고하지 않습니다.
+
 ## 2026-10-12 Omoiyoshino / Inner Oni 실제 변환·재생
 
 - 입력은 설치된 osu!의 `1006535 loos feat Hiiragi Rian - Omoiyoshino` 폴더,
