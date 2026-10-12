@@ -28,6 +28,7 @@ Client 솔루션은 변환기의 Core 정적 라이브러리, 콘솔 EXE, 테스
 
 - `Core/Submodules/OsuDocument`: 원본 문법, 수치·모드 검증.
 - `Core/Submodules/TimingMap`: BPM 기준점, 최근접 틱, omit 마디 길이.
+- `Core/Submodules/OutputWriting`: BPM·속도 반올림과 소수점 셋째 자리까지의 파일 출력.
 - `Core/Converter`: 노트/효과 대응, 기존 파서 저장 왕복과 실제 Taiko 세션 검증.
 - `Core/ConversionFiles`: 음원 복사, 상대 경로, 임시 출력 후 디렉터리 확정.
 - `App/Main`: UTF-16 Windows 인자, UTF-8 JSON stdout, stderr/종료 코드.
@@ -77,6 +78,12 @@ Client에서 사용할 때 EXE 경로를 직접 지정하고 Windows 인자 인�
   `--extra-divisors`로 1~1024 범위의 정수 분모를 추가합니다. 중복은 제거합니다.
 - 노트 시작/끝과 효과 시각은 시간상 가장 가까운 틱으로 이동합니다. 최대 허용 오차는
   없고 동률이면 앞 틱을 택합니다. BPM 경계 양쪽의 유효한 후보도 비교합니다.
+- Base BPM·변경 BPM·최종 스크롤 속도 배율은 소수점 넷째 자리에서 반올림하여
+  셋째 자리까지만 기록합니다. 끝의 불필요한 0은 생략합니다. BPM 반올림은 격자와
+  마디 위치 계산에도 적용하여 저장된 BPM과 일치시키며 빨간 포인트의 원본 ms는 유지합니다.
+  슬라이더 원본 길이는 반올림 전 값으로 계산한 뒤 격자에 맞춥니다.
+  SV·BPM 비율 계산은 정밀도를 유지하고 최종 속도 배율만 반올림합니다.
+  속도가 0으로 반올림되면 Client의 양수 속도 조건에 따라 변환을 거부합니다.
 - 빨간 포인트는 원본 시각의 BPM·격자 기준점입니다. omit이 꺼진 중간 빨간 포인트는
   앞 마디를 짧게 종료합니다. omit이 켜지면 앞 부분과 새 박자표의 한 마디를 합칩니다.
   예: 2.5박 뒤 3/4 + omit이면 5.5박(`11/8`) 마디, 이후 3박 마디입니다.
@@ -115,3 +122,11 @@ Taiko lane이 노트를 누락시킬 겹침은 실패합니다. 첫 빨간 포�
 
 실제 맵 복사본과 음원은 변환기 저장소의 gitignore 대상 `TestData/`에만 둡니다.
 게임 기본곡이나 원격 저장소에 추가하지 않습니다.
+
+2026-10-12 소수점 정리 변경은 Debug/Release x64 전체 솔루션 Build, 변환기 회귀·CLI,
+기존 로직 각 52개 및 smoke 네 경로씩 총 8개를 통과했습니다. 실제 맵은 1,233개
+노트를 모두 로드하며 BPM/속도 필드에 소수점 셋째 자리 이후 숫자가 없음을 검사했습니다.
+MSVC 14.44 Code Analysis는 실제 include/define/C++20 및 두 x64 구성으로 변환기
+Core/Tests(구성별 번역 단위 6개)를 분석했고 경고·오류가 없습니다. 구조/필터 및
+양쪽 git diff --check도 통과했습니다. 로그는 `build/converter-rounding-2026-10-12`,
+새 실제 출력은 변환기 `TestData/Songs/Pandora-ThreeDecimals`에 있습니다.
