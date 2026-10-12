@@ -54,6 +54,8 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 전체 노트/Buzz 회귀는 `--catalog-root` 로직 테스트와
 [All-notes actual gameplay replay](../Tests/Presentation/README.md)를 두 구성에서 실행합니다.
 옵션/설정 파일 변경은 같은 문서의 Options panel regression을 두 구성에서 실행합니다.
+외부 자산 경로 변경은 같은 문서의 Development and deployment asset paths도
+두 구성에서 실행합니다. 같은 EXE의 이동과 다른 작업 폴더에서의 실행을 검사합니다.
 숫자 파서/자산 초기화의 예외 경계 변경은 같은 문서의 Allocation failure boundary regression도
 두 구성에서 실행합니다. 이 테스트는 실제 자산 캐시를 사용하지 않습니다.
 
@@ -78,6 +80,56 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 `Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접 빌드하고 로직·기본곡 카탈로그를
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
+
+## 2026-10-12 개발/배포 자산 경로·난이도별 파일 쌍
+
+- FingerDrum.Assets의 ExecutableDirectory는 EXE 위치를, UserAssetRoot는 개발용
+  `../../../Client/Assets` 또는 배포용 `Asset`을 프로세스마다 한 번 결정합니다.
+  Songs/기본 외부 스킨/SkinSetSelection이 같은 루트를 사용하고, OptionSettings는
+  자산 폴더와 관계없이 EXE 옆 INI를 사용합니다. Scene/엔진/내장 팩의 범위는 유지합니다.
+- Client 빌드는 기본곡을 개발용 Songs에 없는 경우에만 복사하며 난이도별 하위 폴더를
+  보존합니다. AngelDream 5개 난이도는 Patterns/angeldream 아래 이름별 YMP/YME 쌍입니다.
+  효과가 없는 4개에 빈 YME를 만들었고, 효과 채보의 YME/Sounds는 같은 난이도로 옮겼습니다.
+  기존 노트/타이밍/효과/사운드 데이터는 그대로이며 Effect file 경로만 변경했습니다.
+  프로젝트/필터와 직접 경로를 사용하는 디버그·Buzz/효과/실제 재생 테스트도 갱신했습니다.
+- 개발용 사용자 YMP 5개도 난이도별 폴더로 정리하고 빈 YME를 연결했습니다.
+  같은 Stream 이름은 기존 1.5x 파일명으로 폴더만 구분했습니다. 변경 전 원본은 ignored
+  `build/asset-layout-2026-10-12/OriginalUserPatterns`에 보관했고 노트 데이터 동일성을
+  검사했습니다. Omoiyoshino는 Music/Omoiyoshino 및 Patterns/Omoiyoshino/Inner Oni에
+  복사했습니다. YMP 참조 두 필드 외 데이터는 그대로이며 음원/YMM/YME의 SHA-256이
+  기존 변환본과 같습니다. 사용자 곡/스킨은 Git/내장 팩에 넣지 않았습니다.
+- Debug/Release x64 전체 solution Rebuild 성공, 최종 일반 빌드 경고/오류 0.
+  Release의 첫 시도는 ClientLogic CL.exe 종료 코드 1(MSB6006, 추가 컴파일 진단 없음)로
+  실패했으며 빌드 병렬도를 4로 제한한 전체 Rebuild에서 성공했습니다.
+- 실제 include/define/C++20 구성의 MSVC 14.44.35207 Code Analysis를
+  FingerDrum.Assets/MRG.Client/FingerDrum.Rhythm.Tests에 Debug/Release 각각
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`로 실행했습니다.
+  파싱/컴파일 오류와 새 분석 경고 0. 기존 C26115(EditorAnalysisController),
+  C28020(GameplaySessionController), Release C6236(GameplayInput)는 그대로이며 억제를
+  추가하지 않았습니다. AssetPathTests 및 옵션/실제 재생 테스트 소스도 MSVC 분석을 사용합니다.
+- 두 구성의 기본곡 카탈로그/로직 49개 모두 성공(1곡/5패턴). 분리된 배포용 Songs에
+  기본곡과 Omoiyoshino를 넣은 검사도 두 구성 49개 성공(2곡/6패턴), 각 Taiko 세션을
+  생성하고 저장 왕복 및 파일 존재를 확인했습니다.
+- 추가 검사인 개발용 Songs 전체 검사는 Debug에서 기존 사용자 채보 5개의
+  `#measurelinevisible` 명령으로 TestSongCatalog가 실패했습니다(49개 중 1개).
+  현재 YMP가 지원하지 않는 구형 명령이며 이동 전 파일에도 동일하게 존재합니다.
+  요청 범위를 넘어 삭제/재해석하지 않았고 원본을 보존했습니다. 이 결과를 전체 성공으로
+  취급하지 않습니다. 제품 카탈로그는 기존 규칙대로 해당 패턴만 제외합니다.
+- AssetPathTests는 두 구성에서 같은 EXE를 독립된 개발/배포 트리에 복사하고 작업
+  폴더를 반대로 지정해 실행했습니다. Songs/외부 기본 스킨/INI 위치 모두 성공했고
+  사용자 설정/스킨/내장 캐시는 변경하지 않았습니다. 옵션 저장 및 실제 FMOD
+  Automatic→WASAPI/드라이버 변경 회귀도 두 구성 성공했습니다.
+- 개발 실행의 네 smoke는 각 구성 성공했습니다. Release EXE를 별도 TEMP Game 폴더에
+  복사하고 `Asset/Songs`만 배치한 뒤, CWD를 개발용 Assets로 지정해 실행한 네 smoke도
+  성공했습니다. 경로만 변경한 EXE에서 내장 기본 스킨/글꼴도 정상 초기화됐습니다.
+- 실제 D3D12/FMOD 자동 replay는 두 구성 모두 전체 종류 19개 완료/85.1837%/
+  1,557프레임, 효과 15개 완료/97.8897%/1,302프레임으로 기존 결과와 동일합니다.
+  창은 숨김이고 입력은 자동 공급입니다. 실제 픽셀/물리 키·마우스/청음은 수동 확인하지
+  않았습니다. 구조 검사는 11개 프로젝트, git diff --check도 성공했습니다.
+- 로그와 사용자 파일 hash 기록은 ignored `build/asset-layout-2026-10-12`입니다.
+  기존 LaneKeyBeam.cpp 및 Debug/Release Option.ini의 hash를 보존했습니다.
+  엔진 및 변환기 C++ 코드는 변경하지 않았습니다. 변환기의 향후 파일 배치 변경은
+  사용자에게 적용 범위를 질문한 상태이며 확정 전에는 구현하지 않습니다.
 
 ## 2026-10-12 변환기 안내의 Client 최신 문서 참조
 

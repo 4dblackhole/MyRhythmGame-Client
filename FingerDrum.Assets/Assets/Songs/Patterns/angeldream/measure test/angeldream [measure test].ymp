@@ -1,9 +1,10 @@
 [Metadata]
 Music metadata: Music/Angeldream/angel dream hand shaking.ymm
+Effect file: angeldream [measure test].yme
 Pattern Maker Count: 2
 Pattern Maker 1: Konpaku Sariel
 Pattern Maker 2: Youmu
-Pattern Name: test
+Pattern Name: measure test
 Tags: test
 
 Pattern Offset: 104
@@ -17,40 +18,34 @@ JudgeLevel: 50
 [HitSounds]
 
 [Time Signature]
+
+#measure 5/4
+--
+--
+#measure 17/16
 --
 
-0/1,#bpm 360
+#measure 6/4
 --
+#measure 4/4
 --
-0/1,#bpm 180
 --
 --
 --
 
 [Pattern]
 0/8,1,0
-1/8,2,0
-2/8,1,0
-3/8,2,0
-4/8,1,0
-5/8,2,0
-6/8,1,0
-7/8,2,0
 --
 0/8,1,0
-1/8,2,0
-2/8,1,0
-3/8,2,0
-4/8,1,0
-5/8,2,0
-6/8,1,0
-7/8,2,0
 --
 0/8,1,0
-1/8,2,0
-2/8,1,0
-3/8,2,0
-4/8,1,0
-5/8,2,0
-6/8,1,0
-7/8,2,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0
+--
+0/8,1,0

@@ -16,9 +16,32 @@
 - 커밋과 동기화 상태는 Git이 기준입니다. 문서에 고정 SHA를 복제하지 않습니다.
 - C++20 / MSVC v143 / Windows / D3D12. Client의 엔진 경계는 `MRG_Core.h` 하나입니다.
 - 판정/차트/모드/편집 분석은 엔진 비종속 프로젝트입니다. Scene은 수명주기와 조립을 맡습니다.
-- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP 5개와
-  효과 테스트 YME 1개·WAV 2개는 외부 `assets/Songs`입니다.
+- 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP/YME 5쌍과
+  효과 테스트 WAV 2개는 외부 Songs입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
+
+## 최근 구현: 개발/배포 자산 경로·난이도별 파일 쌍 (2026-10-12)
+
+외부 자산 경로는 FingerDrum.Assets의 UserAssetRoot에서 한 번 결정합니다.
+EXE 기준 `../../../Client/Assets`가 있으면 개발용 폴더, 없으면 EXE 옆 `Asset`을
+사용합니다. 작업 폴더와 Debug/Release 구성에 의존하지 않습니다.
+Songs와 Skins는 이 루트를 공유하고 Option.ini는 ExecutableDirectory를 사용합니다.
+내장 기본 스킨/글꼴은 유지합니다. 빌드는 기본곡을 개발용 Songs에 없는 경우에만 복사합니다.
+
+AngelDream 5개 난이도는 `Songs/Patterns/angeldream/<Pattern Name>`에 YMP/YME를
+같은 이름으로 두며 효과용 Sounds도 해당 난이도가 소유합니다. 효과가 없는 패턴은
+빈 YME를 참조합니다. 현재 개발용 사용자 채보도 난이도별 폴더로 정리했습니다.
+같은 Stream 이름의 두 패턴은 기존 파일명의 1.5x로 폴더만 구분합니다.
+음원/노트 데이터는 보존했고 이동 전 사용자 YMP는 ignored build의
+`asset-layout-2026-10-12/OriginalUserPatterns`에도 보관했습니다.
+Omoiyoshino는 개발용 `Music/Omoiyoshino` 및 `Patterns/Omoiyoshino/Inner Oni`에
+복사했으며 Git/내장 자산에 넣지 않았습니다. 이전 bin의 외부 곡은 삭제하지 않았습니다.
+
+기존 사용자 채보 5개에는 지원되지 않는 #measurelinevisible 명령이 남아 있습니다.
+개발 Songs 전체 검사는 이 기존 오류로 실패하지만 정상 패턴은 카탈로그에 유지됩니다.
+이 요청에서 구형 명령의 의미나 파일 형식을 임의로 바꾸지는 않았습니다.
+변환기의 향후 출력 배치까지 바꿀지는 사용자 확인 대기이며 변환기 코드는 변경하지 않았습니다.
+경로/배포/파일 쌍 계약은 BuiltInAssets, 실제 검증 결과는 Verification이 기준입니다.
 
 ## 최근 수정: 변환기 안내의 Client 문서 참조 (2026-10-12)
 

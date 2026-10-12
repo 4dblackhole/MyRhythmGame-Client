@@ -48,7 +48,8 @@ namespace
                     song = &entry;
             Require(song != nullptr, "Actual engine replay requires AngelDream music.");
             auto loaded = mode::TaikoMode{}.LoadSession(root / (effects_
-                ? "Pattern/angeldream/angeldream [effects test].ymp" : "Pattern/angeldream/angeldream [all notes test].ymp"));
+                ? "Patterns/angeldream/YME Effects Verification/angeldream [effects test].ymp"
+                : "Patterns/angeldream/All Notes Verification/angeldream [all notes test].ymp"));
             Require(loaded.Succeeded(), "All-notes gameplay chart must load.");
             session_ = std::move(loaded.session);
             Require(!effects_ || session_->Gear().Lanes().front()->Notes().size() == 15,

@@ -128,12 +128,13 @@ has no game autoplay route and does not change options or user songs/skins.
 
 The window is hidden and input timestamps are supplied directly to PlaySession.
 This verifies real rendering/audio execution, not pixel appearance, hearing,
-physical keyboard Raw Input or mouse interaction. The test requires Songs beside
-its executable; it fails when the all-notes chart or music is absent.
+physical keyboard Raw Input or mouse interaction. The test uses the production
+asset-root resolver (Client/Assets during development, Asset beside deployed copies);
+it fails when the all-notes chart or music is absent.
 
 `-Effects` compiles this test with `TEST_YME_EFFECTS` and loads AngelDream
 `YME Effects Verification` instead. It is a test-runner option, not a game CLI route.
-The explicit YMP reference resolves a YME in `Effects/`, including its relative
+The explicit YMP reference resolves its paired YME in the same difficulty directory, including its relative
 sound table. The same real engine/presenter/router run plays all 15 logical notes
 with Whole/Separate curves, hit-sound changes/volume and syncopation ranges.
 The dense Buzz head is deliberately late: 2 of 37 body ticks must fail and the
@@ -142,3 +143,19 @@ YmeEffectsTests separately checks every expanded judgement boundary, exclusions,
 all interpolation types, position continuity, sound precedence and Kiai ON/OFF state.
 This remains hidden-window automation; it does not verify audible volume differences
 or the visual appearance of motion.
+
+## Development and deployment asset paths
+
+After a solution build, run from an x64 Visual Studio developer PowerShell:
+
+```powershell
+./Tests/Presentation/RunAssetPathTests.ps1 -Configuration Debug
+./Tests/Presentation/RunAssetPathTests.ps1 -Configuration Release
+```
+
+This links the actual asset library and OptionSettings object. The same binary is
+copied to isolated development/deployment directory trees and launched with CWD
+pointing to the opposite tree. It checks external Songs/default-skin paths and
+that Option.ini stays beside the EXE. Fixtures stay under ignored build output;
+no user settings, songs, skins or embedded cache are changed. The test source
+uses MSVC Code Analysis. Catalog tests separately check the AngelDream YMP/YME pairs.

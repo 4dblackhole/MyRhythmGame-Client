@@ -72,11 +72,13 @@ Debug/Release 로직·카탈로그를 검사합니다. 선택 실행(`--filter`)
 에디터의 오디오 탭은 음악 파형·음악 FFT·예상 히트사운드 FFT를 별도로 표시하며,
 패턴/오디오 탭의 하단 타임라인을 드래그해 현재 편집 시각을 탐색합니다.
 Debug/Release 모두 게임 Scene만 포함합니다. 배포할 때는 깨끗한 폴더에
-`MyRhythmGame.exe`, `fmod.dll`, 제공할 `assets/Songs`만 복사합니다.
+`MyRhythmGame.exe`, `fmod.dll`, 제공할 `Asset/Songs`를 복사합니다.
+개발 실행은 `Client/Assets`, 다른 폴더에 복사한 EXE는 그 옆 `Asset`을 사용합니다.
+YMP/YME는 `Songs/Patterns/<곡>/<난이도>`에 한 쌍씩 정리합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는
 [실행 흐름](Docs/ExecutionFlow.md), 외부 파일 우선 및 내장 fallback/배포곡 정책은
-[자산](Docs/BuiltInAssets.md)에서 설명합니다. 스킨은 실행 파일 옆
-`assets/skins`의 폴더를 옵션 패널에서 선택하며 다음 실행에도 유지됩니다.
+[자산](Docs/BuiltInAssets.md)에서 설명합니다. 스킨은 선택한 자산 루트의
+`Skins` 폴더를 옵션 패널에서 선택하며 다음 실행에도 유지됩니다.
 한국어/영어와 옵션 패널은
 [텍스트 관리](Docs/TextManagement.md)에서 관리합니다. 패널에서 FMOD, 일반(자동)/WASAPI/ASIO,
 실제 출력 드라이버를 선택하며 출력 방식/장치 변경은 즉시 적용합니다.

@@ -37,8 +37,8 @@ Client 솔루션은 변환기의 Core 정적 라이브러리, 콘솔 EXE, 테스
 ```powershell
 .\bin\x64\Release\OsuTaikoConverter.exe `
   --input "D:\Maps\song.osu" `
-  --songs-root "D:\Game\assets\Songs" `
-  --output-dir "D:\Game\assets\Songs\Imported\song" `
+  --songs-root "D:\Game\Asset\Songs" `
+  --output-dir "D:\Game\Asset\Songs\Imported\song" `
   --extra-divisors "40,48"
 ```
 

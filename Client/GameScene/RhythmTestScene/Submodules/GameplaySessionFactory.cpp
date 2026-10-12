@@ -99,7 +99,7 @@ void GameplaySessionController::PrepareDebugLaunchRequest()
     }
     const std::filesystem::path songs = mrg_client::asset_paths::UserSongs();
     const std::filesystem::path patternPath =
-        songs / L"Pattern\\angeldream\\angeldream [long notes test].ymp";
+        songs / L"Patterns\\angeldream\\Long Notes Debug\\angeldream [long notes test].ymp";
     const std::filesystem::path musicPath =
         songs / L"Music\\Angeldream\\angel dream hand shaking.mp3";
     if (!std::filesystem::is_regular_file(patternPath) ||

@@ -12,7 +12,7 @@ ThirdParty/
 *.dll
 *.lib
 
-# Songs and skins placed beside the executable are user-added local content.
+# Development Songs and skins are user-added local content.
 # Redistributed fallback content is tracked by FingerDrum.Assets instead.
 Client/Assets/Songs/
 Client/Assets/Skins/

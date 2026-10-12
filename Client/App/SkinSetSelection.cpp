@@ -14,7 +14,7 @@ namespace mrg_client
 
     std::filesystem::path SkinSetSelection::SkinsRoot()
     {
-        return finger_drum::assets::UserSongsRoot().parent_path() / L"skins";
+        return finger_drum::assets::UserAssetRoot() / L"Skins";
     }
 
     std::vector<std::wstring> SkinSetSelection::AvailableNames() const

@@ -16,6 +16,11 @@ namespace finger_drum::assets
 
     [[nodiscard]] bool BuiltInAssetsInitialized() noexcept;
     [[nodiscard]] std::filesystem::path BuiltInAssetRoot();
+    [[nodiscard]] std::filesystem::path ExecutableDirectory();
+
+    // Uses ../../../Client/Assets relative to the executable when that directory
+    // exists; deployed copies use Asset beside the executable. Selected once.
+    [[nodiscard]] std::filesystem::path UserAssetRoot();
     [[nodiscard]] std::filesystem::path UserSongsRoot();
 
     [[nodiscard]] std::filesystem::path ResolveBuiltInAsset(

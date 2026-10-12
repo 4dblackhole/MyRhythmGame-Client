@@ -121,7 +121,7 @@ namespace mrg_client
 
     std::filesystem::path OptionSettings::NextToExecutable()
     {
-        return finger_drum::assets::UserSongsRoot().parent_path().parent_path() / L"Option.ini";
+        return finger_drum::assets::ExecutableDirectory() / L"Option.ini";
     }
 
     bool OptionSettings::Load(std::string &error)

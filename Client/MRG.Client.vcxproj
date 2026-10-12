@@ -96,26 +96,17 @@
   </ItemGroup>
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <ItemGroup>
-      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Music\Angeldream\*.*">
-        <RuntimeDirectory>Music\Angeldream</RuntimeDirectory>
-      </DefaultSong>
-      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\Effects\*.yme">
-        <RuntimeDirectory>Pattern\angeldream\Effects</RuntimeDirectory>
-      </DefaultSong>
-      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\Effects\Sounds\*.wav">
-        <RuntimeDirectory>Pattern\angeldream\Effects\Sounds</RuntimeDirectory>
-      </DefaultSong>
-      <DefaultSong Include="..\FingerDrum.Assets\Assets\Songs\Pattern\angeldream\*.ymp">
-        <RuntimeDirectory>Pattern\angeldream</RuntimeDirectory>
-      </DefaultSong>
+      <DefaultMusic Include="..\FingerDrum.Assets\Assets\Songs\Music\Angeldream\*.*" />
+      <DefaultPattern Include="..\FingerDrum.Assets\Assets\Songs\Patterns\angeldream\**\*.*" />
     </ItemGroup>
-    <!-- Never replace chart/audio files edited by a user in the output folder. -->
-    <Copy SourceFiles="@(DefaultSong)" DestinationFiles="@(DefaultSong->'$(OutDir)assets\Songs\%(RuntimeDirectory)\%(Filename)%(Extension)')"
-          Condition="!Exists('$(OutDir)assets\Songs\%(DefaultSong.RuntimeDirectory)\%(DefaultSong.Filename)%(DefaultSong.Extension)')" />
+    <!-- Development builds share one Songs directory and never replace edited files. -->
+    <Copy SourceFiles="@(DefaultMusic)" DestinationFiles="@(DefaultMusic->'$(ProjectDir)Assets\Songs\Music\Angeldream\%(Filename)%(Extension)')"
+          Condition="!Exists('$(ProjectDir)Assets\Songs\Music\Angeldream\%(DefaultMusic.Filename)%(DefaultMusic.Extension)')" />
+    <Copy SourceFiles="@(DefaultPattern)" DestinationFiles="@(DefaultPattern->'$(ProjectDir)Assets\Songs\Patterns\angeldream\%(RecursiveDir)%(Filename)%(Extension)')"
+          Condition="!Exists('$(ProjectDir)Assets\Songs\Patterns\angeldream\%(DefaultPattern.RecursiveDir)%(DefaultPattern.Filename)%(DefaultPattern.Extension)')" />
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(ProjectDir)..\..\OsuTaikoConverter\bin\$(Platform)\$(Configuration)\OsuTaikoConverter.exe"
           DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-    <MakeDir Directories="$(OutDir)assets" />
   </Target>
   <Target Name="EnsureFmodLibraries" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(Configuration)' == 'Debug' and !Exists('$(FmodLibraryDir)\fmodL_vc.lib')" Text="FMOD debug x64 library was not found. Set FMOD_ROOT or pass /p:FmodRoot=&quot;path to FMOD Studio API Windows&quot;." />

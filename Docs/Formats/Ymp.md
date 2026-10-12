@@ -11,7 +11,7 @@ UTF-8 텍스트이며 빈 줄과 `//`로 시작하는 줄을 무시합니다. �
 ```text
 [Metadata]
 Music metadata: Music/Angeldream/angel dream hand shaking.ymm
-Effect file: Effects/angeldream-effects.yme
+Effect file: angeldream [long notes test].yme
 Pattern Maker Count: 1
 Pattern Maker 1: Maker Name
 Pattern Name: Long Notes Test

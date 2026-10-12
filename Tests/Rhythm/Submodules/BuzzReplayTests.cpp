@@ -76,10 +76,10 @@ namespace finger_drum::tests
 
     void TestAngelDreamAllNotesReplay(const std::filesystem::path &songsRoot)
     {
-        auto loaded = mode::TaikoMode{}.LoadSession(songsRoot / "Pattern/angeldream/angeldream [all notes test].ymp");
+        auto loaded = mode::TaikoMode{}.LoadSession(songsRoot / "Patterns/angeldream/All Notes Verification/angeldream [all notes test].ymp");
         Require(loaded.Succeeded(), "Real AngelDream all-notes YMP must load.");
         const auto parsed =
-            chart::ChartParser{}.ParsePatternFile(songsRoot / "Pattern/angeldream/angeldream [all notes test].ymp");
+            chart::ChartParser{}.ParsePatternFile(songsRoot / "Patterns/angeldream/All Notes Verification/angeldream [all notes test].ymp");
         std::set<int> types;
         for (const auto &note : parsed.document.notes)
             types.insert(note.keyType);

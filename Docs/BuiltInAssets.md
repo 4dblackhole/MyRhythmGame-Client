@@ -1,4 +1,4 @@
-# EXE 내장 기본 자산
+# 내장·외부 자산과 배포
 
 `FingerDrum.Assets`는 배포에 필요한 기본 자산을 한 팩으로 만들고 RCDATA 101로
 `MyRhythmGame.exe`에 링크하는 전용 프로젝트입니다. 런타임 로더는 기존 PNG,
@@ -9,14 +9,29 @@
 - `Assets/Skins/Default Skin` 전체
 - `Assets/Fonts`의 두 글꼴과 각각의 라이선스
 
-AngelDream Handshaking MP3 1개·YMM 1개·YMP 5개와 이펙트 테스트 YME 1개·WAV 2개는
+AngelDream Handshaking MP3 1개·YMM 1개·YMP/YME 5쌍과 이펙트 테스트 WAV 2개는
 EXE에 넣지 않습니다. 추가 WAV는 기본 스킨의 Don/Kat 원본을 재사용한 테스트 파일입니다.
 Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 시
-실행 파일 옆 `assets/Songs`에 복사합니다. 이미 존재하는 파일은 편집본일 수
-있으므로 덮어쓰지 않습니다. 배포할 때 이 Songs 폴더를 EXE와 함께 제공합니다.
+개발용 `Client/Assets/Songs`에 복사합니다. 이미 존재하는 파일은 편집본일 수
+있으므로 덮어쓰지 않습니다. 곡은 개발·배포 모두 외부 파일입니다.
+
+## 외부 자산 루트
+
+`UserAssetRoot`는 EXE 위치 기준 `../../../Client/Assets`가 디렉터리로 존재하면
+그 경로를 선택하고, 없으면 EXE 옆 `Asset`을 선택합니다. 선택은 프로세스마다
+한 번 수행합니다. 작업 폴더나 Debug/Release 구성에 의존하지 않으며 개발자의
+절대 경로를 EXE에 기록하지 않습니다.
+
+- 저장소의 `bin/x64/Debug` 또는 `bin/x64/Release`에서 실행: `Client/Assets`
+- 다른 폴더로 EXE를 복사해 실행: `<EXE 폴더>/Asset`
+- 곡: `<자산 루트>/Songs`, 사용자 스킨: `<자산 루트>/Skins`
+- `Option.ini`: 자산 루트와 별개로 항상 EXE 옆
+
+개발용 폴더의 존재 여부로 구분하므로 배포 폴더는 저장소의 빌드 위치와 분리합니다.
+내장 글꼴과 누락 스킨의 기본본은 기존 RCDATA 캐시에서 읽습니다.
 
 Release 배포 폴더에는 `MyRhythmGame.exe`와 같은 위치의 `fmod.dll`이 필요합니다.
-기본 곡을 제공할 때는 위의 `assets/Songs` 트리를 함께 넣습니다. 로고·기본 스킨·
+기본 곡을 제공할 때는 개발용 Songs에서 제공할 곡만 골라 `Asset/Songs`에 넣습니다. 로고·기본 스킨·
 글꼴만 필요하면 Songs 없이도 시작할 수 있으나 곡 목록은 비어 있습니다.
 `Client/Assets/Unused`의 예제 PNG는 어떤 구성에서도 복사하거나 로드하지 않습니다.
 기존 빌드 출력에 남아 있는 파일까지 빌드가 삭제하지는 않으므로 배포 파일은
@@ -27,7 +42,7 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 
 ## 빌드와 실행 흐름
 
-1. `Scripts/GenerateAssetPack.ps1`이 상대 경로, 크기, offset과 원본 bytes를
+1. `FingerDrum.Assets/Scripts/GenerateAssetPack.ps1`이 상대 경로, 크기, offset과 원본 bytes를
    결정적인 순서로 `BuiltInAssets.fdpak`에 기록합니다. 기존 캐시와 같은 FNV hash를
    빌드 시 계산해 작은 RCDATA 102로 함께 넣으므로 실행 때 팩 전체를 hash하지 않습니다.
 2. 생성된 RC를 컴파일한 `FingerDrum.Assets.res`를 `MRG.Client`가 링크합니다.
@@ -46,12 +61,12 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 
 스킨 파일 하나를 요청할 때의 순서는 다음과 같습니다.
 
-1. 실행 파일 옆 `assets/skins/<선택한 스킨 폴더>/<relative path>`
+1. `<자산 루트>/Skins/<선택한 스킨 폴더>/<relative path>`
 2. EXE에서 추출한 내장 `Default Skin/<relative path>`
 
 따라서 외부 스킨 디렉터리에 일부 파일만 있어도 존재하는 파일은 그대로 사용하고
-누락된 파일만 내장 기본본으로 대체합니다. 옵션 패널의 스킨 목록은 실행 파일 옆
-`assets/skins`의 하위 폴더를 읽으며 `Default Skin`은 외부 폴더가 없어도 표시합니다.
+누락된 파일만 내장 기본본으로 대체합니다. 옵션 패널의 스킨 목록은 선택한 자산 루트의
+`Skins` 하위 폴더를 읽으며 `Default Skin`은 외부 폴더가 없어도 표시합니다.
 선택한 폴더 이름은 EXE 옆 `Option.ini`의 `General/SkinSet`에 UTF-8로 저장되어
 다음 실행 때 복원됩니다. 설정 파일의 계약은 [TextManagement](TextManagement.md)에 있습니다.
 폴더가 사라지면 내장 기본 스킨을 선택합니다.
@@ -64,10 +79,35 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 fallback을 사용합니다. 인디케이터는 별도 색 구간 요소로 구성합니다.
 판정별 파일명과 표시 계약은 [Presentation](Gameplay/Presentation.md)에 있습니다.
 
-곡 선택은 실행 파일 옆 `assets/Songs`만 읽습니다. 곡을 캐시에서 다시 생성하지
+곡 선택은 선택한 자산 루트의 `Songs`만 읽습니다. 곡을 캐시에서 다시 생성하지
 않으며, YMP의 `Effect file`이 참조하는 YME도 사용자가 직접 편집할 수 있습니다.
 히트사운드 표의 경로는 YME 폴더 기준입니다. 내장 글꼴은 캐시 경로에서
 직접 읽으며 라이선스도 같은 팩에 보존됩니다.
+
+## 난이도별 파일 배치
+
+`Songs/Patterns/<곡 폴더>/<난이도 이름>`마다 YMP와 YME 한 쌍을 둡니다.
+두 파일은 같은 이름에 확장자만 다르게 작성하고, 효과가 없는 난이도에도 빈
+YME를 둡니다. YMP의 `Effect file`에는 같은 폴더의 YME 파일명을 적습니다.
+효과 전용 사운드는 그 난이도 폴더의 `Sounds`에 두고 YME 기준으로 참조합니다.
+
+```text
+Songs/
+  Music/Angeldream/angel dream hand shaking.ymm
+  Patterns/angeldream/
+    Dream/angeldream.ymp
+          angeldream.yme
+    All Notes Verification/angeldream [all notes test].ymp
+                           angeldream [all notes test].yme
+    YME Effects Verification/angeldream [effects test].ymp
+                             angeldream [effects test].yme
+                             Sounds/don.wav
+                             Sounds/kat.wav
+```
+
+YMP의 `Music metadata`는 계속 Songs 기준으로 공유 YMM을 참조합니다.
+카탈로그는 하위 폴더를 재귀 검색하므로 이 정리 때문에 파일 문법이나
+플레이 타이밍 규칙을 바꾸지는 않습니다. 에디터는 선택한 쌍을 같은 위치에 저장합니다.
 
 ## 자산 변경
 

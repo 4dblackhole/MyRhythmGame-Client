@@ -20,7 +20,7 @@
 | 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
 | 문구·언어·글꼴·오디오 옵션·Option.ini | [TextManagement](TextManagement.md) | `Client/Texts`, `Client/Presentation/OptionsPanel.*`, `Client/App/OptionSettings.*` |
 | Canvas·입력·클리핑 API 사용 | [Visual2DGuide](Visual2DGuide.md) | 해당 Scene의 Submodules |
-| 스킨 선택·자산 경로·fallback·배포곡 | [BuiltInAssets](BuiltInAssets.md) | `Client/App/SkinSetSelection.*`, `AssetPaths.h`, `FingerDrum.Assets` |
+| 개발/배포 자산 경로·난이도별 YMP/YME·스킨/fallback | [BuiltInAssets](BuiltInAssets.md) | `Client/App/SkinSetSelection.*`, `AssetPaths.h`, `FingerDrum.Assets` |
 | 시작·Scene 전환·종료·소유권 | [ExecutionFlow](ExecutionFlow.md) | `Client/App`, `Client/GameFlow` |
 | 엔진 API 자체 수정 | 엔진 AGENTS, EngineOverview의 해당 기능 | `Dependencies/MRG-Engine` |
 | Penpot 디자인 찾기 | [DesignReferences](DesignReferences.md) | 해당 화면 문서 |

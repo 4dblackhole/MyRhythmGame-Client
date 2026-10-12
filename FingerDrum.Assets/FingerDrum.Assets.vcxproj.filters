@@ -21,7 +21,6 @@
     <None Include="Assets\Fonts\*.*"><Filter>Assets</Filter></None>
     <None Include="Assets\Skins\Default Skin\**\*.*"><Filter>Assets</Filter></None>
     <None Include="Assets\Songs\Music\Angeldream\*.*"><Filter>Assets</Filter></None>
-    <None Include="Assets\Songs\Pattern\angeldream\*.ymp"><Filter>Assets</Filter></None>
-    <None Include="Assets\Songs\Pattern\angeldream\Effects\**\*.*"><Filter>Assets</Filter></None>
+    <None Include="Assets\Songs\Patterns\angeldream\**\*.*"><Filter>Assets</Filter></None>
   </ItemGroup>
 </Project>

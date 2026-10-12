@@ -48,6 +48,14 @@ namespace finger_drum::tests
             }
             for (const chart::SongCatalogPattern &pattern : song.patterns)
             {
+                if (song.metadataPath.filename() == "angel dream hand shaking.ymm")
+                {
+                    Require(pattern.effectPath.has_value() &&
+                                pattern.effectPath->parent_path() == pattern.patternPath.parent_path() &&
+                                pattern.effectPath->stem() == pattern.patternPath.stem() &&
+                                pattern.patternPath.parent_path().filename() == pattern.pattern.name,
+                            "Each AngelDream difficulty must own a same-directory YMP/YME pair.");
+                }
                 TemporaryDirectory saved("finger-drum-catalog-save");
                 auto copy = pattern.pattern;
                 copy.sourcePath = saved.Path() / pattern.patternPath.filename();

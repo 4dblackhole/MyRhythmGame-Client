@@ -2,11 +2,11 @@
 
 ## 롱노트 확인용 채보와 디버그 실행
 
-실행 파일 옆 `assets/Songs/Pattern/angeldream/angeldream [long notes test].ymp`는
+외부 자산 루트의 `Songs/Patterns/angeldream/Long Notes Debug/angeldream [long notes test].ymp`는
 엔젤드림 핸드셰이크 음원을 참조합니다. Roll, BigRoll, TickRoll, BigTickRoll,
 Balloon, DengDeng, Don Buzz, Kat Buzz의 시작점을 2박 간격으로 배치했습니다.
 사용자 추가 곡·YMM·YMP·YME는 Git 제외 대상이므로 이 테스트 파일은 작업 PC에만 남습니다.
-예외로 `FingerDrum.Assets/Assets/Songs`의 기본 AngelDream 음원·YMM·YMP 4개는 Git에서 추적합니다. 파일이
+예외로 `FingerDrum.Assets/Assets/Songs`의 기본 AngelDream 음원·YMM·YMP/YME 5쌍은 Git에서 추적합니다. 파일이
 없는 clean clone에서는 디버그 실행이 같은 배열의 내장 패턴을 사용합니다.
 
 ```powershell
@@ -43,9 +43,9 @@ Debug 빌드에서는 실행 인자와 무관하게 좌측 상단에 현재 포�
 
 ## 전체 노트와 짧은 Buzz 틱 재현
 
-`FingerDrum.Assets/Assets/Songs/Pattern/angeldream/angeldream [all notes test].ymp`는
+`FingerDrum.Assets/Assets/Songs/Patterns/angeldream/All Notes Verification/angeldream [all notes test].ymp`는
 기존 AngelDream Handshaking 음원을 참조하는 180 BPM, JudgeLevel 50 테스트 채보입니다.
-빌드 시 실행 파일 옆 Songs에 파일이 없을 때 복사되며 기존 사용자 파일은 덮어쓰지 않습니다.
+빌드 시 개발용 `Client/Assets/Songs`에 파일이 없을 때 복사되며 기존 사용자 파일은 덮어쓰지 않습니다.
 곡 선택에서 AngelDream의 `All Notes Verification` 패턴을 선택해 플레이합니다.
 
 앞의 빈 두 마디 이후 Don, Kat, BigDon, BigKat, Purple, Roll, BigRoll,

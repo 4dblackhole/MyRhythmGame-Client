@@ -34,7 +34,6 @@ namespace finger_drum::assets
         constexpr std::size_t MaximumPathBytes = 32'768;
         constexpr std::wstring_view DefaultSkinRelative =
             L"assets\\skins\\Default Skin";
-        constexpr std::wstring_view SongsRelative = L"assets\\songs";
 
         struct PackEntry
         {
@@ -88,7 +87,7 @@ namespace finger_drum::assets
             bool ownsMutex_{};
         };
 
-        [[nodiscard]] std::filesystem::path ExecutableDirectory()
+        [[nodiscard]] std::filesystem::path FindExecutableDirectory()
         {
             std::wstring buffer(512, L'\0');
             while (true)
@@ -499,9 +498,30 @@ namespace finger_drum::assets
         return RequireBuiltInRoot();
     }
 
+    std::filesystem::path ExecutableDirectory()
+    {
+        static const std::filesystem::path directory = FindExecutableDirectory();
+        return directory;
+    }
+
+    std::filesystem::path UserAssetRoot()
+    {
+        static const std::filesystem::path root = []
+        {
+            const std::filesystem::path executable = ExecutableDirectory();
+            const std::filesystem::path development =
+                (executable / L"../../../Client/Assets").lexically_normal();
+            std::error_code error;
+            if (std::filesystem::is_directory(development, error) && !error)
+                return development;
+            return executable / L"Asset";
+        }();
+        return root;
+    }
+
     std::filesystem::path UserSongsRoot()
     {
-        return ExecutableDirectory() / std::filesystem::path(SongsRelative);
+        return UserAssetRoot() / L"Songs";
     }
 
     std::filesystem::path ResolveBuiltInAsset(
@@ -533,8 +553,7 @@ namespace finger_drum::assets
         const std::filesystem::path& relativePath)
     {
         const std::filesystem::path looseDefaultSkin =
-            ExecutableDirectory() /
-            std::filesystem::path(DefaultSkinRelative);
+            UserAssetRoot() / L"Skins" / L"Default Skin";
         return ResolveSkinAsset(looseDefaultSkin, relativePath);
     }
 }

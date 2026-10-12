@@ -36,10 +36,11 @@ flowchart TD
    Client 초기화 hook은 첫 update/render 전에 현재 출력 장치 목록에서 저장된
    드라이버를 찾아 적용합니다. 출력 방식이 fallback됐으면 다른 API의 장치 번호를 사용하지 않습니다.
 
-스킨은 실행 파일 옆 `assets/skins/<선택한 스킨 폴더>`의 같은 상대 경로 파일을
+스킨은 선택한 외부 자산 루트의 `Skins/<선택한 스킨 폴더>`에서 같은 상대 경로 파일을
 먼저 사용하고, 파일이 없을 때만 캐시의 내장 파일로 돌아갑니다. 곡 카탈로그는
-실행 파일 옆 `assets/Songs`만 읽습니다. 기본 AngelDream MP3 1개·YMM 1개·YMP 5개와 효과 테스트 YME/WAV는
-외부 파일로 배포하며 빌드는 이미 존재하는 편집본을 덮어쓰지 않습니다.
+선택한 루트의 `Songs`를 읽습니다. 개발 실행은 `Client/Assets`, 배포는 EXE 옆 `Asset`을
+사용합니다. 기본 AngelDream 및 효과 테스트 파일은 외부 파일로 배포하며 빌드는
+개발 폴더에 이미 존재하는 편집본을 덮어쓰지 않습니다.
 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 
 `SceneGameClient`는 SceneManager, 공통 AudioPlaybackManager와 화면
