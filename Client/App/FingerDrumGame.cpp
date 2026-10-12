@@ -6,6 +6,7 @@
 #include "EditorScene/EditorScene.h"
 #include "GameScene/FingerDrumLogoScene/FingerDrumLogoScene.h"
 #include "GameScene/MusicSelectScene/MusicSelectScene.h"
+#include "GameScene/ResultScene/ResultScene.h"
 #include "GameScene/RhythmTestScene/RhythmTestScene.h"
 
 #include <Windows.h>
@@ -82,9 +83,14 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
             std::string(finger_drum::scene_ids::RhythmTest),
             // Gameplay routes keep only their factory while inactive. The
             // concrete mode Scene is constructed on entry and destroyed as
-            // soon as it returns to Lobby.
+            // soon as it transfers its result.
             mrg::scene::SceneRetention::DestroyOnExit, launchRequest_, std::ref(AudioPlayback()),
-            std::ref(ScreenVisuals()), rhythmDebugMode_, std::ref(texts_)))
+            std::ref(ScreenVisuals()), rhythmDebugMode_, std::ref(texts_), std::ref(pendingResult_)) ||
+        !scenes.RegisterScene(std::string(finger_drum::scene_ids::Result),
+                              mrg::scene::SceneRetention::DestroyOnExit,
+                              [this] {
+                                  return std::make_unique<ResultScene>(std::move(pendingResult_), ScreenVisuals(), texts_);
+                              }))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
     }

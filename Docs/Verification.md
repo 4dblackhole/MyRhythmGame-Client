@@ -47,6 +47,8 @@ Client에는 별도 기술 예제 route가 없습니다.
 키빔 표시는 [별도 회귀 테스트](../Tests/Presentation/README.md)로 검사할 수 있습니다.
 판정 인디케이터/마커/링·문구 변경은 같은 문서의 Gameplay judgement guide 회귀를
 Debug/Release에서 실행합니다.
+결과 수집/표시/전환은 같은 문서의 Result graphs and actual Scene transition을 두 구성에서
+실행합니다. 점수 정밀도와 입력/중도 종료 통계는 PlayResultTests의 도메인 검사도 사용합니다.
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
 에디터 모드/문서 계약 변경도 같은 실행 파일에 연결된 EditorModeTests를 두 구성에서 실행합니다.
 에디터 상단 메뉴 변경은 같은 실행 파일의 EditorMenuTests도 두 구성에서 실행합니다.
@@ -80,6 +82,41 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 `Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접 빌드하고 로직·기본곡 카탈로그를
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
+
+## 2026-10-12 Result·입력 로그·6자리 정확도
+
+- AccuracyScore는 퍼센트 소수점 6자리의 정수 단위이며 입력 판정/논리 노트/평균에서
+  아래 자리를 버립니다. 기존 등급·판정 창·노트별 가중치는 유지했습니다.
+  IPlayResultCollector/IPlayResult와 Taiko 구현은 실제 생성 노트·정수 us 입력·실제
+  타이밍 오차를 수집합니다. ResultScene은 이동된 데이터와 모드별 IResultView를 소유하고
+  gameplay는 모든 노트 처리 3초 뒤/ESC로 종료합니다. 미처리 0점은 실제 MISS와 구분합니다.
+- Debug/Release x64 전체 solution Rebuild 성공: 일반 빌드 경고/오류 0.
+  두 구성에서 로직/기본곡 카탈로그 52개 성공(새 점수·결과·롱/Reset 검사 3개 포함),
+  네 smoke 경로씩 총 8개 exit 0. 마지막 서식 정리 후 영향 프로젝트의 분석 Build 및
+  52개 로직/카탈로그도 다시 실행했습니다.
+- 실제 프로젝트 include/define/C++20 설정의 MSVC 14.44.35207 Code Analysis를
+  FingerDrum.Rhythm/FingerDrum.Modes/FingerDrum.Rhythm.Tests/MRG.Client 각각 Debug/Release에
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`로 실행했습니다.
+  파싱/컴파일 오류와 새 분석 경고 0. 기존 C26115(EditorAnalysisController),
+  C28020(GameplaySessionController의 heldStorage), Release C6236(GameplayInput)는 유지되며
+  억제나 범위 밖 수정은 하지 않았습니다. ResultPresentationTests 소스의 초기 C6011은
+  명시적인 null 검사로 수정했고 재분석에서 경고 0입니다.
+- ResultPresentationTests는 두 구성 성공: 한국어/영어, 정확한 6자리 표시, 실제 입력으로
+  만든 부호 있는 오차/히스토그램, 빈 상태, 10,003개 샘플의 단일 RectangleBatch,
+  반복 update에서 일정한 draw list, 좁은/넓은 화면 배치와 pointer-router 버튼 의도를 확인했습니다.
+  숨김 D3D12/FMOD 실행의 한 노트 회귀 세션에서 생산용 gameplay → Result factory 전환,
+  처리 후 3초 대기, unique_ptr 소비, 이전 gameplay Canvas 제거와 Result 종료 정리를 확인했습니다.
+- GameplayJudgementTests도 두 구성 성공. 실제 D3D12/FMOD 전체 노트 자동 replay는
+  두 구성 19개 완료/85.1837%로 기존 규칙을 유지했습니다(Debug 1,557 / Release 1,541프레임).
+  종료 정확도의 기록 정밀도는 6자리이며 이 기존 replay의 콘솔 출력 정밀도는 4자리입니다.
+- CheckArchitecture(11개 프로젝트)와 git diff --check 성공. 변경 코드/직접 호출부의
+  수명·경계/변환·중복 이벤트·실패 처리와 책임 분리를 검토했습니다. 완료 이벤트 검색은
+  각 노트에 terminal state를 저장하여 대량 자동 MISS에서 결과 배열을 반복 탐색하지 않습니다.
+  결과는 backend 객체를 참조하지 않고 그래프는 진입/언어/해상도 변경에만 구성합니다.
+- 로그는 ignored `build/result-2026-10-12`입니다. 기존 LaneKeyBeam.cpp와 Option.ini,
+  사용자 곡/스킨은 보존했습니다. 엔진·변환기 소스/자산 변경은 없습니다.
+  숨김 실행과 자동 입력/포인터 의도 검사이며 실제 픽셀·물리 ESC/키·마우스·청음은
+  수동 확인하지 않았습니다. 디스크 기록/리플레이 재생/곡 선택 기록 표시는 이번 범위 밖입니다.
 
 ## 2026-10-12 개발/배포 자산 경로·난이도별 파일 쌍
 

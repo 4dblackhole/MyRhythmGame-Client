@@ -116,10 +116,14 @@ void GameplaySessionController::ProcessDebugTimeline(const mrg::platform::InputS
     timer_.AnchorDspClock(after, clock.dspClock, clock.sampleRate);
 }
 
-void GameplaySessionController::ProcessRhythmInput(const mrg::platform::InputState &input)
+void GameplaySessionController::ProcessRhythmInput(const mrg::platform::InputState &input,
+                                                  std::optional<std::int64_t> exitTicks)
 {
     for (const mrg::platform::InputEvent &event : input.Events())
     {
+        if ((exitTicks && event.performanceCounterTicks > *exitTicks) ||
+            (event.type == mrg::platform::InputEventType::KeyPressed && event.code == VK_ESCAPE))
+            break;
         if (event.type != mrg::platform::InputEventType::KeyPressed &&
             event.type != mrg::platform::InputEventType::KeyReleased)
         {

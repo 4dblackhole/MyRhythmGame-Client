@@ -14,7 +14,8 @@ Scene 종료 전에 빔의 observer를 해제하고 Canvas가 노드를 파기�
 
 `RhythmTestScene`은 Lobby가 선택한 YMP/YME를 `TaikoMode`에 전달해 세션을
 만듭니다. `DestroyOnExit`이므로 매 플레이마다 새로 생성되고 Escape 또는 패턴
-완료 3초 뒤 Lobby로 돌아갈 때 Canvas, audio voice, session과 함께 삭제됩니다.
+완료 3초 뒤 Result로 이동할 때 Canvas, audio voice, session과 함께 삭제됩니다.
+Result로는 값 데이터만 이동합니다. 통계/그래프와 소유권은 [플레이 결과](Results.md)에 있습니다.
 `GameplaySessionController::ErrorMessage`는 세션 자동화 오류 또는 오디오 오류를 전달하며,
 `GameplayPresenter::PresentErrorMessage`는 공통 HUD에 표시하고 오류가 비면 숨깁니다.
 사용자 보간식의 트랙별 정상값 유지/복구 규칙은 [YME](../Formats/Yme.md)의 보간 절을 따릅니다.
@@ -94,7 +95,7 @@ Canvas는 `FixedHeight`이므로 창 높이에 비례해 이미지와 글자도
 PNG 자체의 밝기 차이와 함께 강·약 상태가 명확히 구분됩니다. 키를 누를
 때마다 홀드 점등 위에 반투명 흰색 `KeyPressFlash` 십자광이 최대 불투명도로
 다시 켜지고 0.1초 동안 선형으로 투명해진 뒤 사라집니다.
-우측 정확도 표시는 같은 HUD 영역의 동적 텍스트로 노트별 평균을 소수점 두 자리까지
+우측 정확도 표시는 같은 HUD 영역의 동적 텍스트로 노트별 평균을 소수점 여섯 자리까지
 표시합니다. 아직 확정된 노트가 없으면 `--.--%`입니다.
 
 ## 판정 인디케이터와 링·문구

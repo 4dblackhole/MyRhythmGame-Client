@@ -159,3 +159,24 @@ pointing to the opposite tree. It checks external Songs/default-skin paths and
 that Option.ini stays beside the EXE. Fixtures stay under ignored build output;
 no user settings, songs, skins or embedded cache are changed. The test source
 uses MSVC Code Analysis. Catalog tests separately check the AngelDream YMP/YME pairs.
+
+## Result graphs and actual Scene transition
+
+After a solution build, run in an x64 Visual Studio developer PowerShell with `FMOD_ROOT`:
+
+```powershell
+./Tests/Presentation/RunResultPresentationTests.ps1 -Configuration Debug
+./Tests/Presentation/RunResultPresentationTests.ps1 -Configuration Release
+```
+
+This links the production Result Scene/view/factory/graphs and gameplay objects.
+It checks six-decimal accuracy text, Korean/English strings, signed scatter axes,
+histogram counts, empty samples, narrow/wide layout, pointer-router return actions,
+and one immutable graph batch for 10,003 samples. It then runs D3D12/FMOD with a
+hidden window and a one-note regression session: the production gameplay Scene
+waits three seconds after automatic judgement, moves its result to the lazy Result
+factory, and destroys its own Canvas. Leaving Result destroys its Canvas too.
+The test source uses MSVC Code Analysis and does not write user options/songs/skins.
+This is automation, not a manual pixel/physical keyboard/mouse/listening check.
+ESC routing is connected in production; its interrupted scoring and tied-us input
+order are covered by domain tests, without claiming a physical ESC test.

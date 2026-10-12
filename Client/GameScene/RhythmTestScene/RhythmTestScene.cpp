@@ -7,8 +7,9 @@
 RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStore> request,
                                  mrg::audio::AudioPlaybackManager &playback,
                                  mrg::visual2d::ScreenVisual2DManager &visuals, bool debug,
-                                 finger_drum::texts::TextCatalog &texts)
-    : controller_(
+                                 finger_drum::texts::TextCatalog &texts,
+                                 std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult)
+    : pendingResult_(pendingResult), controller_(
           std::make_unique<GameplaySessionController>(
               request ? request->Snapshot()
                       : throw std::invalid_argument("Gameplay requires a launch store."),
@@ -34,12 +35,6 @@ void RhythmTestScene::EndScene() noexcept
 }
 void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
 {
-    if (context.input.WasKeyPressed(VK_ESCAPE))
-    {
-        if (!scenes.ChangeScene(finger_drum::scene_ids::Lobby))
-            throw std::runtime_error("Failed to return to song select.");
-        return;
-    }
     view_->AdvanceEffects(context.deltaSeconds);
     controller_->Update(context);
     for (const auto &feedback : controller_->Feedback())
@@ -47,8 +42,14 @@ void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::Scen
     view_->UpdatePresentation(controller_->Time());
     view_->UpdateInputPresentation(context.input, context.deltaSeconds);
     view_->PresentErrorMessage(controller_->ErrorMessage());
-    if (controller_->ShouldReturnToLobby() && !scenes.ChangeScene(finger_drum::scene_ids::Lobby))
-        throw std::runtime_error("Failed to return to song select.");
+    if (context.input.WasKeyPressed(VK_ESCAPE) || controller_->ShouldShowResult())
+        ShowResult(scenes);
+}
+void RhythmTestScene::ShowResult(mrg::scene::SceneManager &scenes)
+{
+    pendingResult_ = controller_->TakeResult();
+    if (!scenes.ChangeScene(finger_drum::scene_ids::Result))
+        throw std::runtime_error("Failed to enter the Result Scene.");
 }
 void RhythmTestScene::Render(const mrg::graphics::RenderContext &)
 {

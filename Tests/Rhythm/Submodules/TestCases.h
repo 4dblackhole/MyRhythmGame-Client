@@ -3,6 +3,9 @@
 
 namespace finger_drum::tests
 {
+    void TestAccuracySixDecimalPrecision();
+    void TestPlayResultCollection();
+    void TestLongResultCompletionAndReset();
     void TestYmeSyntax();
     void TestRuntimeAutomationRecovery();
     void TestEditorCompiledSpeedBounds();

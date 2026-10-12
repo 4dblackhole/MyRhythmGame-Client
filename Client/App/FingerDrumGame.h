@@ -5,6 +5,7 @@
 #include "GameFlow/GameplayLaunchStore.h"
 #include "Texts/TextCatalog.h"
 #include "App/OptionSettings.h"
+#include "Mode/Results/IPlayResult.h"
 
 #include <cstdint>
 #include <memory>
@@ -41,6 +42,7 @@ class FingerDrumGame final : public mrg::scene::SceneGameClient
     bool rhythmDebugMode_{};
     std::string initialSceneId_;
     std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest_;
+    std::unique_ptr<finger_drum::mode::IPlayResult> pendingResult_;
     finger_drum::texts::TextCatalog texts_;
     mrg_client::OptionSettings optionSettings_;
     mrg::graphics::FontHandle performanceFont_;

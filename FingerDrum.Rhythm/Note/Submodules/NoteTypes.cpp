@@ -29,7 +29,7 @@ namespace finger_drum::rhythm
         AppendMoved(finalizedAccuracies, other.finalizedAccuracies);
     }
 
-    double NoteAccuracy::ScoreRate() const noexcept
+    AccuracyScore NoteAccuracy::Score() const noexcept
     {
         const auto ratio = [](std::size_t accepted, std::size_t required) {
             return required == 0 ? 0.0
@@ -43,16 +43,16 @@ namespace finger_drum::rhythm
         switch (target.kind)
         {
         case NoteAccuracyKind::TimingHits:
-            return timing;
+            return AccuracyScore::FromRate(timing);
         case NoteAccuracyKind::HitCount:
-            return ratio(acceptedHits, target.hits);
+            return AccuracyScore::FromRate(ratio(acceptedHits, target.hits));
         case NoteAccuracyKind::Ticks:
-            return ratio(acceptedTicks, target.ticks);
+            return AccuracyScore::FromRate(ratio(acceptedTicks, target.ticks));
         case NoteAccuracyKind::Hold:
-            return target.ticks == 0 ? timing
-                                     : 0.5 * timing + 0.5 * ratio(acceptedTicks, target.ticks);
+            return AccuracyScore::FromRate(target.ticks == 0 ? timing
+                                     : 0.5 * timing + 0.5 * ratio(acceptedTicks, target.ticks));
         }
-        return 0.0;
+        return {};
     }
 
 #if defined(_DEBUG)
@@ -61,7 +61,7 @@ namespace finger_drum::rhythm
         std::wstring result;
         for (std::size_t index = 0; index < hitScoreRates.size(); ++index)
         {
-            result += std::format(L"Hit{}={:.2f}%{}  ", index + 1, hitScoreRates[index] * 100.0,
+            result += std::format(L"Hit{}={:.6f}%{}  ", index + 1, hitScoreRates[index] * 100.0,
                                   index < acceptedHits ? L"" : L" (unfilled)");
         }
         if (target.kind == NoteAccuracyKind::HitCount)
@@ -73,11 +73,11 @@ namespace finger_drum::rhythm
             const double ratio =
                 target.ticks == 0 ? 0.0 : 100.0 * static_cast<double>(acceptedTicks) / static_cast<double>(target.ticks);
             result +=
-                std::format(L"Ticks={}/{} ({:.2f}%){}  ", acceptedTicks, target.ticks, ratio,
+                std::format(L"Ticks={}/{} ({:.6f}%){}  ", acceptedTicks, target.ticks, ratio,
                             target.kind == NoteAccuracyKind::Hold ? L" [head/ticks 50:50]" : L"");
         }
         return result +
-               std::format(L"{}={:.2f}%", finalized ? L"Final" : L"Current", ScoreRate() * 100.0);
+               std::format(L"{}={:.6f}%", finalized ? L"Final" : L"Current", ScoreRate() * 100.0);
     }
 #endif
 } // namespace finger_drum::rhythm

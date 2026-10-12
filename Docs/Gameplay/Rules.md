@@ -78,8 +78,14 @@ BigKat, Purple, Roll, TickRoll, Balloon, DengDeng, Buzz를 모두 **한 Lane**�
 `RuleBasedNote`가 rule의 목표와 수락된 이벤트로 `NoteAccuracy`를 갱신하고,
 Completed/Missed에서 `NoteProcessResult::finalizedAccuracies`로 한 번만 내보냅니다.
 `PlaySession`은 각 논리 노트에 동일한 가중치를 주어 평균을 계산합니다.
+`AccuracyScore`는 0.000001 퍼센트 포인트를 1로 기록하는 정수 점수입니다
+(100% = 100,000,000). 판정 입력과 논리 노트의 최종 점수는 퍼센트 기준
+소수점 6자리 아래를 버립니다. 예를 들어 1/3은 33.333333%입니다.
+세션/결과 평균은 정수 합을 나누어 같은 정밀도로 버림 처리하며 등급/판정 창은 유지합니다.
 완료 전 노트는 누적 평균에서 제외하고, 미스 확정 노트는 부분 점수 또는 0점으로
 포함합니다. `Reset()`은 현재/마지막 노트 상세와 누적 집계를 모두 초기화합니다.
+플레이 HUD는 처리된 노트의 평균을, [Result](Results.md)는 미처리 0점을 포함한
+전체 채보 평균을 표시합니다. 두 값 모두 소수점 6자리입니다.
 
 | 노트 | 최종 정확도 |
 | --- | --- |

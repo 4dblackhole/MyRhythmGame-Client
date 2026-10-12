@@ -229,4 +229,17 @@
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorPlacement.h" /></ItemGroup>
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.h" /></ItemGroup>
   <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.cpp" /></ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameScene\ResultScene\ResultScene.cpp" />
+    <ClInclude Include="GameScene\ResultScene\ResultScene.h" />
+    <ClInclude Include="GameScene\ResultScene\Submodules\IResultView.h" />
+    <ClCompile Include="GameScene\ResultScene\Submodules\ResultViewFactory.cpp" />
+    <ClInclude Include="GameScene\ResultScene\Submodules\ResultViewFactory.h" />
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultGraphs.cpp" />
+    <ClInclude Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultGraphs.h" />
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultView.cpp" />
+    <ClInclude Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultView.h" />
+    <ClCompile Include="Texts\GameScene\ResultScene\ResultTexts.cpp" />
+    <ClInclude Include="Texts\GameScene\ResultScene\ResultTexts.h" />
+  </ItemGroup>
 </Project>

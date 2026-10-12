@@ -6,6 +6,7 @@
 #include "Note/Submodules/TapInputRule.h"
 #include "TaikoBuildSupport.h"
 #include "TaikoChartNotes.h"
+#include "Taiko/Results/TaikoResultCollector.h"
 
 namespace finger_drum::mode
 {
@@ -30,6 +31,11 @@ namespace finger_drum::mode
         chart::MusicalTimeline timeline(pattern);
         chart::ValidateEffectPositions(effects, timeline);
         auto compiled = taiko_notes::PlayableInSourceOrder(timeline.CompileNotes(pattern));
+        PlayResultSummary summary;
+        summary.patternPath = pattern.sourcePath;
+        summary.patternName = pattern.name;
+        summary.judgementLevel = pattern.judgementLevel;
+        auto collector = std::make_unique<TaikoResultCollector>(std::move(summary), compiled.size());
         ConfigureHitSounds(*session, effects, timeline, result.diagnostics);
         if (!result.diagnostics.empty())
             return result;
@@ -87,7 +93,11 @@ namespace finger_drum::mode
                                                                                             : defaultRange,
                             lane, *session, nextId, result.diagnostics);
                 if (nextId > longNoteId)
+                {
                     session->SetNoteScrollMultiplier(longNoteId, longNoteHead->scrollMultiplier);
+                    collector->RegisterNote(longNoteId, static_cast<TaikoNoteType>(longNoteHead->note.keyType),
+                                            longNoteHead->timing);
+                }
                 longNoteHead.reset();
                 continue;
             }
@@ -139,6 +149,7 @@ namespace finger_drum::mode
                                                                  std::move(soundPolicy)));
             session->SetNotePresentation(noteId, {TapVisualId(type), {}, false});
             session->SetNoteScrollMultiplier(noteId, compiledNote.scrollMultiplier);
+            collector->RegisterNote(noteId, type, compiledNote.timing);
         }
 
         if (longNoteHead)
@@ -155,7 +166,8 @@ namespace finger_drum::mode
                 inputMapping.emplace(secondaryKey, action);
             }
         }
-        session->SetInputMapping(std::move(inputMapping));
+        session->SetInputMapping(inputMapping);
+        collector->SetInputMapping(std::move(inputMapping));
         session->SetFreeInputCue(ActionValue(TaikoAction::Don),
                                  Cue(finger_drum::mode::taiko_sound::DonFreeInput, "UserInputFeedback"));
         session->SetFreeInputCue(ActionValue(TaikoAction::Kat),
@@ -164,6 +176,7 @@ namespace finger_drum::mode
         session->SetMeasureLines(timeline.CompileMeasureStarts());
         session->SetTimeline(std::move(timeline));
         session->Gear().Finalize();
+        session->SetResultCollector(std::move(collector));
         result.session = std::move(session);
         return result;
     }

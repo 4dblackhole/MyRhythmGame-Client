@@ -1,6 +1,7 @@
 #pragma once
 #include "Mode/Submodules/PlaySessionTypes.h"
 #include "Automation/ScrollAutomation.h"
+#include "Mode/Results/IPlayResultCollector.h"
 
 namespace finger_drum::mode
 {
@@ -46,12 +47,15 @@ namespace finger_drum::mode
             return automationError_;
         }
         void Reset() noexcept;
+        void SetResultCollector(std::unique_ptr<IPlayResultCollector> collector);
+        void SetResultInitialTime(rhythm::RhythmTime time) noexcept;
+        std::unique_ptr<IPlayResult> TakeResult(PlayEndReason reason, rhythm::RhythmTime time);
         [[nodiscard]] std::optional<double> AccuracyRate() const noexcept;
         [[nodiscard]] std::size_t FinalizedNoteCount() const noexcept;
         [[nodiscard]] const std::optional<rhythm::NoteAccuracy> &LastNoteAccuracy() const noexcept;
 
       private:
-        void AccumulateAccuracy(const rhythm::NoteProcessResult &result);
+        void AccumulateAccuracy(const rhythm::NoteProcessResult &result, bool keyPressed = false);
         void ResolveSoundOverrides(rhythm::NoteProcessResult &result) const;
         [[nodiscard]] static double Interpolate(const chart::CompiledEffectCommand &command,
                                                 rhythm::RhythmTime time);
@@ -74,7 +78,8 @@ namespace finger_drum::mode
         std::vector<rhythm::RhythmTime> measureLines_;
         std::map<rhythm::SoundId, std::filesystem::path> hitSoundFiles_;
         std::map<rhythm::SoundId, std::vector<TimedSoundOverride>, std::less<>> soundOverrides_;
-        double accuracySum_{};
+        std::uint64_t accuracySum_{};
+        std::unique_ptr<IPlayResultCollector> resultCollector_;
         double minimumScrollMultiplier_{1};
         std::size_t finalizedNoteCount_{};
         std::optional<rhythm::NoteAccuracy> lastNoteAccuracy_;

@@ -148,4 +148,21 @@
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorPlacement.h"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClInclude></ItemGroup>
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.h"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClInclude></ItemGroup>
   <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
+  <ItemGroup>
+    <Filter Include="GameScene\ResultScene" />
+    <Filter Include="GameScene\ResultScene\Submodules" />
+    <Filter Include="GameScene\ResultScene\Submodules\Taiko" />
+    <Filter Include="Texts\GameScene\ResultScene" />
+    <ClCompile Include="GameScene\ResultScene\ResultScene.cpp"><Filter>GameScene\ResultScene</Filter></ClCompile>
+    <ClInclude Include="GameScene\ResultScene\ResultScene.h"><Filter>GameScene\ResultScene</Filter></ClInclude>
+    <ClInclude Include="GameScene\ResultScene\Submodules\IResultView.h"><Filter>GameScene\ResultScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="GameScene\ResultScene\Submodules\ResultViewFactory.cpp"><Filter>GameScene\ResultScene\Submodules</Filter></ClCompile>
+    <ClInclude Include="GameScene\ResultScene\Submodules\ResultViewFactory.h"><Filter>GameScene\ResultScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultGraphs.cpp"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClCompile>
+    <ClInclude Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultGraphs.h"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClInclude>
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultView.cpp"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClCompile>
+    <ClInclude Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultView.h"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClInclude>
+    <ClCompile Include="Texts\GameScene\ResultScene\ResultTexts.cpp"><Filter>Texts\GameScene\ResultScene</Filter></ClCompile>
+    <ClInclude Include="Texts\GameScene\ResultScene\ResultTexts.h"><Filter>Texts\GameScene\ResultScene</Filter></ClInclude>
+  </ItemGroup>
 </Project>

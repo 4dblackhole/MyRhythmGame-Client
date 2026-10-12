@@ -2,6 +2,7 @@
 
 #include "Common/RhythmTypes.h"
 #include "Judgement/AccuracyRange.h"
+#include "Judgement/AccuracyScore.h"
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -96,7 +97,8 @@ namespace finger_drum::rhythm
         std::size_t acceptedTicks{};
         bool finalized{};
 
-        [[nodiscard]] double ScoreRate() const noexcept;
+        [[nodiscard]] AccuracyScore Score() const noexcept;
+        [[nodiscard]] double ScoreRate() const noexcept { return Score().Rate(); }
 #if defined(_DEBUG)
         [[nodiscard]] std::wstring DebugText() const;
 #endif

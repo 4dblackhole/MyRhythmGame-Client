@@ -161,7 +161,7 @@ void GameplayPresenter::UpdateAccuracyPresentation()
 {
     const std::optional<double> accuracy = session_->AccuracyRate();
     RequireComponent<mrg::visual2d::TextVisualComponent>(*accuracyIndicator_)
-        .SetText(accuracy.has_value() ? std::format(L"{:.2f}%", *accuracy * 100.0) : L"--.--%");
+        .SetText(accuracy.has_value() ? std::format(L"{:.6f}%", *accuracy * 100.0) : L"--.------%");
 #if defined(_DEBUG)
     const auto &text = finger_drum::texts::Gameplay(texts_.CurrentLanguage());
     std::wstring debug(text.focusNone);

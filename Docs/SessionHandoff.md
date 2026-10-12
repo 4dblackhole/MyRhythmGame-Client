@@ -20,6 +20,25 @@
   효과 테스트 WAV 2개는 외부 Songs입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
+## 최근 구현: Result·입력 로그·정확도 정밀도 (2026-10-12)
+
+노트 처리와 Result의 정확도는 퍼센트 기준 소수점 6자리 아래를 버립니다.
+AccuracyScore 정수 단위(100%=100,000,000)로 합산하며 기존 판정 창/등급은 유지합니다.
+PlaySession은 모드별 IPlayResultCollector를 소유하고 Taiko는 실제 생성된 논리 노트의
+판정·오차·최종 점수와 매핑된 게임 키 Pressed/Released를 정수 us로 수집합니다.
+모든 노트 처리 3초 뒤 또는 ESC 입력으로 Result에 이동하며, ESC는 그 QPC 시각에
+판정/held 상태를 고정합니다. 중도 종료의 미처리와 진행 중 롱노트는 0점/별도 개수이며
+실제 MISS와 구분합니다. R/뒤로 탐색 Reset은 집계와 입력 로그를 초기화합니다.
+
+RhythmTestScene → 루트 대기 슬롯 → Result factory로 unique_ptr를 이동합니다.
+ResultScene은 결과와 IResultView를 소유하고 TaikoResultView가 일반/큰/롤 정확도,
+MAX~BAD/OK/MISS/POOR 개수, 오차 통계와 두 그래프를 표시합니다. 두 Scene 모두
+DestroyOnExit이며 결과는 플레이 세션/노트/오디오 포인터를 보관하지 않습니다.
+Result의 버튼·ESC·Enter는 곡 선택으로 돌아갑니다. 모드 확장, 카운트 정의,
+입력 로그 범위와 점수/그래프 계약은 [플레이 결과](Gameplay/Results.md)가 기준입니다.
+디스크 저장·리플레이 재생·곡 선택 기록은 이번 범위에 포함하지 않았습니다.
+검증은 Verification 및 Tests/Presentation의 Result 회귀 명령을 참고합니다.
+
 ## 최근 구현: 개발/배포 자산 경로·난이도별 파일 쌍 (2026-10-12)
 
 외부 자산 경로는 FingerDrum.Assets의 UserAssetRoot에서 한 번 결정합니다.
@@ -116,7 +135,7 @@ Verification에 구분했습니다. 실제 화면/물리 입력/청음은 수동
   YME는 Interpolation/HitSounds 기본 데이터와 Speed/Sounds/Zone 명령을 분리합니다.
   볼륨은 히트사운드 대상입니다. 문법·보간·Whole/Separate·싱코페이션/Kiai는
   [YME](Formats/Yme.md), 실제 AngelDream 효과 테스트는 Presentation의 -Effects를 참고합니다.
-- 결과 Scene/영구 기록, 에디터 Undo/Redo·드래그·다중 선택·음악 재생은 미구현입니다.
+- 영구 기록·리플레이 재생, 에디터 Undo/Redo·드래그·다중 선택·음악 재생은 미구현입니다.
   이 목록은 추가 구현 지시가 아닙니다. 기능별 제한은 해당 문서가 기준입니다.
 - Scene 전용 폴더와 `Submodules`, Note 계약/규칙 트리를 사용합니다.
   파일 추가 시 프로젝트와 Visual Studio 필터도 같은 트리로 등록합니다.

@@ -2,6 +2,7 @@
 #include "MRG_Core.h"
 #include "GameFlow/GameplayLaunchStore.h"
 #include "Texts/TextCatalog.h"
+#include "Mode/Results/IPlayResult.h"
 #include <memory>
 
 class GameplaySessionController;
@@ -13,7 +14,8 @@ class RhythmTestScene final : public mrg::scene::GameScene
                              mrg::audio::AudioPlaybackManager &playback,
                              mrg::visual2d::ScreenVisual2DManager &screenVisuals,
                              bool debugMode,
-                             finger_drum::texts::TextCatalog &texts);
+                             finger_drum::texts::TextCatalog &texts,
+                             std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult);
 
     ~RhythmTestScene() override;
 
@@ -26,6 +28,8 @@ class RhythmTestScene final : public mrg::scene::GameScene
     void Shutdown() noexcept override;
 
   private:
+    void ShowResult(mrg::scene::SceneManager &scenes);
+    std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult_;
     std::unique_ptr<GameplaySessionController> controller_;
     std::unique_ptr<GameplayPresenter> view_;
 };

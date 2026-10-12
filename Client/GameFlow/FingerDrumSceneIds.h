@@ -11,4 +11,5 @@ namespace finger_drum::scene_ids
         "FingerDrum.EditorSongSelect";
     inline constexpr std::string_view Editor = "FingerDrum.Editor";
     inline constexpr std::string_view RhythmTest = "FingerDrum.RhythmTest";
+    inline constexpr std::string_view Result = "FingerDrum.Result";
 }

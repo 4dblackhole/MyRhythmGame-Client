@@ -19,4 +19,7 @@
     <ClInclude Include="Submodules\TestSupport.h"><Filter>Submodules</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup><ClCompile Include="Submodules\YmeEffectsTests.cpp"><Filter>Submodules</Filter></ClCompile></ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Submodules\PlayResultTests.cpp"><Filter>Submodules</Filter></ClCompile>
+  </ItemGroup>
 </Project>

@@ -129,7 +129,7 @@ namespace finger_drum::tests
                         "Late GOOD head must retain all missed and accepted body ticks.");
                 const auto head = note->Profile().Evaluate(note->Timing(), press);
                 const double expected = (head.scoreRate + static_cast<double>(index - missed) / static_cast<double>(index)) * 0.5;
-                Require(std::abs(accuracy.ScoreRate() - expected) < 1e-9,
+                Require(std::abs(accuracy.ScoreRate() - rhythm::AccuracyScore::FromRate(expected).Rate()) < 1e-9,
                         "Buzz score must combine head and complete tick denominator.");
                 std::cout << "Buzz " << note->Id() << ": " << missed << " missed / " << index << " ticks; accepted "
                           << accuracy.acceptedTicks << '\n';

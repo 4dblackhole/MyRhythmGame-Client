@@ -142,8 +142,9 @@ namespace finger_drum::mode
         }
 
         const rhythm::RhythmInputEvent input{time, mapping->second, physicalKey, edge};
+        if (resultCollector_) resultCollector_->RecordInput(input);
         result = gear_.Lanes().front()->ProcessInput(input);
-        AccumulateAccuracy(result);
+        AccumulateAccuracy(result, edge == rhythm::InputEdge::Pressed);
 
         // Free-input feedback is deliberately separate from note-owned cues.
         // Therefore an early/out-of-range big note can play a normal Don/Kat
@@ -251,7 +252,8 @@ namespace finger_drum::mode
     void PlaySession::Reset() noexcept
     {
         gear_.Reset();
-        accuracySum_ = 0.0;
+        accuracySum_ = 0;
+        if (resultCollector_) resultCollector_->Reset();
         finalizedNoteCount_ = 0;
         lastNoteAccuracy_.reset();
         automationTime_.reset();
@@ -266,11 +268,12 @@ namespace finger_drum::mode
         return false;
     }
 
-    void PlaySession::AccumulateAccuracy(const rhythm::NoteProcessResult &result)
+    void PlaySession::AccumulateAccuracy(const rhythm::NoteProcessResult &result, bool keyPressed)
     {
+        if (resultCollector_) resultCollector_->Consume(result, keyPressed);
         for (const rhythm::NoteAccuracy &accuracy : result.finalizedAccuracies)
         {
-            accuracySum_ += accuracy.ScoreRate();
+            accuracySum_ += accuracy.Score().Units();
             ++finalizedNoteCount_;
             lastNoteAccuracy_ = accuracy;
         }
@@ -279,12 +282,26 @@ namespace finger_drum::mode
     std::optional<double> PlaySession::AccuracyRate() const noexcept
     {
         return finalizedNoteCount_ == 0 ? std::nullopt
-                                        : std::optional<double>{accuracySum_ / static_cast<double>(finalizedNoteCount_)};
+            : std::optional<double>{rhythm::AccuracyScore::Average(accuracySum_, finalizedNoteCount_).Rate()};
     }
 
     std::size_t PlaySession::FinalizedNoteCount() const noexcept
     {
         return finalizedNoteCount_;
+    }
+
+    void PlaySession::SetResultCollector(std::unique_ptr<IPlayResultCollector> collector)
+    {
+        resultCollector_ = std::move(collector);
+    }
+    void PlaySession::SetResultInitialTime(rhythm::RhythmTime time) noexcept
+    {
+        if (resultCollector_) resultCollector_->SetInitialTime(time);
+    }
+    std::unique_ptr<IPlayResult> PlaySession::TakeResult(PlayEndReason reason, rhythm::RhythmTime time)
+    {
+        if (!resultCollector_) throw std::logic_error("The mode has no result collector.");
+        return resultCollector_->TakeResult(reason, time);
     }
 
     const std::optional<rhythm::NoteAccuracy> &PlaySession::LastNoteAccuracy() const noexcept

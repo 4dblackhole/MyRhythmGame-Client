@@ -42,4 +42,7 @@
     <ClInclude Include="Time\RhythmTimer.h"><Filter>Time</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup><ClInclude Include="Judgement\AccuracyRange.h"><Filter>Judgement</Filter></ClInclude></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Judgement\AccuracyScore.h"><Filter>Judgement</Filter></ClInclude>
+  </ItemGroup>
 </Project>

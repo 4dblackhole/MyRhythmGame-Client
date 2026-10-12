@@ -35,6 +35,9 @@ int main(const int argumentCount, char *arguments[])
         std::function<void()> run;
     };
     std::vector<TestCase> tests{
+        {"TestAccuracySixDecimalPrecision", TestAccuracySixDecimalPrecision},
+        {"TestPlayResultCollection", TestPlayResultCollection},
+        {"TestLongResultCompletionAndReset", TestLongResultCompletionAndReset},
         {"TestYmeSyntax", TestYmeSyntax},
         {"TestRuntimeAutomationRecovery", TestRuntimeAutomationRecovery},
         {"TestEditorCompiledSpeedBounds", TestEditorCompiledSpeedBounds},

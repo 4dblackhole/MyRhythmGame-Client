@@ -22,7 +22,7 @@ namespace finger_drum::tests
         const auto second =
             session.ProcessInput('J', rhythm::InputEdge::Pressed, rhythm::RhythmTime{16'500});
         const double hit2 = profile->Evaluate({}, rhythm::RhythmTime{16'500}).scoreRate;
-        const double bigRate = (1.0 + hit2) * 0.5;
+        const double bigRate = rhythm::AccuracyScore::FromRate((1.0 + hit2) * 0.5).Rate();
         const auto bigAccuracyRate = session.AccuracyRate();
         const auto &bigAccuracy = session.LastNoteAccuracy();
         Require(second.finalizedAccuracies.size() == 1 &&
@@ -33,7 +33,7 @@ namespace finger_drum::tests
         static_cast<void>(session.Update(rhythm::RhythmTime{500'000}));
         const auto missedAccuracyRate = session.AccuracyRate();
         Require(session.FinalizedNoteCount() == 2 &&
-                    missedAccuracyRate && std::abs(*missedAccuracyRate - bigRate * 0.5) < 1e-9,
+                    missedAccuracyRate && std::abs(*missedAccuracyRate - rhythm::AccuracyScore::FromRate(bigRate * 0.5).Rate()) < 1e-9,
                 "Each logical note, including a miss, must contribute exactly once.");
         session.Reset();
         Require(!session.AccuracyRate() && !session.LastNoteAccuracy(),
@@ -46,7 +46,7 @@ namespace finger_drum::tests
                 "An unfilled second hit must count as zero, not discard the first hit.");
 #if defined(_DEBUG)
         const auto &partialAccuracy = session.LastNoteAccuracy();
-        Require(partialAccuracy && partialAccuracy->DebugText().find(L"Hit2=0.00%") != std::wstring::npos,
+        Require(partialAccuracy && partialAccuracy->DebugText().find(L"Hit2=0.000000%") != std::wstring::npos,
                 "Debug details must expose unfilled hit components.");
 #endif
     }
@@ -171,7 +171,7 @@ namespace finger_drum::tests
                     "Each TickRoll tick, including head, is binary within inclusive Good.");
         }
         static_cast<void>(tickRoll.session->Update(rhythm::RhythmTime{1'000'000}));
-        Require(tickRoll.session->AccuracyRate() == 2.0 / 9.0,
+        Require(tickRoll.session->AccuracyRate() == rhythm::AccuracyScore::FromUnits(22'222'222).Rate(),
                 "Two accepted ticks of nine must score 2/9, including the missed tail.");
 
         auto profile = std::make_shared<rhythm::AccuracyRange>();
@@ -191,7 +191,7 @@ namespace finger_drum::tests
         const auto done = hold.Update({rhythm::RhythmTime{10'100'000}, {}});
         const double head = profile->Evaluate({}, rhythm::RhythmTime{14'166}).scoreRate;
         Require(done.finalizedAccuracies.size() == 1 && hold.Accuracy().acceptedTicks == 98 &&
-                    std::abs(hold.Accuracy().ScoreRate() - (head + 0.98) * 0.5) < 1e-9 &&
+                    std::abs(hold.Accuracy().ScoreRate() - rhythm::AccuracyScore::FromRate((head + 0.98) * 0.5).Rate()) < 1e-9 &&
                     std::abs(hold.Accuracy().ScoreRate() - 0.97) < 0.00001,
                 "Buzz must combine interpolated head and 98/100 held ticks equally.");
         Require(hold.Update({rhythm::RhythmTime{11'000'000}, {}}).finalizedAccuracies.empty(),

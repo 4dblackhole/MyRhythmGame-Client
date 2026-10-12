@@ -40,10 +40,11 @@ class GameplaySessionController final
         return feedback_;
     }
     std::string_view ErrorMessage() const noexcept;
-    bool ShouldReturnToLobby() const noexcept
+    bool ShouldShowResult() const noexcept
     {
         return !debugMode_ && completedElapsedSeconds_ >= 3.0;
     }
+    std::unique_ptr<finger_drum::mode::IPlayResult> TakeResult();
 
   private:
     std::unique_ptr<finger_drum::mode::PlaySession> CreateSession();
@@ -60,9 +61,10 @@ class GameplaySessionController final
     void ProcessDebugTimeline(const mrg::platform::InputState &input,
                               const mrg::audio::AudioClockSnapshot &clock,
                               const double deltaSeconds);
-    void ProcessRhythmInput(const mrg::platform::InputState &input);
+    void ProcessRhythmInput(const mrg::platform::InputState &input,
+                            std::optional<std::int64_t> exitTicks);
     void UpdateSession(const mrg::platform::InputState &input,
-                       const finger_drum::rhythm::RhythmTime time);
+                       const finger_drum::rhythm::RhythmTime time, bool beforeExit = false);
     bool IsPatternComplete() const noexcept;
     void ConsumeResult(finger_drum::rhythm::NoteProcessResult result, bool pressed = false);
     finger_drum::GameplayLaunchRequest launchRequest_;

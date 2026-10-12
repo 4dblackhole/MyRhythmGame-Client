@@ -18,6 +18,8 @@ flowchart TD
     Lobby --> Request["GameplayLaunchStore · 진입 시 Snapshot"]
     Request --> Manager
     Manager --> Test["RhythmTestScene · transient Taiko play"]
+    Test --> Result["ResultScene · moved IPlayResult / mode view"]
+    Result --> Lobby
 ```
 
 ## 시작
@@ -31,7 +33,7 @@ flowchart TD
    폴더가 없으면 `Default Skin`을 사용합니다. 상세 형식은 [TextManagement](TextManagement.md)입니다.
 3. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다.
-4. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest route를 등록합니다.
+4. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest, Result route를 등록합니다.
 5. `SceneManager`가 최초 Scene을 활성화하고 `Initialize`를 한 번 호출합니다.
    Client 초기화 hook은 첫 update/render 전에 현재 출력 장치 목록에서 저장된
    드라이버를 찾아 적용합니다. 출력 방식이 fallback됐으면 다른 API의 장치 번호를 사용하지 않습니다.
@@ -92,11 +94,13 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 - Logo와 Lobby는 `KeepAlive`, gameplay route는 `DestroyOnExit`입니다.
   gameplay 등록 시에는 factory만 보관하고 곡 선택 후 `ChangeScene`이 호출될
   때 해당 모드의 객체를 동적으로 생성합니다.
-- gameplay에서 Escape를 누르거나 모든 노트를 처리한 뒤 3초가 지나면 Lobby
+- gameplay에서 Escape를 누르거나 모든 노트를 처리한 뒤 3초가 지나면 Result
   전환을 요청합니다. update가 끝난 다음 `EndScene → Shutdown → delete` 순서로
   gameplay 객체가 파기되므로 다음 곡이나 모드의 상태가 남지 않습니다.
-- 결과 Scene이 설계되면 gameplay 객체 대신 점수·판정 통계만 별도의 결과
-  데이터로 이동시키고 같은 transient 수명 정책을 유지합니다.
+- `FingerDrumGame`의 대기 슬롯으로 결과 unique_ptr를 이동하고 Result factory가 이를
+  소비합니다. Result도 `DestroyOnExit`이며 `IResultView`가 모드별 표시를 맡습니다.
+  Result의 버튼·Escape·Enter는 Lobby로 돌아갑니다. 수집/정밀도/입력 로그는
+  [플레이 결과](Gameplay/Results.md)가 기준입니다.
 
 ## 프레임과 종료
 

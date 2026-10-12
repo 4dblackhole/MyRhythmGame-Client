@@ -1,4 +1,5 @@
 #include "Judgement/AccuracyRange.h"
+#include "Judgement/AccuracyScore.h"
 
 #include <algorithm>
 #include <cmath>
@@ -88,14 +89,15 @@ JudgementResult AccuracyRange::Evaluate(const RhythmTime noteTime, const RhythmT
 
         if (index == 0)
         {
-            return {band.grade, error, band.boundaryScoreRate};
+            return {band.grade, error, AccuracyScore::FromRate(band.boundaryScoreRate).Rate()};
         }
 
         const JudgementBand &previous = scaledBands_[index - 1];
         const double range = static_cast<double>((band.halfWindow - previous.halfWindow).count());
         const double position = static_cast<double>((absoluteError - previous.halfWindow).count());
         const double amount = range > 0.0 ? std::clamp(position / range, 0.0, 1.0) : 1.0;
-        return {band.grade, error, std::lerp(previous.boundaryScoreRate, band.boundaryScoreRate, amount)};
+        return {band.grade, error, AccuracyScore::FromRate(
+            std::lerp(previous.boundaryScoreRate, band.boundaryScoreRate, amount)).Rate()};
     }
     return {JudgementGrade::Miss, error, 0.0};
 }
