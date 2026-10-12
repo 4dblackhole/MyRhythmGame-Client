@@ -47,6 +47,8 @@ Client에는 별도 기술 예제 route가 없습니다.
 키빔 표시는 [별도 회귀 테스트](../Tests/Presentation/README.md)로 검사할 수 있습니다.
 판정 인디케이터/마커/링·문구 변경은 같은 문서의 Gameplay judgement guide 회귀를
 Debug/Release에서 실행합니다.
+상단 진행바도 같은 실행 파일의 진행률/시간/롱테일/타이머 일시정지/resize/빈 채보 검사와
+All-notes actual gameplay replay의 D3D12/FMOD 진행바 검사를 두 구성에서 실행합니다.
 결과 수집/표시/전환은 같은 문서의 Result graphs and actual Scene transition을 두 구성에서
 실행합니다. 점수 정밀도와 입력/중도 종료 통계는 PlayResultTests의 도메인 검사도 사용합니다.
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
@@ -82,6 +84,34 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 `Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접 빌드하고 로직·기본곡 카탈로그를
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
+
+## 2026-10-12 마지막 노트 기준 상단 진행바
+
+- GameplayProgressView가 유효한 노트의 마지막 head/tail 시각을 진입 때 캐시합니다.
+  기존 RhythmTimer 시각으로 PNG 채움/마커와 현재/전체 m:ss를 갱신하며 진행을 0~100%로
+  제한합니다. 음원 길이·판정 유예·Result 대기 시간은 포함하지 않습니다.
+  배경/트랙/채움/마커 PNG 4개를 별도로 제작하고 단일 GameProgressBar.png를 제거했습니다.
+  선택 스킨의 파일별 fallback/내장 팩을 사용합니다. 기본 팩은 71개에서 74개 파일이 됩니다.
+- Debug/Release x64 전체 solution Rebuild 성공, 일반 빌드 경고/오류 0.
+  두 구성의 로직/기본곡 카탈로그 52개(1곡/5패턴), 네 smoke 경로씩 총 8개 성공.
+  GameplayJudgementTests의 실제 Presenter/View 검사로 마지막 롱테일, 0/50/100%, 음수 시작,
+  종료 이후 유지, 타이머 일시정지/재개, Reset, 네 해상도, BPM/delay 컴파일 시각,
+  빈/0/음수 종료 시각, 1,000회 갱신의 노드/이미지 재사용을 확인했습니다.
+- 두 구성의 ResultPresentationTests 성공: 기존 결과 데이터 이동/실제 Scene 전환을 유지합니다.
+  AllNotesGameplayTests의 실제 D3D12/FMOD 실행에서 AngelDream 19노트와 dense Buzz 회귀,
+  진행바의 중간 진행과 종료 시 100%를 확인했습니다. 스크립트는 `/W4 /analyze`로
+  테스트 소스도 분석합니다. 기존 Require(song != nullptr)가 분석기에 전달되지 않아 나온
+  C6011은 같은 테스트 안의 명시적인 null 검사로 정리했습니다.
+- MSVC 14.44.35207 Code Analysis: 실제 Client 프로젝트의 include/define/C++20과 Debug/Release x64로
+  `Client/MRG.Client.vcxproj /t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행.
+  파싱/컴파일 오류 및 변경 코드의 새 분석 경고 0. 기존 C26115(EditorAnalysisController:51),
+  C28020(GameplaySessionController:98), Release C6236(GameplayInput:60)은 별도 기존 항목입니다.
+  억제하거나 진행바 범위 밖으로 수정하지 않았습니다. 진행바/판정 테스트 소스의 분석도 경고 0입니다.
+- CheckArchitecture(11프로젝트)와 git diff --check 성공. LaneKeyBeam.cpp의 기존 사용자 변경,
+  Debug/Release Option.ini, 사용자 Songs/Skins는 보존했습니다. 엔진 코드/gitlink는 변경하지 않았습니다.
+  빌드·분석·최종 회귀 로그는 ignored `build/progress-2026-10-12`에 있습니다.
+- PNG 파일을 직접 열어 분리 구성요소를 확인했습니다. 실제 게임 화면의 픽셀 배치,
+  물리 키보드/마우스 조작과 청취는 수동 검증하지 않았습니다. 실제 렌더/재생은 위 자동 실행입니다.
 
 ## 2026-10-12 Result·입력 로그·6자리 정확도
 

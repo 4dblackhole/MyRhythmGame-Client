@@ -17,6 +17,15 @@ namespace
             count += NoteRootCount(*child);
         return count;
     }
+    mrg::visual2d::Visual2DNode &ProgressFill(mrg::visual2d::Visual2DNode &root)
+    {
+        for (const auto &child : root.Children())
+            if (child->Name() == "Hud.GameProgress")
+                for (const auto &part : child->Children())
+                    if (part->Name() == "Progress.Fill")
+                        return *part;
+        throw std::runtime_error("Actual gameplay must create the progress fill.");
+    }
     class ReplayGame final : public mrg::IGameClient
     {
       public:
@@ -46,7 +55,8 @@ namespace
             for (const auto &entry : catalog.songs)
                 if (entry.metadataPath.filename() == "angel dream hand shaking.ymm")
                     song = &entry;
-            Require(song != nullptr, "Actual engine replay requires AngelDream music.");
+            if (!song)
+                throw std::runtime_error("Actual engine replay requires AngelDream music.");
             auto loaded = mode::TaikoMode{}.LoadSession(root / (effects_
                 ? "Patterns/angeldream/YME Effects Verification/angeldream [effects test].ymp"
                 : "Patterns/angeldream/All Notes Verification/angeldream [all notes test].ymp"));
@@ -80,6 +90,13 @@ namespace
                 [](const rhythm::NoteEvent &event) { return event.inputAction.has_value(); });
             presenter_.ApplyFeedback({.keyPressed = keyPressed, .result = result});
             presenter_.UpdatePresentation(time);
+            const auto *progressSprite = ProgressFill(visuals_.FindCanvas(1)->Root())
+                                             .GetComponent<mrg::visual2d::SpriteVisualComponent>();
+            if (!progressSprite)
+                throw std::runtime_error("Actual progress fill requires a Sprite component.");
+            const float progress = progressSprite->UvScale().x;
+            Require(progress >= 0 && progress <= 1, "Rendered progress must remain within the track.");
+            sawPartialProgress_ = sawPartialProgress_ || (progress > 0 && progress < 1);
             audio_.PlayNow(result.audioCues);
             audio_.ApplyAutomation(session_->EvaluateAutomation(time));
             audio_.Update();
@@ -89,6 +106,8 @@ namespace
             if (time >= replay_->End())
             {
                 replay_->Verify(*session_);
+                Require(sawPartialProgress_ && progress == 1,
+                        "Real playback must advance the progress bar and finish at the last note/tail.");
                 presenter_.UpdatePresentation(time + rhythm::RhythmDuration{1'000'000});
                 Require(NoteRootCount(visuals_.FindCanvas(1)->Root()) == 0,
                         "Expired note subtrees must not accumulate during play.");
@@ -167,6 +186,7 @@ namespace
         bool &verified_;
         std::size_t &frames_;
         bool effects_{};
+        bool sawPartialProgress_{};
     };
 } // namespace
 

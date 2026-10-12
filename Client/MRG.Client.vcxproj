@@ -194,6 +194,8 @@
     <ClCompile Include="Presentation\LaneKeyBeam.cpp" />
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayJudgementView.cpp" />
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayJudgementView.h" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayProgressView.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayProgressView.h" />
     <ClInclude Include="Presentation\LaneKeyBeam.h" />
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp" />
     <ClInclude Include="Presentation\MarqueeTextComponent.h" />

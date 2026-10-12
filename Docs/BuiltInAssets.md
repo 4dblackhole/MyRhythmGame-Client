@@ -78,6 +78,9 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 판정 링·문구 8종도 `InGame/Judgements/MAX.png`부터 `POOR.png`, `OK.png`까지 같은 파일별
 fallback을 사용합니다. 인디케이터는 별도 색 구간 요소로 구성합니다.
 판정별 파일명과 표시 계약은 [Presentation](Gameplay/Presentation.md)에 있습니다.
+상단 진행바는 `InGame/Progress/{Background,Track,Fill,Marker}.png` 네 파일을 사용합니다.
+각 요소는 따로 교체할 수 있고 누락 파일만 내장본으로 대체합니다. 시간 문구는 PNG에
+포함하지 않고 런타임에 표시합니다. 제작 크기와 시간 기준은 같은 Presentation 문서에 있습니다.
 
 곡 선택은 선택한 자산 루트의 `Songs`만 읽습니다. 곡을 캐시에서 다시 생성하지
 않으며, YMP의 `Effect file`이 참조하는 YME도 사용자가 직접 편집할 수 있습니다.

@@ -98,6 +98,31 @@ PNG 자체의 밝기 차이와 함께 강·약 상태가 명확히 구분됩니�
 우측 정확도 표시는 같은 HUD 영역의 동적 텍스트로 노트별 평균을 소수점 여섯 자리까지
 표시합니다. 아직 확정된 노트가 없으면 `--.--%`입니다.
 
+## 상단 플레이 진행바
+
+`GameplayProgressView`는 세션 진입 시 실제 생성된 노트의 마지막 head/tail 시각을 한 번
+계산합니다. BPM·delay·offset이 이미 적용된 정수 us 시각을 사용하며, 플레이 중에는
+`GameplayPresenter::UpdatePresentation`이 전달한 같은 `RhythmTimer` 시각으로 채움과 마커를
+갱신합니다. 판정 유예/음원 길이/Result 전환 대기 3초는 100% 기준에 포함하지 않습니다.
+0ms가 시작이고 마지막 노트(롱노트는 tail)가 100%입니다. 음수 시작 대기에는 0%,
+마지막 시각 이후에는 100%를 유지합니다. 일시정지·재개·Reset·디버그 탐색은 기존 타이머를
+따르므로 별도 진행 시계가 없습니다. 노트가 없으면 0%; 마지막 시각이 0ms 이하인 채보는
+그 시각에 100%로 전환합니다. 이 경우 시간 문구는 음수 대신 `0:00`입니다.
+
+기본 스킨 `InGame/Progress`의 `Background.png`(1820×30), `Track.png`(1704×10),
+`Fill.png`(1704×10), `Marker.png`(14×14)를 독립 Sprite로 조합합니다. 원본은 RGBA PNG이며
+바깥 여백은 투명합니다. 채움은 진행률만큼 bounds와 UV를 잘라 표시하고 마커 중심을
+같은 끝점에 둡니다. 현재/전체 시간은 별도 `m:ss` 텍스트로 표시하고 현재 시간의
+정수 초가 달라질 때만 문자열을 갱신합니다. 전체 시간 문구는 마지막 노트 시각입니다.
+기존 문구가 포함된 단일 `GameProgressBar.png`는 제거했습니다.
+
+Canvas는 노드를 소유하며 View는 observer만 보관하고 종료 시 해제합니다.
+PNG는 진입 때 등록하고 프레임 갱신에서 파일 읽기/노트 전체 검색/노드 생성을 하지 않습니다.
+폭은 `FixedHeight` 논리 화면 폭에서 좌우 20px를 제외하고, 시간 문구와 마커 크기는
+이미지의 2/3 기준 배율을 유지합니다. 외부 스킨의 같은 상대 경로 PNG가 우선하며
+없는 요소만 내장 기본본을 사용합니다. 제작 도구/프롬프트는 [진행바 자산](ProgressAssets.md)에 있습니다.
+입력/탐색 동작이 없는 표시 전용 진행바이며 판정·오디오·Result 전환 조건은 바꾸지 않습니다.
+
 ## 판정 인디케이터와 링·문구
 
 `GameplayJudgementView`가 하단 인디케이터와 판정원의 링·문구 상태를 소유합니다.
@@ -146,7 +171,8 @@ Reset은 처리 개수를 0으로 되돌립니다.
 [판정 이미지 제작 기록](JudgementAssets.md)에 있습니다.
 
 코드 진입점은 `Client/GameScene/RhythmTestScene/Submodules`입니다.
-`GameplayPresenter`가 Canvas를 소유하고 판정 표시는 `GameplayJudgementView`에 위임합니다.
+`GameplayPresenter`가 Canvas를 소유하고 판정 표시는 `GameplayJudgementView`, 진행바는
+`GameplayProgressView`에 위임합니다.
 `GameplayLayout`, `GameplayNoteVisuals`,
 `GameplayKeys`, `GameplayFeedbackVisuals`에 표시별 구현을 둡니다. `GameplaySessionController`는
 시간·입력·오디오를 소유하고 `GameplayFeedback`으로 표시할 이벤트만 전달합니다.

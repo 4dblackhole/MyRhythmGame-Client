@@ -112,6 +112,8 @@
     <ClCompile Include="Presentation\LaneKeyBeam.cpp"><Filter>Presentation</Filter></ClCompile>
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayJudgementView.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayJudgementView.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayProgressView.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayProgressView.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClInclude Include="Presentation\LaneKeyBeam.h"><Filter>Presentation</Filter></ClInclude>
     <ClCompile Include="Presentation\MarqueeTextComponent.cpp"><Filter>Presentation</Filter></ClCompile>
     <ClInclude Include="Presentation\MarqueeTextComponent.h"><Filter>Presentation</Filter></ClInclude>

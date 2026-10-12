@@ -4,6 +4,7 @@
 #include "Presentation/LaneKeyBeam.h"
 #include "GameplayFeedback.h"
 #include "GameplayJudgementView.h"
+#include "GameplayProgressView.h"
 #include "Texts/TextCatalog.h"
 #include <array>
 #include <unordered_map>
@@ -114,6 +115,7 @@ class GameplayPresenter final
     const finger_drum::mode::PlaySession *session_{};
     finger_drum::presentation::LaneKeyBeam keyBeam_;
     GameplayJudgementView judgementView_;
+    GameplayProgressView progressView_;
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers> noteVisuals_;
     std::unordered_map<finger_drum::rhythm::NoteId, const finger_drum::rhythm::INote *> noteModels_;
     std::map<std::wstring, mrg::visual2d::ImageHandle, std::less<>> noteImages_;
@@ -137,7 +139,6 @@ class GameplayPresenter final
     mrg::visual2d::ImageHandle strongKeyLightImage_{};
     mrg::visual2d::ImageHandle weakKeyLightImage_{};
     mrg::visual2d::ImageHandle keyPressFlashImage_{};
-    mrg::visual2d::Visual2DNode *gameProgressBar_{};
     mrg::visual2d::Visual2DNode *accuracyIndicator_{};
 #if defined(_DEBUG)
     mrg::visual2d::Visual2DNode *noteDebugLabel_{};

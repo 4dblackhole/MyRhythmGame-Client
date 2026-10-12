@@ -22,16 +22,7 @@ void GameplayPresenter::CreatePresentation()
     errorText.SetTextColor({0.78F, 0.06F, 0.08F, 1.0F});
     errorText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
 
-    const auto progressImage =
-        screenVisuals_.RegisterImage(InGameSkinAssetPath(L"GameProgressBar.png"));
-    const auto progressSize = ScaledImageSize(screenVisuals_, progressImage);
-    gameProgressBar_ =
-        &mrg::visual2d::CreateSprite(root,
-                                     {-CanvasReferenceWidth * 0.5F + GearMargin,
-                                      CanvasReferenceHeight * 0.5F - 16.0F - progressSize.height,
-                                      progressSize.width, progressSize.height},
-                                     progressImage, "Hud.GameProgress");
-    gameProgressBar_->SetZIndex(5);
+    progressView_.Initialize(screenVisuals_, root, *session_, texts_);
 
     const auto accuracyImage =
         screenVisuals_.RegisterImage(InGameSkinAssetPath(L"AccuracyIndicator.png"));
@@ -207,13 +198,9 @@ void GameplayPresenter::UpdatePresentationLayout()
         background_->SetBounds({-logicalWidth * 0.5F, -CanvasReferenceHeight * 0.5F, logicalWidth,
                                 CanvasReferenceHeight});
     }
-    if (gameProgressBar_ != nullptr)
-    {
-        gameProgressBar_->SetBounds(
-            {-logicalWidth * 0.5F + GearMargin,
-             CanvasReferenceHeight * 0.5F - 16.0F - gameProgressBar_->Bounds().height,
-             std::max(logicalWidth - GearMargin * 2.0F, 1.0F), gameProgressBar_->Bounds().height});
-    }
+    progressView_.SetLayout(
+        {-logicalWidth * 0.5F + GearMargin, CanvasReferenceHeight * 0.5F - 16.0F - progressView_.Height(),
+         std::max(logicalWidth - GearMargin * 2.0F, 1.0F), progressView_.Height()});
     if (accuracyIndicator_ != nullptr)
     {
         const auto bounds = accuracyIndicator_->Bounds();

@@ -3,6 +3,7 @@
 #include "Presentation/LaneKeyBeam.h"
 #include "Taiko/TaikoMode.h"
 #include "FingerDrumAssets.h"
+#include "Time/RhythmTimer.h"
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -196,6 +197,129 @@ namespace
               "JudgeLevel 100 must halve the base BAD band length.");
         strictView.Shutdown();
     }
+    void TestGameplayProgress()
+    {
+        AssetRenderer renderer;
+        v::ScreenVisual2DManager visuals;
+        visuals.Initialize(renderer, {1280, 720});
+        finger_drum::chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
+        pattern.baseBpm = 120;
+        // A late normal head must not hide an earlier long note's later tail.
+        pattern.notes = {{{1, {1, 4}}, 1}, {{0, {}}, 11, 1}, {{2, {}}, 11, 2}};
+        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        Check(loaded.Succeeded(), "Progress fixture must load.");
+        mrg::graphics::MeshRenderSystem meshes;
+        mrg::graphics::TextRenderSystem textRendering;
+        mrg::audio::AudioSystem audio;
+        finger_drum::texts::TextCatalog texts;
+        GameplayPresenter presenter(visuals, texts);
+        presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
+        auto &root = visuals.FindCanvas(1)->Root();
+        auto &progress = Node(root, "Hud.GameProgress");
+        auto &track = Node(root, "Progress.Track");
+        auto &fill = Node(root, "Progress.Fill");
+        auto &marker = Node(root, "Progress.Marker");
+        auto &currentText = *Node(root, "Progress.CurrentTime").GetComponent<v::TextVisualComponent>();
+        const auto &totalText = *Node(root, "Progress.TotalTime").GetComponent<v::TextVisualComponent>();
+        Check(totalText.Text() == L"0:04", "Total time includes the last long tail, without judgement grace.");
+        const auto checkFraction = [&](const float expected)
+        {
+            Check(Near(fill.Bounds().width, track.Bounds().width * expected), "Progress fill must follow play time.");
+            Check(Near(marker.Bounds().x + marker.Bounds().width * 0.5F,
+                       track.Bounds().x + track.Bounds().width * expected),
+                  "Marker must follow the fill endpoint.");
+            Check(Near(fill.GetComponent<v::SpriteVisualComponent>()->UvScale().x, expected),
+                  "Fill texture must be cropped with progress.");
+        };
+        presenter.UpdatePresentation(r::RhythmTime{-2'000'000});
+        checkFraction(0);
+        Check(!fill.IsVisible() && currentText.Text() == L"0:00", "Pre-roll must not show negative elapsed time.");
+        presenter.UpdatePresentation(r::RhythmTime{2'000'000});
+        checkFraction(.5F);
+        Check(fill.IsVisible() && currentText.Text() == L"0:02", "The current time label must be dynamic.");
+
+        r::RhythmTimer timer;
+        timer.Start(0, 1'000'000);
+        timer.Pause(1'000'000);
+        presenter.UpdatePresentation(timer.Now(3'000'000));
+        checkFraction(.25F);
+        timer.Resume(3'000'000);
+        presenter.UpdatePresentation(timer.Now(4'000'000));
+        checkFraction(.5F);
+        for (const auto viewport : std::array<v::Size, 4>{{{1920, 1080}, {2560, 1080}, {800, 900}, {100, 720}}})
+        {
+            const auto width = static_cast<std::uint32_t>(viewport.width);
+            const auto height = static_cast<std::uint32_t>(viewport.height);
+            visuals.OnResize(width, height);
+            presenter.OnResize(width, height);
+            checkFraction(.5F);
+            Check(Near(progress.Bounds().width, std::max(viewport.width / viewport.height * 720 - 40, 1.0F)),
+                  "Progress must fit the actual logical viewport width.");
+            Check(marker.Bounds().x >= 0 && marker.Bounds().x + marker.Bounds().width <= progress.NodeSize().width,
+                  "Marker must remain inside the bar after resize.");
+        }
+        presenter.UpdatePresentation(r::RhythmTime{4'000'000});
+        checkFraction(1);
+        presenter.UpdatePresentation(r::RhythmTime{9'000'000});
+        checkFraction(1);
+        Check(currentText.Text() == totalText.Text(), "Post-roll must keep the completed time and progress.");
+        loaded.session->Reset();
+        presenter.ApplyFeedback({.reset = true});
+        presenter.UpdatePresentation(r::RhythmTime{-1});
+        checkFraction(0);
+        presenter.Shutdown();
+        Check(visuals.FindCanvas(1) == nullptr, "Shutdown must destroy the progress Canvas.");
+
+        // Test the view's constant allocation/resource boundary independently
+        // of note/measure visual pools that legitimately change during play.
+        v::Visual2DCanvas canvas;
+        GameplayProgressView view;
+        pattern.timing = {{{1, {}}, finger_drum::chart::TimingDirectiveType::Bpm, 240},
+                          {{1, {}}, finger_drum::chart::TimingDirectiveType::DelayMilliseconds, 500}};
+        loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        Check(loaded.Succeeded(), "Compiled BPM/delay progress fixture must load.");
+        view.Initialize(visuals, canvas.Root(), *loaded.session, texts);
+        view.SetLayout({0, 0, 1200, view.Height()});
+        const auto nodes = NodeCount(canvas.Root());
+        const auto loads = renderer.loads;
+        const auto end = loaded.session->Timeline().Compile({2, {}});
+        view.Update(end / 2);
+        Check(Near(Node(canvas.Root(), "Progress.Fill").GetComponent<v::SpriteVisualComponent>()->UvScale().x, .5F),
+              "Progress must use compiled BPM/delay timing rather than authored beat count.");
+        for (int index = 0; index < 1000; ++index)
+            view.Update(r::RhythmTime{index * 5000});
+        Check(nodes == NodeCount(canvas.Root()) && loads == renderer.loads,
+              "Progress updates must not create nodes or reload images.");
+        view.Shutdown();
+        view.Update(r::RhythmTime{1});
+        view.SetLayout({0, 0, 1, 1});
+
+        const auto checkZeroDuration = [&](const bool empty, const double offset)
+        {
+            v::Visual2DCanvas edgeCanvas;
+            finger_drum::mode::PlaySession emptySession;
+            pattern.notes = {{{0, {}}, 1}};
+            pattern.timing.clear();
+            pattern.patternOffsetMilliseconds = offset;
+            loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+            Check(loaded.Succeeded(), "Zero/negative note fixture must load.");
+            view.Initialize(visuals, edgeCanvas.Root(), empty ? emptySession : *loaded.session, texts);
+            view.SetLayout({0, 0, 1200, view.Height()});
+            const auto noteTime = loaded.session->Gear().Lanes().front()->Notes().front()->Timing();
+            view.Update(noteTime - r::RhythmDuration{1});
+            Check(!Node(edgeCanvas.Root(), "Progress.Fill").IsVisible(), "Zero-duration progress starts empty.");
+            view.Update(noteTime);
+            const auto fraction =
+                Node(edgeCanvas.Root(), "Progress.Fill").GetComponent<v::SpriteVisualComponent>()->UvScale().x;
+            Check(std::isfinite(fraction) && Near(fraction, empty ? 0.0F : 1.0F),
+                  "Empty charts stay empty; nonpositive endpoints finish at the note time without division by zero.");
+            view.Shutdown();
+        };
+        checkZeroDuration(true, 0);
+        checkZeroDuration(false, 0);
+        checkZeroDuration(false, -200);
+    }
     void TestPresenterEventPriority()
     {
         AssetRenderer renderer;
@@ -354,9 +478,10 @@ int main()
         std::string error;
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
         TestGuideAndOverlays();
+        TestGameplayProgress();
         TestPresenterEventPriority();
         TestRollCompletionAndProcessedTicks();
-        std::puts("Gameplay judgement guide/marker/overlay tests passed.");
+        std::puts("Gameplay progress and judgement guide/marker/overlay tests passed.");
         return 0;
     }
     catch (const std::exception &error)

@@ -20,6 +20,19 @@
   효과 테스트 WAV 2개는 외부 Songs입니다.
 - 사용자 곡·스킨과 `TODOLIST.txt`를 임의로 stage/덮어쓰지 않습니다.
 
+## 최근 구현: 상단 진행바 (2026-10-12)
+
+`GameplayProgressView`는 세션 진입 시 컴파일된 마지막 head/tail 시각을 캐시하고
+Presenter가 전달하는 같은 RhythmTimer 시각으로 채움/마커/현재 시간을 갱신합니다.
+0ms→마지막 노트가 0→100%이며 판정 유예·음원 길이·Result 대기 시간은 제외합니다.
+일시정지/Reset/탐색은 기존 타이머를 따릅니다. 빈 채보는 0%, 0 이하 종료 시각은
+해당 마지막 시각에 100%로 전환합니다. 시간 문구는 0:00 미만을 표시하지 않습니다.
+단일 GameProgressBar.png 대신 내장/선택 스킨 `InGame/Progress`의 Background/Track/Fill/Marker
+PNG를 사용하고 현재/전체 m:ss를 런타임에 표시합니다. 노드 수명/스킨/크기 규칙은
+[플레이 표시](Gameplay/Presentation.md), 생성 프롬프트는 [자산 기록](Gameplay/ProgressAssets.md)에 있습니다.
+새 PNG는 기존 스킨 wildcard로 팩에 포함됩니다. 사용자 외부 스킨/설정/곡은 수정하지 않습니다.
+검증 명령은 Verification의 진행바 항목과 Tests/Presentation의 두 회귀를 참고합니다.
+
 ## 최근 구현: Result·입력 로그·정확도 정밀도 (2026-10-12)
 
 노트 처리와 Result의 정확도는 퍼센트 기준 소수점 6자리 아래를 버립니다.

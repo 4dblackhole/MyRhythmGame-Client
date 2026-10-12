@@ -35,7 +35,13 @@ POOR only on red-beam rejection, out-of-range/release/unjudged-tick suppression,
 200ms fade/retrigger/reset, inherited circle centre, resize, node/image reuse,
 and accepted-hit priority over a passive MISS.
 It also verifies displaying an automation diagnostic in the shared error HUD and hiding it when cleared.
-The test source uses MSVC `/analyze`; no GPU/audio device is started.
+The same executable tests the production gameplay progress view: last long-tail
+duration, pre/post-roll clamping, fill UV and marker position, current/total time,
+the shared RhythmTimer's pause/resume, Reset, four viewport sizes, compiled
+BPM/delay timing, empty/zero/negative duration and constant node/image reuse.
+The all-notes actual D3D12/FMOD replay additionally checks that progress advances
+during real playback and reaches 100% by the final note/tail.
+The judgement/progress geometry executable uses MSVC `/analyze`; it starts no GPU/audio device.
 Automated geometry checks do not replace actual screen/input/listening inspection.
 
 ## Allocation failure boundary regression

@@ -19,6 +19,7 @@
 | 플레이 Clock·pause·reset·입력 | `RhythmTestScene/Submodules/GameplaySessionController.*`, GameplayInput.cpp | RhythmCoreTests; gameplay smoke |
 | 노트 이미지·롱노트 | 같은 폴더 `GameplayNoteVisuals.cpp` | GameplayPresenter.h, NoteVisualKind; gameplay smoke |
 | Lane·기어·resize | 같은 폴더 `GameplayLayout.cpp`, GameplaySupport.h | GameplayPresenter.h; gameplay smoke |
+| 상단 진행바·현재/전체 시간 | 같은 폴더 `GameplayProgressView.*`, GameplayLayout.cpp | PlaySession의 컴파일된 head/tail; GameplayJudgementTests, 실제 전체 노트 replay |
 | 정확도/특수 노트 표시 | 같은 폴더 `GameplayFeedbackVisuals.cpp` | NoteTypes.h의 이벤트/정확도; AccuracyTests/GameplayJudgementTests |
 | 판정 구간·타이밍 마커·링/문구 | 같은 폴더 `GameplayJudgementView.*`, GameplayFeedbackVisuals.cpp | AccuracyRange, LaneKeyBeam의 색상/입력 응답; GameplayJudgementTests |
 | 점수 정밀도·결과 수집·입력 로그 | `Judgement/AccuracyScore.h`, `Mode/Results`, `Taiko/Results` | NoteAccuracy/PlaySession, TaikoSessionBuilder; PlayResultTests |

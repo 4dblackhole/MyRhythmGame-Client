@@ -317,6 +317,7 @@ void GameplayPresenter::HideTransientNoteVisuals()
 
 void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime time)
 {
+    progressView_.Update(time);
     UpdateAccuracyPresentation();
     using Duration = finger_drum::rhythm::RhythmDuration;
     const auto horizon = std::max(VisibleTravelDuration(), Duration{1});
