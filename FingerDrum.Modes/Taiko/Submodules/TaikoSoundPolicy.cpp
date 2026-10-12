@@ -49,18 +49,16 @@ namespace finger_drum::mode
     }
 
     std::shared_ptr<const rhythm::INoteSoundPolicy> TaikoSessionBuilder::MakeAlternatingSoundPolicy(
-        const std::size_t hitCount, const std::string &soundId)
+        const std::string &soundId)
     {
         auto policy = std::make_shared<rhythm::MappedNoteSoundPolicy>();
-        for (std::size_t index = 0; index < hitCount; ++index)
+        for (const TaikoAction action : {TaikoAction::Don, TaikoAction::Kat})
         {
-            policy->Bind(rhythm::SoundBinding{.eventType = rhythm::NoteEventType::HitAccepted,
-                                              .hitIndex = index,
-                                              .cue = Cue(!soundId.empty() ? soundId
-                                                         : index % 2 == 0 ? finger_drum::mode::taiko_sound::DonHit
-                                                                          : finger_drum::mode::taiko_sound::KatHit,
-                                                         "TickSound"),
-                                              .stopAfterMatch = true});
+            policy->Bind(rhythm::SoundBinding{
+                .eventType = rhythm::NoteEventType::HitAccepted,
+                .cue = Cue(soundId.empty() ? taiko_audio::InputSound(action) : soundId, "TickSound"),
+                .stopAfterMatch = true,
+                .inputAction = ActionValue(action)});
         }
         return policy;
     }

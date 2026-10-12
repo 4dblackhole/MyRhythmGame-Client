@@ -25,7 +25,7 @@ namespace finger_drum::mode
             const std::string &soundId);
         [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy> MakeBalloonSoundPolicy(
             std::string soundId);
-        [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy>
-        MakeAlternatingSoundPolicy(std::size_t hitCount, const std::string &soundId);
+        [[nodiscard]] static std::shared_ptr<const rhythm::INoteSoundPolicy> MakeAlternatingSoundPolicy(
+            const std::string &soundId);
     };
 } // namespace finger_drum::mode

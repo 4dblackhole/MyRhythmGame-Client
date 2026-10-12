@@ -85,6 +85,33 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
+## 2026-10-12 뎅뎅 자유 시작·순서 오류의 카운트 보존
+
+- TimedSequenceInputRule이 첫 유효 입력으로 순서의 시작을 선택하고 다음 요구 action을
+  보관합니다. TaikoLongNoteFactory는 뎅뎅에서만 자유 시작을 켜며 풍선의 동 전용은 유지합니다.
+  거부된 입력은 Unjudged로 내보내고 카운트/다음 action/점수를 변경하지 않습니다.
+  Reset은 카운트와 순서 상태를 초기화합니다. 구간/요구 횟수/성공·실패 시점은 유지합니다.
+- TaikoSoundPolicy는 뎅뎅의 실제 인정된 inputAction으로 두 sound binding을 선택합니다.
+  캇 시작도 Kat 사운드를 사용하며 명시적 YME 히트사운드는 우선합니다.
+  타격수만큼 binding을 만들던 홀짝 방식은 제거했습니다. 파일 형식·엔진 코드는 변경하지 않았습니다.
+- Debug/Release x64 전체 solution Rebuild 성공, 일반 빌드 경고/오류 0.
+  각 구성 55개 로직·기본곡 카탈로그 검사와 네 smoke씩 총 8개 성공.
+  TestDengDengEitherStart는 동/캇 시작, 같은 색 반복 시 카운트/상태/다음 색 보존,
+  구간 전 입력·키 해제의 시작 선택 방지, 실제 입력 사운드·명시적 사운드 우선,
+  Reset 후 반대 색 시작, 최종 100%와 2/3의 66.666666%, POOR/오차 통계 제외를 검사합니다.
+- 두 구성의 GameplayJudgement 회귀는 양쪽 시작과 잘못된 반복을 섞어 실제 Presenter의
+  POOR/마커 억제, 흰색 키빔, 카운트 유지와 성공 OK를 확인했습니다.
+  실제 숨김 D3D12/FMOD 전체 노트 replay는 각 19개 노트 완료/85.1837%로 기존 기대값을 유지합니다.
+  두 구성의 Result 그래프·소수점 6자리·소유권·실제 deferred Scene 전환도 성공했습니다.
+- MSVC Code Analysis(`/analyze`, 실제 C++20/include/define/x64 설정)는 변경된 Rhythm,
+  Modes, Rhythm.Tests 프로젝트를 Debug/Release Rebuild로 검사했습니다. 경고/오류 0.
+  표시·실제 재생·Result 회귀 소스도 실행 스크립트의 MSVC `/analyze`로 컴파일했습니다.
+  변경 코드와 직접 호출부의 상태 전이·소유권·입력 경계·인덱스 변환·사운드 중복을 검토했습니다.
+- CheckArchitecture(11개 프로젝트)·git diff --check 성공. 사용자 LaneKeyBeam.cpp·곡/스킨·
+  Option.ini를 보존했고 기존 파일/INI 해시가 실행 전후 동일합니다.
+  실제 픽셀 배치·물리 키/마우스 조작·청음은 수동 확인하지 않았습니다.
+  로그는 ignored `build/dengdeng-start-2026-10-12`에 보관합니다.
+
 ## 2026-10-12 X 양끝 이동·마디선 스크롤 통일·횟수형 롤 헤드 판정 제거
 
 - Workspace/Input은 X를 마지막 노트(테일 포함)→음원 끝으로 연결합니다.

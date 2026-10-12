@@ -40,6 +40,15 @@ Roll/BigRoll/Balloon/DengDeng의 Preview는 Unjudged이며 구간·타격수로�
 계약은 [플레이 표시](Gameplay/Presentation.md)와 [판정 규칙](Gameplay/Rules.md),
 검증은 [Verification](Verification.md)를 참고합니다.
 
+## 최근 변경: 뎅뎅의 동·캇 자유 시작 (2026-10-12)
+
+TimedSequenceInputRule에 첫 유효 입력으로 순서의 시작을 선택하는 동작을 추가하고
+Taiko 뎅뎅에만 연결했습니다. 이후는 마지막 인정 입력의 반대 색만 인정합니다.
+순서 오류는 Unjudged이며 카운트/다음 색/점수를 유지합니다. Reset은 초기 상태로 되돌립니다.
+TaikoSoundPolicy는 횟수 홀짝 대신 실제 인정된 action을 사용하므로 캇 시작도 올바른 소리를 냅니다.
+풍선의 동 전용·시간 범위·완료/부분 점수는 유지합니다. 상세는 [판정 규칙](Gameplay/Rules.md),
+검증은 [Verification](Verification.md)를 참고합니다.
+
 ## 최근 구현: 상단 진행바 (2026-10-12)
 
 `GameplayProgressView`는 세션 진입 시 컴파일된 마지막 head/tail 시각을 캐시하고

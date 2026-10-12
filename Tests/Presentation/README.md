@@ -36,6 +36,8 @@ POOR only on red-beam rejection, out-of-range/release/unjudged-tick suppression,
 and accepted-hit priority over a passive MISS.
 It checks coincident note/measure centres under Whole and Separate at several times and viewport sizes,
 and all four count-only roll heads for suppressed timing feedback, white beams and OK/MISS completion.
+Both DengDeng starting colors cover repeated-action rejection with a stable count/next action,
+no POOR/timing marker, white beams, Reset and successful OK completion.
 It also verifies displaying an automation diagnostic in the shared error HUD and hiding it when cleared.
 The same executable tests the production gameplay progress view: last long-tail
 duration, pre/post-roll clamping, fill UV and marker position, current/total time,

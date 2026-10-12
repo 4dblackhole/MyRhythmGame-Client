@@ -81,8 +81,8 @@ namespace finger_drum::mode
             {
                 rule = std::make_unique<rhythm::TimedSequenceInputRule>(
                     std::vector<rhythm::NoteAction>{ActionValue(TaikoAction::Don), ActionValue(TaikoAction::Kat)},
-                    *hitCount, end);
-                soundPolicy = MakeAlternatingSoundPolicy(*hitCount, head.hitSound);
+                    *hitCount, end, true);
+                soundPolicy = MakeAlternatingSoundPolicy(head.hitSound);
             }
             break;
         case TaikoNoteType::Buzz:

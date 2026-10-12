@@ -21,6 +21,7 @@ namespace finger_drum::tests
     void TestOverlappingLongTrailIsNotHiddenByShorterNote();
     void TestTaikoRollAndTickRollRules();
     void TestCountOnlyRollHeadJudgements();
+    void TestDengDengEitherStart();
     void TestMeasureLineScrollEffects();
     void TestBalloonDengDengAndBuzzRules();
     void TestTimingAccuracyAndSessionAggregation();

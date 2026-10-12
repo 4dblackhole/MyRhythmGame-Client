@@ -413,6 +413,51 @@ namespace
         }
     }
 
+    void TestDengDengWrongOrderFeedback()
+    {
+        AssetRenderer renderer;
+        v::ScreenVisual2DManager visuals;
+        visuals.Initialize(renderer, {1280, 720});
+        finger_drum::chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
+        pattern.baseBpm = 120;
+        pattern.notes = {{{0, {}}, 16, 1, {}, {"HitCount=3"}}, {{0, {1, 2}}, 16, 2}};
+        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        Check(loaded.Succeeded(), "Wrong-order presentation fixture must load.");
+        mrg::graphics::MeshRenderSystem meshes;
+        mrg::graphics::TextRenderSystem textRendering;
+        mrg::audio::AudioSystem audio;
+        finger_drum::texts::TextCatalog texts;
+        GameplayPresenter presenter(visuals, texts);
+        presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
+        auto &root = visuals.FindCanvas(1)->Root();
+        for (const char first : {'F', 'D'})
+        {
+            loaded.session->Reset();
+            presenter.ApplyFeedback({.reset = true});
+            const char other = first == 'F' ? 'D' : 'F';
+            const std::array<char, 5> keys{first, first, other, other, first};
+            const std::array<std::size_t, 5> counts{1, 1, 2, 2, 3};
+            for (std::size_t index = 0; index < keys.size(); ++index)
+            {
+                presenter.ApplyFeedback(
+                    {.keyPressed = true,
+                     .result = loaded.session->ProcessInput(keys[index], r::InputEdge::Pressed,
+                                                            r::RhythmTime{10'000 * static_cast<std::int64_t>(index)})});
+                CheckOverlay(root, index == 4 ? "OK" : "");
+                Check(!Node(root, "Judgement.Marker").IsVisible(),
+                      "Wrong-order presses must not display a timing marker.");
+                const auto beam = Node(root, "Lane.KeyBeam").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+                Check(Near(beam.red, 1) && Near(beam.green, 1) && Near(beam.blue, 1),
+                      "Wrong-order DengDeng input must remain white, never POOR/red.");
+                Check(loaded.session->Gear().Lanes().front()->Notes().front()->Progress() ==
+                          r::NoteProgress{counts[index], 3},
+                      "The displayed count must stay unchanged on repeated actions.");
+            }
+        }
+        presenter.Shutdown();
+    }
+
     void TestPresenterEventPriority()
     {
         AssetRenderer renderer;
@@ -574,6 +619,7 @@ int main()
         TestGameplayProgress();
         TestMeasureLinesShareNoteMotion();
         TestCountOnlyHeadsHaveNoFeedback();
+        TestDengDengWrongOrderFeedback();
         TestPresenterEventPriority();
         TestRollCompletionAndProcessedTicks();
         std::puts("Gameplay progress and judgement guide/marker/overlay tests passed.");

@@ -1,7 +1,73 @@
 #include "TestSupport.h"
+#include "Taiko/Results/TaikoPlayResult.h"
 
 namespace finger_drum::tests
 {
+    void TestDengDengEitherStart()
+    {
+        for (const char first : {'F', 'D'})
+        {
+            auto pattern = MakeLongPattern(mode::TaikoNoteType::DengDeng, {"HitCount=3"});
+            pattern.patternOffsetMilliseconds = 500;
+            auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+            Require(loaded.Succeeded(), "Either-start DengDeng fixture must load.");
+            auto &session = *loaded.session;
+            const auto &note = *session.Gear().Lanes().front()->Notes().front();
+            const char other = first == 'F' ? 'D' : 'F';
+            const auto reject = [&](char key, std::int64_t us, std::size_t count, rhythm::InputEdge edge)
+            {
+                const auto state = note.State();
+                const auto result = session.ProcessInput(key, edge, rhythm::RhythmTime{us});
+                Require(
+                    note.Progress() == rhythm::NoteProgress{count, 3} && note.State() == state &&
+                        !HasEvent(result, rhythm::NoteEventType::HitAccepted) &&
+                        std::ranges::all_of(result.events, [](const auto &event)
+                                            { return event.judgement.grade == rhythm::JudgementGrade::Unjudged; }),
+                    "Wrong/released/out-of-range input must not change the phase, count or emit a timing rejection.");
+            };
+            const auto accept = [&](char key, std::int64_t us, std::size_t count)
+            {
+                const auto result = session.ProcessInput(key, rhythm::InputEdge::Pressed, rhythm::RhythmTime{us});
+                const auto sound = key == 'F' ? "Taiko.Don.Hit" : "Taiko.Kat.Hit";
+                Require(HasEvent(result, rhythm::NoteEventType::HitAccepted) &&
+                            note.Progress() == rhythm::NoteProgress{count, 3} && result.audioCues.size() == 1 &&
+                            result.audioCues.front().sound == sound,
+                        "Accepted alternation must count once and sound the actual action, including Kat-first.");
+            };
+            reject(other, 499'999, 0, rhythm::InputEdge::Pressed);
+            reject(other, 500'000, 0, rhythm::InputEdge::Released);
+            accept(first, 900'000, 1);
+            reject(first, 910'000, 1, rhythm::InputEdge::Pressed);
+            accept(other, 920'000, 2);
+            reject(other, 930'000, 2, rhythm::InputEdge::Pressed);
+            accept(first, 940'000, 3);
+            Require(note.Accuracy().Score().Units() == 100'000'000,
+                    "Wrong presses between correct alternations must not reduce full completion accuracy.");
+            session.Reset();
+            Require(note.Progress() == rhythm::NoteProgress{0, 3}, "Reset must restore the initial unbound phase.");
+            // Start with the opposite action after Reset, proving the prior phase is gone.
+            accept(other, 500'000, 1);
+            reject(other, 510'000, 1, rhythm::InputEdge::Pressed);
+            accept(first, 520'000, 2);
+            static_cast<void>(session.Update(rhythm::RhythmTime{1'500'000}));
+            const auto result = session.TakeResult(mode::PlayEndReason::Completed, rhythm::RhythmTime{1'500'000});
+            const auto *taiko = dynamic_cast<const mode::TaikoPlayResult *>(result.get());
+            Require(taiko && taiko->poorCount == 0 && taiko->timingErrors.empty() &&
+                        taiko->summary.accuracy.Units() == 66'666'666,
+                    "Wrong order must not add POOR/timing samples or subtract from the two accepted hits.");
+        }
+        // Explicit YME sound assignments still override action-based default sounds.
+        auto pattern = MakeLongPattern(mode::TaikoNoteType::DengDeng, {"HitCount=3"});
+        pattern.notes.front().hitSound = "1";
+        chart::EffectDocument effects;
+        effects.hitSounds["1"] = "explicit.wav";
+        auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+        Require(loaded.Succeeded(), "Explicit Kat-first sound fixture must load.");
+        const auto hit = loaded.session->ProcessInput('D', rhythm::InputEdge::Pressed, rhythm::RhythmTime{});
+        Require(hit.audioCues.size() == 1 && hit.audioCues.front().sound == "Chart.HitSound.1",
+                "Kat-first must preserve the authored sound override.");
+    }
+
     void TestCountOnlyRollHeadJudgements()
     {
         for (const auto type : {mode::TaikoNoteType::Roll, mode::TaikoNoteType::BigRoll, mode::TaikoNoteType::Balloon,

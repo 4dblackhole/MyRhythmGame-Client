@@ -8,6 +8,7 @@ namespace finger_drum::rhythm
     // Accepts a fixed number of presses during a long-note interval. The
     // sequence repeats, so {Don} models a Balloon and {Don, Kat} models an
     // alternating long note without introducing game-mode concepts here.
+    // An optional free first action chooses the sequence phase on the first accepted press.
     class TimedSequenceInputRule final : public INoteRule
     {
       public:
@@ -15,8 +16,8 @@ namespace finger_drum::rhythm
         {
             return {NoteAccuracyKind::HitCount, requiredHitCount_};
         }
-        TimedSequenceInputRule(std::vector<NoteAction> repeatingSequence,
-                               std::size_t requiredHitCount, RhythmTime endTime);
+        TimedSequenceInputRule(std::vector<NoteAction> repeatingSequence, std::size_t requiredHitCount,
+                               RhythmTime endTime, bool allowAnyStartingAction = false);
 
         void Reset() noexcept override;
         [[nodiscard]] NoteState State() const noexcept override;
@@ -37,6 +38,8 @@ namespace finger_drum::rhythm
         RhythmTime endTime_{};
         NoteState state_{NoteState::Active};
         std::size_t acceptedHitCount_{};
+        std::size_t nextActionIndex_{};
+        bool allowAnyStartingAction_{};
     };
 
     // Caps a roll to one accepted press per authored tick. Each press is

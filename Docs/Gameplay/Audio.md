@@ -34,6 +34,9 @@ DSP 예약 시각을 재설정하지 않으므로 이 경우의 동기화는 보
 - 범위 밖 입력은 노트 전용 사운드가 아니라 `UserInputFeedback` bus의 일반
   Don/Kat 사운드를 냅니다.
 - 홀드 tick은 `TickAccepted`마다 한 번만 `TickSound` bus로 전달됩니다.
+- 뎅뎅의 `HitAccepted`는 횟수의 홀짝이 아니라 실제 `inputAction`으로 Don/Kat를 선택합니다.
+  캇으로 시작해도 Kat 사운드가 나오며, YMP의 명시적 히트사운드 지정은 그대로 우선합니다.
+  교대 거부는 노트 전용 cue를 만들지 않고 기존의 일반 입력 피드백을 사용합니다.
 
 이 분리 덕분에 같은 노트 규칙을 유지한 채 스킨별 파일, 볼륨, pitch, pan,
 우선순위와 bus를 바꿀 수 있습니다.
