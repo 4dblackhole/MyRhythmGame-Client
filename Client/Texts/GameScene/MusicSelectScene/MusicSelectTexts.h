@@ -33,6 +33,7 @@ namespace finger_drum::texts
         std::wstring_view unsupportedModePrefix;
         std::wstring_view patternErrorPrefix;
         std::wstring_view unknownChartError;
+        std::wstring_view loadingSongs;
     };
 
     [[nodiscard]] const MusicSelectTextSet &MusicSelect(Language language) noexcept;

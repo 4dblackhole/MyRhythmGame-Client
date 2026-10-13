@@ -4,6 +4,7 @@
 #include "Submodules/SongSelectPurpose.h"
 #include "Texts/TextCatalog.h"
 #include "App/OptionSettings.h"
+#include "Submodules/SongCatalogLoader.h"
 #include <memory>
 
 class SongSelectionState;
@@ -39,4 +40,5 @@ class MusicSelectScene final : public mrg::scene::GameScene
     std::unique_ptr<SongPreviewController> preview_;
     bool active_{};
     bool firstEntry_{true};
+    SongCatalogLoader catalogLoader_;
 };

@@ -4,6 +4,8 @@
 #include "GameScene/RhythmTestScene/Submodules/GameplayPresenter.h"
 #include "MRG_Core.h"
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 using namespace finger_drum;
 using finger_drum::tests::Require;
@@ -66,11 +68,23 @@ namespace
                     "Effects replay must load the effect fixture, not the all-notes fixture.");
             std::cout << (effects_ ? "Replay fixture: YME effects\n" : "Replay fixture: all notes\n");
             replay_ = std::make_unique<tests::AllNotesReplay>(*session_, !effects_);
+            const auto imageDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+            while (!presenter_.PrepareAssets(services) && std::chrono::steady_clock::now() < imageDeadline)
+                std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            Require(presenter_.PrepareAssets(services), "Async skin image preparation must complete.");
             presenter_.Initialize(services, *session_);
             Require(NoteRootCount(visuals_.FindCanvas(1)->Root()) == 0,
                     "Session entry must not eagerly construct every note visual.");
             presenter_.SetVisible(true);
             RegisterAudio(services.audio, song->audioPath);
+            const auto readyDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+            while (!audio_.Ready() && std::chrono::steady_clock::now() < readyDeadline)
+            {
+                services.audio.Update();
+                std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            }
+            Require(audio_.Ready() && audio_.LastError().empty(),
+                    "Async gameplay resources must become ready before clock anchoring.");
             const auto initial = presenter_.InitialTimelineTime();
             const auto clock = services.audio.CaptureClockSnapshot();
             timer_.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, initial);
@@ -165,12 +179,14 @@ namespace
             for (const auto &sample : samples)
                 aliases[sample.file].push_back(sample.id);
             for (const auto &[file, ids] : aliases)
-                Require(audio_.RegisterSoundAliases(ids, mrg_client::asset_paths::skin::TaikoHitSound(file), error),
+                Require(audio_.RegisterSoundAliases(ids, mrg_client::asset_paths::skin::TaikoHitSound(file), error,
+                                                    mrg::audio::AudioLoadMode::SampleAsync),
                         "Sample registration: " + error);
             for (const auto &[id, path] : session_->HitSoundFiles())
-                Require(audio_.RegisterSound(id, path, mrg::audio::AudioLoadMode::Sample, error), "YME sample registration: " + error);
+                Require(audio_.RegisterSound(id, path, mrg::audio::AudioLoadMode::SampleAsync, error),
+                        "YME sample registration: " + error);
             audio_.PrepareAutomation(session_->Effects());
-            Require(audio_.RegisterSound("Music.Track", music, mrg::audio::AudioLoadMode::Stream, error),
+            Require(audio_.RegisterSound("Music.Track", music, mrg::audio::AudioLoadMode::StreamAsync, error),
                     "Music registration: " + error);
             std::cout << "Actual audio output: " << static_cast<int>(system.ActiveOutput()) << '\n';
         }

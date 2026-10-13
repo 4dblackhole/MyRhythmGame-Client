@@ -35,6 +35,9 @@ int main(const int argumentCount, char *arguments[])
         std::function<void()> run;
     };
     std::vector<TestCase> tests{
+        {"TestIntervalRangeQueries", TestIntervalRangeQueries},
+        {"TestLongViewportIndexEdits", TestLongViewportIndexEdits},
+        {"TestUnusedChartSoundsAreNotPrepared", TestUnusedChartSoundsAreNotPrepared},
         {"TestAccuracySixDecimalPrecision", TestAccuracySixDecimalPrecision},
         {"TestPlayResultCollection", TestPlayResultCollection},
         {"TestLongResultCompletionAndReset", TestLongResultCompletionAndReset},

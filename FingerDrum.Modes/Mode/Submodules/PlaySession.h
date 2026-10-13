@@ -27,6 +27,10 @@ namespace finger_drum::mode
         [[nodiscard]] const NotePresentationInfo *FindNotePresentation(
             rhythm::NoteId noteId) const noexcept;
         void SetNoteScrollMultiplier(rhythm::NoteId noteId, double multiplier);
+        std::uint64_t PresentationRevision() const noexcept
+        {
+            return presentationRevision_;
+        }
         [[nodiscard]] double MinimumScrollMultiplier() const noexcept
         {
             return std::min(minimumScrollMultiplier_, minimumMeasureScrollMultiplier_) * scroll_.MinimumMultiplier();
@@ -85,5 +89,6 @@ namespace finger_drum::mode
         double minimumMeasureScrollMultiplier_{1};
         std::size_t finalizedNoteCount_{};
         std::optional<rhythm::NoteAccuracy> lastNoteAccuracy_;
+        std::uint64_t presentationRevision_{1};
     };
 } // namespace finger_drum::mode

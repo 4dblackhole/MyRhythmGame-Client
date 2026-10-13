@@ -28,6 +28,7 @@
 | Claude 리뷰 반영·정적 분석·테스트 실행기/CI | [리뷰 반영 기록](Reviews/ClaudeReview-2026-10-11.md), [검증](Verification.md) | `Tests/Rhythm`, `Tests/Presentation`, `.github/workflows/domain-tests.yml` |
 | 코드 품질 재검토·효과 오류 복구/조회/검증 일치 | [품질 수정 기록](Reviews/QualityFixes-2026-10-12.md), [검증](Verification.md) | EffectValidation / PlaySession / ChartEditor; 엔진 Run 숨김 오류 |
 | 레거시 제거·예제 폐기 범위 | [레거시 제거 기록](Reviews/LegacyAudit-2026-10-11.md) | Main/OptionSettings, EditorModeFactory, PatternTiming; 직접 계약 헤더 |
+| 프레임 비용·카탈로그/자원 로딩·표시 캐시 | [성능 수정 기록](Reviews/PerformanceFixes-2026-10-14.md) | GameplayPresenter, TaikoSessionBuilder, ChartEditor, SongCatalogLoader; 엔진 Texture/Text/Audio |
 
 [변경 영향 지도](ChangeImpactMap.md)는 소유 파일과 테스트를,
 [검증](Verification.md)은 빌드·실행 명령을 제공합니다.

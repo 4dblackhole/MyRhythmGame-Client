@@ -253,6 +253,7 @@ void GameplayPresenter::UpdateNoteTravelLayout()
     // rotation. Keep the entire largest head beyond that edge at spawn time.
     noteTravelDistance_ = std::max(
         laneRoot_->NodeSize().height - judgementLocalY_ + largestHeadRadius + 1.0F, 1.0F);
+    RebuildVisibilityIndices();
 
     // Ticks retain their chart spacing when the window width changes.
     for (const auto &lane : session_->Gear().Lanes())

@@ -34,6 +34,7 @@
     <ClInclude Include="Timing\MusicalTimeline.h" />
     <ClCompile Include="Utility\RationalNumber.cpp" />
     <ClInclude Include="Utility\RationalNumber.h" />
+    <ClInclude Include="Utility\IntervalIndex.h" />
   </ItemGroup>
   <ItemGroup><ClInclude Include="Editing\IEditorDocument.h" /></ItemGroup>
   <ItemGroup><ClInclude Include="Automation\InterpolationExpression.h" /></ItemGroup>

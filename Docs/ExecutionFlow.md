@@ -3,6 +3,12 @@
 엔진은 Win32, D3D12, 입력, FMOD와 프레임 루프를 소유하고 Client는
 게임 설정과 Scene을 소유합니다.
 
+곡 목록은 Scene이 소유한 SongCatalogLoader worker에서 준비하고 완료 결과만 게시합니다.
+플레이 진입에서는 Session을 먼저 받은 뒤 PNG를 비동기 준비하고 Canvas/오디오를 구성합니다.
+Clip 준비가 끝나면 Controller가 QPC/DSP clock을 고정하고 타이머를 시작합니다.
+대기 중 Scene이 보관하는 EngineServices 사본은 Run 소유 서비스의 비소유 참조이며,
+OnResize에서 창 크기를 갱신하고 Shutdown에서 해제합니다. worker는 경로/데이터만 소유합니다.
+
 ```mermaid
 flowchart TD
     Entry["Client/App/Main.cpp\nwWinMain"] --> Assets["RCDATA asset pack 확인 · cache 준비"]

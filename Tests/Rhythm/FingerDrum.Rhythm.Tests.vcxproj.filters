@@ -22,4 +22,5 @@
   <ItemGroup>
     <ClCompile Include="Submodules\PlayResultTests.cpp"><Filter>Submodules</Filter></ClCompile>
   </ItemGroup>
+  <ItemGroup><ClCompile Include="Submodules\PerformanceRegressionTests.cpp"><Filter>Submodules</Filter></ClCompile></ItemGroup>
 </Project>

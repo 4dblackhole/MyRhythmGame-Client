@@ -43,6 +43,7 @@ class MusicSelectView final
         mrg::visual2d::Visual2DNode *button{};
         mrg::visual2d::Visual2DNode *title{};
         mrg::visual2d::Visual2DNode *artist{};
+        std::size_t visiblePosition{};
     };
 
     void CreateCategoryBar();
@@ -59,6 +60,7 @@ class MusicSelectView final
     void ResizeBorderedPanel(mrg::visual2d::Visual2DNode &panel, const mrg::visual2d::Rect bounds,
                              const float penpotBorderWidth);
     void RebuildSongCards();
+    void UpdateVisibleSongCards();
     void CreateSongCard(const std::size_t visiblePosition, const std::size_t catalogIndex,
                         const float top, const float height, const bool focused);
     void RefreshSearchPresentation();
@@ -98,6 +100,9 @@ class MusicSelectView final
     finger_drum::presentation::OptionsPanel options_;
     std::uint64_t textRevision_{};
     std::vector<SongCard> songCards_;
+    std::vector<SongCard> songRows_;
+    std::size_t firstVisibleRow_{}, lastVisibleRow_{};
+    bool songCardsDirty_{true};
     std::vector<std::pair<mrg::visual2d::NodeId, std::size_t>> difficultyButtonIds_;
     float scrollOffset_{};
     float contentHeight_{};

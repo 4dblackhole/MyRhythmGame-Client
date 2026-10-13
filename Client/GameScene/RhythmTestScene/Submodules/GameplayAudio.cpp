@@ -25,7 +25,8 @@ void GameplaySessionController::InitializeAudio(const mrg::EngineServices &servi
     for (const auto &[path, ids] : chartSounds)
     {
         std::string error;
-        if (!audioRouter_.RegisterSoundAliases(ids, path, error) && hitSoundError.empty())
+        if (!audioRouter_.RegisterSoundAliases(ids, path, error, mrg::audio::AudioLoadMode::SampleAsync) &&
+            hitSoundError.empty())
         {
             hitSoundError = ids.front() + ": " + error;
         }
@@ -34,8 +35,8 @@ void GameplaySessionController::InitializeAudio(const mrg::EngineServices &servi
     std::string musicError;
     if (launchRequest_.IsValid())
     {
-        musicRegistered_ = audioRouter_.RegisterSound(
-            "Music.Track", launchRequest_.musicPath, mrg::audio::AudioLoadMode::Stream, musicError);
+        musicRegistered_ = audioRouter_.RegisterSound("Music.Track", launchRequest_.musicPath,
+                                                      mrg::audio::AudioLoadMode::StreamAsync, musicError);
     }
 
     if (!hitSoundError.empty() || !musicError.empty())
@@ -70,17 +71,16 @@ void GameplaySessionController::RegisterTaikoSounds(std::string &errorMessage)
     for (const SoundRegistration &registration : registrations)
     {
         std::string registrationError;
-        if (!audioRouter_.RegisterSoundAliases(
-                registration.ids, TaikoHitSoundAssetPath(registration.file), registrationError) &&
+        if (!audioRouter_.RegisterSoundAliases(registration.ids, TaikoHitSoundAssetPath(registration.file),
+                                               registrationError, mrg::audio::AudioLoadMode::SampleAsync) &&
             firstError.empty())
         {
             firstError = registration.ids.front() + ": " + registrationError;
         }
     }
     std::string balloonError;
-    if (!audioRouter_.RegisterSound(finger_drum::mode::taiko_sound::BalloonPop,
-                                    TaikoHitSoundAssetPath(L"pop.wav"),
-                                    mrg::audio::AudioLoadMode::Sample, balloonError) &&
+    if (!audioRouter_.RegisterSound(finger_drum::mode::taiko_sound::BalloonPop, TaikoHitSoundAssetPath(L"pop.wav"),
+                                    mrg::audio::AudioLoadMode::SampleAsync, balloonError) &&
         firstError.empty())
     {
         firstError = "Taiko.Balloon.Pop: " + balloonError;

@@ -16,6 +16,13 @@ Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성�
 PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
 문법 변경이 없으면 다른 형식 문서와 엔진 내부를 읽을 필요가 없습니다.
 
+화면 구간의 롱노트는 ChartEditor의 시간/마디 구간 인덱스로 조회합니다. 양 끝점이
+화면 밖이어도 몸체가 보이면 포함합니다. 노트·BPM·delay·효과 원본 트리와 안정 ID는
+그대로 유지하고 문서 revision 변경 뒤 첫 조회에서 불변 projection을 갱신합니다.
+오디오 탭은 128열 시간 타일의 집계와 FFT geometry를 캐시합니다. 재생/seek에서 기존
+타일 위치를 옮기고 새로 보이는 타일만 만들며, 줌·분석·주파수·문서 변경은 캐시를
+무효화합니다. ruler/cursor와 waveform min/max는 현재 시간으로 갱신합니다.
+
 ## 조작
 
 - 노트 도구는 W 동/캇, E 큰 동/큰 캇/보라, R 롤/큰 롤, T 틱롤/큰 틱롤,

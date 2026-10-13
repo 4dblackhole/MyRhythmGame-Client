@@ -17,6 +17,14 @@ roll ticks, missed-note rollover, alpha at 0/100/200ms, retrigger, sprite reuse,
 inherited Lane rotation/scale, resize clipping, and reset. It does not initialize
 an audio device or renderer; normal gameplay smoke covers resource loading.
 
+## Music selection viewport and catalog worker
+
+Run `./Tests/Presentation/RunMusicSelectViewTests.ps1 -Configuration Debug`
+and the same command with Release from the developer PowerShell.
+The test links production view/state objects, checks that 5,000 in-memory songs
+create only viewport cards across focus/search/resize, and polls real catalog
+loads/cache reuse/error results. It writes no song or option files.
+
 ## Gameplay judgement guide and overlays
 
 After a solution build, run in an x64 Visual Studio developer PowerShell with

@@ -27,23 +27,19 @@ void MusicSelectScene::Initialize(const mrg::EngineServices &services)
 {
     if (!launchRequest_)
         throw std::invalid_argument("Lobby requires a gameplay launch request.");
-    selection_->catalog_ =
-        finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
-    if (selection_->catalog_.songs.empty() && !selection_->catalog_.diagnostics.empty())
-    {
-        selection_->SetLaunchError(
-            SongSelectionState::LaunchErrorKind::Catalog,
-            selection_->catalog_.diagnostics.front().message);
-    }
+    catalogLoader_.Refresh(mrg_client::asset_paths::UserSongs());
+    selection_->catalogLoading_ = true;
     preview_->Initialize(services.audio);
     view_->Initialize(services);
 }
 void MusicSelectScene::BeginScene()
 {
-    // Initialize already loaded the first catalog. Re-entry still observes user edits.
+    // Initialize started the first load. Re-entry still observes user edits.
     if (!firstEntry_)
-        selection_->catalog_ =
-            finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
+    {
+        catalogLoader_.Refresh(mrg_client::asset_paths::UserSongs());
+        selection_->catalogLoading_ = true;
+    }
     firstEntry_ = false;
     view_->RebuildVisibleSongs();
     active_ = true;
@@ -58,6 +54,17 @@ void MusicSelectScene::EndScene() noexcept
 }
 void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
 {
+    if (auto catalog = catalogLoader_.Poll())
+    {
+        preview_->StopPreviewAudio();
+        selection_->catalogLoading_ = false;
+        selection_->catalog_ = std::move(*catalog);
+        selection_->ClearLaunchError();
+        if (selection_->catalog_.songs.empty() && !selection_->catalog_.diagnostics.empty())
+            selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::Catalog,
+                                       selection_->catalog_.diagnostics.front().message);
+        view_->RebuildVisibleSongs();
+    }
     preview_->UpdatePreviewAudio(context.deltaSeconds);
     const auto command = view_->Update(context.input, context.deltaSeconds);
     preview_->SyncPreviewToFocusedSong(*selection_, active_);

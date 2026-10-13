@@ -9,6 +9,7 @@ namespace
     using finger_drum::editor::AudioAnalysis;
     using finger_drum::editor::SpectrumFrame;
     constexpr std::size_t Columns = 640;
+    constexpr std::size_t TileColumns = 128;
     constexpr v::Rect Waveform{205, 153, 1565, 166};
     constexpr v::Rect MusicSpectrum{205, 375, 1565, 212};
     constexpr v::Rect HitSpectrum{205, 640, 1565, 212};
@@ -91,41 +92,159 @@ namespace
             }
         }
     }
+
+    std::vector<SpectrumFrame> BuildSpectrumColumns(const AnalysisBatch &data, const std::vector<AudioMarker> &markers,
+                                                    std::size_t track, double start, double tileSeconds,
+                                                    double minimumHz, double maximumHz, double longestSound)
+    {
+        const auto &sounds = data.sounds;
+        std::vector<SpectrumFrame> columns(TileColumns);
+        if (track == 0)
+        {
+            if (const auto music = sounds.find("Music"); music != sounds.end())
+                AccumulateColumns(columns, music->second, 0, start, tileSeconds,
+                                  MapFrequencyBands(music->second, minimumHz, maximumHz));
+        }
+        else
+        {
+            std::map<std::string, SourceBands> bands;
+            for (auto marker = std::ranges::lower_bound(markers, start - longestSound, {}, &AudioMarker::seconds);
+                 marker != markers.end() && marker->seconds <= start + tileSeconds; ++marker)
+                if (const auto sound = sounds.find(marker->sound); sound != sounds.end())
+                {
+                    auto [mapping, inserted] = bands.try_emplace(marker->sound);
+                    if (inserted)
+                        mapping->second = MapFrequencyBands(sound->second, minimumHz, maximumHz);
+                    AccumulateColumns(columns, sound->second, marker->seconds, start, tileSeconds, mapping->second);
+                }
+        }
+        return columns;
+    }
+
+    void BuildSpectrumGeometry(EditorVisual &geometry, const std::vector<SpectrumFrame> &columns, const v::Rect rect)
+    {
+        const float columnWidth = rect.width / Columns;
+        const float bandHeight = rect.height / finger_drum::editor::SpectrumBandCount;
+        for (std::size_t band = 0; band < finger_drum::editor::SpectrumBandCount; ++band)
+            for (std::size_t column = 0; column < columns.size();)
+            {
+                const auto colorAt = [&](std::size_t c)
+                { return static_cast<std::size_t>(std::lround(columns[c].bands[band] * (SpectrumColors.size() - 1))); };
+                const auto color = colorAt(column);
+                auto end = column + 1;
+                while (end < columns.size() && colorAt(end) == color)
+                    ++end;
+                if (color != 0)
+                    geometry.AddRectangle({static_cast<float>(column) * columnWidth,
+                                           static_cast<float>(band) * bandHeight,
+                                           static_cast<float>(end - column) * columnWidth + .1F, bandHeight + .1F},
+                                          SpectrumColors[color], 0);
+                column = end;
+            }
+        geometry.Finish();
+    }
 } // namespace
 
-void EditorView::DrawAudioSpectrum(const v::Rect rect, const std::vector<SpectrumFrame> &columns,
-                                   const double minimumHz, const double maximumHz)
+void EditorView::PrepareAudioTrack(std::size_t track, v::Rect rect, std::int64_t first, std::int64_t last,
+                                   bool invalidate)
 {
-    Box(rect, {0, 0, 0, 1});
-    const float columnWidth = rect.width / static_cast<float>(columns.size());
-    const float bandHeight = rect.height / finger_drum::editor::SpectrumBandCount;
-    for (std::size_t band = 0; band < finger_drum::editor::SpectrumBandCount; ++band)
+    if (!audioRoots_[track])
     {
-        const auto colorAt = [&](const std::size_t column) {
-            return static_cast<std::size_t>(std::lround(columns[column].bands[band] * (SpectrumColors.size() - 1)));
-        };
-        // Adjacent cells with the same palette entry share one rectangle.
-        for (std::size_t first = 0; first < columns.size();)
+        auto &root = node->CreateChild(track == 0 ? "Audio.MusicSpectrum" : "Audio.HitSpectrum");
+        root.SetBounds({rect.x - 960, 540 - rect.y - rect.height, rect.width, rect.height});
+        root.SetClipRect({0, 0, rect.width, rect.height});
+        audioRoots_[track] = &root;
+        auto &overlay = root.CreateChild("Ruler");
+        overlay.SetZIndex(1);
+        audioOverlays_[track] = &overlay.AddComponent<EditorVisual>();
+    }
+    audioRoots_[track]->SetVisible(true);
+    audioOverlays_[track]->Clear();
+    auto &tiles = audioTiles_[track];
+    for (auto it = tiles.begin(); it != tiles.end();)
+    {
+        // Retain one neighbouring tile on each side for short back-seeks.
+        if (invalidate || it->first < first - 1 || it->first > last + 1)
         {
-            const auto color = colorAt(first);
-            auto last = first + 1;
-            while (last < columns.size() && colorAt(last) == color)
-                ++last;
-            if (color != 0)
-                Box({rect.x + columnWidth * static_cast<float>(first),
-                     rect.y + rect.height - bandHeight * static_cast<float>(band + 1),
-                     columnWidth * static_cast<float>(last - first) + .1F, bandHeight + .1F},
-                    SpectrumColors[color]);
-            first = last;
+            static_cast<void>(audioRoots_[track]->RemoveChild(it->second.node->Id()));
+            it = tiles.erase(it);
+        }
+        else
+        {
+            it->second.node->SetVisible(false);
+            ++it;
         }
     }
+}
+
+void EditorView::UpdateWaveformColumns(double begin, double columnSeconds)
+{
+    // The waveform only needs min/max, not a copy of all 96 FFT bands.
+    musicColumns_.resize(Columns);
+    for (std::size_t column = 0; column < Columns; ++column)
+    {
+        const auto absoluteColumn =
+            static_cast<std::int64_t>(std::floor(begin / columnSeconds)) + static_cast<std::int64_t>(column);
+        const auto tileIndex = static_cast<std::int64_t>(std::floor(static_cast<double>(absoluteColumn) / TileColumns));
+        const auto local =
+            static_cast<std::size_t>(absoluteColumn - tileIndex * static_cast<std::int64_t>(TileColumns));
+        const auto &source = audioTiles_[0].at(tileIndex).columns[local];
+        musicColumns_[column].minimum = source.minimum;
+        musicColumns_[column].maximum = source.maximum;
+    }
+}
+
+void EditorView::UpdateAudioTiles(double begin, double minimumHz, double maximumHz, double longestSound)
+{
+    const double columnSeconds = state_.audioWindow / Columns;
+    const double tileSeconds = columnSeconds * TileColumns;
+    const auto first = static_cast<std::int64_t>(std::floor(begin / tileSeconds));
+    const auto last = static_cast<std::int64_t>(std::floor((begin + state_.audioWindow) / tileSeconds));
+    const AudioColumnsKey key{state_.audioWindow, minimumHz, maximumHz, state_.Analysis().Revision()};
+    const bool invalidate = audioColumnsKey_ != key || audioColumnsDocument_ != &state_.Document() ||
+                            audioColumnsDocumentRevision_ != state_.Document().Revision();
+    const auto &markers = state_.Analysis().Markers();
+    const std::array rectangles{MusicSpectrum, HitSpectrum};
+    for (std::size_t track = 0; track < rectangles.size(); ++track)
+    {
+        const auto rect = rectangles[track];
+        PrepareAudioTrack(track, rect, first, last, invalidate);
+        auto &tiles = audioTiles_[track];
+        for (auto index = first; index <= last; ++index)
+        {
+            auto tile = tiles.find(index);
+            if (tile == tiles.end())
+            {
+                auto columns = BuildSpectrumColumns(state_.Analysis().Data(), markers, track,
+                                                    static_cast<double>(index) * tileSeconds, tileSeconds, minimumHz,
+                                                    maximumHz, longestSound);
+                auto &tileNode = audioRoots_[track]->CreateChild("Spectrum.Tile");
+                auto &geometry = tileNode.AddComponent<EditorVisual>();
+                BuildSpectrumGeometry(geometry, columns, rect);
+                tile = tiles.emplace(index, AudioTile{&tileNode, std::move(columns)}).first;
+            }
+            tile->second.node->SetVisible(true);
+            tile->second.node->SetPosition(
+                {static_cast<float>((index * tileSeconds - begin) / state_.audioWindow * rect.width), 0});
+        }
+    }
+    UpdateWaveformColumns(begin, columnSeconds);
+    audioColumnsKey_ = key;
+    audioColumnsDocument_ = &state_.Document();
+    audioColumnsDocumentRevision_ = state_.Document().Revision();
+}
+
+void EditorView::DrawAudioSpectrum(const v::Rect rect, const double minimumHz, const double maximumHz)
+{
+    Box(rect, {0, 0, 0, 1});
     for (const double frequency : {20.0, 100.0, 1000.0, 5000.0, maximumHz})
     {
         if (frequency < minimumHz || frequency > maximumHz)
             continue;
         const float y = rect.y + rect.height * static_cast<float>(1 - std::log(frequency / minimumHz) /
                                                                           std::log(maximumHz / minimumHz));
-        Box({rect.x, y, rect.width, 1}, {1, 1, 1, .10F});
+        audioOverlays_[rect.y == MusicSpectrum.y ? 0 : 1]->AddRectangle({0, rect.height - (y - rect.y), rect.width, 1},
+                                                                        {1, 1, 1, .10F}, 0);
         Text({125, std::clamp(y - 10, rect.y, rect.y + rect.height - 20), 78, 20},
              frequency >= 1000 ? Decimal(frequency / 1000, 0) + L"k Hz" : Decimal(frequency, 0) + L" Hz", 14);
     }
@@ -167,11 +286,16 @@ void EditorView::DrawAudioTimeRuler(const double begin)
         const float x = Waveform.x + static_cast<float>((seconds - begin) / state_.audioWindow) * Waveform.width;
         Text({std::clamp(x - 30, Waveform.x, Waveform.x + Waveform.width - 70), 126, 70, 22},
              Decimal(seconds, step < 1 ? 2 : 0) + L" s", 14);
-        for (const auto rect : {Waveform, MusicSpectrum, HitSpectrum})
-            Box({x, rect.y, 1, rect.height}, {1, 1, 1, .08F});
+        Box({x, Waveform.y, 1, Waveform.height}, {1, 1, 1, .08F});
+        for (std::size_t track = 0; track < audioOverlays_.size(); ++track)
+            audioOverlays_[track]->AddRectangle({x - Waveform.x, 0, 1, MusicSpectrum.height}, {1, 1, 1, .08F}, 0);
     }
-    for (const auto rect : {Waveform, MusicSpectrum, HitSpectrum})
-        Box({rect.x + rect.width * .25F, rect.y, 2, rect.height}, White);
+    Box({Waveform.x + Waveform.width * .25F, Waveform.y, 2, Waveform.height}, White);
+    for (auto *overlay : audioOverlays_)
+    {
+        overlay->AddRectangle({MusicSpectrum.width * .25F, 0, 2, MusicSpectrum.height}, White, 0);
+        overlay->Finish();
+    }
 }
 
 void EditorView::DrawAudio()
@@ -203,34 +327,7 @@ void EditorView::DrawAudio()
         }
         maximumHz = std::max(maximumHz, minimumHz * 2);
     }
-    const AudioColumnsKey key{begin, state_.audioWindow, minimumHz, maximumHz, state_.Analysis().Revision()};
-    const bool sourceChanged = audioColumnsKey_ != key;
-    if (sourceChanged)
-    {
-        musicColumns_.assign(Columns, {});
-        if (const auto music = sounds.find("Music"); music != sounds.end())
-            AccumulateColumns(musicColumns_, music->second, 0, begin, state_.audioWindow,
-                              MapFrequencyBands(music->second, minimumHz, maximumHz));
-    }
-    const auto &markers = state_.Analysis().Markers();
-    if (sourceChanged || audioColumnsDocument_ != &state_.Document() ||
-        audioColumnsDocumentRevision_ != state_.Document().Revision())
-    {
-        hitColumns_.assign(Columns, {});
-        std::map<std::string, SourceBands> mappedBands;
-        for (auto marker = std::ranges::lower_bound(markers, begin - longestSound, {}, &AudioMarker::seconds);
-             marker != markers.end() && marker->seconds <= begin + state_.audioWindow; ++marker)
-            if (const auto sound = sounds.find(marker->sound); sound != sounds.end())
-            {
-                auto [bands, inserted] = mappedBands.try_emplace(marker->sound);
-                if (inserted)
-                    bands->second = MapFrequencyBands(sound->second, minimumHz, maximumHz);
-                AccumulateColumns(hitColumns_, sound->second, marker->seconds, begin, state_.audioWindow, bands->second);
-            }
-        audioColumnsDocument_ = &state_.Document();
-        audioColumnsDocumentRevision_ = state_.Document().Revision();
-    }
-    audioColumnsKey_ = key;
+    UpdateAudioTiles(begin, minimumHz, maximumHz, longestSound);
 
     // Draw distinct tracks before their shared ruler/cursor and controls.
     Box({112, 76, 1784, 797}, Paper, 8);
@@ -238,8 +335,8 @@ void EditorView::DrawAudio()
     Text({132, 340, 1500, 28}, std::wstring(text.musicSpectrum), 22);
     Text({132, 606, 1500, 28}, std::wstring(text.hitSoundSpectrum), 22);
     DrawAudioWaveform(musicColumns_);
-    DrawAudioSpectrum(MusicSpectrum, musicColumns_, minimumHz, maximumHz);
-    DrawAudioSpectrum(HitSpectrum, hitColumns_, minimumHz, maximumHz);
+    DrawAudioSpectrum(MusicSpectrum, minimumHz, maximumHz);
+    DrawAudioSpectrum(HitSpectrum, minimumHz, maximumHz);
     DrawAudioTimeRuler(begin);
     Button({1620, 85, 54, 32}, L"+", [this] {
         state_.audioWindow = std::max(.25, state_.audioWindow / 2);

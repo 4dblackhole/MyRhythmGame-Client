@@ -321,6 +321,44 @@ namespace
         checkZeroDuration(false, 0);
         checkZeroDuration(false, -200);
     }
+    void TestSlowNotesDoNotExpandAllVisuals()
+    {
+        finger_drum::chart::PatternDocument pattern;
+        pattern.mode = "Taiko";
+        pattern.baseBpm = 180;
+        for (std::int64_t i = 0; i < 5000; ++i)
+            pattern.notes.push_back({{i / 16, {i % 16, 16}}, 1});
+        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        Check(loaded.Succeeded(), "Large visibility fixture must compile.");
+        loaded.session->SetNoteScrollMultiplier(5000, .001);
+        AssetRenderer renderer;
+        v::ScreenVisual2DManager visuals;
+        visuals.Initialize(renderer, {1280, 720});
+        mrg::graphics::MeshRenderSystem meshes;
+        mrg::graphics::TextRenderSystem textRendering;
+        mrg::audio::AudioSystem audio;
+        finger_drum::texts::TextCatalog texts;
+        GameplayPresenter presenter(visuals, texts);
+        presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
+        auto &root = visuals.FindCanvas(1)->Root();
+        presenter.UpdatePresentation({});
+        Check(NodeCount(root) < 400 && Find(root, "Lane.Note.5000"),
+              "One slow future note must remain visible without creating thousands of ordinary offscreen notes.");
+        loaded.session->SetNoteScrollMultiplier(5000, 1);
+        presenter.UpdatePresentation({});
+        Check(!Find(root, "Lane.Note.5000"), "Changing Separate must refresh the visibility projection.");
+        presenter.UpdatePresentation(loaded.session->Gear().Lanes().front()->Notes().back()->Timing());
+        Check(NodeCount(root) < 400 && Find(root, "Lane.Note.5000"), "Forward seek must query the end of the score.");
+        presenter.UpdatePresentation({});
+        Check(Find(root, "Lane.Note.1") && !Find(root, "Lane.Note.5000"),
+              "Backward seek must restore only visible notes.");
+        visuals.OnResize(2560, 1080);
+        presenter.OnResize(2560, 1080);
+        presenter.UpdatePresentation({});
+        Check(NodeCount(root) < 400, "A wide viewport must retain bounded visibility work.");
+        presenter.Shutdown();
+    }
+
     void TestMeasureLinesShareNoteMotion()
     {
         AssetRenderer renderer;
@@ -617,6 +655,7 @@ int main()
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
         TestGuideAndOverlays();
         TestGameplayProgress();
+        TestSlowNotesDoNotExpandAllVisuals();
         TestMeasureLinesShareNoteMotion();
         TestCountOnlyHeadsHaveNoFeedback();
         TestDengDengWrongOrderFeedback();

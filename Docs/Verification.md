@@ -52,6 +52,8 @@ All-notes actual gameplay replay의 D3D12/FMOD 진행바 검사를 두 구성에
 결과 수집/표시/전환은 같은 문서의 Result graphs and actual Scene transition을 두 구성에서
 실행합니다. 점수 정밀도와 입력/중도 종료 통계는 PlayResultTests의 도메인 검사도 사용합니다.
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
+곡 카드 가상화·비동기 카탈로그 변경은 `Tests/Presentation/RunMusicSelectViewTests.ps1`도
+Debug/Release에서 실행합니다.
 에디터 모드/문서 계약 변경도 같은 실행 파일에 연결된 EditorModeTests를 두 구성에서 실행합니다.
 에디터 상단 메뉴 변경은 같은 실행 파일의 EditorMenuTests도 두 구성에서 실행합니다.
 UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조작 검증과 구분합니다.
@@ -66,6 +68,37 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
+
+## 2026-10-14 성능 보고서 8개 항목 수정
+
+- Client/엔진 Debug·Release x64 전체 solution Rebuild 성공. 마지막 오디오 alias 수정도
+  두 구성의 Client 분석 Build와 전체 solution Build로 확인했습니다. 일반 빌드 경고/오류 0.
+- 각 구성 58개 로직·기본곡 카탈로그 검사 및 네 smoke씩 총 8개 성공.
+  IntervalIndex 경계/구간 겹침, 롱노트 삭제·이동·BPM 변경 후 조회, 사용하지 않는 사운드
+  등록 제외를 추가했습니다. 편집 원본 트리/ID와 기존 판정·점수 정밀도를 유지합니다.
+- 두 구성 GameplayJudgement(느린 노트/뒤로 이동/배율 변경/resize 포함),
+  EditorAudioView/Mode/Menu/Playback(FFT 타일 공유·줌 무효화 포함), MusicSelectView
+  (5,000곡 가시 카드/포커스/검색/resize 및 실제 worker 결과), OptionsPanel 회귀 성공.
+- 실제 숨김 D3D12/FMOD 자동 replay는 각 구성 전체 19노트/85.1837%와 효과 15노트/97.8897%를
+  유지했습니다. SampleAsync/StreamAsync와 스킨 PrepareImages의 준비 완료 후 재생,
+  밀집 Buzz/처리된 tick/OK/MISS/진행바/뒤로 이동을 확인했습니다.
+  Result 그래프·소수점 6자리·소유권과 실제 deferred Scene 전환도 두 구성 성공했습니다.
+- 엔진 SDK 검사와 `--headless-error`의 숨김 치명 오류 정리도 두 구성 성공했습니다.
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Chart, Modes, ClientLogic, MRG.Client,
+  Rhythm.Tests의 실제 Debug/Release x64 include/define/C++20 설정으로 실행했습니다.
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했고,
+  마지막 router 수정은 같은 구성의 분석 Build로 재검사했습니다. 신규 진단/파싱 오류 0.
+  기존 C26115(EditorAnalysisController:51), C28020(GameplaySessionController:112),
+  Release C6236(GameplayInput:60)은 유지하며 자동 억제/수정하지 않았습니다.
+  표시 회귀 테스트 소스도 실행 스크립트의 `/analyze`로 분석했습니다.
+- 변경 코드와 직접 호출부의 query 경계·세대 수명·cache 무효화·효과 순서·worker 관찰자·
+  async Clip 정리·upload fence 실패/종료 경로를 검토했습니다. CheckArchitecture(11프로젝트),
+  양쪽 git diff --check 성공. 사용자 LaneKeyBeam.cpp와 Debug/Release Option.ini의 SHA256을
+  실행 전후 대조해 보존했고 사용자 Songs/Skins를 변경하지 않았습니다.
+- 같은 Release probe 두 번의 CPU 비교는 [성능 수정 기록](Reviews/PerformanceFixes-2026-10-14.md)에
+  있습니다. 로그는 ignored `build/performance-fixes-2026-10-14`에 보관합니다.
+- **수동 확인:** 실제 픽셀 배치·물리 입력·청음 및 전체 게임 FPS/GPU frame time은
+  수동 확인하거나 측정하지 않았습니다. 위 숨김 엔진 실행과 좌표/캐시 검사는 자동입니다.
 
 ## 선택 실행·서식·도메인 CI
 

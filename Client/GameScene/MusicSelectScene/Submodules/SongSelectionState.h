@@ -23,6 +23,7 @@ class SongSelectionState final
     };
 
     finger_drum::chart::SongCatalogLoadResult catalog_;
+    bool catalogLoading_{};
     std::vector<std::size_t> visibleSongIndices_;
     std::size_t focusedSongPosition_{};
     std::size_t selectedPatternIndex_{};

@@ -32,52 +32,63 @@ namespace
 
 void MusicSelectView::RebuildSongCards()
 {
-    if (songContent_ == nullptr || canvas_ == nullptr)
-    {
+    if (!songContent_ || !canvas_)
         return;
-    }
-    inputRouter_.Reset(*canvas_);
-    std::vector<mrg::visual2d::NodeId> childIds;
-    childIds.reserve(songContent_->Children().size());
-    for (const auto &child : songContent_->Children())
-    {
-        childIds.push_back(child->Id());
-    }
-    for (const mrg::visual2d::NodeId id : childIds)
-    {
-        static_cast<void>(songContent_->RemoveChild(id));
-    }
-    songCards_.clear();
-    difficultyButtonIds_.clear();
-
-    if (selection_.visibleSongIndices_.empty())
-    {
-        const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
-        AddLabel(*songContent_,
-                 {layout::EmptySongMessage.x, layout::EmptySongMessage.y,
-                  std::max(songContentWidth_ - 32.0F, 1.0F), layout::EmptySongMessage.height},
-                 std::wstring(text.noSongsAvailable), 20.0F, DeepBlue, "NoSongs",
-                 mrg::visual2d::TextAlignment::Center);
-        contentHeight_ = layout::ContentBottom;
-        ApplyScrollOffset();
-        return;
-    }
-
+    songRows_.clear();
+    songRows_.reserve(selection_.visibleSongIndices_.size());
     float top = layout::ContentTop;
     for (std::size_t position = 0; position < selection_.visibleSongIndices_.size(); ++position)
     {
-        const std::size_t catalogIndex = selection_.visibleSongIndices_[position];
+        const auto index = selection_.visibleSongIndices_[position];
         const bool focused = position == selection_.focusedSongPosition_;
-        const std::size_t difficultyCount = selection_.catalog_.songs[catalogIndex].patterns.size();
-        const float height =
-            focused ? layout::ExpandedBaseHeight +
-                          layout::DifficultyRowStep * static_cast<float>(difficultyCount)
-                    : layout::NormalSongHeight;
-        CreateSongCard(position, catalogIndex, top, height, focused);
+        const float height = focused ? layout::ExpandedBaseHeight +
+                                           layout::DifficultyRowStep *
+                                               static_cast<float>(selection_.catalog_.songs[index].patterns.size())
+                                     : layout::NormalSongHeight;
+        songRows_.push_back({index, top, height, nullptr, nullptr, nullptr, position});
         top += height + layout::SongGap;
     }
-    contentHeight_ = top - layout::SongGap + layout::ContentTop;
-    ApplyScrollOffset();
+    contentHeight_ = songRows_.empty() ? layout::ContentBottom : top - layout::SongGap + layout::ContentTop;
+    songCardsDirty_ = true;
+    EnsureFocusedCardVisible();
+}
+
+void MusicSelectView::UpdateVisibleSongCards()
+{
+    if (!songContent_ || !canvas_)
+        return;
+    const float begin = layout::ContentTop + scrollOffset_ - layout::NormalSongHeight;
+    const float end = layout::ContentBottom + scrollOffset_ + layout::NormalSongHeight;
+    const auto first =
+        std::ranges::lower_bound(songRows_, begin, {}, [](const SongCard &row) { return row.top + row.height; });
+    const auto last = std::ranges::upper_bound(first, songRows_.end(), end, {}, &SongCard::top);
+    const auto firstIndex = static_cast<std::size_t>(first - songRows_.begin());
+    const auto lastIndex = static_cast<std::size_t>(last - songRows_.begin());
+    if (!songCardsDirty_ && firstIndex == firstVisibleRow_ && lastIndex == lastVisibleRow_)
+        return;
+    inputRouter_.Reset(*canvas_);
+    std::vector<mrg::visual2d::NodeId> ids;
+    for (const auto &child : songContent_->Children())
+        ids.push_back(child->Id());
+    for (const auto id : ids)
+        static_cast<void>(songContent_->RemoveChild(id));
+    songCards_.clear();
+    difficultyButtonIds_.clear();
+    for (auto row = first; row != last; ++row)
+        CreateSongCard(row->visiblePosition, row->catalogIndex, row->top, row->height,
+                       row->visiblePosition == selection_.focusedSongPosition_);
+    if (songRows_.empty())
+    {
+        const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+        AddLabel(*songContent_,
+                 {layout::EmptySongMessage.x, layout::EmptySongMessage.y, std::max(songContentWidth_ - 32.0F, 1.0F),
+                  layout::EmptySongMessage.height},
+                 std::wstring(selection_.catalogLoading_ ? text.loadingSongs : text.noSongsAvailable), 20.0F, DeepBlue,
+                 "NoSongs", mrg::visual2d::TextAlignment::Center);
+    }
+    firstVisibleRow_ = firstIndex;
+    lastVisibleRow_ = lastIndex;
+    songCardsDirty_ = false;
     inputRouter_.InvalidateHitTest();
 }
 
@@ -139,7 +150,7 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
             difficultyButtonIds_.push_back({difficulty.Id(), index});
         }
     }
-    songCards_.push_back({catalogIndex, top, height, &button, &title, &artist});
+    songCards_.push_back({catalogIndex, top, height, &button, &title, &artist, visiblePosition});
 }
 
 void MusicSelectView::RefreshSelectionPresentation()
@@ -236,13 +247,13 @@ void MusicSelectView::RefreshSearchPresentation()
 
 void MusicSelectView::EnsureFocusedCardVisible()
 {
-    if (selection_.focusedSongPosition_ >= songCards_.size())
+    if (selection_.focusedSongPosition_ >= songRows_.size())
     {
         scrollOffset_ = 0.0F;
         ApplyScrollOffset();
         return;
     }
-    const SongCard &card = songCards_[selection_.focusedSongPosition_];
+    const SongCard &card = songRows_[selection_.focusedSongPosition_];
     const float visibleTop = layout::ContentTop + scrollOffset_;
     const float visibleBottom = layout::ContentBottom + scrollOffset_;
     if (card.top < visibleTop)
@@ -265,6 +276,7 @@ void MusicSelectView::ApplyScrollOffset()
         songContent_->SetPosition({0.0F, scrollOffset_ * DesignToCanvasScale});
     }
     UpdateScrollbar();
+    UpdateVisibleSongCards();
     inputRouter_.InvalidateHitTest();
 }
 

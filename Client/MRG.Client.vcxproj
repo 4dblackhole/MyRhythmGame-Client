@@ -246,4 +246,5 @@
     <ClCompile Include="Texts\GameScene\ResultScene\ResultTexts.cpp" />
     <ClInclude Include="Texts\GameScene\ResultScene\ResultTexts.h" />
   </ItemGroup>
+  <ItemGroup><ClInclude Include="GameScene\MusicSelectScene\Submodules\SongCatalogLoader.h" /></ItemGroup>
 </Project>

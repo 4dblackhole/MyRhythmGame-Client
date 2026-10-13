@@ -68,6 +68,16 @@ namespace
                 return found;
         return nullptr;
     }
+    std::vector<v::DrawPacket> SpectrumGeometry(v::Visual2DNode &root)
+    {
+        std::vector<v::DrawPacket> result;
+        for (const auto name : {"Audio.MusicSpectrum", "Audio.HitSpectrum"})
+            if (auto *track = FindNode(root, name))
+                for (const auto &tile : track->Children())
+                    if (tile->Name() == "Spectrum.Tile")
+                        if (auto *geometry = tile->GetComponent<EditorVisual>()) geometry->AppendDrawPackets(result);
+        return result;
+    }
 } // namespace
 
 int main()
@@ -226,13 +236,23 @@ int main()
         Check(hasText(L"음악 파형") && hasText(L"음악 FFT 스펙트로그램") &&
                   hasText(L"예상 히트사운드 FFT 스펙트로그램"),
               "Three audio tracks missing");
-        const auto coloredIn = [&](float top, float bottom) {
-            return std::ranges::count_if(renderer.packets, [&](const auto &packet) {
-                const float y = 540 - packet.bounds.y - packet.bounds.height;
-                return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
-                       packet.bounds.x >= 205 - 960 && packet.bounds.x < 1770 - 960 && packet.color.red > .3F &&
-                       packet.color.green < .95F;
-            });
+        const auto coloredIn = [&](float top, float bottom)
+        {
+            return std::ranges::count_if(
+                renderer.packets,
+                [&](const auto &packet)
+                {
+                    DirectX::XMFLOAT3 corner;
+                    DirectX::XMStoreFloat3(
+                        &corner,
+                        DirectX::XMVector3TransformCoord(
+                            DirectX::XMVectorSet(packet.bounds.x, packet.bounds.y + packet.bounds.height, 0, 1),
+                            DirectX::XMLoadFloat4x4(&packet.nodeTransform)));
+                    const float y = 540 - corner.y;
+                    return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
+                           corner.x >= 205 - 960 && corner.x < 1770 - 960 && packet.color.red > .3F &&
+                           packet.color.green < .95F;
+                });
         };
         Check(coloredIn(375, 587) > 10 && coloredIn(640, 852) > 10,
               "Music and expected hits must produce separate visible spectrum "
@@ -241,6 +261,32 @@ int main()
         auto *canvas = visuals.FindCanvas(1);
         if (canvas == nullptr)
             throw std::runtime_error("Editor Canvas missing");
+        const auto geometryBefore = SpectrumGeometry(canvas->Root());
+        state.Seek(state.TimeMilliseconds() + 16);
+        view.Build();
+        const auto geometryAfter = SpectrumGeometry(canvas->Root());
+        const auto reused = std::ranges::count_if(
+            geometryAfter,
+            [&](const auto &packet)
+            {
+                return packet.rectangles && std::ranges::any_of(geometryBefore, [&](const auto &old)
+                                                                { return old.rectangles == packet.rectangles; });
+            });
+        Check(reused >= 8, "Moving audio time must reuse both tracks' cached tile geometry.");
+        const auto oldWindow = state.audioWindow;
+        state.audioWindow /= 2;
+        view.Build();
+        const auto zoomed = SpectrumGeometry(canvas->Root());
+        Check(std::ranges::none_of(zoomed,
+                                   [&](const auto &packet)
+                                   {
+                                       return packet.rectangles &&
+                                              std::ranges::any_of(geometryAfter, [&](const auto &old)
+                                                                  { return old.rectangles == packet.rectangles; });
+                                   }),
+              "Changing audio zoom must invalidate the cached tile resolution.");
+        state.audioWindow = oldWindow;
+        view.Build();
         auto *menuBar = FindNode(canvas->Root(), "Editor.MenuBar");
         if (menuBar == nullptr)
             throw std::runtime_error("Editor top menu is missing.");

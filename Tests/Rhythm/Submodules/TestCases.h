@@ -3,6 +3,9 @@
 
 namespace finger_drum::tests
 {
+    void TestIntervalRangeQueries();
+    void TestLongViewportIndexEdits();
+    void TestUnusedChartSoundsAreNotPrepared();
     void TestAccuracySixDecimalPrecision();
     void TestPlayResultCollection();
     void TestLongResultCompletionAndReset();

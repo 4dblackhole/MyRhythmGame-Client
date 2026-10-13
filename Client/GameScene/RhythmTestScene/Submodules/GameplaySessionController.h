@@ -78,5 +78,7 @@ class GameplaySessionController final
     double completedElapsedSeconds_{};
     double debugSpeedMillisecondsPerSecond_{1000.0};
     bool musicRegistered_{};
+    bool timelineStarted_{};
+    double nextAudioPreparationPoll_{};
     bool debugMode_{};
 };

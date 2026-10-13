@@ -1,9 +1,70 @@
 #include "GameplayPresenter.h"
 #include "GameplaySupport.h"
 using namespace gameplay;
+namespace
+{
+    constexpr std::wstring_view NoteImageFiles[]{L"note.png",
+                                                 L"noteoverlay.png",
+                                                 L"bignote.png",
+                                                 L"bigcircleoverlay.png",
+                                                 L"LNBody.png",
+                                                 L"LNBodyOverlay.png",
+                                                 L"LNTail.png",
+                                                 L"LNTailOverlay.png",
+                                                 L"BigLNBody.png",
+                                                 L"BigLNBodyOverlay.png",
+                                                 L"BigLNTail.png",
+                                                 L"BigLNTailOverlay.png",
+                                                 L"TickMarker.png",
+                                                 L"BuzzTickDiamond.png",
+                                                 L"Balloon.png",
+                                                 L"DengDeng.png",
+                                                 L"BalloonProcessing.png",
+                                                 L"BalloonBurst.png",
+                                                 L"DengDengProcessing.png",
+                                                 L"HitCounterCloud.png"};
+}
 
-void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
-                                           finger_drum::rhythm::RhythmDuration horizon, bool enabled)
+bool GameplayPresenter::PrepareAssets(const mrg::EngineServices &services)
+{
+    if (preparingImages_.empty())
+    {
+        for (const auto file : NoteImageFiles)
+            preparingImages_.push_back(InGameSkinAssetPath(file));
+        for (const auto file : {L"AccuracyIndicator.png",
+                                L"InputPanel.png",
+                                L"LaneLight.png",
+                                L"JudgementCircle.png",
+                                L"Lane.png",
+                                L"KeyButtonLeftKat.png",
+                                L"KeyButtonLeftDon.png",
+                                L"KeyButtonRightDon.png",
+                                L"KeyButtonRightKat.png",
+                                L"KeyLightStrong.png",
+                                L"KeyLightWeak.png",
+                                L"KeyPressFlash.png",
+                                L"Progress/Background.png",
+                                L"Progress/Track.png",
+                                L"Progress/Fill.png",
+                                L"Progress/Marker.png",
+                                L"Judgements/MAX.png",
+                                L"Judgements/PERFECT.png",
+                                L"Judgements/GREAT.png",
+                                L"Judgements/GOOD.png",
+                                L"Judgements/BAD.png",
+                                L"Judgements/MISS.png",
+                                L"Judgements/POOR.png",
+                                L"Judgements/OK.png"})
+            preparingImages_.push_back(InGameSkinAssetPath(file));
+    }
+    std::string error;
+    const bool ready = services.visual2DRendering.PrepareImages(preparingImages_, error);
+    if (!error.empty())
+        throw std::runtime_error(error);
+    return ready;
+}
+
+void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time, bool enabled)
 {
     for (auto &visual : measureLineVisuals_)
         visual.node->SetVisible(false);
@@ -11,41 +72,50 @@ void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
         return;
     const auto &lines = session_->MeasureLines();
     std::size_t used = 0;
-    for (auto it = std::ranges::lower_bound(lines, time - MissedTravelDuration, {},
-                                            &finger_drum::mode::MeasureLinePresentationInfo::timing);
-         it != lines.end() && it->timing <= time + horizon; ++it)
-    {
-        const auto position = LaneObjectPosition(it->timing, time, static_cast<float>(it->scrollMultiplier));
-        if (position.y > judgementLocalY_ + noteTravelDistance_ || position.y < judgementLocalY_ - noteTravelDistance_)
-            continue;
-        if (used == measureLineVisuals_.size())
-        {
-            auto &line = mrg::visual2d::CreatePanel(*laneRoot_, {}, "Lane.MeasureLine");
-            line.SetPivot({0.5F, 0.5F});
-            SetColor(line, {.78F, .85F, .90F, .72F});
-            line.SetZIndex(1);
-            measureLineVisuals_.push_back({{}, &line});
-        }
-        auto &visual = measureLineVisuals_[used++];
-        visual.timing = it->timing;
-        visual.node->SetVisible(true);
-        visual.node->SetSize({laneWidth_, 4});
-        visual.node->SetPosition(position);
-    }
+    const auto distance = session_->ScrollDistance(time, {});
+    measureVisibility_.Visit(distance, distance,
+                             [&](std::size_t index)
+                             {
+                                 const auto it = lines.begin() + static_cast<std::ptrdiff_t>(index);
+                                 const auto position =
+                                     LaneObjectPosition(it->timing, time, static_cast<float>(it->scrollMultiplier));
+                                 if (position.y > judgementLocalY_ + noteTravelDistance_ ||
+                                     position.y < judgementLocalY_ - noteTravelDistance_)
+                                     return;
+                                 if (used == measureLineVisuals_.size())
+                                 {
+                                     auto &line = mrg::visual2d::CreatePanel(*laneRoot_, {}, "Lane.MeasureLine");
+                                     line.SetPivot({0.5F, 0.5F});
+                                     SetColor(line, {.78F, .85F, .90F, .72F});
+                                     line.SetZIndex(1);
+                                     measureLineVisuals_.push_back({{}, &line});
+                                 }
+                                 auto &visual = measureLineVisuals_[used++];
+                                 visual.timing = it->timing;
+                                 visual.node->SetVisible(true);
+                                 visual.node->SetSize({laneWidth_, 4});
+                                 visual.node->SetPosition(position);
+                             });
 }
 
 void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
                                           const finger_drum::mode::NotePresentationInfo &presentation,
                                           finger_drum::rhythm::RhythmTime time,
-                                          finger_drum::rhythm::RhythmDuration horizon,
                                           finger_drum::rhythm::RhythmTime anchor, std::size_t processedTicks)
 {
     std::size_t used = 0;
     const auto &ticks = presentation.tickTimes;
     const float speed = static_cast<float>(presentation.scrollMultiplier);
     const auto first = ticks.begin() + static_cast<std::ptrdiff_t>(std::min(processedTicks, ticks.size()));
-    for (auto it = std::lower_bound(first, ticks.end(), time - MissedTravelDuration);
-         it != ticks.end() && *it <= time + horizon; ++it)
+    const long double distance = session_->ScrollDistance(time, {});
+    const long double scale = session_->Timeline().BaseBpm() / 240'000'000.0L * pixelsPerWholeNote_ * speed;
+    const auto cumulative = [this](auto tick) { return session_->ScrollDistance(tick, {}); };
+    const auto last = std::ranges::upper_bound(
+        first, ticks.end(),
+        distance + (laneRoot_->NodeSize().height + layers.tickSize.height - judgementLocalY_) / scale, {}, cumulative);
+    for (auto it = std::ranges::lower_bound(first, last, distance - (judgementLocalY_ + layers.tickSize.height) / scale,
+                                            {}, cumulative);
+         it != last; ++it)
     {
         if (*it <= layers.timing)
             continue;
@@ -81,12 +151,7 @@ mrg::visual2d::ImageHandle GameplayPresenter::NoteImage(std::wstring_view file)
 
 void GameplayPresenter::CreateNoteVisuals()
 {
-    static constexpr std::wstring_view files[]{L"note.png", L"noteoverlay.png", L"bignote.png",
-        L"bigcircleoverlay.png", L"LNBody.png", L"LNBodyOverlay.png", L"LNTail.png", L"LNTailOverlay.png",
-        L"BigLNBody.png", L"BigLNBodyOverlay.png", L"BigLNTail.png", L"BigLNTailOverlay.png",
-        L"TickMarker.png", L"BuzzTickDiamond.png", L"Balloon.png", L"DengDeng.png",
-        L"BalloonProcessing.png", L"BalloonBurst.png", L"DengDengProcessing.png", L"HitCounterCloud.png"};
-    for (const auto file : files)
+    for (const auto file : NoteImageFiles)
         static_cast<void>(NoteImage(file));
     const auto normalSize = ScaledImageSize(screenVisuals_, NoteImage(L"note.png"));
     pixelsPerWholeNote_ = normalSize.width * 16.0F * SixteenthSpacingInHeadDiameters;
@@ -323,29 +388,43 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
     progressView_.Update(time);
     UpdateAccuracyPresentation();
     using Duration = finger_drum::rhythm::RhythmDuration;
-    const auto horizon = std::max(VisibleTravelDuration(), Duration{1});
-    const auto snapshot = session_->Gear().BuildSnapshot(
-        time, horizon, MissedTravelDuration);
+    if (visibilityRevision_ != session_->PresentationRevision())
+        RebuildVisibilityIndices();
+    visibleNoteModels_.clear();
+    const auto distance = session_->ScrollDistance(time, {});
+    noteVisibility_.Visit(distance, distance,
+                          [&](finger_drum::rhythm::NoteId id)
+                          {
+                              const auto *model = noteModels_.at(id);
+                              if (time <= model->ExpireTime() + MissedTravelDuration)
+                                  visibleNoteModels_.push_back(model);
+                          });
+    std::ranges::sort(visibleNoteModels_, {}, [](const auto *note) { return note->Timing(); });
+    ++presentationGeneration_;
     HideTransientNoteVisuals();
     bool showMeasureLines = true;
     for (const auto &value : session_->EvaluateAutomation(time))
         if (value.type == finger_drum::chart::EffectCommandType::MeasureLineVisible)
             showMeasureLines = value.value >= 0.5;
-    UpdateMeasureLines(time, horizon, showMeasureLines);
+    UpdateMeasureLines(time, showMeasureLines);
     bool focusClaimed{};
-    for (const finger_drum::rhythm::ScrollNoteSnapshot &note : snapshot.notes)
+    for (const auto *model : visibleNoteModels_)
     {
+        const finger_drum::rhythm::ScrollNoteSnapshot note{.noteId = model->Id(),
+                                                           .timing = model->Timing(),
+                                                           .expireTime = model->ExpireTime(),
+                                                           .state = model->State(),
+                                                           .progress = model->Progress(),
+                                                           .processedTicks = model->ProcessedTickCount()};
         auto found = noteVisuals_.find(note.noteId);
         if (found == noteVisuals_.end())
         {
-            const auto model = noteModels_.find(note.noteId);
-            if (model == noteModels_.end())
-                continue;
-            CreateNoteVisual(*model->second);
+            CreateNoteVisual(*model);
             found = noteVisuals_.find(note.noteId);
         }
         NoteVisualLayers &layers = found->second;
         presentedNoteIds_.push_back(note.noteId);
+        layers.presentedGeneration = presentationGeneration_;
         const finger_drum::mode::NotePresentationInfo *presentation =
             session_->FindNotePresentation(note.noteId);
         const bool focusNote = layers.focusType != FocusNoteType::None;
@@ -378,7 +457,7 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         if (presentation != nullptr && presentation->hasEndTime && layers.body != nullptr &&
             layers.tail != nullptr)
         {
-            UpdateTickVisuals(layers, *presentation, time, horizon, targetTime, note.processedTicks);
+            UpdateTickVisuals(layers, *presentation, time, targetTime, note.processedTicks);
             const float tailTravel = std::clamp(TravelPixelsAt(layers.endTime, time, speed),
                                                 -0.05F * noteTravelDistance_,
                                                 1.65F * noteTravelDistance_);
@@ -411,8 +490,7 @@ void GameplayPresenter::RemoveUnusedNoteVisuals()
 {
     for (auto it = noteVisuals_.begin(); it != noteVisuals_.end();)
     {
-        if (std::ranges::find(presentedNoteIds_, it->first) != presentedNoteIds_.end() ||
-            completionEffects_.contains(it->first))
+        if (it->second.presentedGeneration == presentationGeneration_ || completionEffects_.contains(it->first))
         {
             ++it;
             continue;
@@ -425,4 +503,39 @@ void GameplayPresenter::RemoveUnusedNoteVisuals()
                 static_cast<void>(canvas_->RemoveNode(node->Id()));
         it = noteVisuals_.erase(it);
     }
+}
+
+void GameplayPresenter::RebuildVisibilityIndices()
+{
+    using NoteIndex = finger_drum::chart::IntervalIndex<long double, finger_drum::rhythm::NoteId>;
+    using MeasureIndex = finger_drum::chart::IntervalIndex<long double, std::size_t>;
+    std::vector<NoteIndex::Entry> notes;
+    std::vector<MeasureIndex::Entry> lines;
+    notes.reserve(noteModels_.size());
+    firstVisibilityDistance_ = std::numeric_limits<long double>::infinity();
+    const long double scale = session_->Timeline().BaseBpm() / 240'000'000.0L * pixelsPerWholeNote_;
+    for (const auto &[id, model] : noteModels_)
+    {
+        const auto *info = session_->FindNotePresentation(id);
+        const double speed = info ? info->scrollMultiplier : 1;
+        const auto start = session_->ScrollDistance(model->Timing(), {});
+        const auto endTime =
+            info && info->hasEndTime ? std::max(info->endTime, model->ExpireTime()) : model->ExpireTime();
+        const auto end = session_->ScrollDistance(endTime, {});
+        const auto margin = noteTravelDistance_ / (scale * speed);
+        notes.push_back({start - margin, end + margin, id});
+        firstVisibilityDistance_ = std::min(firstVisibilityDistance_, start - margin);
+    }
+    const auto &measures = session_->MeasureLines();
+    lines.reserve(measures.size());
+    for (std::size_t i = 0; i < measures.size(); ++i)
+    {
+        const auto distance = session_->ScrollDistance(measures[i].timing, {});
+        const auto margin = noteTravelDistance_ / (scale * measures[i].scrollMultiplier);
+        lines.push_back({distance - margin, distance + margin, i});
+        firstVisibilityDistance_ = std::min(firstVisibilityDistance_, distance - margin);
+    }
+    noteVisibility_.Assign(std::move(notes));
+    measureVisibility_.Assign(std::move(lines));
+    visibilityRevision_ = session_->PresentationRevision();
 }

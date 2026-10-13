@@ -3,6 +3,9 @@
 비공개 리듬게임 FingerDrum의 Client 코드와 게임 자산 저장소입니다.
 재사용 엔진은 `Dependencies/MRG-Engine` private submodule입니다.
 
+표시 구간 인덱스·FFT 타일·비동기 자원/곡 목록 준비와 엔진 캐시의 최신 변경은
+[성능 수정 기록](Docs/Reviews/PerformanceFixes-2026-10-14.md)에 정리합니다.
+
 ## 작업 시작
 
 루트 `AGENTS.md` → [짧은 인수인계](Docs/SessionHandoff.md) →

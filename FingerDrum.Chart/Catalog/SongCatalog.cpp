@@ -89,6 +89,24 @@ namespace finger_drum::chart
             std::vector<std::filesystem::path> patterns;
         };
 
+        template <class Cache, class Parser>
+        auto ParseChangedFile(Cache &cache, const std::filesystem::path &path, Parser parse)
+        {
+            std::error_code error;
+            const auto modified = std::filesystem::last_write_time(path, error);
+            if (error)
+                return parse(path);
+            const auto size = std::filesystem::file_size(path, error);
+            if (error)
+                return parse(path);
+            if (const auto found = cache.find(path);
+                found != cache.end() && found->second.modified == modified && found->second.size == size)
+                return found->second.parsed;
+            auto parsed = parse(path);
+            cache.insert_or_assign(path, typename Cache::mapped_type{modified, size, parsed});
+            return parsed;
+        }
+
         [[nodiscard]] CatalogFiles DiscoverCatalogFiles(
             const std::filesystem::path& songsRoot,
             SongCatalogLoadResult& result)
@@ -176,6 +194,15 @@ namespace finger_drum::chart
         const std::filesystem::path& songsRoot) const
     {
         SongCatalogLoadResult result;
+        const auto deleted = [](const auto &entry)
+        {
+            std::error_code error;
+            const bool exists = std::filesystem::exists(entry.first, error);
+            return !exists && !error;
+        };
+        std::erase_if(musicCache_, deleted);
+        std::erase_if(patternCache_, deleted);
+        std::erase_if(effectCache_, deleted);
         std::error_code rootError;
         if (!std::filesystem::is_directory(songsRoot, rootError))
         {
@@ -201,7 +228,8 @@ namespace finger_drum::chart
             ParseResult<MusicDocument> parsed;
             try
             {
-                parsed = parser.ParseMusicFile(path);
+                parsed = ParseChangedFile(musicCache_, path,
+                                          [&parser](const auto &file) { return parser.ParseMusicFile(file); });
             }
             catch (const std::exception& exception)
             {
@@ -258,7 +286,8 @@ namespace finger_drum::chart
             ParseResult<PatternDocument> parsed;
             try
             {
-                parsed = parser.ParsePatternFile(path);
+                parsed = ParseChangedFile(patternCache_, path,
+                                          [&parser](const auto &file) { return parser.ParsePatternFile(file); });
             }
             catch (const std::exception& exception)
             {
@@ -326,7 +355,8 @@ namespace finger_drum::chart
                 ParseResult<EffectDocument> effects;
                 try
                 {
-                    effects = parser.ParseEffectFile(effectPath);
+                    effects = ParseChangedFile(effectCache_, effectPath,
+                                               [&parser](const auto &file) { return parser.ParseEffectFile(file); });
                 }
                 catch (const std::exception& exception)
                 {

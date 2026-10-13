@@ -85,7 +85,12 @@ Catalog 탐색은 파일별 오류를 격리하므로 손상된 YMM/YMP/YME 또�
 진단을 남기고 해당 항목만 제외한다. `GO` 직전에도 선택 패턴을 한 번 검증하며,
 실패하면 Scene을 전환하지 않고 상세 영역에 오류를 표시한다. 성공하면 검증한
 PlaySession의 소유권을 gameplay controller로 한 번 넘겨 같은 파일을 다시 읽지 않는다.
-첫 진입의 Initialize/Begin에서는 카탈로그를 한 번만 읽고 재진입에서는 외부 편집을 반영한다.
+첫 진입의 Initialize에서 카탈로그 worker를 시작하고 재진입에서도 외부 편집을 반영한다.
+SongCatalogLoader는 복사한 경로와 파서 캐시만 worker에 넘기며 Scene/엔진 pointer를
+참조하지 않는다. Scene은 완료 결과만 적용하고 첫 로딩 중에는 로딩 문구를 표시한다.
+SongCatalog는 파일 수정 시각/크기가 같으면 파싱 결과를 재사용하고 삭제 파일 캐시를 제거한다.
+MusicSelectView는 행 배치 metadata와 실제 카드를 구분하여 viewport 인근 행만 만든다.
+포커스/검색/정렬/스크롤/resize는 기존 조작 규칙을 유지한다.
 미리듣기는 엔진의 StreamAsync로 열고 준비가 끝난 다음 기존 200ms fade로 재생한다.
 선택이 바뀌면 이전 로딩의 완료를 확인해 폐기하고 최신 선택을 시작한다. 로딩/정지 직후의
 clip은 안전한 release 상태가 될 때까지 보관한다. 실패 파일은 매 Update 재시도하지 않고

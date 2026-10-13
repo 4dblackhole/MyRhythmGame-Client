@@ -22,6 +22,7 @@ namespace finger_drum::mode
     void PlaySession::SetTimeline(chart::MusicalTimeline timeline)
     {
         timeline_.emplace(std::move(timeline));
+        ++presentationRevision_;
     }
 
     const chart::MusicalTimeline &PlaySession::Timeline() const
@@ -60,6 +61,7 @@ namespace finger_drum::mode
         automationValues_.clear();
         automationLastValues_.swap(lastValues);
         automationError_.clear();
+        ++presentationRevision_;
     }
 
     void PlaySession::SetMeasureLines(std::vector<MeasureLinePresentationInfo> measureLines)
@@ -74,6 +76,7 @@ namespace finger_drum::mode
         std::ranges::stable_sort(measureLines, {}, &MeasureLinePresentationInfo::timing);
         measureLines_ = std::move(measureLines);
         minimumMeasureScrollMultiplier_ = minimum;
+        ++presentationRevision_;
     }
 
     void PlaySession::SetHitSoundFiles(std::map<rhythm::SoundId, std::filesystem::path> files)
@@ -122,6 +125,7 @@ namespace finger_drum::mode
         // and negative-delay maps. Rendering uses the same processed prefix.
         std::ranges::sort(presentation.tickTimes);
         notePresentation_.insert_or_assign(noteId, std::move(presentation));
+        ++presentationRevision_;
     }
 
     const NotePresentationInfo *PlaySession::FindNotePresentation(const rhythm::NoteId noteId) const noexcept
@@ -137,6 +141,7 @@ namespace finger_drum::mode
         minimumScrollMultiplier_ = std::min(minimumScrollMultiplier_, multiplier);
         if (auto found = notePresentation_.find(noteId); found != notePresentation_.end())
             found->second.scrollMultiplier = multiplier;
+        ++presentationRevision_;
     }
 
     rhythm::NoteProcessResult PlaySession::ProcessInput(const rhythm::PhysicalKey physicalKey,

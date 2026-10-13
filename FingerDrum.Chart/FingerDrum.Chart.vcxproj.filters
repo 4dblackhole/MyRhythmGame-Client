@@ -38,4 +38,5 @@
   <ItemGroup><ClInclude Include="Automation\ScrollAutomation.h"><Filter>Automation</Filter></ClInclude></ItemGroup>
   <ItemGroup><ClCompile Include="Automation\ScrollAutomation.cpp"><Filter>Automation</Filter></ClCompile></ItemGroup>
   <ItemGroup><ClInclude Include="Automation\EffectValidation.h"><Filter>Automation</Filter></ClInclude><ClCompile Include="Automation\EffectValidation.cpp"><Filter>Automation</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClInclude Include="Utility\IntervalIndex.h"><Filter>Utility</Filter></ClInclude></ItemGroup>
 </Project>

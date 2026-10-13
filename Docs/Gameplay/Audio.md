@@ -5,13 +5,20 @@
 실제 재생: `Client/Audio/GameplayAudioRouter.*`. 엔진 API 변경 때만 엔진 Audio 문서를 읽습니다.
 
 파일 등록은 라우터의 `RegisterSound`가 SoundId와 경로를 연결하고
-`AudioSystem::LoadSound`로 Clip을 로드합니다. 음악은 Stream, 히트사운드는
-Sample 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 같은 Sample을 가리키는
+`AudioSystem::LoadSound`로 Clip을 로드합니다. 플레이 음악은 StreamAsync, 히트사운드는
+SampleAsync 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 같은 Sample을 가리키는
 SoundId 별칭은 하나의 활성 Voice를 공유합니다. 이전 재생이 끝나기 전에 같은
 Sample을 다시 요청하면 새 Channel을 만들지 않고 기존 Channel의 위치를 처음으로
 되돌려 재생하며, 끝난 뒤 요청한 경우에만 새 Voice를 만듭니다. 재생 관리자는 재생 중
 Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system은 `mrg::Run`이
 소유하는 AudioSystem 하나가 관리합니다.
+
+YME 표의 실제 참조 항목만 세션의 HitSoundFiles에 모읍니다. 비동기 Clip을 등록한 뒤
+Controller는 2ms 주기로 Ready/Failed를 확인하며, 준비가 끝난 시점에 QPC/DSP를 고정하고
+음악을 예약합니다. 종료 Clip은 엔진 RetireClip으로 안전한 해제를 기다립니다.
+라우터는 성공한 자동화 값이 같으면 native setter를 반복하지 않고, Voice 종료 확인은
+공통 PlaybackManager에 맡깁니다. SceneGameClient의 native 유지관리 주기는 2ms이며
+입력 판정이나 DSP 예약 시각은 이 주기로 양자화하지 않습니다.
 
 풍선 완료 cue는 선택한 스킨의 `HitSounds/TaikoMode/pop.wav`를 사용하며 파일이
 없으면 내장 기본 스킨의 같은 파일로 대체합니다.

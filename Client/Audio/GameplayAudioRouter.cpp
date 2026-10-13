@@ -53,6 +53,25 @@ namespace finger_drum::audio
         StopAllVoices();
         effects_.clear();
         bypassedEffects_.clear();
+        appliedValues_.clear();
+        if (audioSystem_)
+            for (auto &[id, sound] : clips_)
+            {
+                static_cast<void>(id);
+                // Aliases share one clip. Retire only the last owned alias.
+                if (sound.clip.use_count() > 1)
+                {
+                    sound.clip.reset();
+                    continue;
+                }
+                try
+                {
+                    audioSystem_->RetireClip(std::move(sound.clip));
+                }
+                catch (...)
+                { /* Shutdown releases remaining handles while the audio service is alive. */
+                }
+            }
         clips_.clear();
         buses_.clear();
         audioSystem_ = nullptr;
@@ -84,17 +103,15 @@ namespace finger_drum::audio
         }
         clips_.insert_or_assign(
             std::move(soundId),
-            RegisteredSound{
-                std::move(clip),
-                loadMode == mrg::audio::AudioLoadMode::Sample});
+            RegisteredSound{std::move(clip), loadMode == mrg::audio::AudioLoadMode::Sample ||
+                                                 loadMode == mrg::audio::AudioLoadMode::SampleAsync});
         errorMessage.clear();
         return true;
     }
 
-    bool GameplayAudioRouter::RegisterSoundAliases(
-        const std::span<const rhythm::SoundId> soundIds,
-        const std::filesystem::path& path,
-        std::string& errorMessage)
+    bool GameplayAudioRouter::RegisterSoundAliases(const std::span<const rhythm::SoundId> soundIds,
+                                                   const std::filesystem::path &path, std::string &errorMessage,
+                                                   const mrg::audio::AudioLoadMode loadMode)
     {
         if (audioSystem_ == nullptr)
         {
@@ -113,11 +130,7 @@ namespace finger_drum::audio
             return false;
         }
 
-        std::unique_ptr<mrg::audio::AudioClip> loaded =
-            audioSystem_->LoadSound(
-                path,
-                mrg::audio::AudioLoadMode::Sample,
-                errorMessage);
+        std::unique_ptr<mrg::audio::AudioClip> loaded = audioSystem_->LoadSound(path, loadMode, errorMessage);
         if (loaded == nullptr)
         {
             return false;
@@ -127,10 +140,26 @@ namespace finger_drum::audio
         {
             clips_.insert_or_assign(
                 soundId,
-                RegisteredSound{clip, true});
+                RegisteredSound{clip, loadMode == mrg::audio::AudioLoadMode::Sample ||
+                    loadMode == mrg::audio::AudioLoadMode::SampleAsync});
         }
         errorMessage.clear();
         return true;
+    }
+
+    bool GameplayAudioRouter::Ready()
+    {
+        bool ready = true;
+        for (const auto &[id, sound] : clips_)
+        {
+            std::string error;
+            const auto state = sound.clip->LoadState(error);
+            if (state == mrg::audio::AudioClipLoadState::Loading)
+                ready = false;
+            else if (state == mrg::audio::AudioClipLoadState::Failed && lastError_.empty())
+                lastError_ = id + ": " + error;
+        }
+        return ready;
     }
 
     void GameplayAudioRouter::PlayNow(
@@ -264,6 +293,7 @@ namespace finger_drum::audio
         }
         voices_.clear();
         sampleVoices_.clear();
+        appliedValues_.clear();
     }
 
     bool GameplayAudioRouter::SetVoicesPaused(
@@ -290,15 +320,11 @@ namespace finger_drum::audio
             [this](const mrg::audio::AudioPlaybackId id)
             {
                 const mrg::audio::AudioVoice* voice = playback_.FindVoice(id);
-                return voice == nullptr || !voice->IsPlaying();
+                // The common playback manager polls native channels once.
+                return voice == nullptr;
             });
-        std::erase_if(
-            sampleVoices_,
-            [this](const auto& entry)
-            {
-                return std::ranges::find(voices_, entry.second) ==
-                    voices_.end();
-            });
+        std::erase_if(sampleVoices_,
+                      [this](const auto &entry) { return playback_.FindVoice(entry.second) == nullptr; });
     }
 
     std::string_view GameplayAudioRouter::LastError() const noexcept
@@ -351,14 +377,18 @@ namespace finger_drum::audio
         const std::string_view target = value.target.empty()
             ? std::string_view{"HitSound"}
             : std::string_view{value.target};
+        const auto key = std::pair{value.type, std::string(target)};
+        if (const auto applied = appliedValues_.find(key);
+            applied != appliedValues_.end() && applied->second == value.value)
+            return;
         if (value.type == chart::EffectCommandType::BusVolume)
         {
-            if (mrg::audio::AudioBus* const bus = FindBus(target);
-                bus != nullptr && !bus->SetVolume(
-                    static_cast<float>(std::max(value.value, 0.0)),
-                    error))
+            if (mrg::audio::AudioBus *const bus = FindBus(target); bus != nullptr)
             {
-                lastError_ = std::move(error);
+                if (!bus->SetVolume(static_cast<float>(std::max(value.value, 0.0)), error))
+                    lastError_ = std::move(error);
+                else
+                    appliedValues_.insert_or_assign(key, value.value);
             }
             return;
         }
@@ -403,6 +433,8 @@ namespace finger_drum::audio
         {
             lastError_ = std::move(error);
         }
+        else
+            appliedValues_.insert_or_assign(key, value.value);
     }
 
     void GameplayAudioRouter::PrepareAutomation(std::span<const chart::CompiledEffectCommand> commands)

@@ -61,13 +61,24 @@ tail과 tail overlay는 별도로 회전하지 않고, 둥근 면이 위를 향�
 그대로 Lane 부모의 회전만 상속합니다.
 기본 히트사운드는 `don.wav`, `kat.wav`, `bigdon.wav`, `bigkat.wav`이며 풍선 완료음은
 같은 `HitSounds/TaikoMode` 폴더의 `pop.wav`입니다.
-음악은 Stream으로 읽어 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
+음악은 StreamAsync로 준비한 뒤 하나의 `RhythmTimer`가 가리키는 DSP 시각 0에 예약합니다.
 Raw Input으로 발생한 히트사운드는 입력 timestamp를 판정에만 사용하고 즉시
 재생합니다. 따라서 QPC와 장치 DSP clock의 장시간 미세 드리프트가 실시간 입력음을
 미래 시각으로 예약해 지연을 누적시키지 않습니다.
 오디오 초기화·파일 등록·재생 요청이 실패하면 가능한 나머지 파일 등록은 계속하고,
 게임플레이 화면 상단에 첫 오류를 표시합니다. 오류는 무음으로 삼키지 않으며 노트
 판정 시간축은 오디오 오류와 독립적으로 유지됩니다.
+
+`GameplayPresenter`는 누적 Whole 거리에서 객체별 가시 구간을 한 번 인덱싱합니다.
+Separate가 느린 미래 노트 하나가 다른 화면 밖 노트들의 표시 범위를 확대하지 않습니다.
+노트/마디선/틱은 같은 거리 계산으로 조회하고, 노트 수명 정리는 표시 세대 번호를 사용합니다.
+창 크기나 세션 presentation revision 변경 시 인덱스를 재구성합니다. Scene의 Render가 표시를
+갱신하며 Update는 입력·세션·피드백을 처리합니다. 초기 대기 시각은 첫 실제 가시 구간의
+진입 거리를 역산하되 최소 2초를 유지합니다.
+
+Scene 진입에서 `PrepareImages`로 선택 스킨과 fallback PNG를 비동기 디코드합니다.
+준비가 끝난 뒤 Canvas를 만들고 오디오 자원을 준비합니다. 오디오 준비가 끝나기 전에
+플레이 clock을 시작하지 않습니다. 상세 병목/검증은 [성능 수정 기록](../Reviews/PerformanceFixes-2026-10-14.md)에 있습니다.
 
 Lane 표시는 RPG `PlayScene`의 Transform 계층도 유지합니다. 기본 Lane은 로컬
 `+Y` 방향으로 아래에서 위로 진행하는 세로 노드이며, Taiko 화면에서는 이 부모

@@ -9,6 +9,11 @@
 
 ## 작업 위치와 경계
 
+최근 성능 수정(2026-10-14): [8개 병목 수정 기록](Reviews/PerformanceFixes-2026-10-14.md).
+객체별 표시 구간 조회/Render 갱신, 효과 시각 인덱스, 편집 롱 구간 인덱스, FFT 타일,
+비동기 카탈로그/가시 카드, 비동기 플레이 자원, 엔진 텍스트 LRU/업로드 fence/2ms 오디오
+유지관리를 적용했습니다. 상세 검증과 수동 확인 구분은 [Verification](Verification.md)에 있습니다.
+
 - 작업 폴더: `D:\Projects\c++\asdf\MyRhythmGame-Client`. 별도 지시 없으면 `main`에서 작업합니다.
 - Client: `4dblackhole/MyRhythmGame-Client`, 엔진: private `Dependencies/MRG-Engine` submodule.
 - 전체 솔루션 빌드는 같은 부모 폴더의 독립 저장소 `OsuTaikoConverter`도 필요합니다.

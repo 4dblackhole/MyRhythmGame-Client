@@ -139,6 +139,7 @@ void SongPreviewController::UpdatePreviewAudio(const double deltaSeconds)
             continue;
         }
 
+        const float previousVolume = slot.volume;
         if (slot.volume < slot.targetVolume)
         {
             slot.volume = std::min(slot.volume + fadeStep, slot.targetVolume);
@@ -149,7 +150,7 @@ void SongPreviewController::UpdatePreviewAudio(const double deltaSeconds)
         }
 
         std::string errorMessage;
-        if (!voice->SetVolume(slot.volume, errorMessage))
+        if (slot.volume != previousVolume && !voice->SetVolume(slot.volume, errorMessage))
         {
             StopPreviewSlot(slot);
             if (currentPreviewSlot_ == index)

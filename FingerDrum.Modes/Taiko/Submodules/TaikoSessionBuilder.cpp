@@ -16,14 +16,13 @@ namespace finger_drum::mode
     namespace
     {
         std::vector<MeasureLinePresentationInfo> BuildMeasureLines(const chart::MusicalTimeline &timeline,
-                                                                   const chart::EffectDocument &effects)
+                                                                   const EffectLookup &effects)
         {
             std::vector<MeasureLinePresentationInfo> result;
             result.reserve(timeline.MeasureSpans().size());
             for (const auto &span : timeline.MeasureSpans())
                 if (span.end > span.begin)
-                    result.push_back({span.begin, timeline.EffectValueAt(effects, chart::EffectCommandType::NoteSpeed,
-                                                                         span.sourceBegin)});
+                    result.push_back({span.begin, effects.Value(chart::EffectCommandType::NoteSpeed, span.begin)});
             return result;
         }
     } // namespace
@@ -46,13 +45,15 @@ namespace finger_drum::mode
 
         chart::MusicalTimeline timeline(pattern);
         chart::ValidateEffectPositions(effects, timeline);
+        auto compiledEffects = timeline.CompileEffects(effects);
+        const EffectLookup effectLookup(compiledEffects);
         auto compiled = taiko_notes::PlayableInSourceOrder(timeline.CompileNotes(pattern));
         PlayResultSummary summary;
         summary.patternPath = pattern.sourcePath;
         summary.patternName = pattern.name;
         summary.judgementLevel = pattern.judgementLevel;
         auto collector = std::make_unique<TaikoResultCollector>(std::move(summary), compiled.size());
-        ConfigureHitSounds(*session, effects, timeline, result.diagnostics);
+        ConfigureHitSounds(*session, pattern, effects, timeline, result.diagnostics);
         if (!result.diagnostics.empty())
             return result;
         for (auto &note : compiled)
@@ -63,8 +64,7 @@ namespace finger_drum::mode
                     "Note references an undefined YME hit sound index."});
                 return result;
             }
-            note.scrollMultiplier =
-                timeline.EffectValueAt(effects, chart::EffectCommandType::NoteSpeed, note.note.position);
+            note.scrollMultiplier = effectLookup.Value(chart::EffectCommandType::NoteSpeed, note.timing);
             // Explicit per-note assignments take precedence over timed defaults.
             if (effects.hitSounds.contains(note.note.hitSound))
             {
@@ -80,7 +80,8 @@ namespace finger_drum::mode
         for (const chart::CompiledPatternNote &compiledNote : compiled)
         {
             const chart::PatternNote &source = compiledNote.note;
-            const auto profile = UsesSyncopation(effects, timeline, source.position) ? syncopationRange : defaultRange;
+            const auto profile =
+                UsesSyncopation(effectLookup, timeline, source.position) ? syncopationRange : defaultRange;
             const TaikoNoteType type = static_cast<TaikoNoteType>(source.keyType);
             const TaikoPatternAction action = static_cast<TaikoPatternAction>(source.actionType);
 
@@ -105,8 +106,8 @@ namespace finger_drum::mode
                 }
                 const auto longNoteId = nextId;
                 AddLongNote(*longNoteHead, compiledNote, timeline,
-                            UsesSyncopation(effects, timeline, longNoteHead->note.position) ? syncopationRange
-                                                                                            : defaultRange,
+                            UsesSyncopation(effectLookup, timeline, longNoteHead->note.position) ? syncopationRange
+                                                                                                 : defaultRange,
                             lane, *session, nextId, result.diagnostics);
                 if (nextId > longNoteId)
                 {
@@ -188,8 +189,8 @@ namespace finger_drum::mode
                                  Cue(finger_drum::mode::taiko_sound::DonFreeInput, "UserInputFeedback"));
         session->SetFreeInputCue(ActionValue(TaikoAction::Kat),
                                  Cue(finger_drum::mode::taiko_sound::KatFreeInput, "UserInputFeedback"));
-        session->SetEffects(timeline.CompileEffects(effects));
-        session->SetMeasureLines(BuildMeasureLines(timeline, effects));
+        session->SetMeasureLines(BuildMeasureLines(timeline, effectLookup));
+        session->SetEffects(std::move(compiledEffects));
         session->SetTimeline(std::move(timeline));
         session->Gear().Finalize();
         session->SetResultCollector(std::move(collector));

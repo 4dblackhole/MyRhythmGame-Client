@@ -30,6 +30,11 @@ class EditorView final : public IEditorModeCanvas
         if (canvas.Get())
             sliderInput_.Reset(*canvas.Get());
         menuBar_.Shutdown();
+        for (auto &tiles : audioTiles_)
+            tiles.clear();
+        audioRoots_.fill(nullptr);
+        audioOverlays_.fill(nullptr);
+        audioColumnsKey_.reset();
         canvas.Reset();
         node = nullptr;
         divisionSliderNode_ = nullptr;
@@ -60,10 +65,12 @@ class EditorView final : public IEditorModeCanvas
     void DrawTiming();
     void DrawEffects();
     void DrawAudio();
+    void UpdateAudioTiles(double begin, double minimumHz, double maximumHz, double longestSound);
+    void PrepareAudioTrack(std::size_t track, v::Rect rect, std::int64_t first, std::int64_t last, bool invalidate);
+    void UpdateWaveformColumns(double begin, double columnSeconds);
     void DrawAudioWaveform(const std::vector<finger_drum::editor::SpectrumFrame> &columns);
     void DrawAudioTimeRuler(double begin);
-    void DrawAudioSpectrum(v::Rect rect, const std::vector<finger_drum::editor::SpectrumFrame> &columns,
-                           double minimumHz, double maximumHz);
+    void DrawAudioSpectrum(v::Rect rect, double minimumHz, double maximumHz);
     void DrawTimeline();
     void SyncTimelineSlider();
     void Image(v::Rect, const std::filesystem::path &, v::Color) override;
@@ -87,10 +94,18 @@ class EditorView final : public IEditorModeCanvas
     static constexpr v::Rect DivisionSliderRect{1240, 6 + EditorMenuBar::Height, 480, 26};
     static constexpr v::Rect TimelineSliderRect{205, 915, 1645, 44};
     std::vector<Control> controls;
-    using AudioColumnsKey = std::tuple<double, double, double, double, std::uint64_t>;
+    using AudioColumnsKey = std::tuple<double, double, double, std::uint64_t>;
     std::optional<AudioColumnsKey> audioColumnsKey_;
     const finger_drum::chart::IEditorDocument *audioColumnsDocument_{};
     std::uint64_t audioColumnsDocumentRevision_{};
-    std::vector<finger_drum::editor::SpectrumFrame> musicColumns_, hitColumns_;
+    std::vector<finger_drum::editor::SpectrumFrame> musicColumns_;
+    struct AudioTile
+    {
+        v::Visual2DNode *node{};
+        std::vector<finger_drum::editor::SpectrumFrame> columns;
+    };
+    std::array<v::Visual2DNode *, 2> audioRoots_{};
+    std::array<EditorVisual *, 2> audioOverlays_{};
+    std::array<std::map<std::int64_t, AudioTile>, 2> audioTiles_;
     std::uint32_t width{1280}, height{720};
 };

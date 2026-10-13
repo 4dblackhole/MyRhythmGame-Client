@@ -33,14 +33,26 @@ void GameplaySessionController::Start(const mrg::EngineServices &services,
     initialTime_ = initialTime;
     session_->SetResultInitialTime(initialTime);
     InitializeAudio(services);
-    StartTimeline(services.audio.CaptureClockSnapshot());
-    if (!debugMode_)
-        ScheduleMusic();
+    time_ = initialTime_;
+    timelineStarted_ = false;
+    nextAudioPreparationPoll_ = 0;
 }
 void GameplaySessionController::Update(const mrg::UpdateContext &context)
 {
     feedback_.clear();
     const auto clock = context.audio.CaptureClockSnapshot();
+    if (!timelineStarted_)
+    {
+        if (context.totalSeconds < nextAudioPreparationPoll_)
+            return;
+        nextAudioPreparationPoll_ = context.totalSeconds + 0.002;
+        if (!audioRouter_.Ready())
+            return;
+        StartTimeline(clock);
+        timelineStarted_ = true;
+        if (!debugMode_)
+            ScheduleMusic();
+    }
     ProcessControlKeys(context.input, clock);
     if (debugMode_)
         ProcessDebugTimeline(context.input, clock, context.deltaSeconds);
@@ -73,6 +85,8 @@ std::string_view GameplaySessionController::ErrorMessage() const noexcept
 void GameplaySessionController::Shutdown() noexcept
 {
     timer_.Stop();
+    timelineStarted_ = false;
+    nextAudioPreparationPoll_ = 0;
     audioRouter_.Shutdown();
     session_.reset();
     musicRegistered_ = false;

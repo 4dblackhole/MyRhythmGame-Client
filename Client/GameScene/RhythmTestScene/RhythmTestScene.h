@@ -29,7 +29,11 @@ class RhythmTestScene final : public mrg::scene::GameScene
 
   private:
     void ShowResult(mrg::scene::SceneManager &scenes);
+    bool PreparePresentation();
     std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult_;
     std::unique_ptr<GameplaySessionController> controller_;
     std::unique_ptr<GameplayPresenter> view_;
+    std::optional<mrg::EngineServices> services_;
+    bool presentationReady_{};
+    double nextPreparationPoll_{};
 };

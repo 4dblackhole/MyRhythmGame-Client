@@ -6,6 +6,7 @@
 #include "Mode/PlayGameMode.h"
 #include "Presentation/LaneKeyBeam.h"
 #include "Texts/TextCatalog.h"
+#include "Utility/IntervalIndex.h"
 #include <array>
 #include <unordered_map>
 
@@ -19,6 +20,7 @@ class GameplayPresenter final
     }
     void Initialize(const mrg::EngineServices &services,
                     const finger_drum::mode::PlaySession &session);
+    bool PrepareAssets(const mrg::EngineServices &services);
     void SetVisible(bool visible)
     {
         static_cast<void>(canvasHandle_.SetVisible(visible));
@@ -75,6 +77,7 @@ class GameplayPresenter final
         float bodyWidth{};
         float tailWidth{};
         float tailHeight{};
+        std::uint64_t presentedGeneration{};
     };
 
     void CreatePresentation();
@@ -85,10 +88,9 @@ class GameplayPresenter final
     void CreateNoteVisuals();
     void CreateNoteVisual(const finger_drum::rhythm::INote &);
     mrg::visual2d::ImageHandle NoteImage(std::wstring_view);
-    void UpdateMeasureLines(finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmDuration, bool);
+    void UpdateMeasureLines(finger_drum::rhythm::RhythmTime, bool);
     void UpdateTickVisuals(NoteVisualLayers &, const finger_drum::mode::NotePresentationInfo &,
-                           finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmDuration,
-                           finger_drum::rhythm::RhythmTime, std::size_t);
+                           finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmTime, std::size_t);
     void UpdatePresentationLayout();
     void UpdateNoteTravelLayout();
     [[nodiscard]] float TravelPixels(finger_drum::rhythm::RhythmDuration duration,
@@ -98,9 +100,9 @@ class GameplayPresenter final
     [[nodiscard]] mrg::visual2d::Point LaneObjectPosition(finger_drum::rhythm::RhythmTime target,
                                                           finger_drum::rhythm::RhythmTime current,
                                                           float multiplier) const;
-    [[nodiscard]] finger_drum::rhythm::RhythmDuration VisibleTravelDuration() const;
     void HideTransientNoteVisuals();
     void RemoveUnusedNoteVisuals();
+    void RebuildVisibilityIndices();
     void PresentFocusCounter(NoteVisualLayers &layers,
                              const finger_drum::rhythm::NoteProgress &progress,
                              const float visualHeight);
@@ -123,8 +125,15 @@ class GameplayPresenter final
     std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers> noteVisuals_;
     std::unordered_map<finger_drum::rhythm::NoteId, const finger_drum::rhythm::INote *> noteModels_;
     std::map<std::wstring, mrg::visual2d::ImageHandle, std::less<>> noteImages_;
+    std::vector<std::filesystem::path> preparingImages_;
     float largestHeadRadius_{};
     std::vector<finger_drum::rhythm::NoteId> presentedNoteIds_;
+    finger_drum::chart::IntervalIndex<long double, finger_drum::rhythm::NoteId> noteVisibility_;
+    finger_drum::chart::IntervalIndex<long double, std::size_t> measureVisibility_;
+    std::vector<const finger_drum::rhythm::INote *> visibleNoteModels_;
+    std::uint64_t visibilityRevision_{};
+    std::uint64_t presentationGeneration_{};
+    long double firstVisibilityDistance_{};
     std::unordered_map<finger_drum::rhythm::NoteId, finger_drum::rhythm::RhythmTime>
         completionEffects_;
     std::vector<TimedVisual> measureLineVisuals_;

@@ -35,6 +35,9 @@ void EditorView::Initialize(const mrg::EngineServices &services)
 
 void EditorView::BuildContent()
 {
+    for (auto *root : audioRoots_)
+        if (root)
+            root->SetVisible(state_.Tab() == EditorTab::Audio);
     controls.clear();
     visual->Clear();
     Box({0, 0, 1920, 1080}, Background);
@@ -173,6 +176,9 @@ void EditorView::Build()
         // correction available, with no automatic retry until the next action.
         state_.SetStatus(error.what());
         buildFailed_ = true;
+        for (auto *root : audioRoots_)
+            if (root)
+                root->SetVisible(false);
         controls.clear();
         visual->Clear();
         sliderInput_.Reset(*canvas.Get());

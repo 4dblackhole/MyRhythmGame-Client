@@ -1,5 +1,7 @@
 #include "GameplayPresenter.h"
 #include "GameplaySupport.h"
+#include <limits>
+#include <numeric>
 using namespace gameplay;
 
 void GameplayPresenter::Initialize(const mrg::EngineServices &services,
@@ -31,8 +33,25 @@ void GameplayPresenter::OnResize(const std::uint32_t width, const std::uint32_t 
 
 finger_drum::rhythm::RhythmTime GameplayPresenter::InitialTimelineTime() const
 {
-    return std::min(finger_drum::rhythm::RhythmTime{-2'000'000},
-                    session_->Timeline().Compile({0, {}}) - VisibleTravelDuration());
+    using Time = finger_drum::rhythm::RhythmTime;
+    const Time latest{-2'000'000};
+    if (session_->ScrollDistance(latest, {}) <= firstVisibilityDistance_)
+        return latest;
+    // Invert the monotone cumulative distance only at entry. A slow future
+    // object must not lengthen the lead-in of every ordinary note.
+    const long double bound = std::floor(firstVisibilityDistance_ / session_->MinimumScrollMultiplier());
+    auto low =
+        static_cast<Time::rep>(std::max(bound, static_cast<long double>(std::numeric_limits<Time::rep>::lowest())));
+    auto high = latest.count();
+    while (low < high - 1)
+    {
+        const auto middle = std::midpoint(low, high);
+        if (session_->ScrollDistance(Time{middle}, {}) <= firstVisibilityDistance_)
+            low = middle;
+        else
+            high = middle;
+    }
+    return Time{low};
 }
 
 float GameplayPresenter::TravelPixels(const finger_drum::rhythm::RhythmDuration duration,
@@ -48,17 +67,6 @@ float GameplayPresenter::TravelPixelsAt(finger_drum::rhythm::RhythmTime target, 
 {
     return static_cast<float>(session_->ScrollDistance(target, current) *
         session_->Timeline().BaseBpm() / 240'000'000.0L * pixelsPerWholeNote_ * multiplier);
-}
-
-finger_drum::rhythm::RhythmDuration GameplayPresenter::VisibleTravelDuration() const
-{
-    constexpr long double MicrosecondsPerWholeNoteAtBpmOne = 240'000'000.0L;
-    const long double microseconds =
-        static_cast<long double>(noteTravelDistance_) * MicrosecondsPerWholeNoteAtBpmOne /
-        (static_cast<long double>(pixelsPerWholeNote_) * session_->Timeline().BaseBpm() *
-         session_->MinimumScrollMultiplier());
-    return finger_drum::rhythm::RhythmDuration{
-        static_cast<finger_drum::rhythm::RhythmDuration::rep>(std::ceil(microseconds))};
 }
 
 mrg::visual2d::Point GameplayPresenter::LaneObjectPosition(const finger_drum::rhythm::RhythmTime target,
@@ -78,6 +86,13 @@ void GameplayPresenter::Shutdown() noexcept
     noteVisuals_.clear();
     noteModels_.clear();
     noteImages_.clear();
+    preparingImages_.clear();
+    visibleNoteModels_.clear();
+    noteVisibility_.Assign({});
+    measureVisibility_.Assign({});
+    visibilityRevision_ = 0;
+    presentationGeneration_ = 0;
+    firstVisibilityDistance_ = 0;
     presentedNoteIds_.clear();
     completionEffects_.clear();
     measureLineVisuals_.clear();

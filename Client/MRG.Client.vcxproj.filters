@@ -169,4 +169,5 @@
     <ClCompile Include="Texts\GameScene\ResultScene\ResultTexts.cpp"><Filter>Texts\GameScene\ResultScene</Filter></ClCompile>
     <ClInclude Include="Texts\GameScene\ResultScene\ResultTexts.h"><Filter>Texts\GameScene\ResultScene</Filter></ClInclude>
   </ItemGroup>
+  <ItemGroup><ClInclude Include="GameScene\MusicSelectScene\Submodules\SongCatalogLoader.h"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClInclude></ItemGroup>
 </Project>

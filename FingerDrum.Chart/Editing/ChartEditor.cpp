@@ -386,15 +386,9 @@ std::vector<CompiledPatternNote> ChartEditor::NotesInMeasures(std::int64_t begin
     for (auto it = noteTree_.lower_bound({{begin, {}}, 0});
          it != noteTree_.end() && it->first.first.measure < end; ++it)
         selected.emplace(it->first.second, &it->second);
-    // Include intervals spanning the viewport even when both endpoints are outside.
-    for (const auto &[head, tail] : longPartners_)
-        if (noteTree_.at(noteKeys_.at(head)).note.actionType == 1)
-        {
-            const auto &a = noteTree_.at(noteKeys_.at(head));
-            const auto &b = noteTree_.at(noteKeys_.at(tail));
-            if (a.note.position.measure < end && b.note.position.measure >= begin)
-                selected.emplace(head, &a);
-        }
+    EnsureLongIntervalIndices();
+    longMeasureIntervals_.Visit(begin, end - 1,
+                                [&](std::size_t head) { selected.emplace(head, &noteTree_.at(noteKeys_.at(head))); });
     return IncludeLongNotePartners(std::move(selected));
 }
 
@@ -405,15 +399,32 @@ std::vector<CompiledPatternNote> ChartEditor::NotesInTimeRange(rhythm::RhythmTim
     std::map<std::size_t, const CompiledPatternNote *> selected;
     for (auto it = timeIndex_.lower_bound({begin, 0}); it != timeIndex_.end() && it->first.first <= end; ++it)
         selected.emplace(it->first.second, &noteTree_.at(it->second));
-    for (const auto &[head, tail] : longPartners_)
-        if (noteTree_.at(noteKeys_.at(head)).note.actionType == 1)
-        {
-            const auto &a = noteTree_.at(noteKeys_.at(head));
-            const auto &b = noteTree_.at(noteKeys_.at(tail));
-            if (a.timing <= end && b.timing >= begin)
-                selected.emplace(head, &a);
-        }
+    EnsureLongIntervalIndices();
+    longTimeIntervals_.Visit(begin, end,
+                             [&](std::size_t head) { selected.emplace(head, &noteTree_.at(noteKeys_.at(head))); });
     return IncludeLongNotePartners(std::move(selected));
+}
+
+void ChartEditor::EnsureLongIntervalIndices() const
+{
+    if (longIntervalRevision_ == revision_)
+        return;
+    std::vector<IntervalIndex<rhythm::RhythmTime, std::size_t>::Entry> times;
+    std::vector<IntervalIndex<std::int64_t, std::size_t>::Entry> measures;
+    times.reserve(longPartners_.size() / 2);
+    measures.reserve(longPartners_.size() / 2);
+    for (const auto &[head, tail] : longPartners_)
+    {
+        const auto &a = noteTree_.at(noteKeys_.at(head));
+        if (a.note.actionType != 1)
+            continue;
+        const auto &b = noteTree_.at(noteKeys_.at(tail));
+        times.push_back({a.timing, b.timing, head});
+        measures.push_back({a.note.position.measure, b.note.position.measure, head});
+    }
+    longTimeIntervals_.Assign(std::move(times));
+    longMeasureIntervals_.Assign(std::move(measures));
+    longIntervalRevision_ = revision_;
 }
 
 void ChartEditor::InvalidateNoteSnapshots() noexcept

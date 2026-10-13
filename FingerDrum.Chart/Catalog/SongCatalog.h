@@ -2,11 +2,13 @@
 
 #include "Model/Submodules/MusicDocument.h"
 #include "Model/Submodules/PatternDocument.h"
+#include "Model/Submodules/EffectDocument.h"
 
 #include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <vector>
+#include <map>
 
 namespace finger_drum::chart
 {
@@ -44,5 +46,16 @@ namespace finger_drum::chart
     public:
         [[nodiscard]] SongCatalogLoadResult Load(
             const std::filesystem::path& songsRoot) const;
+
+      private:
+        template <class Document> struct CachedDocument
+        {
+            std::filesystem::file_time_type modified;
+            std::uintmax_t size{};
+            ParseResult<Document> parsed;
+        };
+        mutable std::map<std::filesystem::path, CachedDocument<MusicDocument>> musicCache_;
+        mutable std::map<std::filesystem::path, CachedDocument<PatternDocument>> patternCache_;
+        mutable std::map<std::filesystem::path, CachedDocument<EffectDocument>> effectCache_;
     };
 }

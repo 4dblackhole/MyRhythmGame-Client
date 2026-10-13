@@ -2,6 +2,7 @@
 
 #include "Editing/IEditorDocument.h"
 #include "Automation/ScrollAutomation.h"
+#include "Utility/IntervalIndex.h"
 
 #include <algorithm>
 #include <map>
@@ -75,6 +76,7 @@ namespace finger_drum::chart
             std::optional<std::size_t> excluded = {}, std::optional<std::size_t> excludedPartner = {},
             std::span<const CompiledPatternNote> replacements = {}) const;
         std::vector<CompiledPatternNote> IncludeLongNotePartners(std::map<std::size_t, const CompiledPatternNote *>) const;
+        void EnsureLongIntervalIndices() const;
         using NoteKey = std::pair<MusicalPosition, std::size_t>;
         using TimeKey = std::pair<rhythm::RhythmTime, std::size_t>;
         // Trees own all editable events. DTO vectors below are lazy, read-only projections.
@@ -85,6 +87,9 @@ namespace finger_drum::chart
         std::set<std::pair<double, std::size_t>> noteSpeedIndex_;
         std::map<std::size_t, std::size_t> longPartners_;
         std::map<NoteKey, std::size_t> longEndpoints_;
+        mutable IntervalIndex<rhythm::RhythmTime, std::size_t> longTimeIntervals_;
+        mutable IntervalIndex<std::int64_t, std::size_t> longMeasureIntervals_;
+        mutable std::uint64_t longIntervalRevision_{};
         std::multimap<MusicalPosition, TimingDirective> timingTree_;
         std::multimap<MusicalPosition, EffectCommand> effectTree_;
         std::multimap<MusicalPosition, HitSoundChange> soundChangeTree_;

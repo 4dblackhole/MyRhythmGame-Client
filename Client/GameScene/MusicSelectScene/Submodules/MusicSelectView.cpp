@@ -84,6 +84,7 @@ void MusicSelectView::Shutdown() noexcept
     canvasPointer_.reset();
     difficultyButtonIds_.clear();
     songCards_.clear();
+    songRows_.clear();
     goLabel_ = nullptr;
     goFill_ = nullptr;
     goButton_ = nullptr;

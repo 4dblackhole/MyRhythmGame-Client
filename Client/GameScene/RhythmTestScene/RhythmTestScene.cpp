@@ -21,9 +21,21 @@ RhythmTestScene::~RhythmTestScene() = default;
 void RhythmTestScene::Initialize(const mrg::EngineServices &services)
 {
     controller_->InitializeSession();
-    view_->Initialize(services, controller_->Session());
-    controller_->Start(services, view_->InitialTimelineTime());
+    services_.emplace(services);
+    static_cast<void>(PreparePresentation());
+}
+bool RhythmTestScene::PreparePresentation()
+{
+    if (presentationReady_)
+        return true;
+    if (!view_->PrepareAssets(*services_))
+        return false;
+    view_->Initialize(*services_, controller_->Session());
+    controller_->Start(*services_, view_->InitialTimelineTime());
     view_->PresentErrorMessage(controller_->ErrorMessage());
+    view_->SetVisible(true);
+    presentationReady_ = true;
+    return true;
 }
 void RhythmTestScene::BeginScene()
 {
@@ -35,11 +47,18 @@ void RhythmTestScene::EndScene() noexcept
 }
 void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
 {
+    if (!presentationReady_ && (context.totalSeconds < nextPreparationPoll_ || !PreparePresentation()))
+    {
+        if (context.totalSeconds >= nextPreparationPoll_)
+            nextPreparationPoll_ = context.totalSeconds + 0.002;
+        if (context.input.WasKeyPressed(VK_ESCAPE))
+            ShowResult(scenes);
+        return;
+    }
     view_->AdvanceEffects(context.deltaSeconds);
     controller_->Update(context);
     for (const auto &feedback : controller_->Feedback())
         view_->ApplyFeedback(feedback);
-    view_->UpdatePresentation(controller_->Time());
     view_->UpdateInputPresentation(context.input, context.deltaSeconds);
     view_->PresentErrorMessage(controller_->ErrorMessage());
     if (context.input.WasKeyPressed(VK_ESCAPE) || controller_->ShouldShowResult())
@@ -53,13 +72,23 @@ void RhythmTestScene::ShowResult(mrg::scene::SceneManager &scenes)
 }
 void RhythmTestScene::Render(const mrg::graphics::RenderContext &)
 {
+    if (presentationReady_)
+        view_->UpdatePresentation(controller_->Time());
 }
 void RhythmTestScene::OnResize(std::uint32_t width, std::uint32_t height)
 {
+    if (services_)
+    {
+        services_->windowWidth = width;
+        services_->windowHeight = height;
+    }
     view_->OnResize(width, height);
 }
 void RhythmTestScene::Shutdown() noexcept
 {
     view_->Shutdown(); // Release session observers before the session.
     controller_->Shutdown();
+    services_.reset();
+    presentationReady_ = false;
+    nextPreparationPoll_ = 0;
 }

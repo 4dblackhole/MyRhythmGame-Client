@@ -35,10 +35,10 @@ namespace finger_drum::audio
             const std::filesystem::path& path,
             mrg::audio::AudioLoadMode loadMode,
             std::string& errorMessage);
-        [[nodiscard]] bool RegisterSoundAliases(
-            std::span<const rhythm::SoundId> soundIds,
-            const std::filesystem::path& path,
-            std::string& errorMessage);
+        [[nodiscard]] bool RegisterSoundAliases(std::span<const rhythm::SoundId> soundIds,
+                                                const std::filesystem::path &path, std::string &errorMessage,
+                                                mrg::audio::AudioLoadMode loadMode = mrg::audio::AudioLoadMode::Sample);
+        bool Ready();
 
         // Input-driven cues start immediately. Timeline scheduling remains a
         // separate path for music and other deliberately future playback.
@@ -92,5 +92,6 @@ namespace finger_drum::audio
             sampleVoices_;
         std::string lastError_;
         std::set<std::pair<std::string, mrg::audio::AudioEffectType>> bypassedEffects_;
+        std::map<std::pair<chart::EffectCommandType, std::string>, double> appliedValues_;
     };
 }

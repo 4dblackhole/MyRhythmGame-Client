@@ -85,7 +85,7 @@ bool MusicSelectView::ProcessActions()
                 action.source == songCards_[position].button->Id())
             {
                 searchFocused_ = false;
-                SelectVisibleSong(position);
+                SelectVisibleSong(songCards_[position].visiblePosition);
                 RefreshSearchPresentation();
                 return false;
             }

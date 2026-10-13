@@ -24,6 +24,7 @@
     <ClCompile Include="Submodules\AccuracyTests.cpp" />
     <ClCompile Include="Submodules\BuzzReplayTests.cpp" />
     <ClCompile Include="Submodules\ChartEditorTests.cpp" />
+    <ClCompile Include="Submodules\PerformanceRegressionTests.cpp" />
     <ClCompile Include="Submodules\ChartParserTests.cpp" />
     <ClCompile Include="Submodules\ChartReviewRegressionTests.cpp" />
     <ClCompile Include="Submodules\EditorAudioAnalysisTests.cpp" />
