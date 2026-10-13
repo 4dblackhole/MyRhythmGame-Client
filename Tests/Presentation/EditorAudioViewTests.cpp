@@ -218,8 +218,10 @@ int main()
         finger_drum::texts::TextCatalog texts;
         EditorView view(visuals, state, texts);
         view.Initialize({meshes, textRendering, renderer, audio, 1920, 1080});
-        const auto hasText = [&](const std::wstring_view text) {
-            return std::ranges::any_of(renderer.packets, [&](const auto &packet) { return packet.text == text; });
+        const auto hasText = [&](const std::wstring_view text)
+        {
+            return std::ranges::any_of(renderer.packets,
+                                       [&](const auto &packet) { return packet.text && packet.text->value == text; });
         };
         visuals.Render({});
         Check(hasText(L"파일"), "Editor view must compose the top menu.");

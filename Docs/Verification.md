@@ -69,6 +69,39 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-14 텍스트 렌더링 후속 개선
+
+- Client/엔진 Debug·Release x64 전체 solution Rebuild 성공. 일반 빌드 경고/오류 0.
+- 마지막 글꼴 조회 실패의 캐시 게시 경계 수정까지 Debug 전체 Rebuild와
+  로직/네 smoke/엔진 SDK·텍스트·headless 오류 경로를 다시 실행해 성공했습니다.
+- 각 구성 로직·기본곡 카탈로그 58개와 네 smoke 경로씩 성공.
+  GameplayJudgement, EditorAudioView/Mode/Menu/Playback, MusicSelectView,
+  OptionsPanel, ResultPresentation 및 일반/효과 실제 D3D12/FMOD replay도 두 구성 성공.
+  기존 19노트/85.1837%, 효과 15노트/97.8897% 결과를 유지했습니다.
+- 엔진 기본 SDK 검사와 `--headless-error`, 새 `--text-rendering` / `--text-pixels`를
+  각각 별도 프로세스로 Debug/Release에서 성공했습니다. 유지 배치 2,049개 재제출의
+  layout/rasterization 0, clip 문구 4,096글자 중 실제 제출 5개, 새 한글 512개의
+  upload arena 1개, 아틀라스 22→16페이지 회수와 회수 글리프 재생성을 검사했습니다.
+  Debug D3D12 validation의 ERROR/CORRUPTION 0. 다중 페이지 합성 readback도 성공했습니다.
+- MSVC 14.44.35207 Code Analysis를 변경된 Client 소유 `MRG.Client.vcxproj`의 실제
+  Debug/Release x64 include/define/C++20 설정으로
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행했습니다.
+  표시 회귀 테스트 소스도 실행 스크립트의 `/analyze`로 분석했습니다. 신규 진단/파싱 오류 0.
+  기존 C26115(EditorAnalysisController:51), C28020(GameplaySessionController:112),
+  Release C6236(GameplayInput:60)은 유지했고 자동 억제/수정하지 않았습니다.
+- 변경 코드/직접 호출부의 배치·font-face 소유권, payload 무효화, clip bounds,
+  페이지·upload·descriptor fence 수명, 합성 순서, 실패한 글꼴 조회의 캐시 게시 순서와
+  범위/변환을 검토했습니다. CheckArchitecture(11프로젝트)와 양쪽 git diff --check 성공.
+- Release CPU 비교 두 번과 실제 렌더 샘플 비교는
+  [텍스트 개선 기록](Reviews/TextRenderingFixes-2026-10-14.md)에 있습니다.
+  원시 로그/BMP/probe는 ignored `build/text-rendering-fixes-2026-10-14`에 있습니다.
+- **실제 눈으로 확인:** 밝고 어두운 배경의 영문·한글·일본어 16/24/32px 수정 전후
+  D3D12 렌더 이미지에서 글자 경계와 겹친 색상 합성을 비교했습니다.
+  전체 게임의 물리 마우스/키보드 조작·청음과 전체 FPS/GPU timestamp는 확인하지 않았습니다.
+  smoke와 숨김 엔진 replay, 픽셀 수치 검사는 자동 검증입니다.
+- 사용자 LaneKeyBeam.cpp와 Debug/Release Option.ini의 SHA256을 대조해 보존했고
+  사용자 Songs/Skins는 변경하지 않았습니다.
+
 ## 2026-10-14 성능 보고서 8개 항목 수정
 
 - Client/엔진 Debug·Release x64 전체 solution Rebuild 성공. 마지막 오디오 alias 수정도

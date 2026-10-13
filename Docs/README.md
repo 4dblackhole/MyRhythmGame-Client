@@ -30,6 +30,7 @@
 | 레거시 제거·예제 폐기 범위 | [레거시 제거 기록](Reviews/LegacyAudit-2026-10-11.md) | Main/OptionSettings, EditorModeFactory, PatternTiming; 직접 계약 헤더 |
 | 프레임 비용·카탈로그/자원 로딩·표시 캐시 | [성능 수정 기록](Reviews/PerformanceFixes-2026-10-14.md) | GameplayPresenter, TaikoSessionBuilder, ChartEditor, SongCatalogLoader; 엔진 Texture/Text/Audio |
 | 텍스트 캐시·글리프 업로드·긴 제목·아틀라스 성능 조사 | [텍스트 심층 조사](Reviews/TextRenderingAudit-2026-10-14.md) | 엔진 TextRendering / Visual2DRendering; Client MarqueeTextComponent / SongSelectCards |
+| 텍스트 유지 배치·회색조·아틀라스 회수 구현/검증 | [텍스트 개선 기록](Reviews/TextRenderingFixes-2026-10-14.md) | 엔진 TextRendering / Visual2D TextContent; Client MarqueeTextComponent; 엔진 SDK 텍스트 회귀 |
 
 [변경 영향 지도](ChangeImpactMap.md)는 소유 파일과 테스트를,
 [검증](Verification.md)은 빌드·실행 명령을 제공합니다.

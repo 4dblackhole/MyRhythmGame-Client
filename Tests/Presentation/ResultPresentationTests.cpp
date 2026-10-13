@@ -52,8 +52,8 @@ namespace
     bool HasText(const v::Visual2DCanvas &canvas, std::wstring_view text)
     {
         const auto packets = canvas.BuildDrawList();
-        return std::ranges::any_of(packets,
-                                   [&](const auto &packet) { return packet.text.find(text) != std::wstring::npos; });
+        return std::ranges::any_of(packets, [&](const auto &packet)
+                                   { return packet.text && packet.text->value.find(text) != std::wstring::npos; });
     }
     const v::Visual2DNode *FindNode(const v::Visual2DNode &node, std::string_view name)
     {

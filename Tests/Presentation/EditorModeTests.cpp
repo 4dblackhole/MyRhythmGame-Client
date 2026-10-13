@@ -889,7 +889,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     EditorView view(visuals, state, texts);
     view.Initialize(services);
     const auto hasText = [&](std::wstring_view text)
-    { return std::ranges::any_of(packets(), [text](const auto &p) { return p.text == text; }); };
+    { return std::ranges::any_of(packets(), [text](const auto &p) { return p.text && p.text->value == text; }); };
     visuals.Render({});
     Check(hasText(L"PROBE TOOL") && hasText(L"PROBE CHART") && !hasText(L"DON"),
           "Common view rendered Taiko instead of the selected mode.");

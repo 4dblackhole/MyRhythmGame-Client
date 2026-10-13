@@ -14,6 +14,11 @@
 비동기 카탈로그/가시 카드, 비동기 플레이 자원, 엔진 텍스트 LRU/업로드 fence/2ms 오디오
 유지관리를 적용했습니다. 상세 검증과 수동 확인 구분은 [Verification](Verification.md)에 있습니다.
 
+텍스트 후속 개선(2026-10-14): [유지 배치·아틀라스·긴 제목 수정 기록](Reviews/TextRenderingFixes-2026-10-14.md).
+TextContent payload와 준비된 글리프 배치를 재사용하며 clip 밖 글리프를 제외합니다.
+회색조 출력·프레임 upload arena·16MiB 기본 아틀라스 확대/회수·합성 순서 보존을 적용했습니다.
+Marquee는 원본 Unicode를 유지하고 측정 폭으로 픽셀 이동합니다.
+
 - 작업 폴더: `D:\Projects\c++\asdf\MyRhythmGame-Client`. 별도 지시 없으면 `main`에서 작업합니다.
 - Client: `4dblackhole/MyRhythmGame-Client`, 엔진: private `Dependencies/MRG-Engine` submodule.
 - 전체 솔루션 빌드는 같은 부모 폴더의 독립 저장소 `OsuTaikoConverter`도 필요합니다.

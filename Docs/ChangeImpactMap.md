@@ -11,6 +11,7 @@
 | 곡/난이도 이동·검색·정렬 | 같은 폴더 `SongSelectionState.*`, 입력 연결은 SongSelectInput.cpp | SceneStateTests.cpp |
 | 곡 미리듣기 | 같은 폴더 `SongPreviewController.*` | AudioPlayback 공개 계약, lobby smoke |
 | 문구·언어·글꼴 | `Client/Texts/TextCatalog.*`, 해당 화면의 `Texts/**/<화면>*Texts.*` | TextManagement; 해당 화면 smoke |
+| 텍스트 배치·clip·아틀라스/업로드·긴 제목 | 엔진 `Graphics.D3D12/Text`, `Graphics.D3D12/Visual2D`, `Core/Visual2D`; `Client/Presentation/MarqueeTextComponent.*` | 엔진 TextRendering 문서/SDK --text-rendering·--text-pixels; MusicSelectViewTests; Client 직접 DrawPacket 생성/검사, 네 smoke |
 | 로고/곡 선택 옵션 패널 | `Client/Presentation/OptionsPanel.*` | LogoView/MusicSelectView 입력 연결; logo/lobby smoke |
 | Option.ini·오디오 출력/드라이버 선택 | `Client/App/OptionSettings.*`, `OptionsPanel.*` | FingerDrumGame 초기화; OptionsPanelTests, logo/lobby smoke |
 | 스킨 선택·경로·내장 기본본 | `Client/App/SkinSetSelection.*`, `AssetPaths.h` | `FingerDrumAssets.h`, BuiltInAssets; logo/gameplay/editor smoke |

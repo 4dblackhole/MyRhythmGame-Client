@@ -24,6 +24,8 @@ and the same command with Release from the developer PowerShell.
 The test links production view/state objects, checks that 5,000 in-memory songs
 create only viewport cards across focus/search/resize, and polls real catalog
 loads/cache reuse/error results. It writes no song or option files.
+It also checks marquee Unicode preservation, shared repeated text payloads,
+pixel displacement and stopping after the label becomes wide enough.
 
 ## Gameplay judgement guide and overlays
 

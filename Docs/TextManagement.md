@@ -36,6 +36,17 @@ Client/Texts/
 런타임 진단은 종류와 원문을 상태에 보관하고 View에서 현재 언어의 접두사와
 조합합니다. 따라서 언어를 바꾸면 이미 표시 중인 오류 제목도 함께 갱신됩니다.
 
+## 렌더링 수명
+
+TextCatalog는 문구와 글꼴 선택을 소유하고, 엔진 TextVisual/ComboBox는 공유
+`TextContent` payload를 게시합니다. 문자열·글꼴·크기·정렬이 바뀔 때 payload를
+교체하며 색상·위치·clip 변경에는 같은 payload를 유지합니다. D3D12 renderer가
+글꼴과 배치 handle을 유지하므로 Client에 DirectWrite 객체나 아틀라스 UV를 저장하지 않습니다.
+직접 DrawPacket을 만드는 에디터도 `packet.text`에 이 payload를 전달합니다.
+자세한 배치·측정·아틀라스 수명은
+[엔진 텍스트 계약](../Dependencies/MRG-Engine/Docs/TextRendering.md), 구현/검증은
+[텍스트 개선 기록](Reviews/TextRenderingFixes-2026-10-14.md)에 있습니다.
+
 ## 옵션 패널
 
 `Client/Presentation/OptionsPanel.*`은 로고와 곡 선택 View가 조립하는 공통

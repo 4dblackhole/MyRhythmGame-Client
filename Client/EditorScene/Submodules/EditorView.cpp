@@ -99,9 +99,8 @@ void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
     p.type = v::DrawPacketType::Text;
     p.bounds = {r.x - 960, 540 - r.y - r.height, r.width, r.height};
     p.color = color;
-    p.text = std::move(text);
-    p.font = texts_.CurrentProfile().font;
-    p.fontSize = size;
+    p.text = std::make_shared<v::TextContent>(
+        v::TextContent{std::move(text), texts_.CurrentProfile().font, size, v::TextAlignment::Leading, {}});
     visual->AddPacket(std::move(p));
 }
 

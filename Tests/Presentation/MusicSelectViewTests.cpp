@@ -1,6 +1,7 @@
 #include "App/AssetPaths.h"
 #include "GameScene/MusicSelectScene/Submodules/MusicSelectView.h"
 #include "GameScene/MusicSelectScene/Submodules/SongCatalogLoader.h"
+#include "Presentation/MarqueeTextComponent.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -77,6 +78,33 @@ int main()
 {
     try
     {
+        {
+            v::Visual2DCanvas canvas;
+            auto &label = v::CreateLabel(canvas.Root(), {0, 0, 100, 30}, L"");
+            const std::wstring unicode = L"\U0001F600ABCDEFGH";
+            auto &marquee = label.AddComponent<finger_drum::presentation::MarqueeTextComponent>(unicode, 0.28);
+            marquee.Update(0);
+            const auto initial = canvas.BuildDrawList();
+            const auto source = initial.back().text;
+            source->measuredSize = v::Size{180, 20};
+            marquee.Update(1.3);
+            const auto moved = canvas.BuildDrawList();
+            if (moved.size() != 2 || moved[0].text != source || moved[1].text != source || moved[0].textOffset.x >= 0 ||
+                moved[1].textOffset.x <= 0 || source->value != unicode)
+                throw std::runtime_error("Marquee must preserve its Unicode content and share its repeated layout.");
+            if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, source->value.data(),
+                                    static_cast<int>(source->value.size()), nullptr, 0, nullptr, nullptr) <= 0)
+                throw std::runtime_error("Marquee scrolling corrupted UTF-16.");
+            label.SetSize({300, 30});
+            marquee.Update(0);
+            const auto resized = canvas.BuildDrawList();
+            if (resized.size() != 1 || resized[0].textOffset.x != 0 || !label.ClipRect())
+                throw std::runtime_error("A resized label must stop scrolling when the full title fits.");
+            marquee.SetText(L"Short");
+            marquee.Update(0);
+            if (canvas.BuildDrawList().back().text->value != L"Short")
+                throw std::runtime_error("Marquee content replacement failed.");
+        }
         std::string error;
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
         SongCatalogLoader loader;

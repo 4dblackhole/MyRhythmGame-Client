@@ -112,8 +112,7 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
     auto &title =
         AddLabel(button, {14.0F, focused ? 16.0F : 10.0F, titleWidth, focused ? 32.0F : 30.0F},
                  SongTitle(song), focused ? 20.0F : 16.0F, DeepBlue, "Title");
-    title.AddComponent<finger_drum::presentation::MarqueeTextComponent>(SongTitle(song),
-                                                                        focused ? 31 : 37, 0.24);
+    title.AddComponent<finger_drum::presentation::MarqueeTextComponent>(SongTitle(song), 0.24);
     auto &artist = AddLabel(button, {14.0F, focused ? 50.0F : 40.0F, titleWidth, 20.0F},
                             SongArtist(song), focused ? 12.0F : 11.0F, MutedBlue, "Artist");
 

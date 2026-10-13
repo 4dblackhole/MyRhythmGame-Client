@@ -57,12 +57,11 @@ void MusicSelectView::CreateSongInformationPanel()
 
     selectedSongLabel_ = &AddLabel(panel, layout::SelectedSong, std::wstring(text.noSongSelected), 28.0F,
                                    DeepBlue, "SelectedSong");
-    selectedSongLabel_->AddComponent<finger_drum::presentation::MarqueeTextComponent>(
-        std::wstring(text.noSongSelected), 24, 0.28);
+    selectedSongLabel_->AddComponent<finger_drum::presentation::MarqueeTextComponent>(std::wstring(text.noSongSelected),
+                                                                                      0.28);
     selectedArtistLabel_ =
         &AddLabel(panel, layout::SelectedArtist, L"", 16.0F, MutedBlue, "SelectedArtist");
-    selectedArtistLabel_->AddComponent<finger_drum::presentation::MarqueeTextComponent>(L"", 34,
-                                                                                        0.32);
+    selectedArtistLabel_->AddComponent<finger_drum::presentation::MarqueeTextComponent>(L"", 0.32);
 
     auto &information = AddBorderedPanel(panel, layout::DifficultyInformation, PaleBlue, PaleBorder,
                                          1.0F, 12.0F, "DifficultyInformation");
