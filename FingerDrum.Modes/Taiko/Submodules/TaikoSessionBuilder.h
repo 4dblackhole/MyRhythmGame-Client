@@ -7,8 +7,8 @@ namespace finger_drum::mode
     class TaikoSessionBuilder final
     {
       public:
-        static ModeLoadResult CreateSession(const chart::PatternDocument &pattern,
-                                            const chart::EffectDocument &effects);
+        static ModeLoadResult CreateSession(const chart::PatternDocument &pattern, const chart::EffectDocument &effects,
+                                            const PlaySessionOptions &options, ModeInputLayout inputLayout);
 
       private:
         static void AddLongNote(const chart::CompiledPatternNote &head,

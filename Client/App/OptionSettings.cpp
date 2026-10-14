@@ -1,5 +1,7 @@
 #include "OptionSettings.h"
 #include "FingerDrumAssets.h"
+#include "Mode/PlayGameModeFactory.h"
+#include <algorithm>
 
 #include <Windows.h>
 
@@ -63,6 +65,28 @@ namespace mrg_client
                 std::string_view::npos;
         }
 
+        template <class Integer> Integer ReadInteger(std::string_view value)
+        {
+            if (value.starts_with('+'))
+                value.remove_prefix(1);
+            Integer number{};
+            const auto parsed = std::from_chars(value.data(), value.data() + value.size(), number);
+            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
+                throw std::runtime_error("The option must be an integer within its valid range.");
+            return number;
+        }
+
+        bool IsIdentifier(std::string_view value)
+        {
+            return !value.empty() && value.size() <= 128 &&
+                   std::ranges::all_of(value,
+                                       [](char c)
+                                       {
+                                           return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                                                  (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.';
+                                       });
+        }
+
         void Validate(const OptionValues &values)
         {
             if (values.language != finger_drum::texts::Language::Korean &&
@@ -78,6 +102,23 @@ namespace mrg_client
             if (values.audioMiddleware != "FMOD")
                 throw std::runtime_error("Only the FMOD audio middleware is installed.");
             static_cast<void>(OutputName(values.audioOutput));
+            if (!values.windowWidth || !values.windowHeight || values.windowWidth > 16384 ||
+                values.windowHeight > 16384)
+                throw std::runtime_error("Window dimensions must be within 1..16384 pixels.");
+            for (const auto &[mode, bindings] : values.modeKeys)
+            {
+                if (!IsIdentifier(mode))
+                    throw std::runtime_error("Invalid mode identifier.");
+                for (const auto &[id, keys] : bindings)
+                {
+                    if (!IsIdentifier(id) || keys.empty() ||
+                        std::ranges::any_of(keys, [](auto key) { return key < 8 || key > 254; }))
+                        throw std::runtime_error("Invalid mode input keys.");
+                }
+            }
+            for (auto layout : finger_drum::mode::AvailableInputLayouts())
+                if (const auto saved = values.modeKeys.find(layout.modeId); saved != values.modeKeys.end())
+                    static_cast<void>(finger_drum::mode::ResolveInputLayout(std::move(layout), saved->second));
         }
 
         void ReadValue(OptionValues &values, const std::string_view section,
@@ -92,6 +133,29 @@ namespace mrg_client
                     else throw std::runtime_error("Language must be ko or en.");
                 }
                 else if (key == "SkinSet") values.skinSet = DecodeUtf8(value);
+                else if (key == "GlobalOffsetMs")
+                    values.globalOffsetMs = ReadInteger<std::int32_t>(value);
+            }
+            else if (section == "Display")
+            {
+                if (key == "Width")
+                    values.windowWidth = ReadInteger<std::uint32_t>(value);
+                else if (key == "Height")
+                    values.windowHeight = ReadInteger<std::uint32_t>(value);
+            }
+            else if (section.starts_with("Keys."))
+            {
+                std::vector<std::uint16_t> keys;
+                auto remaining = value;
+                for (;;)
+                {
+                    const auto comma = remaining.find(',');
+                    keys.push_back(ReadInteger<std::uint16_t>(Trim(remaining.substr(0, comma))));
+                    if (comma == std::string_view::npos)
+                        break;
+                    remaining.remove_prefix(comma + 1);
+                }
+                values.modeKeys[std::string(section.substr(5))][std::string(key)] = std::move(keys);
             }
             else if (section == "Audio")
             {
@@ -187,13 +251,23 @@ namespace mrg_client
             // Allocate the publication candidate before replacing the persisted file.
             OptionValues candidate = values;
             std::ofstream file(temporary, std::ios::binary | std::ios::trunc);
-            file << "[General]\r\nLanguage="
-                 << (values.language == finger_drum::texts::Language::English ? "en" : "ko")
-                 << "\r\nSkinSet=" << EncodeUtf8(values.skinSet)
+            file << "[General]\r\nLanguage=" << (values.language == finger_drum::texts::Language::English ? "en" : "ko")
+                 << "\r\nSkinSet=" << EncodeUtf8(values.skinSet) << "\r\nGlobalOffsetMs=" << values.globalOffsetMs
+                 << "\r\n\r\n[Display]\r\nWidth=" << values.windowWidth << "\r\nHeight=" << values.windowHeight
                  << "\r\n\r\n[Audio]\r\nMiddleware=" << values.audioMiddleware
-                 << "\r\nOutput=" << OutputName(values.audioOutput)
-                 << "\r\nDriverIndex=" << values.driverIndex
+                 << "\r\nOutput=" << OutputName(values.audioOutput) << "\r\nDriverIndex=" << values.driverIndex
                  << "\r\nDriverName=" << values.driverName << "\r\n";
+            for (const auto &[mode, bindings] : values.modeKeys)
+            {
+                file << "\r\n[Keys." << mode << "]\r\n";
+                for (const auto &[id, keys] : bindings)
+                {
+                    file << id << '=';
+                    for (std::size_t i = 0; i < keys.size(); ++i)
+                        file << (i ? "," : "") << keys[i];
+                    file << "\r\n";
+                }
+            }
             file.close();
             if (!file || !MoveFileExW(temporary.c_str(), path_.c_str(),
                                      MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))

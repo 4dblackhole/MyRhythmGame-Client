@@ -28,7 +28,7 @@ void LogoView::Initialize(const mrg::EngineServices &services)
     CreateLogoStrip();
     CreateMenu();
     skinRevision_ = mrg_client::SkinSetSelection::Instance().Revision();
-    options_.Initialize(*canvas_, services.audio);
+    options_.Initialize(*canvas_, services.audio, services.windowControl);
     ApplyTexts();
     UpdateLogoStripLayout();
 }
@@ -60,7 +60,7 @@ std::optional<std::size_t> LogoView::Update(const mrg::platform::InputState &inp
     options_.Update(deltaSeconds);
     const bool controlDown =
         input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
-    if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
+    if (!options_.OwnsKeyboard() && controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
         options_.Toggle();
     ProcessPointer(input);
     if (options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_))

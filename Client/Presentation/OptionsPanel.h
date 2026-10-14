@@ -1,9 +1,10 @@
 #pragma once
 
-#include "MRG_Core.h"
-#include "Texts/TextCatalog.h"
-#include "App/SkinSetSelection.h"
 #include "App/OptionSettings.h"
+#include "App/SkinSetSelection.h"
+#include "MRG_Core.h"
+#include "Mode/ModeInputLayout.h"
+#include "Texts/TextCatalog.h"
 
 #include <optional>
 #include <vector>
@@ -16,7 +17,8 @@ namespace finger_drum::presentation
         OptionsPanel(texts::TextCatalog &texts, mrg_client::OptionSettings &options) noexcept
             : texts_(texts), options_(options) {}
 
-        void Initialize(mrg::visual2d::Visual2DCanvas &canvas, mrg::audio::AudioSystem &audio);
+        void Initialize(mrg::visual2d::Visual2DCanvas &canvas, mrg::audio::AudioSystem &audio,
+                        mrg::platform::IWindowControl *window = nullptr);
         void Shutdown() noexcept;
         void Toggle();
         void Update(double deltaSeconds);
@@ -26,9 +28,25 @@ namespace finger_drum::presentation
         bool HandleKey(std::uint16_t virtualKey, mrg::visual2d::Visual2DInputRouter &inputRouter);
         [[nodiscard]] bool ProcessAction(const mrg::visual2d::Action &action);
         void RefreshTexts();
+        [[nodiscard]] bool OwnsKeyboard() const noexcept
+        {
+            return captureRow_.has_value() || editingOffset_;
+        }
         [[nodiscard]] bool IsVisible() const noexcept;
 
       private:
+        void CreateDisplayControls();
+        void RefreshDisplayControls();
+        void SelectResolution(std::size_t index);
+        void CreateKeyControls();
+        void RefreshKeyControls();
+        void CaptureKey(std::uint16_t key);
+        void CreateOffsetControls();
+        void RefreshOffsetControls();
+        void EditOffset(std::uint16_t key);
+        void ApplyOffset();
+        void CancelKeyboardEdit();
+        bool ProcessFieldAction(const mrg::visual2d::Action &action);
         void ApplyAnimationPosition();
         void ApplyScrollOffset(mrg::visual2d::Visual2DInputRouter &inputRouter);
         void CreateLanguageControls();
@@ -47,13 +65,36 @@ namespace finger_drum::presentation
         static constexpr float PanelHeight = 720.0F;
         static constexpr float AnimationSeconds = 0.2F;
         static constexpr float ContentViewportHeight = 608.0F;
-        static constexpr float ContentHeight = 860.0F;
+        float contentHeight_{};
+        struct KeyRow
+        {
+            std::string mode, binding, displayName;
+            std::size_t slot{};
+            mrg::visual2d::Visual2DNode *label{}, *button{};
+        };
+        std::vector<mode::ModeInputLayout> inputLayouts_;
+        std::vector<KeyRow> keyRows_;
+        std::vector<mrg::visual2d::Visual2DNode *> modeLabels_;
+        std::vector<mrg::platform::WindowResolution> resolutions_;
+        mrg::platform::IWindowControl *window_{};
+        mrg::visual2d::Visual2DNode *resolutionLabel_{}, *resolutionCombo_{};
+        mrg::visual2d::Visual2DNode *offsetLabel_{}, *offsetField_{}, *offsetHint_{};
+        std::optional<std::size_t> captureRow_;
+        std::wstring offsetDraft_;
+        bool editingOffset_{}, replaceOffsetDraft_{};
 
         texts::TextCatalog &texts_;
         mrg_client::OptionSettings &options_;
         mrg::audio::AudioSystem *audio_{};
         mrg::visual2d::Visual2DCanvas *canvas_{};
-        enum class Status { None, SaveFailed, AudioFailed };
+        enum class Status
+        {
+            None,
+            SaveFailed,
+            AudioFailed,
+            WindowFailed,
+            InvalidInput
+        };
         Status status_{};
         std::string statusDetail_;
         mrg::visual2d::Visual2DNode *panel_{};

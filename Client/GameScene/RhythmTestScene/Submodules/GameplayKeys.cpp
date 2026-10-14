@@ -64,18 +64,16 @@ void GameplayPresenter::UpdateInputPresentation(const mrg::platform::InputState 
 {
     for (std::size_t index = 0; index < keyIndicators_.size(); ++index)
     {
-        const finger_drum::mode::TaikoInputBinding &binding =
-            finger_drum::mode::TaikoInputBindings[index];
-        const bool primaryPressed = input.IsKeyDown(binding.primaryKey);
-        const bool secondaryPressed = std::ranges::any_of(
-            binding.secondaryKeys,
-            [&input](const finger_drum::rhythm::PhysicalKey key) { return input.IsKeyDown(key); });
+        const auto &bindings = session_->InputLayout().bindings;
+        if (index >= bindings.size() || bindings[index].keys.empty())
+            continue;
+        const auto &keys = bindings[index].keys;
+        const auto auxiliary = std::span(keys).subspan(1);
+        const bool primaryPressed = input.IsKeyDown(keys.front());
+        const bool secondaryPressed =
+            std::ranges::any_of(auxiliary, [&input](auto key) { return input.IsKeyDown(key); });
         const bool pressedThisFrame =
-            input.WasKeyPressed(binding.primaryKey) ||
-            std::ranges::any_of(binding.secondaryKeys,
-                                [&input](const finger_drum::rhythm::PhysicalKey key) {
-                                    return input.WasKeyPressed(key);
-                                });
+            std::ranges::any_of(keys, [&input](auto key) { return input.WasKeyPressed(key); });
         const mrg::visual2d::Color &faceColor =
             primaryPressed
                 ? InputKeyStrongColors[index]

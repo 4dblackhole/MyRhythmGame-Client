@@ -94,7 +94,34 @@ Scene마다 필요한 색상군과 alpha 차이는 이름으로 구분하여 기
 [RulesetBindingsSection](https://github.com/ppy/osu/blob/master/osu.Game/Overlays/Settings/Sections/Input/RulesetBindingsSection.cs)과
 [VariantBindingsSubsection](https://github.com/ppy/osu/blob/master/osu.Game/Overlays/Settings/Sections/Input/VariantBindingsSubsection.cs)입니다.
 모드/variant 단위의 섹션을 만들고 모드가 제공한 입력과 기본 binding으로 행을 구성합니다.
-현재 Client의 사용자 키 설정·DLL 로더는 아직 구현하지 않았습니다.
+현재 Taiko 기본 4키(D/F/J/K)와 보조 4키(C/V/N/M)를 모드별 행으로 표시합니다.
+행의 버튼을 클릭하고 새 키를 누르면 저장합니다. 동일 모드의 다른 기본/보조 키와
+중복할 수 없으며 기존 게임 제어 ESC/Space/R/F7은 예약합니다. ESC는 키 지정 대기를
+취소하고 패널을 닫습니다. 사용자 입력은 단일 Win32 Virtual-Key이며 키 조합/마우스 binding은
+이번 범위에 없습니다. DLL 로더 자체는 아직 구현하지 않았습니다.
+
+`IPlayGameMode::InputLayout`은 stable mode/binding ID, 표시 이름, semantic action,
+기본·보조 physical key 목록을 제공합니다. PlayGameModeFactory의 실제 지원 모드 목록으로
+옵션 행을 구성하고 ResolveInputLayout이 기본값과 저장한 변경값을 검증합니다.
+PlaySession이 해결된 목록을 소유하며 판정·held·키 불빛·입력 기록에 같은 매핑을 사용합니다.
+새 모드는 factory에 구현을 연결하고 자신의 목록을 제공합니다. 런타임 DLL 로딩/ABI 계약은 별도입니다.
+
+해상도 목록은 현재 모니터가 지원하는 실제 픽셀 크기와 현재 창 크기를 표시합니다.
+선택 즉시 client 영역 크기를 변경하고 저장하며 다음 실행의 EngineConfig에도 사용합니다.
+저장이 실패하면 이전 창 크기 복원을 시도합니다. 엔진의 비소유 WindowControl 서비스가 없는
+offscreen context에서는 선택을 비활성화합니다. GPU 한도에 따라 각 치수는 1~16,384px입니다.
+
+글로벌 오프셋 필드는 클릭 → 정수 ms 입력 → Enter로 적용합니다. 숫자키/숫자패드,
+음수 부호, Backspace/Delete를 사용할 수 있습니다. ESC는 저장하지 않고 패널을 닫습니다.
++100ms는 음원에 비해 노트·틱·마디선·BPM·YME 지점/영역 끝점을 100ms 늦춥니다.
+음원 시작은 여전히 차트 타이머 0ms이며 효과 보간의 구간 길이는 유지합니다.
+설정은 다음 플레이/에디터 진입 Snapshot에서 사용합니다. MusicalTimeline의 실행용 정수 us
+오프셋으로 컴파일하고 원본 YMP/YME·Pattern Offset은 수정하지 않습니다.
+에디터 Copy/Replace/타이밍 수정/저장에도 이 분리를 유지합니다.
+
+OptionsPanel은 Canvas/스크롤/키보드 소유권을 맡고 Submodules의 OptionsDisplay,
+OptionsKeys, OptionsOffset이 각 표시·적용 함수를 분리합니다. OptionSettings는 지속 값의
+검증/원자적 저장을 맡으며 창·오디오 핸들은 소유하지 않습니다.
 
 ## Option.ini
 
@@ -109,6 +136,17 @@ EXE와 같은 폴더에 `Option.ini`가 없으면 처음 실행할 때 생성합
 [General]
 Language=ko
 SkinSet=Default Skin
+GlobalOffsetMs=0
+
+[Display]
+Width=1280
+Height=720
+
+[Keys.Taiko]
+LeftKat=68,67
+LeftDon=70,86
+RightDon=74,78
+RightKat=75,77
 
 [Audio]
 Middleware=FMOD
@@ -118,6 +156,13 @@ DriverName=
 ```
 
 - `Language`: `ko` 또는 `en`.
+- `GlobalOffsetMs`: signed int32 정수 ms, 기본 0.
+- `Display/Width,Height`: 게임 화면 픽셀 크기. 누락 시 1280×720.
+- `Keys.<mode ID>`: binding ID별 십진 Virtual-Key 목록. 첫 값은 기본 키, 이후는 보조 키입니다.
+  목록을 저장하지 않은 입력은 모드의 기본값을 사용하며 변경한 행만 기록합니다.
+  현재 설치되지 않은 모드의 유효한 키 설정도 저장/읽기에서 보존합니다.
+  설치된 모드의 알 수 없는 binding/개수·키 충돌·예약 키는 오류입니다.
+  위 예시는 기본 Taiko 값이며 실제 최초 파일에는 Keys 섹션을 만들지 않습니다.
 - `Middleware`: 현재는 `FMOD`만 사용 가능합니다.
 - `Output`: `Automatic`, `WASAPI`, `ASIO`.
 - `DriverIndex`: 엔진이 보고한 0부터 시작하는 장치 번호. `-1`은 기본 장치입니다.

@@ -265,7 +265,8 @@ namespace
         backend->rejectAsio = false;
         // Scroll-position geometry: the ASIO popup row overlaps the driver field.
         // Exercise the real hit router so the lower field cannot steal this click.
-        FindNode(canvas.Root(), "Options.Content").SetPosition({0, 0});
+        FindNode(canvas.Root(), "Options.Content")
+            .SetPosition({0, 860 - FindNode(canvas.Root(), "Options.Content").NodeSize().height});
         v::Visual2DInputRouter router;
         auto click = [&](v::Point position) {
             v::PointerInput input;
@@ -321,6 +322,116 @@ namespace
         clip.reset();
     }
 
+    class TestWindow final : public mrg::platform::IWindowControl
+    {
+      public:
+        mrg::platform::WindowResolution size{1280, 720};
+        bool reject{};
+        mrg::platform::WindowResolution ClientSize() const noexcept override
+        {
+            return size;
+        }
+        std::vector<mrg::platform::WindowResolution> DisplayResolutions() const override
+        {
+            return {{1280, 720}, {960, 540}};
+        }
+        bool SetClientSize(mrg::platform::WindowResolution value, std::string &error) override
+        {
+            if (reject)
+            {
+                error = "Injected resize failure";
+                return false;
+            }
+            size = value;
+            error.clear();
+            return true;
+        }
+    };
+    void TestExtraOptions(const std::filesystem::path &folder)
+    {
+        mrg_client::OptionSettings settings(folder / "Extra.ini");
+        std::string error;
+        Check(settings.Load(error), "Create extra options fixture.");
+        a::AudioSystem audio;
+        Check(audio.Initialize({}, &CreateBackend, &CreateClip, error), "Initialize extra option audio fixture.");
+        finger_drum::texts::TextCatalog texts;
+        v::Visual2DCanvas canvas;
+        TestWindow window;
+        finger_drum::presentation::OptionsPanel panel(texts, settings);
+        panel.Initialize(canvas, audio, &window);
+        panel.Toggle();
+        panel.Update(.2);
+        v::Visual2DInputRouter router;
+        const auto click = [&](std::string_view name)
+        {
+            v::Action action;
+            action.source = FindNode(canvas.Root(), name).Id();
+            action.type = v::ActionType::Clicked;
+            Check(panel.ProcessAction(action), "Option field click is consumed.");
+        };
+        Check(panel.ProcessAction(Select(canvas, "Options.Resolution.Combo", 1)) && window.size.width == 960 &&
+                  settings.Values().windowHeight == 540,
+              "Resolution applies and persists immediately.");
+        SetFileAttributesW(settings.Path().c_str(), FILE_ATTRIBUTE_READONLY);
+        Check(panel.ProcessAction(Select(canvas, "Options.Resolution.Combo", 0)) && window.size.width == 960 &&
+                  settings.Values().windowWidth == 960,
+              "INI write failure rolls the runtime window back.");
+        SetFileAttributesW(settings.Path().c_str(), FILE_ATTRIBUTE_NORMAL);
+        window.reject = true;
+        Check(panel.ProcessAction(Select(canvas, "Options.Resolution.Combo", 0)) &&
+                  settings.Values().windowWidth == 960,
+              "Native resize failure preserves saved size.");
+        window.reject = false;
+        click("Options.Offset.Field");
+        Check(panel.OwnsKeyboard(), "Offset field captures numeric input.");
+        for (const auto key : {'1', '0', '0'})
+            Check(panel.HandleKey(static_cast<std::uint16_t>(key), router), "Capture offset digit.");
+        panel.HandleKey(VK_RETURN, router);
+        Check(settings.Values().globalOffsetMs == 100 && !panel.OwnsKeyboard(),
+              "Enter publishes integer milliseconds.");
+        click("Options.Offset.Field");
+        panel.HandleKey(VK_SUBTRACT, router);
+        panel.HandleKey('5', router);
+        panel.HandleKey(VK_RETURN, router);
+        Check(settings.Values().globalOffsetMs == -5, "Negative offsets persist.");
+        click("Options.Offset.Field");
+        panel.HandleKey(VK_DELETE, router);
+        panel.HandleKey(VK_RETURN, router);
+        Check(settings.Values().globalOffsetMs == -5 && panel.OwnsKeyboard(), "Invalid draft preserves saved offset.");
+        click("Options.Key.Taiko.LeftDon.0");
+        panel.HandleKey('K', router);
+        Check(panel.OwnsKeyboard() && !settings.Values().modeKeys.contains("Taiko"),
+              "Duplicate key rejected against untouched defaults.");
+        panel.HandleKey(VK_SPACE, router);
+        Check(panel.OwnsKeyboard(), "Reserved game control is rejected.");
+        panel.HandleKey('S', router);
+        Check(settings.Values().modeKeys.at("Taiko").at("LeftDon")[0] == 'S' && !panel.OwnsKeyboard(),
+              "Primary key saved.");
+        click("Options.Key.Taiko.LeftDon.1");
+        panel.HandleKey('A', router);
+        Check(settings.Values().modeKeys.at("Taiko").at("LeftDon")[1] == 'A', "Auxiliary key saved independently.");
+        click("Options.Key.Taiko.RightDon.0");
+        panel.HandleKey(VK_ESCAPE, router);
+        panel.Update(.2);
+        Check(!panel.IsVisible() && !panel.OwnsKeyboard() &&
+                  !settings.Values().modeKeys.at("Taiko").contains("RightDon"),
+              "ESC closes panel and cancels key capture without applying Escape as a game key.");
+        auto candidate = settings.Values();
+        candidate.modeKeys["FutureMode"]["Lane1"] = {'L'};
+        Check(settings.Save(candidate, error),
+              "Other mode settings can be preserved before loading its implementation.");
+        mrg_client::OptionSettings restored(settings.Path());
+        Check(restored.Load(error) && restored.Values().globalOffsetMs == -5 && restored.Values().windowWidth == 960 &&
+                  restored.Values().modeKeys == candidate.modeKeys,
+              "Resolution, offset and all mode profiles survive restart.");
+        candidate.windowWidth = 0;
+        Check(!settings.Save(candidate, error), "Invalid saved resolution rejected.");
+        candidate = settings.Values();
+        candidate.modeKeys["Bad]\nsection"]["Lane1"] = {'L'};
+        Check(!settings.Save(candidate, error), "Mode names cannot inject INI sections.");
+        panel.Shutdown();
+    }
+
     void TestActualAudio()
     {
         a::AudioSystem audio;
@@ -350,6 +461,7 @@ int main()
         std::filesystem::create_directory(folder);
         TestInvalidOptionFallback(folder);
         TestOptions(folder);
+        TestExtraOptions(folder);
         TestActualAudio();
         std::filesystem::remove_all(folder);
         std::cout << "Options panel and persistence tests passed.\n";

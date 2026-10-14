@@ -18,7 +18,7 @@ namespace finger_drum::chart
     class ChartEditor final : public IEditorDocument
     {
       public:
-        ChartEditor(PatternDocument pattern, EffectDocument effects = {});
+        ChartEditor(PatternDocument pattern, EffectDocument effects = {}, rhythm::RhythmDuration runtimeOffset = {});
         ChartEditor(const ChartEditor &);
         ChartEditor &operator=(const ChartEditor &);
         ChartEditor(ChartEditor &&) noexcept = default;
@@ -97,6 +97,7 @@ namespace finger_drum::chart
         std::map<std::pair<EffectCommandType, rhythm::RhythmTime>, const EffectCommand *> effectIndex_;
         mutable PatternDocument pattern_;
         mutable EffectDocument effects_;
+        rhythm::RhythmDuration runtimeOffset_{}; // Session option; never serialized as chart data.
         MusicalTimeline timeline_;
         ScrollAutomation scroll_;
         mutable std::vector<CompiledPatternNote> notes_;

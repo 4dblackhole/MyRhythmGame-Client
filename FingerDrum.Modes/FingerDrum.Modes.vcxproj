@@ -36,6 +36,10 @@
     <ClCompile Include="Taiko\TaikoMode.cpp" />
     <ClInclude Include="Taiko\TaikoMode.h" />
   </ItemGroup>
+  <ItemGroup><ClInclude Include="Mode\ModeInputLayout.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Mode\ModeInputLayout.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="Mode\PlayGameModeFactory.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Mode\PlayGameModeFactory.cpp" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <ClInclude Include="Mode\Results\IPlayResult.h" />

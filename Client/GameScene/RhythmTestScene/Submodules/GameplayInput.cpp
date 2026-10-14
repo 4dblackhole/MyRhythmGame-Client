@@ -135,15 +135,8 @@ void GameplaySessionController::ProcessRhythmInput(const mrg::platform::InputSta
         {
             continue;
         }
-        const auto inputBinding =
-            std::ranges::find_if(finger_drum::mode::TaikoInputBindings,
-                                 [&event](const finger_drum::mode::TaikoInputBinding &binding) {
-                                     return binding.Contains(event.code);
-                                 });
-        if (inputBinding == finger_drum::mode::TaikoInputBindings.end())
-        {
+        if (!session_->InputMapping().contains(event.code))
             continue;
-        }
         const auto edge = event.type == mrg::platform::InputEventType::KeyPressed
                               ? finger_drum::rhythm::InputEdge::Pressed
                               : finger_drum::rhythm::InputEdge::Released;

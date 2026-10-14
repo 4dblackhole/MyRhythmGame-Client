@@ -28,7 +28,8 @@ namespace finger_drum::mode
     } // namespace
 
     ModeLoadResult TaikoSessionBuilder::CreateSession(const chart::PatternDocument &pattern,
-                                                      const chart::EffectDocument &effects)
+                                                      const chart::EffectDocument &effects,
+                                                      const PlaySessionOptions &options, ModeInputLayout inputLayout)
     {
         ModeLoadResult result;
         if (pattern.mode != "Taiko")
@@ -43,13 +44,14 @@ namespace finger_drum::mode
         auto syncopationRange = std::make_shared<const rhythm::AccuracyRange>("Taiko.Syncopation", pattern.judgementLevel,
             rhythm::AccuracyRange::DefaultLevel50Bands(), rhythm::RhythmDuration{10'000});
 
-        chart::MusicalTimeline timeline(pattern);
+        chart::MusicalTimeline timeline(pattern, options.globalOffset);
         chart::ValidateEffectPositions(effects, timeline);
         auto compiledEffects = timeline.CompileEffects(effects);
         const EffectLookup effectLookup(compiledEffects);
         auto compiled = taiko_notes::PlayableInSourceOrder(timeline.CompileNotes(pattern));
         PlayResultSummary summary;
         summary.patternPath = pattern.sourcePath;
+        summary.globalOffset = options.globalOffset;
         summary.patternName = pattern.name;
         summary.judgementLevel = pattern.judgementLevel;
         auto collector = std::make_unique<TaikoResultCollector>(std::move(summary), compiled.size());
@@ -174,15 +176,10 @@ namespace finger_drum::mode
                 "Ignored long-note head without a matching end."});
 
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping;
-        for (const TaikoInputBinding &binding : TaikoInputBindings)
-        {
-            const rhythm::NoteAction action = ActionValue(binding.action);
-            inputMapping.emplace(binding.primaryKey, action);
-            for (const rhythm::PhysicalKey secondaryKey : binding.secondaryKeys)
-            {
-                inputMapping.emplace(secondaryKey, action);
-            }
-        }
+        for (const auto &binding : inputLayout.bindings)
+            for (const auto key : binding.keys)
+                inputMapping.emplace(key, binding.action);
+        session->SetInputLayout(std::move(inputLayout));
         session->SetInputMapping(inputMapping);
         collector->SetInputMapping(std::move(inputMapping));
         session->SetFreeInputCue(ActionValue(TaikoAction::Don),

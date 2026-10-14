@@ -60,6 +60,7 @@ class GameplaySessionController final
     std::unique_ptr<finger_drum::mode::IPlayResult> TakeResult();
 
   private:
+    std::vector<finger_drum::rhythm::PhysicalKey> heldKeys_;
     std::unique_ptr<finger_drum::mode::PlaySession> CreateSession();
     std::unique_ptr<finger_drum::mode::PlaySession> CreateDemoSession();
     std::unique_ptr<finger_drum::mode::PlaySession> CreateLongNoteDebugSession();

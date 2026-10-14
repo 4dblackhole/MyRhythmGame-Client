@@ -25,7 +25,9 @@ std::unique_ptr<chart::IEditorDocument> TaikoEditorMode::OpenDocument(
         throw std::runtime_error("Editor could not parse the selected chart.");
     if (p.document.mode != Id())
         throw std::invalid_argument("Selected chart is not a Taiko chart.");
-    return std::make_unique<chart::ChartEditor>(std::move(p.document), std::move(e.document));
+    return std::make_unique<chart::ChartEditor>(
+        std::move(p.document), std::move(e.document),
+        finger_drum::rhythm::RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000});
 }
 
 bool TaikoEditorMode::CancelInteraction() noexcept

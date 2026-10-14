@@ -1,4 +1,5 @@
 #pragma once
+#include "Mode/ModeInputLayout.h"
 #include "Mode/Submodules/PlaySession.h"
 
 namespace finger_drum::mode
@@ -15,6 +16,7 @@ namespace finger_drum::mode
     {
       public:
         virtual ~IPlayGameMode() = default;
+        [[nodiscard]] virtual ModeInputLayout InputLayout() const = 0;
         [[nodiscard]] virtual std::string_view Id() const noexcept = 0;
         [[nodiscard]] virtual ModeLoadResult LoadSession(
             const std::filesystem::path &patternPath,

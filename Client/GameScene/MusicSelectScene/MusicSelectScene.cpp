@@ -1,21 +1,19 @@
 #include "MusicSelectScene.h"
+#include "App/AssetPaths.h"
+#include "GameFlow/FingerDrumSceneIds.h"
+#include "Mode/PlayGameModeFactory.h"
 #include "Submodules/MusicSelectView.h"
 #include "Submodules/SongPreviewController.h"
 #include "Submodules/SongSelectionText.h"
-#include "App/AssetPaths.h"
-#include "GameFlow/FingerDrumSceneIds.h"
-#include "Taiko/TaikoMode.h"
 #include <stdexcept>
 
 using namespace song_select;
 
 MusicSelectScene::MusicSelectScene(mrg::visual2d::ScreenVisual2DManager &visuals,
                                    mrg::audio::AudioPlaybackManager &playback,
-                                   std::shared_ptr<finger_drum::GameplayLaunchStore> request,
-                                   SongSelectPurpose purpose,
-                                   finger_drum::texts::TextCatalog &texts,
-                                   mrg_client::OptionSettings &options)
-    : launchRequest_(std::move(request)), purpose_(purpose),
+                                   std::shared_ptr<finger_drum::GameplayLaunchStore> request, SongSelectPurpose purpose,
+                                   finger_drum::texts::TextCatalog &texts, mrg_client::OptionSettings &options)
+    : launchRequest_(std::move(request)), purpose_(purpose), options_(options),
       selection_(std::make_unique<SongSelectionState>()),
       view_(std::make_unique<MusicSelectView>(visuals, *selection_, purpose, texts, options)),
       preview_(std::make_unique<SongPreviewController>(playback))
@@ -114,12 +112,17 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
         return false;
     }
 
+    finger_drum::GameplayLaunchRequest request{
+        pattern.patternPath, pattern.effectPath,
+        song.audioPath,      pattern.pattern.mode,
+        SongTitle(song),     pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())};
+    request.globalOffsetMs = options_.Values().globalOffsetMs;
+    if (const auto keys = options_.Values().modeKeys.find(request.mode); keys != options_.Values().modeKeys.end())
+        request.inputKeys = keys->second;
     if (purpose_ == SongSelectPurpose::Editor)
     {
         selection_->ClearLaunchError();
-        launchRequest_->Set({pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode,
-                             SongTitle(song),
-                             pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())});
+        launchRequest_->Set(request);
         if (!scenes.ChangeScene(finger_drum::scene_ids::Editor))
         {
             throw std::runtime_error("Failed to enter the editor scene.");
@@ -131,7 +134,11 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
     try
     {
         finger_drum::mode::ModeLoadResult validation =
-            finger_drum::mode::TaikoMode{}.LoadSession(pattern.patternPath, pattern.effectPath);
+            finger_drum::mode::CreatePlayGameMode(
+                request.mode,
+                {finger_drum::rhythm::RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000},
+                 request.inputKeys})
+                ->LoadSession(pattern.patternPath, pattern.effectPath);
         if (!validation.Succeeded())
         {
             selection_->SetLaunchError(
@@ -152,10 +159,7 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
     }
 
     selection_->ClearLaunchError();
-    launchRequest_->SetValidated(
-        {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode, SongTitle(song),
-         pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())},
-        std::move(prepared));
+    launchRequest_->SetValidated(request, std::move(prepared));
     if (!scenes.ChangeScene(finger_drum::scene_ids::RhythmTest))
     {
         throw std::runtime_error("Failed to enter transient gameplay.");

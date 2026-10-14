@@ -4,7 +4,9 @@
 #include "Texts/TextCatalog.h"
 
 #include <filesystem>
+#include <map>
 #include <string>
+#include <vector>
 
 namespace mrg_client
 {
@@ -16,6 +18,9 @@ namespace mrg_client
         mrg::audio::AudioOutputBackend audioOutput{mrg::audio::AudioOutputBackend::Automatic};
         int driverIndex{-1};
         std::string driverName;
+        std::uint32_t windowWidth{1280}, windowHeight{720};
+        std::int32_t globalOffsetMs{};
+        std::map<std::string, std::map<std::string, std::vector<std::uint16_t>>> modeKeys;
     };
 
     // Owns the persistent values, independently of the panel and audio handles.

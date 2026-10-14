@@ -71,6 +71,45 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-15 해상도·모드별 키·글로벌 오프셋 옵션
+
+- [TextManagement](TextManagement.md)의 해상도 즉시 적용/저장, Taiko 기본·보조 8키,
+  모드별 입력 목록 계약과 정수 ms 오프셋을 구현했습니다. 음악의 타이머 0ms 시작을
+  유지하고 공통 MusicalTimeline에서 노트·틱·BPM·마디선·YME 시각을 함께 보정합니다.
+  에디터의 원본/Dirty/저장 박자를 보존하며 Copy/Replace/타이밍 수정에도 보정을 유지합니다.
+  DLL 로더는 이번 범위가 아닙니다. 색상/ESC 선행 변경도 그대로 유지합니다.
+- Client 및 엔진 Debug/Release x64 전체 solution Rebuild 성공, 일반 빌드 경고/오류 0.
+  영향 프로젝트의 이후 분석 Rebuild/Build도 성공했습니다. 두 구성 전체 로직·기본곡
+  카탈로그 각각 63개/실패 0, 네 Client smoke 경로씩 총 8개 성공했습니다.
+  엔진 기본 SDK 및 실제 숨김 D3D12/NoSound `--window-control` 두 구성 성공:
+  native 해상도 중복 제거, 960×540 변경, 잘못된 크기 거부, 지연 OnResize와 렌더러 크기를 검사했습니다.
+- OptionsPanelTests 두 구성 성공: 해상도 적용·native 실패·INI 실패 시 복구,
+  기본/보조 키 캡처·기본값과의 중복/예약 키 거부·ESC 취소,
+  양수/음수 정수 오프셋·잘못된 초안 보존·재실행 설정·미설치 모드 profile 보존을 검사했습니다.
+  기존 ESC/popup/스크롤 입력·저장 실패·실제 FMOD Automatic→WASAPI/driver 검사도 성공했습니다.
+  OptionTimingTests는 remap된 primary/auxiliary와 Buzz held·입력 로그 매핑,
+  양수/음수 오프셋의 노트/틱/BPM/delay/마디선/YME 일치·Area 길이 유지·원본 저장 보존을 검사합니다.
+- 두 구성 MusicSelectView, EditorPresentation, GameplayJudgement, GameplayPause,
+  ResultPresentation 회귀 성공. 실제 D3D12/FMOD 전체 종류/효과 자동 플레이도 각각
+  19노트/85.1837%, 15노트/97.8897%를 유지했습니다.
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Chart, Modes, MRG.Client,
+  ClientLogic, Rhythm.Tests의 실제 Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`와 최종 테스트의 분석 Build를 사용했습니다.
+  새 진단·파싱 오류 0. 새 테스트의 C26817은 const reference로 수정 후 두 구성 분석/회귀를 통과했습니다.
+  기존 C28020(held-key 배열 범위)은 해결된 키 목록의 예약 버퍼로 교체하여 없어졌습니다.
+  기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지합니다.
+  표시 회귀 소스도 각 실행 스크립트의 `/analyze`로 검사했습니다.
+- 변경 코드와 직접 호출부의 창 서비스/Canvas 관찰자 수명, resize 알림의 순서,
+  옵션의 원자적 게시/실패 복구, 키 소유권·ESC/stale action 경계,
+  모드 입력 매핑/표시/로그 일치와 오프셋의 순방향/역방향 좌표 및 편집 캐시를 검토했습니다.
+  CheckArchitecture(11프로젝트), 양쪽 git diff --check 성공. 사용자 LaneKeyBeam.cpp와
+  Debug/Release Option.ini의 SHA256을 대조해 보존했고 사용자 Songs/Skins는 수정하지 않았습니다.
+  로그/캡처는 ignored `build/options-features-2026-10-15`에 있습니다.
+- **화면 확인:** 실제 D3D12 1920×1080의 한국어/영어 offscreen 캡처에서 패널 대비,
+  해상도·오프셋·8키의 표시/간격/클리핑을 눈으로 확인했습니다.
+  실행 창에서 물리 키/마우스 조작 또는 청음하는 수동 검증은 미실시입니다.
+  UI 입력은 자동 의도 검사이며 native 창 크기 변경도 숨김 실행의 자동 검사입니다.
+
 ## 2026-10-15 공통 UI 색상·옵션 ESC 선행 변경
 
 - [TextManagement](TextManagement.md)의 UiColors.h와 화면별 역할 연결을 적용했습니다.

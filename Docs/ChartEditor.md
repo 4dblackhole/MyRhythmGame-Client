@@ -4,6 +4,10 @@
 Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성했습니다.
 일반 실행은 여전히 로고 화면에서 시작합니다.
 
+진입 시 선택한 글로벌 오프셋(ms)은 플레이와 동일한 MusicalTimeline의 실행용 시간에
+적용합니다. 노트·틱·마디선·효과 표시/히트사운드 예측은 같은 좌표를 사용하며,
+저장 원본과 문서의 Dirty 상태는 바꾸지 않습니다. 문서 복사·교체·타이밍 수정에도 유지합니다.
+
 수정 시 `Client/EditorScene/EditorScene.*`는 조립 흐름만 확인합니다.
 `Submodules/EditorWorkspace`는 문서와 모드의 수명 및 공통 편집 상태를,
 `EditorView`와 각 `Editor*View.cpp`는 공통 탭/타임라인/분석 화면을 맡습니다.

@@ -133,6 +133,13 @@ this does not replace visual inspection, listening or mouse testing in the app.
 
 ## Options panel and Option.ini regression
 
+Resolution changes use the window service immediately, with rollback when INI saving fails.
+The suite checks primary/auxiliary key capture, default-key conflicts, reserved game controls,
+ESC cancellation, integer global offsets, invalid drafts and persistent mode profiles.
+The rhythm suite's OptionTimingTests checks resolved input/held mappings and us timing translation
+across notes, ticks, BPM/delay, bars and YME, without changing saved chart data.
+Engine SDK `--window-control` verifies actual hidden native resizing and renderer notifications.
+
 After building both configurations, run in an x64 Visual Studio developer PowerShell
 with `FMOD_ROOT` set to the installed SDK:
 

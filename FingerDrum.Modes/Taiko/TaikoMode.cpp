@@ -1,10 +1,29 @@
 #include "Taiko/TaikoMode.h"
 #include "Automation/EffectValidation.h"
 #include "Parsing/ChartParser.h"
+#include "Taiko/Submodules/TaikoInputBinding.h"
 #include "Taiko/Submodules/TaikoSessionBuilder.h"
 
 namespace finger_drum::mode
 {
+    ModeInputLayout TaikoMode::InputLayout() const
+    {
+        static constexpr std::array ids{"LeftKat", "LeftDon", "RightDon", "RightKat"};
+        static constexpr std::array names{"Left Kat", "Left Don", "Right Don", "Right Kat"};
+        ModeInputLayout layout{"Taiko", {}};
+        for (std::size_t i = 0; i < TaikoInputBindings.size(); ++i)
+        {
+            const auto &source = TaikoInputBindings[i];
+            ModeInputBinding binding{
+                ids[i], names[i], static_cast<rhythm::NoteAction>(source.action), {source.primaryKey}};
+            for (const auto key : source.secondaryKeys)
+                if (key)
+                    binding.keys.push_back(key);
+            layout.bindings.push_back(std::move(binding));
+        }
+        return layout;
+    }
+
     std::string_view TaikoMode::Id() const noexcept
     {
         return "Taiko";
@@ -52,7 +71,8 @@ namespace finger_drum::mode
             auto resolved = effects;
             chart::ResolveEffectInterpolations(resolved);
             chart::ValidateEffectDocument(resolved);
-            return TaikoSessionBuilder::CreateSession(pattern, resolved);
+            return TaikoSessionBuilder::CreateSession(pattern, resolved, options_,
+                                                      ResolveInputLayout(InputLayout(), options_.inputKeys));
         }
         catch (const std::exception &error)
         {

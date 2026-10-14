@@ -43,4 +43,5 @@
     <ClCompile Include="Submodules\PlayResultTests.cpp" />
     <ClCompile Include="Submodules\PlayPauseTests.cpp" />
   </ItemGroup>
+  <ItemGroup><ClCompile Include="Submodules\OptionTimingTests.cpp" /></ItemGroup>
 </Project>

@@ -34,6 +34,7 @@ namespace finger_drum::mode
         // exact mapped press/release events passed to judgement, including blanks.
         std::vector<rhythm::RhythmInputEvent> inputs;
         std::vector<PlayControlEvent> controls;
+        rhythm::RhythmDuration globalOffset{}; // Reproduce the compiled timing in a future replay.
         bool pauseMenuUsed{};
         // Future HP/record systems must use these gates, not completion alone.
         bool CanUseHp() const noexcept

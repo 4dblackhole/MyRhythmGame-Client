@@ -26,6 +26,7 @@ void GameplaySessionController::InitializeSession()
     PrepareDebugLaunchRequest();
     if (!session_)
         session_ = CreateSession();
+    heldKeys_.reserve(session_->InputMapping().size());
     time_ = initialTime_;
 }
 void GameplaySessionController::Start(const mrg::EngineServices &services,
@@ -115,26 +116,12 @@ std::unique_ptr<finger_drum::mode::IPlayResult> GameplaySessionController::TakeR
 void GameplaySessionController::UpdateSession(const mrg::platform::InputState &input,
                                               const finger_drum::rhythm::RhythmTime time, bool beforeExit)
 {
-    std::array<finger_drum::rhythm::PhysicalKey, finger_drum::mode::TaikoInputBindings.size() * 3>
-        heldStorage{};
-    std::size_t heldCount{};
-    for (const finger_drum::mode::TaikoInputBinding &binding :
-         finger_drum::mode::TaikoInputBindings)
-    {
-        if (IsKeyDownBeforeExit(input, binding.primaryKey, beforeExit))
-        {
-            heldStorage[heldCount++] = binding.primaryKey;
-        }
-        for (const finger_drum::rhythm::PhysicalKey secondaryKey : binding.secondaryKeys)
-        {
-            if (IsKeyDownBeforeExit(input, secondaryKey, beforeExit))
-            {
-                heldStorage[heldCount++] = secondaryKey;
-            }
-        }
-    }
-    ConsumeResult(session_->Update(
-        time, std::span<const finger_drum::rhythm::PhysicalKey>{heldStorage.data(), heldCount}));
+    heldKeys_.clear();
+    // Capacity was reserved when the session was initialized.
+    for (const auto &[key, action] : session_->InputMapping())
+        if (IsKeyDownBeforeExit(input, key, beforeExit))
+            heldKeys_.push_back(key);
+    ConsumeResult(session_->Update(time, heldKeys_));
 }
 
 bool GameplaySessionController::IsPatternComplete() const noexcept

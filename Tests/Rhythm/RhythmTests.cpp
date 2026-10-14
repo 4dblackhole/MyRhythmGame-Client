@@ -71,6 +71,8 @@ int main(const int argumentCount, char *arguments[])
         {"TestLongNoteKeepsFirstHead", TestLongNoteKeepsFirstHead},
         {"TestTaikoUsesOneLaneForEveryNoteType", TestTaikoUsesOneLaneForEveryNoteType},
         {"TestTaikoInputBindings", TestTaikoInputBindings},
+        {"TestModeInputOverrides", TestModeInputOverrides},
+        {"TestRuntimeGlobalOffset", TestRuntimeGlobalOffset},
         {"TestIndexedHitSoundChanges", TestIndexedHitSoundChanges},
         {"TestSpecialNoteSoundOverridePriority", TestSpecialNoteSoundOverridePriority},
         {"TestChartEditingAndSave", TestChartEditingAndSave},

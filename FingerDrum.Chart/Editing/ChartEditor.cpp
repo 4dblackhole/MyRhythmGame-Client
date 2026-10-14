@@ -156,8 +156,9 @@ void Validate(const PatternDocument &pattern, const EffectDocument &effects, con
 }
 } // namespace
 
-ChartEditor::ChartEditor(PatternDocument pattern, EffectDocument effects)
-    : pattern_(std::move(pattern)), effects_(std::move(effects)), timeline_(pattern_)
+ChartEditor::ChartEditor(PatternDocument pattern, EffectDocument effects, rhythm::RhythmDuration runtimeOffset)
+    : pattern_(std::move(pattern)), effects_(std::move(effects)), runtimeOffset_(runtimeOffset),
+      timeline_(pattern_, runtimeOffset_)
 {
     ResolveEffectInterpolations(effects_);
     if (effects_.sourcePath.empty() && !pattern_.sourcePath.empty())
@@ -216,7 +217,8 @@ void ChartEditor::InitializeEventTrees()
     pattern_.notes.clear();
 }
 
-ChartEditor::ChartEditor(const ChartEditor &source) : ChartEditor(source.Pattern(), source.Effects())
+ChartEditor::ChartEditor(const ChartEditor &source)
+    : ChartEditor(source.Pattern(), source.Effects(), source.runtimeOffset_)
 {
     nextNoteId_ = source.nextNoteId_;
     audioSourceRevision_ = source.audioSourceRevision_;
@@ -437,7 +439,7 @@ void ChartEditor::InvalidateNoteSnapshots() noexcept
 void ChartEditor::Replace(PatternDocument pattern, EffectDocument effects)
 {
     // Construct caches before publishing the edit, preserving the old chart on error.
-    ChartEditor replacement(std::move(pattern), std::move(effects));
+    ChartEditor replacement(std::move(pattern), std::move(effects), runtimeOffset_);
     const bool sourcesChanged = replacement.pattern_.musicMetadataFile != pattern_.musicMetadataFile ||
         replacement.pattern_.sourcePath != pattern_.sourcePath ||
         replacement.effects_.sourcePath != effects_.sourcePath || replacement.effects_.hitSounds != effects_.hitSounds;
@@ -459,7 +461,7 @@ void ChartEditor::ReplaceTiming(std::vector<TimingDirective> timing)
     // Only the final source position is needed to bound the measure cache.
     if (!noteTree_.empty())
         timingPattern.notes.push_back({noteTree_.rbegin()->second.note.position});
-    MusicalTimeline timeline(timingPattern);
+    MusicalTimeline timeline(timingPattern, runtimeOffset_);
     const auto &effects = Effects();
     Validate(timingPattern, effects, timeline);
     ScrollAutomation scroll(timeline.CompileEffects(effects));
@@ -727,7 +729,7 @@ void ChartEditor::SetMeasureLength(std::int64_t measure, Rational length)
         return d.type == TimingDirectiveType::MeasureLength && d.position.measure == measure;
     });
     pattern.timing.push_back({{measure, {}}, TimingDirectiveType::MeasureLength, 0, length});
-    const MusicalTimeline changed(pattern);
+    const MusicalTimeline changed(pattern, runtimeOffset_);
     for (auto &note : pattern.notes)
     {
         if (note.position.fraction >= changed.MeasureLength(note.position.measure))

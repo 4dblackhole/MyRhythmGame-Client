@@ -41,6 +41,8 @@ namespace finger_drum::tests
     void TestLongNoteKeepsFirstHead();
     void TestTaikoUsesOneLaneForEveryNoteType();
     void TestTaikoInputBindings();
+    void TestModeInputOverrides();
+    void TestRuntimeGlobalOffset();
     void TestRationalNumberUsesExactOrderingAndArithmetic();
     void TestTimingCommandWhitespaceGrammar();
     void TestAbsoluteMeasurePositionsAndTempoAnchors();

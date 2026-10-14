@@ -35,7 +35,7 @@ flowchart TD
    `%LOCALAPPDATA%/FingerDrum/BuiltInAssets/<pack hash>`에 준비합니다. 같은 팩의
    유효한 캐시가 있으면 다시 기록하지 않습니다.
 2. 일반 실행과 FingerDrum smoke는 `FingerDrumGame`을 생성합니다. EXE 옆
-   `Option.ini`에서 언어·스킨·오디오 미들웨어/출력 방식/드라이버를 읽습니다.
+   `Option.ini`에서 언어·스킨·오디오 미들웨어/출력 방식/드라이버·창 크기·모드별 키·글로벌 오프셋을 읽습니다.
    파일이 없으면 기본 설정을 저장합니다. 저장된 스킨
    폴더가 없으면 `Default Skin`을 사용합니다. 상세 형식은 [TextManagement](TextManagement.md)입니다.
 3. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를

@@ -27,8 +27,9 @@ namespace finger_drum::chart
         }
     } // namespace
 
-    MusicalTimeline::MusicalTimeline(const PatternDocument &pattern)
-        : baseBpm_(pattern.baseBpm), offsetMilliseconds_(pattern.patternOffsetMilliseconds), directives_(pattern.timing)
+    MusicalTimeline::MusicalTimeline(const PatternDocument &pattern, rhythm::RhythmDuration runtimeOffset)
+        : runtimeOffset_(runtimeOffset), baseBpm_(pattern.baseBpm),
+          offsetMilliseconds_(pattern.patternOffsetMilliseconds), directives_(pattern.timing)
     {
         if (!std::isfinite(baseBpm_) || baseBpm_ <= 0.0)
         {
@@ -336,7 +337,7 @@ namespace finger_drum::chart
                 change.delayMicroseconds += static_cast<long double>(directive.value) * 1'000;
             }
         }
-        const long double offset = static_cast<long double>(offsetMilliseconds_) * 1'000;
+        const long double offset = static_cast<long double>(offsetMilliseconds_) * 1'000 + runtimeOffset_.count();
         static_cast<void>(CheckedTime(offset));
         timePoints_.push_back({{}, offset, offset, baseBpm_});
         activeTimePoints_ = timePoints_;

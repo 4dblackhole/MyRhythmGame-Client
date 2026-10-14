@@ -1,5 +1,6 @@
 #include "GameplaySessionController.h"
 #include "GameplaySupport.h"
+#include "Mode/PlayGameModeFactory.h"
 using namespace gameplay;
 
 std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::CreateSession()
@@ -14,9 +15,11 @@ std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::Creat
                                  launchRequest_.mode);
     }
 
-    finger_drum::mode::TaikoMode mode;
-    finger_drum::mode::ModeLoadResult loaded =
-        mode.LoadSession(launchRequest_.patternPath, launchRequest_.effectPath);
+    auto mode = finger_drum::mode::CreatePlayGameMode(
+        launchRequest_.mode,
+        {finger_drum::rhythm::RhythmDuration{static_cast<std::int64_t>(launchRequest_.globalOffsetMs) * 1000},
+         launchRequest_.inputKeys});
+    finger_drum::mode::ModeLoadResult loaded = mode->LoadSession(launchRequest_.patternPath, launchRequest_.effectPath);
     if (!loaded.Succeeded())
     {
         const std::string detail = loaded.diagnostics.empty() ? "Unknown chart error."

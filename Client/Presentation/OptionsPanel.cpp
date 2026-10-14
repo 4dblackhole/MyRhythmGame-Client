@@ -1,5 +1,6 @@
 #include "OptionsPanel.h"
-#include "Presentation/UiColors.h"
+#include "Mode/PlayGameModeFactory.h"
+#include "OptionsPanel/Submodules/OptionsPanelStyle.h"
 
 #include "Texts/Options/OptionTexts.h"
 #include <Windows.h>
@@ -11,93 +12,22 @@
 
 namespace finger_drum::presentation
 {
-    namespace
-    {
-        constexpr auto PanelColor = ui_colors::options::Background;
-        constexpr auto HeadingColor = ui_colors::Ink, LabelColor = ui_colors::options::Label;
-        constexpr auto FieldColor = ui_colors::options::Field, FieldHoverColor = ui_colors::options::Hover;
+    using namespace options_ui;
 
-        template <typename Component>
-        [[nodiscard]] Component &RequireComponent(mrg::visual2d::Visual2DNode &node)
-        {
-            Component *component = node.GetComponent<Component>();
-            if (component == nullptr)
-            {
-                throw std::logic_error("The options panel is missing a required component.");
-            }
-            return *component;
-        }
-
-        void SetPanelColor(mrg::visual2d::Visual2DNode &node,
-                           const mrg::visual2d::Color color)
-        {
-            mrg::visual2d::VisualStyle style{};
-            style.normal = style.hovered = style.pressed = style.disabled = color;
-            RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetStyle(style);
-        }
-
-        void ConfigureCombo(mrg::visual2d::Visual2DNode &node, const std::size_t visibleItems)
-        {
-            node.SetZIndex(10);
-            mrg::visual2d::VisualStyle style{};
-            style.normal = FieldColor;
-            style.hovered = FieldHoverColor;
-            style.pressed = ui_colors::options::Pressed;
-            style.disabled = ui_colors::options::Disabled;
-            RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetStyle(style);
-            auto &combo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(node);
-            combo.SetMaxVisibleItems(visibleItems);
-            combo.SetItemHeight(42.0F);
-            combo.SetFontSize(19.0F);
-            combo.SetTextColor(HeadingColor);
-            combo.SetSelectedTextColor(ui_colors::White);
-            combo.SetPopupBackgroundColor(PanelColor);
-        }
-
-        std::wstring WideText(const std::string &value)
-        {
-            if (value.empty()) return {};
-            const int length = MultiByteToWideChar(CP_UTF8, 0, value.data(),
-                                                   static_cast<int>(value.size()), nullptr, 0);
-            std::wstring result(static_cast<std::size_t>(length), L'\0');
-            MultiByteToWideChar(CP_UTF8, 0, value.data(), static_cast<int>(value.size()),
-                                result.data(), length);
-            return result;
-        }
-
-        mrg::visual2d::Visual2DNode &CreateFieldLabel(mrg::visual2d::Visual2DNode &parent,
-                                                     float y, float width, std::string name)
-        {
-            auto &node = mrg::visual2d::CreateLabel(parent, {24.0F, y, width - 48.0F, 28.0F},
-                                                   L"", std::move(name));
-            auto &text = RequireComponent<mrg::visual2d::TextVisualComponent>(node);
-            text.SetFontSize(18.0F);
-            text.SetTextColor(LabelColor);
-            return node;
-        }
-
-        std::wstring OutputName(mrg::audio::AudioOutputBackend output,
-                                 const texts::OptionTextSet &text)
-        {
-            using mrg::audio::AudioOutputBackend;
-            switch (output)
-            {
-            case AudioOutputBackend::Automatic: return std::wstring(text.automatic);
-            case AudioOutputBackend::Wasapi: return L"WASAPI";
-            case AudioOutputBackend::Asio: return L"ASIO";
-            default: return std::wstring(text.noSound);
-            }
-        }
-
-        constexpr std::array Outputs{mrg::audio::AudioOutputBackend::Automatic,
-                                      mrg::audio::AudioOutputBackend::Wasapi,
-                                      mrg::audio::AudioOutputBackend::Asio};
-    } // namespace
-
-    void OptionsPanel::Initialize(mrg::visual2d::Visual2DCanvas &canvas, mrg::audio::AudioSystem &audio)
+    void OptionsPanel::Initialize(mrg::visual2d::Visual2DCanvas &canvas, mrg::audio::AudioSystem &audio,
+                                  mrg::platform::IWindowControl *window)
     {
         canvas_ = &canvas;
         audio_ = &audio;
+        window_ = window;
+        inputLayouts_ = mode::AvailableInputLayouts();
+        contentHeight_ = 1120.0F;
+        for (const auto &layout : inputLayouts_)
+        {
+            contentHeight_ += 52.0F;
+            for (const auto &binding : layout.bindings)
+                contentHeight_ += 84.0F * static_cast<float>(binding.keys.size());
+        }
         auto &leftAnchor = canvas.AnchorNode(mrg::visual2d::Anchor::MiddleLeft);
         leftAnchor.SetZIndex(100);
         panel_ = &mrg::visual2d::CreatePanel(
@@ -120,12 +50,15 @@ namespace finger_drum::presentation
         viewport.SetBounds({0.0F, 24.0F, PanelWidth, ContentViewportHeight});
         viewport.SetClipRect({0.0F, 0.0F, PanelWidth, ContentViewportHeight});
         content_ = &viewport.CreateChild("Options.Content");
-        content_->SetSize({PanelWidth, ContentHeight});
-        content_->SetPosition({0.0F, ContentViewportHeight - ContentHeight});
+        content_->SetSize({PanelWidth, contentHeight_});
+        content_->SetPosition({0.0F, ContentViewportHeight - contentHeight_});
 
         CreateLanguageControls();
         CreateSkinControls();
         CreateAudioControls();
+        CreateDisplayControls();
+        CreateOffsetControls();
+        CreateKeyControls();
         RefreshTexts();
         panel_->SetVisible(false);
     }
@@ -133,8 +66,7 @@ namespace finger_drum::presentation
     void OptionsPanel::CreateLanguageControls()
     {
         languageLabel_ = &mrg::visual2d::CreateLabel(
-            *content_, {24.0F, ContentHeight - 38.0F, PanelWidth - 48.0F, 28.0F}, L"",
-            "Options.Language.Label");
+            *content_, {24.0F, contentHeight_ - 38.0F, PanelWidth - 48.0F, 28.0F}, L"", "Options.Language.Label");
         auto &languageText =
             RequireComponent<mrg::visual2d::TextVisualComponent>(*languageLabel_);
         languageText.SetFontSize(18.0F);
@@ -145,9 +77,9 @@ namespace finger_drum::presentation
         {
             languageNames.emplace_back(profile.displayName);
         }
-        languageCombo_ = &mrg::visual2d::CreateComboBox(
-            *content_, {24.0F, ContentHeight - 96.0F, PanelWidth - 48.0F, 46.0F},
-            std::move(languageNames), "Options.Language.Combo");
+        languageCombo_ =
+            &mrg::visual2d::CreateComboBox(*content_, {24.0F, contentHeight_ - 96.0F, PanelWidth - 48.0F, 46.0F},
+                                           std::move(languageNames), "Options.Language.Combo");
         languageComboId_ = languageCombo_->Id();
         ConfigureCombo(*languageCombo_, 2);
         languageCombo_->SetZIndex(50);
@@ -155,24 +87,21 @@ namespace finger_drum::presentation
 
     void OptionsPanel::CreateSkinControls()
     {
-        skinLabel_ = &mrg::visual2d::CreateLabel(
-            *content_, {24.0F, ContentHeight - 174.0F, PanelWidth - 48.0F, 28.0F}, L"",
-            "Options.Skin.Label");
+        skinLabel_ = &mrg::visual2d::CreateLabel(*content_, {24.0F, contentHeight_ - 174.0F, PanelWidth - 48.0F, 28.0F},
+                                                 L"", "Options.Skin.Label");
         auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*skinLabel_);
         label.SetFontSize(18.0F);
         label.SetTextColor(LabelColor);
 
         skinNames_ = mrg_client::SkinSetSelection::Instance().AvailableNames();
         skinCombo_ = &mrg::visual2d::CreateComboBox(
-            *content_, {24.0F, ContentHeight - 232.0F, PanelWidth - 48.0F, 46.0F},
-            skinNames_, "Options.Skin.Combo");
+            *content_, {24.0F, contentHeight_ - 232.0F, PanelWidth - 48.0F, 46.0F}, skinNames_, "Options.Skin.Combo");
         skinComboId_ = skinCombo_->Id();
         ConfigureCombo(*skinCombo_, 4);
         skinCombo_->SetZIndex(40);
 
-        statusLabel_ = &mrg::visual2d::CreateLabel(
-            *content_, {24.0F, ContentHeight - 784.0F, PanelWidth - 48.0F, 140.0F}, L"",
-            "Options.Status");
+        statusLabel_ =
+            &mrg::visual2d::CreateLabel(*content_, {24.0F, 24.0F, PanelWidth - 48.0F, 140.0F}, L"", "Options.Status");
         auto &status = RequireComponent<mrg::visual2d::TextVisualComponent>(*statusLabel_);
         status.SetFontSize(14.0F);
         status.SetTextColor(ui_colors::Error);
@@ -181,21 +110,17 @@ namespace finger_drum::presentation
 
     void OptionsPanel::CreateAudioControls()
     {
-        middlewareLabel_ = &CreateFieldLabel(*content_, ContentHeight - 310.0F, PanelWidth,
-                                             "Options.Middleware.Label");
-        outputLabel_ = &CreateFieldLabel(*content_, ContentHeight - 438.0F, PanelWidth,
-                                         "Options.Output.Label");
-        driverLabel_ = &CreateFieldLabel(*content_, ContentHeight - 566.0F, PanelWidth,
-                                         "Options.Driver.Label");
-        middlewareCombo_ = &mrg::visual2d::CreateComboBox(
-            *content_, {24.0F, ContentHeight - 368.0F, PanelWidth - 48.0F, 46.0F},
-            {L"FMOD"}, "Options.Middleware.Combo");
+        middlewareLabel_ =
+            &CreateFieldLabel(*content_, contentHeight_ - 310.0F, PanelWidth, "Options.Middleware.Label");
+        outputLabel_ = &CreateFieldLabel(*content_, contentHeight_ - 438.0F, PanelWidth, "Options.Output.Label");
+        driverLabel_ = &CreateFieldLabel(*content_, contentHeight_ - 566.0F, PanelWidth, "Options.Driver.Label");
+        middlewareCombo_ =
+            &mrg::visual2d::CreateComboBox(*content_, {24.0F, contentHeight_ - 368.0F, PanelWidth - 48.0F, 46.0F},
+                                           {L"FMOD"}, "Options.Middleware.Combo");
         outputCombo_ = &mrg::visual2d::CreateComboBox(
-            *content_, {24.0F, ContentHeight - 496.0F, PanelWidth - 48.0F, 46.0F},
-            {}, "Options.Output.Combo");
+            *content_, {24.0F, contentHeight_ - 496.0F, PanelWidth - 48.0F, 46.0F}, {}, "Options.Output.Combo");
         driverCombo_ = &mrg::visual2d::CreateComboBox(
-            *content_, {24.0F, ContentHeight - 624.0F, PanelWidth - 48.0F, 46.0F},
-            {}, "Options.Driver.Combo");
+            *content_, {24.0F, contentHeight_ - 624.0F, PanelWidth - 48.0F, 46.0F}, {}, "Options.Driver.Combo");
         ConfigureCombo(*middlewareCombo_, 1);
         ConfigureCombo(*outputCombo_, 3);
         ConfigureCombo(*driverCombo_, 3);
@@ -208,6 +133,16 @@ namespace finger_drum::presentation
 
     void OptionsPanel::Shutdown() noexcept
     {
+        keyRows_.clear();
+        modeLabels_.clear();
+        inputLayouts_.clear();
+        resolutions_.clear();
+        window_ = nullptr;
+        resolutionLabel_ = resolutionCombo_ = nullptr;
+        offsetLabel_ = offsetField_ = offsetHint_ = nullptr;
+        captureRow_.reset();
+        editingOffset_ = false;
+        offsetDraft_.clear();
         skinNames_.clear();
         skinCombo_ = nullptr;
         statusLabel_ = nullptr;
@@ -243,7 +178,12 @@ namespace finger_drum::presentation
             return;
         }
         targetOpen_ = !targetOpen_;
-        if (targetOpen_) RefreshSkinSets();
+        CancelKeyboardEdit();
+        if (targetOpen_)
+        {
+            RefreshSkinSets();
+            RefreshDisplayControls();
+        }
         panel_->SetVisible(true);
         dragging_ = false;
         previousDragPoint_.reset();
@@ -269,14 +209,31 @@ namespace finger_drum::presentation
 
     bool OptionsPanel::HandleKey(std::uint16_t virtualKey, mrg::visual2d::Visual2DInputRouter &inputRouter)
     {
-        if (!IsVisible() || virtualKey != VK_ESCAPE)
+        if (!IsVisible())
             return false;
+        if (virtualKey != VK_ESCAPE)
+        {
+            if (!targetOpen_)
+                return false;
+            if (captureRow_)
+            {
+                CaptureKey(virtualKey);
+                return true;
+            }
+            if (editingOffset_)
+            {
+                EditOffset(virtualKey);
+                return true;
+            }
+            return false;
+        }
+        CancelKeyboardEdit();
         // Closing is idempotent: another ESC during the slide must not reopen it.
         targetOpen_ = false;
         dragging_ = false;
         previousDragPoint_.reset();
         inputRouter.Reset(*canvas_);
-        for (auto *node : {languageCombo_, skinCombo_, middlewareCombo_, outputCombo_, driverCombo_})
+        for (auto *node : {languageCombo_, skinCombo_, middlewareCombo_, outputCombo_, driverCombo_, resolutionCombo_})
             RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*node).Collapse();
         return true;
     }
@@ -288,6 +245,15 @@ namespace finger_drum::presentation
     {
         if (input.WasKeyPressed(VK_ESCAPE) && HandleKey(VK_ESCAPE, inputRouter))
             return true;
+        if (OwnsKeyboard())
+        {
+            bool consumed = false;
+            for (const auto &event : input.Events())
+                if (event.type == mrg::platform::InputEventType::KeyPressed)
+                    consumed |= HandleKey(event.code, inputRouter);
+            if (consumed)
+                return true;
+        }
         if (!IsVisible() || panel_ == nullptr || !canvasPointer.has_value() ||
             !panel_->BoundsInCanvas().Contains(*canvasPointer))
         {
@@ -329,7 +295,11 @@ namespace finger_drum::presentation
 
     bool OptionsPanel::ProcessAction(const mrg::visual2d::Action &action)
     {
-        if (panel_ == nullptr || !targetOpen_ || action.type != mrg::visual2d::ActionType::SelectionChanged)
+        if (panel_ == nullptr || !targetOpen_)
+            return false;
+        if (ProcessFieldAction(action))
+            return true;
+        if (action.type != mrg::visual2d::ActionType::SelectionChanged)
         {
             return false;
         }
@@ -421,6 +391,9 @@ namespace finger_drum::presentation
         if (selected != skinNames_.end())
             skinCombo.SetSelectedIndex(static_cast<std::size_t>(selected - skinNames_.begin()));
         RefreshAudioControls();
+        RefreshDisplayControls();
+        RefreshOffsetControls();
+        RefreshKeyControls();
         RefreshStatus();
         optionRevision_ = options_.Revision();
     }
@@ -528,6 +501,10 @@ namespace finger_drum::presentation
         const auto &saved = options_.Values();
         if (status_ == Status::SaveFailed) value = text.saveError;
         else if (status_ == Status::AudioFailed) value = text.audioError;
+        else if (status_ == Status::WindowFailed)
+            value = text.windowError;
+        else if (status_ == Status::InvalidInput)
+            value = text.inputError;
         else if (audio_->RequestedOutput() != saved.audioOutput)
             value = std::wstring(text.outputFallback) + L" " + OutputName(audio_->ActiveOutput(), text);
         else if ((!saved.driverName.empty() && saved.driverName != DriverName(audio_->ActiveDriverIndex())) ||
@@ -560,12 +537,11 @@ namespace finger_drum::presentation
 
     void OptionsPanel::ApplyScrollOffset(mrg::visual2d::Visual2DInputRouter &inputRouter)
     {
-        const float maximum = std::max(ContentHeight - ContentViewportHeight, 0.0F);
+        const float maximum = std::max(contentHeight_ - ContentViewportHeight, 0.0F);
         scrollOffset_ = std::clamp(scrollOffset_, 0.0F, maximum);
         if (content_ != nullptr)
         {
-            content_->SetPosition(
-                {0.0F, ContentViewportHeight - ContentHeight + scrollOffset_});
+            content_->SetPosition({0.0F, ContentViewportHeight - contentHeight_ + scrollOffset_});
         }
         inputRouter.InvalidateHitTest();
     }

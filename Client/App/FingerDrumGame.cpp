@@ -38,8 +38,8 @@ mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
 {
     mrg::EngineConfig config;
     config.windowTitle = L"FingerDrum";
-    config.windowWidth = 1280;
-    config.windowHeight = 720;
+    config.windowWidth = optionSettings_.Values().windowWidth;
+    config.windowHeight = optionSettings_.Values().windowHeight;
     const auto color = finger_drum::presentation::ui_colors::ClearBackground;
     config.clearColor = {color.red, color.green, color.blue, color.alpha};
     config.audio.preferredBackend = optionSettings_.Values().audioOutput;

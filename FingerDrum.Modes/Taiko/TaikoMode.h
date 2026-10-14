@@ -12,6 +12,10 @@ namespace finger_drum::mode
     class TaikoMode final : public IPlayGameMode
     {
       public:
+        explicit TaikoMode(PlaySessionOptions options = {}) : options_(std::move(options))
+        {
+        }
+        [[nodiscard]] ModeInputLayout InputLayout() const override;
         [[nodiscard]] std::string_view Id() const noexcept override;
         [[nodiscard]] ModeLoadResult LoadSession(
             const std::filesystem::path &patternPath,
@@ -19,5 +23,8 @@ namespace finger_drum::mode
         [[nodiscard]] ModeLoadResult CreateSession(
             const chart::PatternDocument &pattern,
             const chart::EffectDocument &effects = {}) const override;
+
+      private:
+        PlaySessionOptions options_;
     };
 } // namespace finger_drum::mode

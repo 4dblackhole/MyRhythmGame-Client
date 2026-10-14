@@ -17,7 +17,7 @@ namespace finger_drum::chart
             long double wholeNotes{};
             MusicalPosition sourceBegin{};
         };
-        explicit MusicalTimeline(const PatternDocument &pattern);
+        explicit MusicalTimeline(const PatternDocument &pattern, rhythm::RhythmDuration runtimeOffset = {});
 
         [[nodiscard]] rhythm::RhythmTime Compile(MusicalPosition position) const;
         [[nodiscard]] std::vector<CompiledPatternNote> CompileNotes(const PatternDocument &pattern) const;
@@ -81,6 +81,7 @@ namespace finger_drum::chart
         [[nodiscard]] long double MicrosecondsAt(const Rational &position) const;
         [[nodiscard]] rhythm::RhythmTime CompileAbsolute(const Rational &position) const;
 
+        rhythm::RhythmDuration runtimeOffset_{};
         double baseBpm_{120.0};
         double offsetMilliseconds_{};
         std::vector<TimingDirective> directives_;

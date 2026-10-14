@@ -14,7 +14,7 @@
 | 텍스트 배치·clip·아틀라스/업로드·긴 제목 | 엔진 `Graphics.D3D12/Text`, `Graphics.D3D12/Visual2D`, `Core/Visual2D`; `Client/Presentation/MarqueeTextComponent.*` | 엔진 TextRendering 문서/SDK --text-rendering·--text-pixels; MusicSelectViewTests; Client 직접 DrawPacket 생성/검사, 네 smoke |
 | 로고/곡 선택 옵션 패널·ESC 닫기 | `Client/Presentation/OptionsPanel.*` | LogoView/MusicSelectView 입력 소비; OptionsPanelTests; logo/lobby smoke |
 | 공통 UI 색상 | `Client/Presentation/UiColors.h` | LogoStyle / SongSelectLayout / EditorSupport / TaikoResultLayout / GameplayPauseMenu; Options/MusicSelect/Editor/Result/Pause 표시 회귀 |
-| Option.ini·오디오 출력/드라이버 선택 | `Client/App/OptionSettings.*`, `OptionsPanel.*` | FingerDrumGame 초기화; OptionsPanelTests, logo/lobby smoke |
+| Option.ini·오디오 출력/드라이버·해상도·키·글로벌 오프셋 선택 | `Client/App/OptionSettings.*`, `OptionsPanel.*` / `OptionsPanel/Submodules` | FingerDrumGame 초기화; ModeInputLayout / PlayGameModeFactory / PlaySession; MusicalTimeline / ChartEditor; 엔진 WindowControl; OptionsPanelTests / OptionTimingTests, 네 smoke |
 | 스킨 선택·경로·내장 기본본 | `Client/App/SkinSetSelection.*`, `AssetPaths.h` | `FingerDrumAssets.h`, BuiltInAssets; logo/gameplay/editor smoke |
 | 배포 빌드·자산 | `Client/MRG.Client.vcxproj`, `Client/App/Main.cpp` | BuiltInAssets; Debug/Release smoke, CheckArchitecture |
 | Scene 전환/선택 전달 | Scene 주 파일, `Client/GameFlow/GameplayLaunchStore.h` | SceneStateTests; ExecutionFlow |

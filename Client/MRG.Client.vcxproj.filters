@@ -180,4 +180,9 @@
     <ClInclude Include="Texts\GameScene\ResultScene\ResultTexts.h"><Filter>Texts\GameScene\ResultScene</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup><ClInclude Include="GameScene\MusicSelectScene\Submodules\SongCatalogLoader.h"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClInclude></ItemGroup>
+  <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsDisplay.cpp"><Filter>Presentation\OptionsPanel\Submodules</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsKeys.cpp"><Filter>Presentation\OptionsPanel\Submodules</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsOffset.cpp"><Filter>Presentation\OptionsPanel\Submodules</Filter></ClCompile></ItemGroup>
+  <ItemGroup><ClInclude Include="Presentation\OptionsPanel\Submodules\OptionsPanelStyle.h"><Filter>Presentation\OptionsPanel\Submodules</Filter></ClInclude></ItemGroup>
+  <ItemGroup><Filter Include="Presentation\OptionsPanel"/><Filter Include="Presentation\OptionsPanel\Submodules"/></ItemGroup>
 </Project>

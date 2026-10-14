@@ -1,5 +1,6 @@
 #pragma once
 #include "Automation/ScrollAutomation.h"
+#include "Mode/ModeInputLayout.h"
 #include "Mode/Results/IPlayResultCollector.h"
 #include "Mode/Results/PlayControlEvent.h"
 #include "Mode/Submodules/PlaySessionTypes.h"
@@ -16,6 +17,18 @@ namespace finger_drum::mode
         [[nodiscard]] const rhythm::ScrollGear &Gear() const noexcept;
         void SetTimeline(chart::MusicalTimeline timeline);
         [[nodiscard]] const chart::MusicalTimeline &Timeline() const;
+        void SetInputLayout(ModeInputLayout layout)
+        {
+            inputLayout_ = std::move(layout);
+        }
+        const ModeInputLayout &InputLayout() const noexcept
+        {
+            return inputLayout_;
+        }
+        const auto &InputMapping() const noexcept
+        {
+            return inputMapping_;
+        }
         void SetInputMapping(std::map<rhythm::PhysicalKey, rhythm::NoteAction> mapping);
         void SetFreeInputCue(rhythm::NoteAction action, rhythm::AudioCueRequest cue);
         void SetEffects(std::vector<chart::CompiledEffectCommand> effects);
@@ -87,6 +100,7 @@ namespace finger_drum::mode
                                                 rhythm::RhythmTime time);
         double EvaluateTrack(std::size_t effectIndex, std::size_t trackIndex, rhythm::RhythmTime time) const;
 
+        ModeInputLayout inputLayout_;
         rhythm::ScrollGear gear_;
         std::optional<chart::MusicalTimeline> timeline_;
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping_;

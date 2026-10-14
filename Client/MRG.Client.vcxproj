@@ -257,4 +257,8 @@
     <ClInclude Include="Texts\GameScene\ResultScene\ResultTexts.h" />
   </ItemGroup>
   <ItemGroup><ClInclude Include="GameScene\MusicSelectScene\Submodules\SongCatalogLoader.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsDisplay.cpp" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsKeys.cpp" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsOffset.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="Presentation\OptionsPanel\Submodules\OptionsPanelStyle.h" /></ItemGroup>
 </Project>

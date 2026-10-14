@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace finger_drum
 {
@@ -18,6 +21,9 @@ namespace finger_drum
         // Result/retry uses this snapshot rather than reopening metadata files.
         std::wstring songTitle;
         std::wstring patternCreator;
+        // Freeze settings for this attempt, including a Result retry.
+        std::int32_t globalOffsetMs{};
+        std::map<std::string, std::vector<std::uint16_t>> inputKeys;
 
         [[nodiscard]] bool IsValid() const noexcept
         {
@@ -32,6 +38,8 @@ namespace finger_drum
             mode.clear();
             songTitle.clear();
             patternCreator.clear();
+            globalOffsetMs = 0;
+            inputKeys.clear();
         }
     };
 } // namespace finger_drum

@@ -32,7 +32,7 @@ void MusicSelectView::Initialize(const mrg::EngineServices &services)
     CreateSongInformationPanel();
     CreateSongBrowser();
     CreateFooter();
-    options_.Initialize(*canvas_, services.audio);
+    options_.Initialize(*canvas_, services.audio, services.windowControl);
     ApplyTexts();
     UpdateResponsiveLayout();
     RebuildVisibleSongs();
@@ -52,7 +52,7 @@ SongSelectCommand MusicSelectView::Update(const mrg::platform::InputState &input
     options_.Update(deltaSeconds);
     const bool controlDown =
         input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
-    if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
+    if (!options_.OwnsKeyboard() && controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
         options_.Toggle();
     ProcessPointer(input);
     if (options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_))
