@@ -156,6 +156,7 @@ namespace finger_drum::mode
         }
 
         const rhythm::RhythmInputEvent input{time, mapping->second, physicalKey, edge};
+        judgementHistory_.push_back({time, input, {}});
         if (resultCollector_) resultCollector_->RecordInput(input);
         result = gear_.Lanes().front()->ProcessInput(input);
         AccumulateAccuracy(result, edge == rhythm::InputEdge::Pressed);
@@ -186,6 +187,21 @@ namespace finger_drum::mode
     rhythm::NoteProcessResult PlaySession::Update(
         const rhythm::RhythmTime time, const std::span<const rhythm::PhysicalKey> heldPhysicalKeys)
     {
+        ResolveHeldActions(heldPhysicalKeys);
+        rhythm::NoteProcessResult result = gear_.Update(time, heldActions_);
+        // Do not record every unlimited-loop update. Keep only state-changing
+        // updates and held-state edges, sufficient to reproduce long-note ticks.
+        if (!result.events.empty() || !result.finalizedAccuracies.empty() || heldActions_ != lastRecordedHeld_)
+        {
+            judgementHistory_.push_back({time, {}, {heldPhysicalKeys.begin(), heldPhysicalKeys.end()}});
+            lastRecordedHeld_ = heldActions_;
+        }
+        AccumulateAccuracy(result);
+        ResolveSoundOverrides(result);
+        return result;
+    }
+    void PlaySession::ResolveHeldActions(const std::span<const rhythm::PhysicalKey> heldPhysicalKeys)
+    {
         heldActions_.clear();
         // Iterate bindings so repeated physical keys cannot exceed the reserved buffer.
         for (const auto &[key, action] : inputMapping_)
@@ -196,10 +212,6 @@ namespace finger_drum::mode
         std::ranges::sort(heldActions_);
         const auto duplicates = std::ranges::unique(heldActions_);
         heldActions_.erase(duplicates.begin(), duplicates.end());
-        rhythm::NoteProcessResult result = gear_.Update(time, heldActions_);
-        AccumulateAccuracy(result);
-        ResolveSoundOverrides(result);
-        return result;
     }
 
     const std::vector<AutomationValue> &PlaySession::EvaluateAutomation(
@@ -265,9 +277,17 @@ namespace finger_drum::mode
 
     void PlaySession::Reset() noexcept
     {
+        ResetNoteState();
+        if (resultCollector_)
+            resultCollector_->Reset();
+        judgementHistory_.clear();
+        lastRecordedHeld_.clear();
+        pauseMenuUsed_ = false;
+    }
+    void PlaySession::ResetNoteState() noexcept
+    {
         gear_.Reset();
         accuracySum_ = 0;
-        if (resultCollector_) resultCollector_->Reset();
         finalizedNoteCount_ = 0;
         lastNoteAccuracy_.reset();
         automationTime_.reset();

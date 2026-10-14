@@ -106,6 +106,10 @@
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPresenter.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPresenter.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplaySessionController.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPause.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPauseMenu.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseMenu.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseAction.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySessionController.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplaySessionFactory.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySupport.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
@@ -129,6 +133,8 @@
     <ClInclude Include="Texts\GameScene\MusicSelectScene\MusicSelectTexts.h"><Filter>Texts\GameScene\MusicSelectScene</Filter></ClInclude>
     <ClCompile Include="Texts\GameScene\RhythmTestScene\GameplayTexts.cpp"><Filter>Texts\GameScene\RhythmTestScene</Filter></ClCompile>
     <ClInclude Include="Texts\GameScene\RhythmTestScene\GameplayTexts.h"><Filter>Texts\GameScene\RhythmTestScene</Filter></ClInclude>
+    <ClCompile Include="Texts\GameScene\RhythmTestScene\PauseTexts.cpp"><Filter>Texts\GameScene\RhythmTestScene</Filter></ClCompile>
+    <ClInclude Include="Texts\GameScene\RhythmTestScene\PauseTexts.h"><Filter>Texts\GameScene\RhythmTestScene</Filter></ClInclude>
     <ClCompile Include="Texts\Options\OptionTexts.cpp"><Filter>Texts\Options</Filter></ClCompile>
     <ClInclude Include="Texts\Options\OptionTexts.h"><Filter>Texts\Options</Filter></ClInclude>
     <ClCompile Include="Texts\TextCatalog.cpp"><Filter>Texts</Filter></ClCompile>

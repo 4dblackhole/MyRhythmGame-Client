@@ -58,6 +58,26 @@ during real playback and reaches 100% by the final note/tail.
 The judgement/progress geometry executable uses MSVC `/analyze`; it starts no GPU/audio device.
 Automated geometry checks do not replace actual screen/input/listening inspection.
 
+## Gameplay pause menu and transport
+
+After a solution build, run in an x64 developer PowerShell with `FMOD_ROOT` set:
+
+```powershell
+./Tests/Presentation/RunGameplayPauseTests.ps1 -Configuration Debug
+./Tests/Presentation/RunGameplayPauseTests.ps1 -Configuration Release
+```
+
+The test links production pause/menu/controller/audio objects and uses MSVC `/analyze`.
+It verifies keyboard focus, bounded adjustments, pointer Retire, language changes,
+portrait/wide resizing, preparation gating and owned Canvas cleanup. Hidden D3D12
+execution checks clock freezing, Resume preserving grades, four-measure Rewind with
+meter/BPM changes, score restoration, Retry eligibility, Retire MISS counts and control logs.
+A clip backend probe verifies source seek positions and DSP scheduling before chart zero;
+a separate real FMOD NoSound MP3 near-end seek checks that playback finishes at the actual source end.
+PlayPauseTests also covers rewind inside Buzz, repeated cancellation, preserved input traces,
+and forced zero-score MISS for all seven long-note types. These are automated intents and
+rendering/audio checks, not physical ESC/arrow-key testing, audible listening or manual screen review.
+
 ## Allocation failure boundary regression
 
 After a solution build, run in an x64 Visual Studio developer PowerShell:

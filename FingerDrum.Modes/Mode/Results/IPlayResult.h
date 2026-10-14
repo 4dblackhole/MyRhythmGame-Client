@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Judgement/AccuracyScore.h"
+#include "Mode/Results/PlayControlEvent.h"
 #include "Note/Submodules/NoteTypes.h"
 #include <filesystem>
 #include <map>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace finger_drum::mode
 {
@@ -31,6 +33,17 @@ namespace finger_drum::mode
         // Append order resolves ties at the same microsecond. These are the
         // exact mapped press/release events passed to judgement, including blanks.
         std::vector<rhythm::RhythmInputEvent> inputs;
+        std::vector<PlayControlEvent> controls;
+        bool pauseMenuUsed{};
+        // Future HP/record systems must use these gates, not completion alone.
+        bool CanUseHp() const noexcept
+        {
+            return !pauseMenuUsed;
+        }
+        bool IsCleared() const noexcept
+        {
+            return endReason == PlayEndReason::Completed && !pauseMenuUsed;
+        }
     };
 
     class IPlayResult

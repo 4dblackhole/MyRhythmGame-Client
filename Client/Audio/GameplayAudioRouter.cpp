@@ -167,6 +167,60 @@ namespace finger_drum::audio
     {
         Route(cues, nullptr);
     }
+    bool GameplayAudioRouter::StartMusicAt(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer)
+    {
+        const auto found = clips_.find("Music.Track");
+        if (found == clips_.end())
+        {
+            lastError_ = "No music clip is registered.";
+            return false;
+        }
+        std::string error;
+        std::uint64_t duration{};
+        if (!found->second.clip->GetDurationMicroseconds(duration, error))
+        {
+            lastError_ = std::move(error);
+            return false;
+        }
+        const auto sourcePosition = static_cast<std::uint64_t>(std::max(position.count(), rhythm::RhythmTime::rep{}));
+        if (sourcePosition >= duration)
+            return true; // The chart may extend beyond the music file.
+        mrg::audio::AudioPlaybackSettings settings;
+        settings.startPositionMicroseconds = sourcePosition;
+        // Before zero the song stays at its start until the re-anchored DSP
+        // clock reaches chart 0. A positive seek starts at that source sample.
+        settings.startDspClock = timer.ToDspClock(std::max(position, rhythm::RhythmTime{}));
+        const auto bus = buses_.find("Music");
+        const auto voice =
+            playback_.Play(found->second.clip, settings, bus == buses_.end() ? nullptr : bus->second, error);
+        if (voice == mrg::audio::InvalidAudioPlaybackId)
+        {
+            lastError_ = std::move(error);
+            return false;
+        }
+        voices_.push_back(voice);
+        return true;
+    }
+    void GameplayAudioRouter::ResetAutomation()
+    {
+        appliedValues_.clear();
+        for (const auto name : {"HitSound", "TickSound", "UserInputFeedback"})
+            if (auto *bus = FindBus(name))
+            {
+                std::string error;
+                if (!bus->SetVolume(1, error))
+                    lastError_ = std::move(error);
+            }
+        for (auto &[bus, effects] : effects_)
+            for (auto &[type, effect] : effects)
+            {
+                std::string error;
+                if (effect->SetBypass(true, error))
+                    bypassedEffects_.emplace(bus, type);
+                else
+                    lastError_ = std::move(error);
+            }
+    }
 
     void GameplayAudioRouter::Schedule(
         const std::span<const rhythm::AudioCueRequest> cues,

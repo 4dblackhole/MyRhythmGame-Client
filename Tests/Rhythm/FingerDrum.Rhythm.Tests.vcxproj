@@ -41,5 +41,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <ClCompile Include="Submodules\PlayResultTests.cpp" />
+    <ClCompile Include="Submodules\PlayPauseTests.cpp" />
   </ItemGroup>
 </Project>

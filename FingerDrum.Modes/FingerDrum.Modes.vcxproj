@@ -22,6 +22,7 @@
     <ClInclude Include="Mode\PlayGameMode.h" />
     <ClInclude Include="Mode\Submodules\NoteVisualKind.h" />
     <ClCompile Include="Mode\Submodules\PlaySession.cpp" />
+    <ClCompile Include="Mode\Submodules\PlaySessionSeeking.cpp" />
     <ClInclude Include="Mode\Submodules\PlaySession.h" />
     <ClInclude Include="Mode\Submodules\PlaySessionTypes.h" />
     <ClInclude Include="Taiko\Submodules\TaikoBuildSupport.h" />
@@ -38,6 +39,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <ClInclude Include="Mode\Results\IPlayResult.h" />
+    <ClInclude Include="Mode\Results\PlayControlEvent.h" />
     <ClInclude Include="Mode\Results\IPlayResultCollector.h" />
     <ClInclude Include="Taiko\Results\TaikoPlayResult.h" />
     <ClCompile Include="Taiko\Results\TaikoResultCollector.cpp" />

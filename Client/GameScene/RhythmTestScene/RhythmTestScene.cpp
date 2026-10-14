@@ -1,7 +1,8 @@
 #include "RhythmTestScene.h"
+#include "GameFlow/FingerDrumSceneIds.h"
+#include "Submodules/GameplayPauseMenu.h"
 #include "Submodules/GameplayPresenter.h"
 #include "Submodules/GameplaySessionController.h"
-#include "GameFlow/FingerDrumSceneIds.h"
 #include <stdexcept>
 
 RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStore> request,
@@ -9,12 +10,12 @@ RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStor
                                  mrg::visual2d::ScreenVisual2DManager &visuals, bool debug,
                                  finger_drum::texts::TextCatalog &texts,
                                  std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult)
-    : pendingResult_(pendingResult), controller_(
-          std::make_unique<GameplaySessionController>(
-              request ? request->Snapshot()
-                      : throw std::invalid_argument("Gameplay requires a launch store."),
-              playback, debug, request ? request->TakeValidatedSession() : nullptr)),
-      view_(std::make_unique<GameplayPresenter>(visuals, texts))
+    : pendingResult_(pendingResult),
+      controller_(std::make_unique<GameplaySessionController>(
+          request ? request->Snapshot() : throw std::invalid_argument("Gameplay requires a launch store."), playback,
+          debug, request ? request->TakeValidatedSession() : nullptr)),
+      view_(std::make_unique<GameplayPresenter>(visuals, texts)),
+      pauseMenu_(std::make_unique<GameplayPauseMenu>(visuals, texts))
 {
 }
 RhythmTestScene::~RhythmTestScene() = default;
@@ -52,17 +53,54 @@ void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::Scen
         if (context.totalSeconds >= nextPreparationPoll_)
             nextPreparationPoll_ = context.totalSeconds + 0.002;
         if (context.input.WasKeyPressed(VK_ESCAPE))
-            ShowResult(scenes);
+            controller_->OpenPauseMenu(context);
+        UpdatePauseMenu(context, scenes);
         return;
     }
-    view_->AdvanceEffects(context.deltaSeconds);
     controller_->Update(context);
+    UpdatePauseMenu(context, scenes);
+    if (!controller_->PauseMenuOpen())
+        view_->AdvanceEffects(context.deltaSeconds);
     for (const auto &feedback : controller_->Feedback())
         view_->ApplyFeedback(feedback);
-    view_->UpdateInputPresentation(context.input, context.deltaSeconds);
+    if (!controller_->PauseMenuOpen())
+        view_->UpdateInputPresentation(context.input, context.deltaSeconds);
     view_->PresentErrorMessage(controller_->ErrorMessage());
-    if (context.input.WasKeyPressed(VK_ESCAPE) || controller_->ShouldShowResult())
+    if (controller_->ShouldShowResult())
         ShowResult(scenes);
+}
+void RhythmTestScene::UpdatePauseMenu(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
+{
+    if (!controller_->PauseMenuOpen())
+    {
+        pauseMenu_->Hide();
+        return;
+    }
+    pauseMenu_->Show(services_->windowWidth, services_->windowHeight, controller_->TimelineReady(),
+                     controller_->Session().Timeline().MeasureSpans().size());
+    const auto choice = pauseMenu_->Update(context.input);
+    switch (choice.action)
+    {
+    case GameplayPauseAction::Resume:
+        if (controller_->ResumeFromPause(context, choice.leadIn))
+            pauseMenu_->Hide();
+        break;
+    case GameplayPauseAction::Rewind:
+        if (controller_->RewindFromPause(context, choice.measures))
+            pauseMenu_->Hide();
+        break;
+    case GameplayPauseAction::Retry:
+        controller_->RetryFromPause(context);
+        pauseMenu_->Hide();
+        break;
+    case GameplayPauseAction::Retire:
+        controller_->RetireFromPause();
+        pauseMenu_->Hide();
+        ShowResult(scenes);
+        break;
+    default:
+        break;
+    }
 }
 void RhythmTestScene::ShowResult(mrg::scene::SceneManager &scenes)
 {
@@ -83,9 +121,11 @@ void RhythmTestScene::OnResize(std::uint32_t width, std::uint32_t height)
         services_->windowHeight = height;
     }
     view_->OnResize(width, height);
+    pauseMenu_->OnResize(width, height);
 }
 void RhythmTestScene::Shutdown() noexcept
 {
+    pauseMenu_->Shutdown();
     view_->Shutdown(); // Release session observers before the session.
     controller_->Shutdown();
     services_.reset();

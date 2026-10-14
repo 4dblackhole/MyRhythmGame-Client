@@ -26,6 +26,7 @@ void GameplaySessionController::InitializeSession()
     PrepareDebugLaunchRequest();
     if (!session_)
         session_ = CreateSession();
+    time_ = initialTime_;
 }
 void GameplaySessionController::Start(const mrg::EngineServices &services,
                                       const finger_drum::rhythm::RhythmTime initialTime)
@@ -50,13 +51,20 @@ void GameplaySessionController::Update(const mrg::UpdateContext &context)
             return;
         StartTimeline(clock);
         timelineStarted_ = true;
-        if (!debugMode_)
+        if (pauseMenuOpen_)
+            timer_.Pause(clock.performanceCounterTicks);
+        if (!debugMode_ && !pauseMenuOpen_)
             ScheduleMusic();
     }
-    ProcessControlKeys(context.input, clock);
+    if (pauseMenuOpen_)
+    {
+        audioRouter_.Update();
+        return;
+    }
+    ProcessControlKeys(context, clock);
     if (debugMode_)
         ProcessDebugTimeline(context.input, clock, context.deltaSeconds);
-    // Freeze an interrupted result at ESC's timestamp, not at the later frame
+    // Freeze gameplay at ESC's timestamp, not at the later frame
     // clock. Inputs after ESC must not turn unfinished notes into hits/misses.
     std::optional<std::int64_t> exitTicks;
     for (const auto &event : context.input.Events())
@@ -73,7 +81,10 @@ void GameplaySessionController::Update(const mrg::UpdateContext &context)
         audioRouter_.ApplyAutomation(session_->EvaluateAutomation(time_));
     }
     audioRouter_.Update();
-    if (!debugMode_ && IsPatternComplete())
+    if (exitTicks)
+        PauseAt(*exitTicks, true);
+    if (!debugMode_ && !pauseMenuOpen_ && timer_.CurrentState() == finger_drum::rhythm::RhythmTimer::State::Running &&
+        IsPatternComplete())
         completedElapsedSeconds_ += context.deltaSeconds;
 }
 std::string_view GameplaySessionController::ErrorMessage() const noexcept
@@ -91,11 +102,14 @@ void GameplaySessionController::Shutdown() noexcept
     session_.reset();
     musicRegistered_ = false;
     feedback_.clear();
+    pauseMenuOpen_ = retired_ = false;
+    completedElapsedSeconds_ = 0;
 }
 std::unique_ptr<finger_drum::mode::IPlayResult> GameplaySessionController::TakeResult()
 {
-    return session_->TakeResult(IsPatternComplete() ? finger_drum::mode::PlayEndReason::Completed
-                                                   : finger_drum::mode::PlayEndReason::Interrupted, time_);
+    return session_->TakeResult(!retired_ && IsPatternComplete() ? finger_drum::mode::PlayEndReason::Completed
+                                                                 : finger_drum::mode::PlayEndReason::Interrupted,
+                                time_);
 }
 
 void GameplaySessionController::UpdateSession(const mrg::platform::InputState &input,

@@ -188,6 +188,10 @@
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPresenter.cpp" />
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPresenter.h" />
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplaySessionController.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPause.cpp" />
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPauseMenu.cpp" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseMenu.h" />
+    <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseAction.h" />
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySessionController.h" />
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplaySessionFactory.cpp" />
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySupport.h" />
@@ -211,6 +215,8 @@
     <ClInclude Include="Texts\GameScene\MusicSelectScene\MusicSelectTexts.h" />
     <ClCompile Include="Texts\GameScene\RhythmTestScene\GameplayTexts.cpp" />
     <ClInclude Include="Texts\GameScene\RhythmTestScene\GameplayTexts.h" />
+    <ClCompile Include="Texts\GameScene\RhythmTestScene\PauseTexts.cpp" />
+    <ClInclude Include="Texts\GameScene\RhythmTestScene\PauseTexts.h" />
     <ClCompile Include="Texts\Options\OptionTexts.cpp" />
     <ClInclude Include="Texts\Options\OptionTexts.h" />
     <ClCompile Include="Texts\TextCatalog.cpp" />

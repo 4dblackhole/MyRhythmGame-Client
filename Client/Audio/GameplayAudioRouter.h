@@ -53,6 +53,8 @@ namespace finger_drum::audio
             bool paused,
             std::string& errorMessage);
         void StopAllVoices() noexcept;
+        bool StartMusicAt(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer);
+        void ResetAutomation();
         void Update();
 
         [[nodiscard]] std::string_view LastError() const noexcept;

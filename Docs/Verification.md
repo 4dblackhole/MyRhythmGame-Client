@@ -51,6 +51,8 @@ Debug/Release에서 실행합니다.
 All-notes actual gameplay replay의 D3D12/FMOD 진행바 검사를 두 구성에서 실행합니다.
 결과 수집/표시/전환은 같은 문서의 Result graphs and actual Scene transition을 두 구성에서
 실행합니다. 점수 정밀도와 입력/중도 종료 통계는 PlayResultTests의 도메인 검사도 사용합니다.
+ESC 메뉴·음악 seek·판정 복원은 같은 문서의 Gameplay pause menu and transport를 두 구성에서
+실행하며 PlayPauseTests의 Rewind/Retire 검사를 함께 사용합니다.
 오디오 탭/타임라인 변경은 같은 문서의 Editor audio view regression을 두 구성에서 실행합니다.
 곡 카드 가상화·비동기 카탈로그 변경은 `Tests/Presentation/RunMusicSelectViewTests.ps1`도
 Debug/Release에서 실행합니다.
@@ -68,6 +70,40 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 커밋 전 `git diff --check`, 사용자 파일 제외 여부, Client/엔진 status와 upstream을
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
+
+## 2026-10-15 플레이 일시정지·마디 되감기
+
+- [Pause](Gameplay/Pause.md)에 조작·복원/소유 경계와 향후 HP·리플레이 필수 계약을 기록했습니다.
+  Resume 0.5~3초/처리 상태 유지, Rewind 원본 마디 시작/대상 시각 이상 판정 취소,
+  Retry 새 시도 자격·로그 초기화, Retire 미완료 롱 포함 0점·MISS 확정을 적용했습니다.
+- Client Debug/Release x64 전체 solution Rebuild 성공. 일반 빌드 경고/오류 0.
+  마지막 직접 include/완주 자격 회귀 추가 후 영향 프로젝트의 두 구성 분석 Build도 성공했습니다.
+  두 구성 전체 로직·기본곡 카탈로그 각각 61개/실패 0, 네 smoke 경로씩 총 8개 성공했습니다.
+- GameplayPauseTests 두 구성 성공: 메뉴 준비 gating, ↑↓/←→/Enter, 0.5~3초 범위,
+  클릭 의도·한국어/영어·portrait/wide resize·Canvas 정리, 실제 숨김 D3D12 실행의 시간 고정,
+  Resume 판정 보존·음악 소스 seek, BPM/마디 길이 변경 시 4마디 되감기·점수 복원,
+  10번째 마디 3/4→6번째 마디 0/1 예시, 음수 재개 DSP 예약·앞으로 이동 방지,
+  Retry 자격 복구·Retire 실제 MISS/마커를 검사했습니다. 별도 실제 FMOD NoSound MP3의
+  끝부분 seek 후 종료를 검사했고 소스/DSP 설정 검사는 Clip backend probe를 사용했습니다.
+  PlayPauseTests는 반복 되감기·전체 입력 로그/제어 경계 보존·Buzz 중간 헤드/틱 보존,
+  일곱 롱 종류의 강제 0점 MISS와 완주해도 메뉴 사용 자격이 복구되지 않는지 검사했습니다.
+- 두 구성 ResultPresentation(기존 3초 완료→deferred Result→새 Retry/소유권), GameplayJudgement,
+  EditorPresentation 회귀 성공. 실제 D3D12/FMOD 전체 노트/효과 자동 플레이는 각각
+  19노트/85.1837%, 15노트/97.8897%를 유지했습니다.
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Modes, MRG.Client, Rhythm.Tests의 실제
+  Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`와 마지막 영향 영역의
+  분석 Build를 사용했습니다. 신규 진단·파싱 오류 0. 기존 C26115(EditorAnalysisController:51),
+  C28020(GameplaySessionController:126), Release C6236(GameplayInput:66)은 유지했습니다.
+  표시 테스트 소스도 실행 스크립트의 `/analyze`로 분석했습니다.
+- 변경 코드와 직접 호출부의 Scene/Canvas/Clip 수명, 판정/trace 분리, 닫힌 취소 경계,
+  타이머/DSP 재기준화, 준비/실패/종료 경로, held 입력/긴 노트 복원과 함수 책임을 검토했습니다.
+  CheckArchitecture(11프로젝트), 양쪽 git diff --check 성공. 사용자 LaneKeyBeam.cpp와
+  Debug/Release Option.ini의 SHA256을 대조해 보존했습니다. 사용자 Songs/Skins와 엔진은 변경하지 않았습니다.
+  상세 로그와 캡처는 ignored `build/gameplay-pause-2026-10-15`에 있습니다.
+- **화면 확인:** 실제 D3D12의 1920×1080·720×1280 메뉴 캡처를 눈으로 확인했습니다.
+  이는 숨김 offscreen 이미지 확인입니다. 실행 창에서 물리 ESC/화살표/마우스로 조작하거나
+  실제 소리를 듣는 수동 플레이 검증은 실시하지 않았습니다. 위 UI 입력은 자동 의도 검사입니다.
 
 ## 2026-10-14 Penpot 리절트와 엔진 글꼴 굵기
 

@@ -21,7 +21,7 @@ MyRhythmGame.exe --rhythm-debug
 - `Space`: 자동 진행/일시정지
 - `R`: -2초로 초기화
 - `D`, `K`: Kat, `F`, `J`: Don
-- `Escape`: 곡 선택으로 복귀
+- `Escape`: [일시정지 메뉴](Pause.md), Retire로 결과 화면 이동
 
 Debug 빌드의 `Client/GameScene/RhythmTestScene/Submodules/GameplaySupport.h`에 있는 `ReferenceTimeDebug`를 켜면 위 조작을
 사용합니다. 화면 좌측 상단 DEBUG 텍스트는 노트 객체가 반환하는 ID·상태·시작·

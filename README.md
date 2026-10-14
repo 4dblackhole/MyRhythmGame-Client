@@ -50,10 +50,13 @@ MAX/PERFECT/GREAT/GOOD/BAD/MISS/POOR와 롤 성공의 OK 링·문구를 표시�
 에디터는 선택 스킨과 W/E/R/T/Y/U 도구 묶음, 우측 노트 정보/속성 영역을 제공합니다.
 노트의 시작·끝은 마디/박자로 수정하며 ms는 계산 결과만 표시합니다.
 동작과 스킨 경로는 [플레이 표시](Docs/Gameplay/Presentation.md)에 있습니다.
-모든 노트 처리 3초 뒤 또는 ESC 입력으로 [Result](Docs/Gameplay/Results.md)에 이동합니다.
+모든 노트 처리 3초 뒤 [Result](Docs/Gameplay/Results.md)에 이동합니다. ESC는
+[일시정지 메뉴](Docs/Gameplay/Pause.md)를 열어 Resume/Rewind/Retry/Retire를 선택합니다.
+Resume은 판정을 유지하고 0.5~3초 이전부터 재생하며 Rewind는 지정 마디 시작 이후 판정을 취소합니다.
+Retire는 남은 노트를 0점·MISS로 확정합니다. 메뉴 사용 시 해당 시도의 클리어/HP 자격을 해제합니다.
 일반·큰·롤 계열 및 최종 정확도는 소수점 6자리로 기록/표시하고 판정 개수,
 오차 분산·시간별 산점도·히스토그램을 제공합니다. 모드별 결과/View를 교체할 수 있으며
-정수 us 입력 로그를 메모리에 수집합니다. 기록 저장·리플레이 재생은 미구현입니다.
+정수 us 입력·일시정지/이동 로그를 메모리에 수집합니다. 기록 저장·리플레이 재생은 미구현입니다.
 리절트는 Penpot Result · Sky의 배치·내장 PNG·Noto Sans KR 굵기를 사용하며,
 리트라이로 같은 패턴의 새 세션을 시작할 수 있습니다. 리플레이 버튼은 비활성입니다.
 

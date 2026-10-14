@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+플레이 일시정지(2026-10-15): [Resume/Rewind/Retry/Retire와 향후 HP·리플레이 계약](Gameplay/Pause.md).
+ESC는 메뉴를 열고 Resume은 처리 상태 유지, Rewind는 지정 마디 시작 이후의 판정만 취소합니다.
+Retire는 미완료 롱을 포함한 남은 노트를 0점·MISS로 확정합니다. 메뉴 사용 시 클리어/HP 자격은
+해당 시도에서 복구되지 않으며 Retry가 새 시도로 초기화합니다. 음악 소스 seek·음수 대기 예약과
+정수 us 제어 마커를 연결했습니다. HP/리플레이 자체는 미구현이며 위 문서의 계약을 따라야 합니다.
+
 리절트 Penpot 구현(2026-10-14): [플레이 결과](Gameplay/Results.md).
 엔진 TextStyle/Visual2D fontWeight를 먼저 반영하고 Noto Sans KR의 네 굵기로 시안의
 3열 배치·장식·실제 통계를 구현했습니다. Retry는 같은 선택 경로의 새 세션,

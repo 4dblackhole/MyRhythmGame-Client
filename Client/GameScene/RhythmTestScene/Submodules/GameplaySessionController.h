@@ -26,6 +26,19 @@ class GameplaySessionController final
     void Start(const mrg::EngineServices &services,
                finger_drum::rhythm::RhythmTime initialTime);
     void Update(const mrg::UpdateContext &context);
+    void OpenPauseMenu(const mrg::UpdateContext &context);
+    bool ResumeFromPause(const mrg::UpdateContext &context, finger_drum::rhythm::RhythmDuration leadIn);
+    bool RewindFromPause(const mrg::UpdateContext &context, std::size_t measures);
+    void RetryFromPause(const mrg::UpdateContext &context);
+    void RetireFromPause();
+    bool PauseMenuOpen() const noexcept
+    {
+        return pauseMenuOpen_;
+    }
+    bool TimelineReady() const noexcept
+    {
+        return timelineStarted_;
+    }
     void Shutdown() noexcept;
     const finger_drum::mode::PlaySession &Session() const
     {
@@ -42,7 +55,7 @@ class GameplaySessionController final
     std::string_view ErrorMessage() const noexcept;
     bool ShouldShowResult() const noexcept
     {
-        return !debugMode_ && completedElapsedSeconds_ >= 3.0;
+        return !debugMode_ && !pauseMenuOpen_ && !retired_ && completedElapsedSeconds_ >= 3.0;
     }
     std::unique_ptr<finger_drum::mode::IPlayResult> TakeResult();
 
@@ -55,9 +68,11 @@ class GameplaySessionController final
     void RegisterTaikoSounds(std::string &errorMessage);
     void ScheduleMusic();
     void StartTimeline(const mrg::audio::AudioClockSnapshot &clock);
+    void PauseAt(std::int64_t ticks, bool menuShown);
+    bool ContinueAt(const mrg::UpdateContext &context, finger_drum::rhythm::RhythmTime target,
+                    finger_drum::mode::PlayControlType action);
     void ResetTimeline(const mrg::audio::AudioClockSnapshot &clock);
-    void ProcessControlKeys(const mrg::platform::InputState &input,
-                            const mrg::audio::AudioClockSnapshot &clock);
+    void ProcessControlKeys(const mrg::UpdateContext &context, const mrg::audio::AudioClockSnapshot &clock);
     void ProcessDebugTimeline(const mrg::platform::InputState &input,
                               const mrg::audio::AudioClockSnapshot &clock,
                               const double deltaSeconds);
@@ -81,4 +96,5 @@ class GameplaySessionController final
     bool timelineStarted_{};
     double nextAudioPreparationPoll_{};
     bool debugMode_{};
+    bool pauseMenuOpen_{}, retired_{};
 };

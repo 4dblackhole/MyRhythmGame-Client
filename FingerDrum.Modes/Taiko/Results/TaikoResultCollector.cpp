@@ -34,6 +34,14 @@ namespace finger_drum::mode
         if (result_)
             result_->summary.inputs.push_back(input);
     }
+    void TaikoResultCollector::RecordControl(PlayControlEvent event)
+    {
+        if (!result_)
+            return;
+        event.inputIndex = result_->summary.inputs.size();
+        result_->summary.controls.push_back(event);
+        result_->summary.pauseMenuUsed |= event.pauseMenuShown;
+    }
     void TaikoResultCollector::SetInitialTime(RhythmTime time) noexcept
     {
         if (result_)
@@ -71,7 +79,12 @@ namespace finger_drum::mode
         // HoldStarted and Completed carry head judgements too; ignoring them
         // here prevents a single Buzz press from producing duplicate samples.
     }
-    void TaikoResultCollector::FinalizeNote(const NoteAccuracy &accuracy)
+    void TaikoResultCollector::RecordRetirement(const NoteAccuracy &accuracy)
+    {
+        if (result_)
+            FinalizeNote(accuracy, true);
+    }
+    void TaikoResultCollector::FinalizeNote(const NoteAccuracy &accuracy, bool retired)
     {
         const auto found = noteIndices_.find(accuracy.noteId);
         if (found == noteIndices_.end() || !accuracy.finalized)
@@ -80,7 +93,9 @@ namespace finger_drum::mode
         if (note.processed)
             return;
         note.processed = true;
-        note.accuracy = accuracy.Score();
+        note.accuracy = retired ? AccuracyScore{} : accuracy.Score();
+        if (retired)
+            note.finalState = NoteState::Missed;
         note.target = accuracy.target;
         note.acceptedHits = accuracy.acceptedHits;
         note.acceptedTicks = accuracy.acceptedTicks;
@@ -102,6 +117,15 @@ namespace finger_drum::mode
     }
     void TaikoResultCollector::Reset() noexcept
     {
+        ResetJudgements();
+        if (!result_)
+            return;
+        result_->summary.inputs.clear();
+        result_->summary.controls.clear();
+        result_->summary.pauseMenuUsed = false;
+    }
+    void TaikoResultCollector::ResetJudgements() noexcept
+    {
         if (!result_)
             return;
         for (auto &note : result_->notes)
@@ -112,7 +136,6 @@ namespace finger_drum::mode
             note.target = {};
             note.acceptedHits = note.acceptedTicks = 0;
         }
-        result_->summary.inputs.clear();
         result_->timingErrors.clear();
         result_->judgements = {};
         result_->okCount = result_->poorCount = result_->acceptedTicks = result_->missedTicks = 0;

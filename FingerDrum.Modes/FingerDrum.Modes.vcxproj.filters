@@ -24,6 +24,7 @@
     <ClInclude Include="Mode\PlayGameMode.h"><Filter>Mode</Filter></ClInclude>
     <ClInclude Include="Mode\Submodules\NoteVisualKind.h"><Filter>Mode\Submodules</Filter></ClInclude>
     <ClCompile Include="Mode\Submodules\PlaySession.cpp"><Filter>Mode\Submodules</Filter></ClCompile>
+    <ClCompile Include="Mode\Submodules\PlaySessionSeeking.cpp"><Filter>Mode\Submodules</Filter></ClCompile>
     <ClInclude Include="Mode\Submodules\PlaySession.h"><Filter>Mode\Submodules</Filter></ClInclude>
     <ClInclude Include="Mode\Submodules\PlaySessionTypes.h"><Filter>Mode\Submodules</Filter></ClInclude>
     <ClInclude Include="Taiko\Submodules\TaikoBuildSupport.h"><Filter>Taiko\Submodules</Filter></ClInclude>
@@ -41,6 +42,7 @@
     <Filter Include="Mode\Results" />
     <Filter Include="Taiko\Results" />
     <ClInclude Include="Mode\Results\IPlayResult.h"><Filter>Mode\Results</Filter></ClInclude>
+    <ClInclude Include="Mode\Results\PlayControlEvent.h"><Filter>Mode\Results</Filter></ClInclude>
     <ClInclude Include="Mode\Results\IPlayResultCollector.h"><Filter>Mode\Results</Filter></ClInclude>
     <ClInclude Include="Taiko\Results\TaikoPlayResult.h"><Filter>Taiko\Results</Filter></ClInclude>
     <ClCompile Include="Taiko\Results\TaikoResultCollector.cpp"><Filter>Taiko\Results</Filter></ClCompile>

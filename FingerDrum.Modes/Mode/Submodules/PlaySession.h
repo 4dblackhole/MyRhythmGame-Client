@@ -1,8 +1,11 @@
 #pragma once
 #include "Automation/ScrollAutomation.h"
 #include "Mode/Results/IPlayResultCollector.h"
+#include "Mode/Results/PlayControlEvent.h"
 #include "Mode/Submodules/PlaySessionTypes.h"
 #include <algorithm>
+#include <optional>
+#include <vector>
 
 namespace finger_drum::mode
 {
@@ -52,6 +55,13 @@ namespace finger_drum::mode
             return automationError_;
         }
         void Reset() noexcept;
+        void RewindJudgements(rhythm::RhythmTime target);
+        void RetireRemaining(rhythm::RhythmTime time);
+        void RecordControl(PlayControlEvent event);
+        bool CanUseHp() const noexcept
+        {
+            return !pauseMenuUsed_;
+        }
         void SetResultCollector(std::unique_ptr<IPlayResultCollector> collector);
         void SetResultInitialTime(rhythm::RhythmTime time) noexcept;
         std::unique_ptr<IPlayResult> TakeResult(PlayEndReason reason, rhythm::RhythmTime time);
@@ -60,6 +70,17 @@ namespace finger_drum::mode
         [[nodiscard]] const std::optional<rhythm::NoteAccuracy> &LastNoteAccuracy() const noexcept;
 
       private:
+        struct JudgementStep
+        {
+            rhythm::RhythmTime time{};
+            std::optional<rhythm::RhythmInputEvent> input;
+            std::vector<rhythm::PhysicalKey> heldKeys;
+        };
+        void ResetNoteState() noexcept;
+        void ResolveHeldActions(std::span<const rhythm::PhysicalKey> keys);
+        std::vector<JudgementStep> judgementHistory_;
+        std::vector<rhythm::NoteAction> lastRecordedHeld_;
+        bool pauseMenuUsed_{};
         void AccumulateAccuracy(const rhythm::NoteProcessResult &result, bool keyPressed = false);
         void ResolveSoundOverrides(rhythm::NoteProcessResult &result) const;
         [[nodiscard]] static double Interpolate(const chart::CompiledEffectCommand &command,

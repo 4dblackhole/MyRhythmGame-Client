@@ -5,7 +5,7 @@
 실제 재생: `Client/Audio/GameplayAudioRouter.*`. 엔진 API 변경 때만 엔진 Audio 문서를 읽습니다.
 
 파일 등록은 라우터의 `RegisterSound`가 SoundId와 경로를 연결하고
-`AudioSystem::LoadSound`로 Clip을 로드합니다. 플레이 음악은 StreamAsync, 히트사운드는
+`AudioSystem::LoadSound`로 Clip을 로드합니다. 플레이 음악은 StreamAsyncAccurate, 히트사운드는
 SampleAsync 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 같은 Sample을 가리키는
 SoundId 별칭은 하나의 활성 Voice를 공유합니다. 이전 재생이 끝나기 전에 같은
 Sample을 다시 요청하면 새 Channel을 만들지 않고 기존 Channel의 위치를 처음으로
@@ -23,12 +23,16 @@ Controller는 2ms 주기로 Ready/Failed를 확인하며, 준비가 끝난 시�
 풍선 완료 cue는 선택한 스킨의 `HitSounds/TaikoMode/pop.wav`를 사용하며 파일이
 없으면 내장 기본 스킨의 같은 파일로 대체합니다.
 
-일반 플레이의 음악은 `Music.Track` cue의 timelineTime=0으로 미리 예약하며,
+일반 플레이의 음악은 `StartMusicAt`으로 차트 0ms의 소스 시작을 미리 예약하며,
 `RhythmTimer::ToDspClock`과 FMOD `setDelay`로 mixer sample clock에 연결합니다.
 Pattern Offset은 노트 시각에 더하고 음악 시작 시각은 옮기지 않습니다.
 플레이 타이머는 항상 최소 −2000ms에서 시작하며 첫 박자와 노트 이동 거리에 따라
-더 이른 시각에서 시작할 수 있습니다. 0ms 이전의 pause/resume 경로는 기존 음악의
-DSP 예약 시각을 재설정하지 않으므로 이 경우의 동기화는 보완이 필요합니다.
+더 이른 시각에서 시작할 수 있습니다. [Pause](Pause.md)의 Resume/Rewind와 일반 Space 재개는
+세션 음성을 정지하고 새 QPC/DSP 기준점으로 음악을 재예약합니다. 양수 시각은 같은 us의
+음원 소스 위치로 탐색하고 음수 시각은 소스 0을 새 차트 0ms의 DSP 시각까지 기다리게 합니다.
+정확한 MP3 탐색표는 비동기 로딩 중에 준비합니다. 음악 길이 이후의 재개는 음악 없이 진행합니다.
+이동/Retry 시 히트사운드 bus 볼륨과 DSP bypass를 기본 상태로 돌린 뒤 이동 위치의 자동화를
+적용하여 이전 위치의 효과가 남지 않게 합니다. 음악/UI 볼륨은 변경하지 않습니다.
 
 ## 상태 기반 히트사운드
 
@@ -83,8 +87,8 @@ Lane 끝에서 clip됩니다. PNG 원본 알파에 1→0의 표시 알파를 곱
 Scene 종료 전에 빔의 observer를 해제하고 Canvas가 노드를 파기합니다.
 
 `RhythmTestScene`은 Lobby가 선택한 YMP/YME를 `TaikoMode`에 전달해 세션을
-만듭니다. `DestroyOnExit`이므로 매 플레이마다 새로 생성되고 Escape 또는 패턴
-완료 3초 뒤 Lobby로 돌아갈 때 Canvas, audio voice, session과 함께 삭제됩니다.
+만듭니다. `DestroyOnExit`이므로 곡 선택/Result Retry의 플레이 진입마다 새로 생성되고
+Retire 또는 패턴 완료 3초 뒤 Result로 이동할 때 Canvas, audio voice, session과 함께 삭제됩니다.
 
 플레이 화면의 기준 시안과 런타임 PNG 자산 원본은 Penpot의
 [Gameplay · Sky](https://design.penpot.app/#/workspace?team-id=3be9e5e1-190f-8090-8008-7464803e8b40&file-id=3be9e5e1-190f-8090-8008-7468d9cc1bc8&page-id=618d0170-ff55-8025-8008-80646ceaa9d9)에 있습니다.

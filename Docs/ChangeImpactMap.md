@@ -18,6 +18,7 @@
 | 배포 빌드·자산 | `Client/MRG.Client.vcxproj`, `Client/App/Main.cpp` | BuiltInAssets; Debug/Release smoke, CheckArchitecture |
 | Scene 전환/선택 전달 | Scene 주 파일, `Client/GameFlow/GameplayLaunchStore.h` | SceneStateTests; ExecutionFlow |
 | 플레이 Clock·pause·reset·입력 | `RhythmTestScene/Submodules/GameplaySessionController.*`, GameplayInput.cpp | RhythmCoreTests; gameplay smoke |
+| ESC 메뉴·음악 seek·마디 되감기·Retire·HP/리플레이 마커 | 같은 폴더 GameplayPause / GameplayPauseMenu, Texts의 PauseTexts; `Mode/Submodules/PlaySessionSeeking.cpp` | PlayControlEvent / IPlayResultCollector / TaikoResultCollector; PlayPauseTests / GameplayPauseTests / ResultPresentationTests; Gameplay/Pause 문서 |
 | 노트 이미지·롱노트·마디선 스크롤 | 같은 폴더 `GameplayNoteVisuals.cpp` | GameplayPresenter의 LaneObjectPosition, PlaySession/MeasureLinePresentationInfo, TaikoSessionBuilder; YmeEffectsTests/GameplayJudgementTests; gameplay smoke |
 | Lane·기어·resize | 같은 폴더 `GameplayLayout.cpp`, GameplaySupport.h | GameplayPresenter.h; gameplay smoke |
 | 상단 진행바·현재/전체 시간 | 같은 폴더 `GameplayProgressView.*`, GameplayLayout.cpp | PlaySession의 컴파일된 head/tail; GameplayJudgementTests, 실제 전체 노트 replay |

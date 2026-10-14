@@ -36,7 +36,7 @@ void GameplaySessionController::InitializeAudio(const mrg::EngineServices &servi
     if (launchRequest_.IsValid())
     {
         musicRegistered_ = audioRouter_.RegisterSound("Music.Track", launchRequest_.musicPath,
-                                                      mrg::audio::AudioLoadMode::StreamAsync, musicError);
+                                                      mrg::audio::AudioLoadMode::StreamAsyncAccurate, musicError);
     }
 
     if (!hitSoundError.empty() || !musicError.empty())
@@ -94,10 +94,5 @@ void GameplaySessionController::ScheduleMusic()
     {
         return;
     }
-    finger_drum::rhythm::AudioCueRequest cue;
-    cue.sound = "Music.Track";
-    cue.bus = "Music";
-    cue.timelineTime = finger_drum::rhythm::RhythmTime::zero();
-    const std::array cues{cue};
-    audioRouter_.Schedule(cues, timer_);
+    static_cast<void>(audioRouter_.StartMusicAt(time_, timer_));
 }

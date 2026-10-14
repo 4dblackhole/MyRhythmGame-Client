@@ -4,6 +4,7 @@ using namespace gameplay;
 
 void GameplaySessionController::StartTimeline(const mrg::audio::AudioClockSnapshot &clock)
 {
+    time_ = initialTime_;
     timer_.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, initialTime_);
     timer_.AnchorDspClock(initialTime_, clock.dspClock, clock.sampleRate);
     if (debugMode_ && ReferenceTimeDebug)
@@ -17,6 +18,8 @@ void GameplaySessionController::ResetTimeline(const mrg::audio::AudioClockSnapsh
     feedback_.push_back({true});
     session_->Reset();
     audioRouter_.StopAllVoices();
+    audioRouter_.ResetAutomation();
+    retired_ = false;
     completedElapsedSeconds_ = 0.0;
     StartTimeline(clock);
     if (!debugMode_)
@@ -25,9 +28,10 @@ void GameplaySessionController::ResetTimeline(const mrg::audio::AudioClockSnapsh
     }
 }
 
-void GameplaySessionController::ProcessControlKeys(const mrg::platform::InputState &input,
+void GameplaySessionController::ProcessControlKeys(const mrg::UpdateContext &context,
                                                    const mrg::audio::AudioClockSnapshot &clock)
 {
+    const auto &input = context.input;
     if (input.WasKeyPressed(static_cast<std::uint16_t>('R')))
     {
         ResetTimeline(clock);
@@ -38,17 +42,19 @@ void GameplaySessionController::ProcessControlKeys(const mrg::platform::InputSta
         using State = finger_drum::rhythm::RhythmTimer::State;
         if (timer_.CurrentState() == State::Running)
         {
-            timer_.Pause(clock.performanceCounterTicks);
-            std::string ignoredError;
-            static_cast<void>(audioRouter_.SetVoicesPaused(true, ignoredError));
+            PauseAt(clock.performanceCounterTicks, false);
         }
         else if (timer_.CurrentState() == State::Paused)
         {
-            timer_.Resume(clock.performanceCounterTicks);
-            timer_.AnchorDspClock(timer_.Now(clock.performanceCounterTicks), clock.dspClock,
-                                  clock.sampleRate);
-            std::string ignoredError;
-            static_cast<void>(audioRouter_.SetVoicesPaused(false, ignoredError));
+            if (debugMode_)
+            {
+                timer_.Resume(clock.performanceCounterTicks);
+                timer_.AnchorDspClock(timer_.Now(clock.performanceCounterTicks), clock.dspClock, clock.sampleRate);
+                std::string error;
+                static_cast<void>(audioRouter_.SetVoicesPaused(false, error));
+            }
+            else
+                static_cast<void>(ContinueAt(context, time_, finger_drum::mode::PlayControlType::Resume));
         }
     }
 }
