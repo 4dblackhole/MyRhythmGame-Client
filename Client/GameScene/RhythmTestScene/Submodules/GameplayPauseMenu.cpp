@@ -1,4 +1,5 @@
 #include "GameplayPauseMenu.h"
+#include "Presentation/UiColors.h"
 #include "Texts/GameScene/RhythmTestScene/PauseTexts.h"
 #include <algorithm>
 #include <format>
@@ -6,7 +7,8 @@
 namespace v = mrg::visual2d;
 namespace
 {
-    constexpr v::Color White{1, 1, 1, 1}, Muted{.65F, .8F, .95F, 1};
+    namespace colors = finger_drum::presentation::ui_colors;
+    constexpr auto White = colors::White, Muted = colors::pause::Muted;
     constexpr std::array<GameplayPauseAction, 4> Actions{GameplayPauseAction::Resume, GameplayPauseAction::Rewind,
                                                          GameplayPauseAction::Retry, GameplayPauseAction::Retire};
 } // namespace
@@ -58,7 +60,7 @@ void GameplayPauseMenu::Build()
     const float width = std::min(500.0F, std::max(220.0F, size.width - 32));
     auto &panel = v::CreatePanel(root, {-width / 2, -250, width, 500}, "Pause.Panel");
     auto &visual = *panel.GetComponent<v::SpriteVisualComponent>();
-    visual.SetTint({.07F, .14F, .24F, 1});
+    visual.SetTint(colors::pause::Surface);
     visual.SetCornerRadius(20);
     const auto &text = finger_drum::texts::Pause(texts_.CurrentLanguage());
     Label(panel, {24, 444, width - 48, 40}, std::wstring(text.title), 28, White);
@@ -95,10 +97,10 @@ void GameplayPauseMenu::RefreshRows()
             continue;
         row->SetEnabled(i >= 2 || canResume_);
         v::VisualStyle style;
-        style.normal = i == focus_ ? v::Color{.15F, .38F, .62F, 1} : v::Color{.11F, .22F, .35F, 1};
-        style.hovered = {.18F, .43F, .68F, 1};
-        style.pressed = {.08F, .28F, .48F, 1};
-        style.disabled = {.11F, .18F, .25F, 1};
+        style.normal = i == focus_ ? colors::pause::Focus : colors::pause::Row;
+        style.hovered = colors::pause::Hover;
+        style.pressed = colors::pause::Pressed;
+        style.disabled = colors::pause::Disabled;
         row->GetComponent<v::SpriteVisualComponent>()->SetStyle(style);
         if (auto *label = handle_.Get()->FindNode(descriptions_[i]))
             label->GetComponent<v::TextVisualComponent>()->SetText(descriptions[i]);

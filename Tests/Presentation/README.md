@@ -142,6 +142,8 @@ with `FMOD_ROOT` set to the installed SDK:
 ```
 
 This links the production panel/settings objects. It checks UTF-8 settings round trips,
+panel/field contrast, closing expanded popups on ESC, repeated ESC during animation,
+immediate close before the first animation step, stale selection rejection and reopening,
 invalid values, all three audio ComboBoxes, sparse driver indices, output-scoped lists,
 failed switches and rollback after a read-only INI blocks saving. Test files are isolated
 in a unique temporary directory; the user's Option.ini and skins are not changed.

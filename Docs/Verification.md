@@ -71,6 +71,34 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-15 공통 UI 색상·옵션 ESC 선행 변경
+
+- [TextManagement](TextManagement.md)의 UiColors.h와 화면별 역할 연결을 적용했습니다.
+  옵션 배경은 기존 sky::PaleBorder, 입력 칸은 sky::Pale를 사용하여 대비를 높였습니다.
+  그 외 로고/곡 선택/에디터/Result/일시정지의 기존 팔레트 값은 유지했습니다.
+  ESC는 마우스 위치와 무관하게 목록/드래그를 정리하고 닫는 프레임의 입력을 소비합니다.
+  해상도·모드 키 설정·글로벌 오프셋의 적용 방식은 사용자 확인 대기이며 구현하지 않았습니다.
+- Client Debug/Release x64 전체 solution Rebuild 성공, 일반 빌드 경고/오류 0.
+  두 구성 전체 로직·기본곡 카탈로그 각각 61개/실패 0, 네 smoke 경로씩 총 8개 성공.
+- OptionsPanelTests 두 구성 성공: 배경/필드 대비, 열린 popup의 ESC 정리, 닫는 도중 반복 ESC,
+  animation progress 0에서 즉시 닫기, 닫는 동안 stale selection 거부와 재개방을 검사했습니다.
+  기존 UTF-8 INI/실패 복구·음원 소유권·실제 FMOD Automatic→WASAPI/driver 전환 검사도 성공했습니다.
+  두 구성 MusicSelectView, EditorPresentation, ResultPresentation, GameplayPause 회귀 성공.
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 영향 프로젝트 MRG.Client의 실제
+  Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했습니다.
+  신규 진단/파싱 오류 0. 기존 C26115(EditorAnalysisController:51),
+  C28020(GameplaySessionController:126), Release C6236(GameplayInput:66)은 유지했습니다.
+  표시 회귀 소스도 각 실행 스크립트의 `/analyze`로 검사했습니다.
+- 변경 코드와 직접 호출부의 팔레트 역할/기존 alpha 값, Canvas 관찰자 수명/정리,
+  ESC 우선 처리·입력 전달 차단·목록/포인터 상태·stale action 경계를 검토했습니다.
+  CheckArchitecture(11프로젝트), 양쪽 git diff --check 성공. 사용자 LaneKeyBeam.cpp와
+  Debug/Release Option.ini의 SHA256을 대조해 보존했습니다. 엔진·사용자 Songs/Skins는 변경하지 않았습니다.
+  상세 로그와 캡처는 ignored `build/options-2026-10-15`에 있습니다.
+- **화면 확인:** 실제 D3D12의 1920×1080 옵션 패널 offscreen 캡처에서 배경/필드/문구를
+  눈으로 확인했습니다. 사용자 창에서 물리 ESC/마우스를 조작하는 수동 검증은 미실시입니다.
+  ESC·popup·포인터 정리 검사는 자동 입력 의도 검사입니다.
+
 ## 2026-10-15 플레이 일시정지·마디 되감기
 
 - [Pause](Gameplay/Pause.md)에 조작·복원/소유 경계와 향후 HP·리플레이 필수 계약을 기록했습니다.

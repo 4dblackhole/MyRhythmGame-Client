@@ -125,6 +125,7 @@
     <ClInclude Include="Presentation\MarqueeTextComponent.h"><Filter>Presentation</Filter></ClInclude>
     <ClCompile Include="Presentation\OptionsPanel.cpp"><Filter>Presentation</Filter></ClCompile>
     <ClInclude Include="Presentation\OptionsPanel.h"><Filter>Presentation</Filter></ClInclude>
+    <ClInclude Include="Presentation\UiColors.h"><Filter>Presentation</Filter></ClInclude>
     <ClCompile Include="Texts\EditorScene\EditorTexts.cpp"><Filter>Texts\EditorScene</Filter></ClCompile>
     <ClInclude Include="Texts\EditorScene\EditorTexts.h"><Filter>Texts\EditorScene</Filter></ClInclude>
     <ClCompile Include="Texts\GameScene\FingerDrumLogoScene\LogoTexts.cpp"><Filter>Texts\GameScene\FingerDrumLogoScene</Filter></ClCompile>

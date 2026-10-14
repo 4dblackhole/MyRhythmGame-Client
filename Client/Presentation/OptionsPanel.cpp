@@ -1,4 +1,5 @@
 #include "OptionsPanel.h"
+#include "Presentation/UiColors.h"
 
 #include "Texts/Options/OptionTexts.h"
 #include <Windows.h>
@@ -12,11 +13,9 @@ namespace finger_drum::presentation
 {
     namespace
     {
-        constexpr mrg::visual2d::Color PanelColor{0.965F, 0.984F, 1.0F, 0.985F};
-        constexpr mrg::visual2d::Color HeadingColor{0.08F, 0.28F, 0.52F, 1.0F};
-        constexpr mrg::visual2d::Color LabelColor{0.20F, 0.38F, 0.57F, 1.0F};
-        constexpr mrg::visual2d::Color FieldColor{0.78F, 0.89F, 0.98F, 1.0F};
-        constexpr mrg::visual2d::Color FieldHoverColor{0.64F, 0.82F, 0.96F, 1.0F};
+        constexpr auto PanelColor = ui_colors::options::Background;
+        constexpr auto HeadingColor = ui_colors::Ink, LabelColor = ui_colors::options::Label;
+        constexpr auto FieldColor = ui_colors::options::Field, FieldHoverColor = ui_colors::options::Hover;
 
         template <typename Component>
         [[nodiscard]] Component &RequireComponent(mrg::visual2d::Visual2DNode &node)
@@ -43,15 +42,15 @@ namespace finger_drum::presentation
             mrg::visual2d::VisualStyle style{};
             style.normal = FieldColor;
             style.hovered = FieldHoverColor;
-            style.pressed = {0.22F, 0.56F, 0.88F, 1.0F};
-            style.disabled = {0.62F, 0.70F, 0.78F, 0.55F};
+            style.pressed = ui_colors::options::Pressed;
+            style.disabled = ui_colors::options::Disabled;
             RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetStyle(style);
             auto &combo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(node);
             combo.SetMaxVisibleItems(visibleItems);
             combo.SetItemHeight(42.0F);
             combo.SetFontSize(19.0F);
             combo.SetTextColor(HeadingColor);
-            combo.SetSelectedTextColor({1.0F, 1.0F, 1.0F, 1.0F});
+            combo.SetSelectedTextColor(ui_colors::White);
             combo.SetPopupBackgroundColor(PanelColor);
         }
 
@@ -97,6 +96,7 @@ namespace finger_drum::presentation
 
     void OptionsPanel::Initialize(mrg::visual2d::Visual2DCanvas &canvas, mrg::audio::AudioSystem &audio)
     {
+        canvas_ = &canvas;
         audio_ = &audio;
         auto &leftAnchor = canvas.AnchorNode(mrg::visual2d::Anchor::MiddleLeft);
         leftAnchor.SetZIndex(100);
@@ -175,7 +175,7 @@ namespace finger_drum::presentation
             "Options.Status");
         auto &status = RequireComponent<mrg::visual2d::TextVisualComponent>(*statusLabel_);
         status.SetFontSize(14.0F);
-        status.SetTextColor({0.75F, 0.17F, 0.21F, 1.0F});
+        status.SetTextColor(ui_colors::Error);
         statusLabel_->SetVisible(false);
     }
 
@@ -231,6 +231,7 @@ namespace finger_drum::presentation
         dragging_ = false;
         optionRevision_ = 0;
         audio_ = nullptr;
+        canvas_ = nullptr;
         status_ = Status::None;
         statusDetail_.clear();
     }
@@ -266,18 +267,33 @@ namespace finger_drum::presentation
         }
     }
 
-    void OptionsPanel::ProcessInput(
-        const mrg::platform::InputState &input,
-        const std::optional<mrg::visual2d::Point> canvasPointer,
-        const mrg::visual2d::NodeId hoveredNode,
-        mrg::visual2d::Visual2DInputRouter &inputRouter)
+    bool OptionsPanel::HandleKey(std::uint16_t virtualKey, mrg::visual2d::Visual2DInputRouter &inputRouter)
     {
+        if (!IsVisible() || virtualKey != VK_ESCAPE)
+            return false;
+        // Closing is idempotent: another ESC during the slide must not reopen it.
+        targetOpen_ = false;
+        dragging_ = false;
+        previousDragPoint_.reset();
+        inputRouter.Reset(*canvas_);
+        for (auto *node : {languageCombo_, skinCombo_, middlewareCombo_, outputCombo_, driverCombo_})
+            RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*node).Collapse();
+        return true;
+    }
+
+    bool OptionsPanel::ProcessInput(const mrg::platform::InputState &input,
+                                    const std::optional<mrg::visual2d::Point> canvasPointer,
+                                    const mrg::visual2d::NodeId hoveredNode,
+                                    mrg::visual2d::Visual2DInputRouter &inputRouter)
+    {
+        if (input.WasKeyPressed(VK_ESCAPE) && HandleKey(VK_ESCAPE, inputRouter))
+            return true;
         if (!IsVisible() || panel_ == nullptr || !canvasPointer.has_value() ||
             !panel_->BoundsInCanvas().Contains(*canvasPointer))
         {
             dragging_ = false;
             previousDragPoint_.reset();
-            return;
+            return false;
         }
 
         if (input.MouseWheelDelta() != 0.0F)
@@ -308,11 +324,12 @@ namespace finger_drum::presentation
             dragging_ = false;
             previousDragPoint_.reset();
         }
+        return false;
     }
 
     bool OptionsPanel::ProcessAction(const mrg::visual2d::Action &action)
     {
-        if (panel_ == nullptr || action.type != mrg::visual2d::ActionType::SelectionChanged)
+        if (panel_ == nullptr || !targetOpen_ || action.type != mrg::visual2d::ActionType::SelectionChanged)
         {
             return false;
         }

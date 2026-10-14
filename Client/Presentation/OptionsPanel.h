@@ -20,10 +20,10 @@ namespace finger_drum::presentation
         void Shutdown() noexcept;
         void Toggle();
         void Update(double deltaSeconds);
-        void ProcessInput(const mrg::platform::InputState &input,
-                          std::optional<mrg::visual2d::Point> canvasPointer,
-                          mrg::visual2d::NodeId hoveredNode,
-                          mrg::visual2d::Visual2DInputRouter &inputRouter);
+        // True consumes a panel keyboard command, including the closing frame.
+        bool ProcessInput(const mrg::platform::InputState &input, std::optional<mrg::visual2d::Point> canvasPointer,
+                          mrg::visual2d::NodeId hoveredNode, mrg::visual2d::Visual2DInputRouter &inputRouter);
+        bool HandleKey(std::uint16_t virtualKey, mrg::visual2d::Visual2DInputRouter &inputRouter);
         [[nodiscard]] bool ProcessAction(const mrg::visual2d::Action &action);
         void RefreshTexts();
         [[nodiscard]] bool IsVisible() const noexcept;
@@ -52,6 +52,7 @@ namespace finger_drum::presentation
         texts::TextCatalog &texts_;
         mrg_client::OptionSettings &options_;
         mrg::audio::AudioSystem *audio_{};
+        mrg::visual2d::Visual2DCanvas *canvas_{};
         enum class Status { None, SaveFailed, AudioFailed };
         Status status_{};
         std::string statusDetail_;

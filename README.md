@@ -100,4 +100,7 @@ YMP/YME는 `Songs/Patterns/<곡>/<난이도>`에 한 쌍씩 정리합니다.
 한국어/영어와 옵션 패널은
 [텍스트 관리](Docs/TextManagement.md)에서 관리합니다. 패널에서 FMOD, 일반(자동)/WASAPI/ASIO,
 실제 출력 드라이버를 선택하며 출력 방식/장치 변경은 즉시 적용합니다.
+열린 옵션 패널은 ESC로 닫으며 뒤 화면의 ESC 동작은 실행하지 않습니다.
+UI 색상은 `Client/Presentation/UiColors.h`에서 공유하고 옵션 배경은 기존 하늘색 중
+더 짙은 색을 사용합니다.
 언어·스킨·오디오 설정은 EXE 옆 `Option.ini`에 저장하고 다음 실행에 복원합니다.

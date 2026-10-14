@@ -1,5 +1,6 @@
 #include "App/OptionSettings.h"
 #include "Presentation/OptionsPanel.h"
+#include "Presentation/UiColors.h"
 
 #include <Windows.h>
 #include <chrono>
@@ -123,6 +124,47 @@ namespace
         action.source = FindNode(canvas.Root(), name).Id();
         action.selectedIndex = index;
         return action;
+    }
+
+    void TestPanelAppearanceAndClosing(finger_drum::presentation::OptionsPanel &panel, v::Visual2DCanvas &canvas,
+                                       v::Visual2DInputRouter &router)
+    {
+        const auto luminance = [](v::Color c) { return .2126F * c.red + .7152F * c.green + .0722F * c.blue; };
+        const auto background =
+            FindNode(canvas.Root(), "Options.Panel").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+        const auto field =
+            FindNode(canvas.Root(), "Options.Output.Combo").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+        Check(background.alpha == 1 &&
+                  luminance(background) + .06F < luminance(finger_drum::presentation::ui_colors::sky::Background),
+              "The options surface must visibly separate from the scene background.");
+        Check(luminance(field) > luminance(background) + .06F, "Fields must remain visible on the darker panel.");
+        const auto b = FindNode(canvas.Root(), "Options.Output.Combo").BoundsInCanvas();
+        v::PointerInput pointer;
+        pointer.position = {b.x + b.width / 2, b.y + b.height / 2};
+        pointer.leftButtonDown = pointer.leftButtonPressed = true;
+        router.Process(canvas, pointer);
+        pointer.leftButtonDown = pointer.leftButtonPressed = false;
+        pointer.leftButtonReleased = true;
+        router.Process(canvas, pointer);
+        static_cast<void>(canvas.TakeActions());
+        Check(Combo(canvas, "Options.Output.Combo").IsExpanded(), "The close test must begin with a visible popup.");
+        Check(panel.HandleKey(VK_ESCAPE, router) && !Combo(canvas, "Options.Output.Combo").IsExpanded(),
+              "ESC must consume the command and collapse popups without requiring a pointer inside the panel.");
+        Check(!panel.ProcessAction(Select(canvas, "Options.Language.Combo", 1)),
+              "Pending selections must be ignored during panel closing.");
+        panel.Update(.05);
+        Check(panel.IsVisible() && panel.HandleKey(VK_ESCAPE, router), "Repeated ESC during closing must be consumed.");
+        panel.Update(.2);
+        Check(!panel.IsVisible() && !panel.HandleKey(VK_ESCAPE, router),
+              "A closed panel must release ESC to its host.");
+        panel.Toggle(); // Opening and immediately closing also consumes the command.
+        Check(panel.HandleKey(VK_ESCAPE, router), "ESC at zero animation progress must still be consumed.");
+        panel.Update(.2);
+        Check(!panel.IsVisible(), "Closing at zero progress must not reopen the panel.");
+        panel.Toggle();
+        panel.Update(.2);
+        Check(panel.IsVisible() && !Combo(canvas, "Options.Output.Combo").IsExpanded(),
+              "Reopening must begin with collapsed fields.");
     }
 
     void TestInvalidOptionFallback(const std::filesystem::path &folder)
@@ -273,6 +315,7 @@ namespace
         Check(!FindNode(canvas.Root(), "Options.Driver.Combo").IsEnabled() &&
               Combo(canvas, "Options.Driver.Combo").Items().size() == 1,
               "An empty device list must be explicit and non-selectable.");
+        TestPanelAppearanceAndClosing(panel, canvas, router);
         panel.Shutdown();
         Check(!panel.ProcessAction(actions.front()), "A closed panel must reject stale Canvas actions.");
         clip.reset();

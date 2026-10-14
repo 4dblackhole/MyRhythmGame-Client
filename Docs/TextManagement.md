@@ -57,7 +57,8 @@ TextCatalog는 문구와 글꼴 선택을 소유하고, 엔진 TextVisual/ComboB
 Visual2D 패널입니다.
 
 - 로고의 `옵션` 버튼, 곡 선택의 `OPTION SELECT` 버튼 또는 두 화면의 `Ctrl+O`로
-  열고 닫습니다.
+  열고 닫습니다. 열린 패널은 `ESC`로도 닫습니다. 마우스가 밖에 있어도 처리하고
+  펼친 ComboBox·드래그 상태를 정리합니다. 닫는 프레임의 ESC는 뒤 화면에 전달하지 않습니다.
 - 1280×720 논리 화면에서 폭 320, 높이 720이며 왼쪽 밖에서 0.2초 동안
   smoothstep으로 들어옵니다.
 - 패널 안에서 휠, 가운데 버튼 드래그, 빈 영역의 왼쪽 버튼 드래그로 세로
@@ -76,6 +77,24 @@ Visual2D 패널입니다.
 패널이 열리거나 닫히는 동안에는 뒤쪽 화면의 선택·검색·전환 입력을 처리하지
 않습니다. 옵션 패널의 노드는 다른 anchor보다 높은 Z 순서로 배치해 표시와
 hit-test가 항상 앞에 오도록 합니다.
+
+## 공통 UI 색상
+
+`Client/Presentation/UiColors.h`는 로고·곡 선택·에디터·Result·일시정지·옵션의
+공통 색상 값을 소유합니다. 각 화면의 Layout/Style은 그 색상을 자신의 표시 역할에
+연결합니다. 공통 팔레트의 RGB/흰색/강조색은 한 곳에서 수정합니다.
+Scene마다 필요한 색상군과 alpha 차이는 이름으로 구분하여 기존 디자인 값을 보존합니다.
+
+옵션 배경은 기존 곡 선택 색상군의 `sky::PaleBorder`를 불투명한 표면으로 재사용합니다.
+입력 칸은 `sky::Pale`, hover는 `sky::Focus`, 강조는 `sky::Accent`를 사용합니다.
+배경·입력 칸·문구가 각각 구분되며 문구/오류 색도 공통 표에서 가져옵니다.
+노트 종류·판정 구간/키빔의 의미 색은 기존 게임플레이 표시 정책이 소유합니다.
+
+모드별 키 설정 참고 구조는 osu!lazer의
+[RulesetBindingsSection](https://github.com/ppy/osu/blob/master/osu.Game/Overlays/Settings/Sections/Input/RulesetBindingsSection.cs)과
+[VariantBindingsSubsection](https://github.com/ppy/osu/blob/master/osu.Game/Overlays/Settings/Sections/Input/VariantBindingsSubsection.cs)입니다.
+모드/variant 단위의 섹션을 만들고 모드가 제공한 입력과 기본 binding으로 행을 구성합니다.
+현재 Client의 사용자 키 설정·DLL 로더는 아직 구현하지 않았습니다.
 
 ## Option.ini
 

@@ -1,8 +1,9 @@
 #pragma once
-#include "MRG_Core.h"
 #include "App/AssetPaths.h"
 #include "Catalog/SongCatalog.h"
+#include "MRG_Core.h"
 #include "Presentation/MarqueeTextComponent.h"
+#include "Presentation/UiColors.h"
 #include <algorithm>
 #include <cmath>
 #include <cwctype>
@@ -40,22 +41,15 @@ namespace song_select
     {
         return penpotFontSize * DesignToCanvasScale * ReadableFontScale(penpotFontSize);
     }
-    constexpr mrg::visual2d::Color CanvasBlue{0.918F, 0.965F, 1.0F, 1.0F};
-    constexpr mrg::visual2d::Color PanelWhite{0.976F, 0.992F, 1.0F, 0.98F};
-    constexpr mrg::visual2d::Color PureWhite{1.0F, 1.0F, 1.0F, 1.0F};
-    constexpr mrg::visual2d::Color AccentBlue{0.310F, 0.624F, 0.878F, 1.0F};
-    constexpr mrg::visual2d::Color AccentHover{0.365F, 0.690F, 0.930F, 1.0F};
-    constexpr mrg::visual2d::Color BorderBlue{0.310F, 0.624F, 0.878F, 1.0F};
-    constexpr mrg::visual2d::Color SubtleBorder{0.569F, 0.769F, 0.890F, 1.0F};
-    constexpr mrg::visual2d::Color PaleBorder{0.725F, 0.851F, 0.929F, 1.0F};
-    constexpr mrg::visual2d::Color PaleBlue{0.937F, 0.973F, 0.996F, 1.0F};
-    constexpr mrg::visual2d::Color ViewportBlue{0.933F, 0.973F, 0.992F, 0.62F};
-    constexpr mrg::visual2d::Color FocusBlue{0.906F, 0.965F, 1.0F, 1.0F};
-    constexpr mrg::visual2d::Color RowBlue{0.929F, 0.973F, 0.996F, 1.0F};
-    constexpr mrg::visual2d::Color DeepBlue{0.157F, 0.325F, 0.455F, 1.0F};
-    constexpr mrg::visual2d::Color MutedBlue{0.290F, 0.471F, 0.592F, 1.0F};
-    constexpr mrg::visual2d::Color SoftTextBlue{0.455F, 0.659F, 0.784F, 1.0F};
-    constexpr mrg::visual2d::Color DisabledBlue{0.70F, 0.78F, 0.84F, 0.55F};
+    namespace palette = finger_drum::presentation::ui_colors;
+    constexpr auto CanvasBlue = palette::sky::Background, PanelWhite = palette::sky::Surface;
+    constexpr auto PureWhite = palette::White, AccentBlue = palette::sky::Accent;
+    constexpr auto AccentHover = palette::sky::AccentHover, BorderBlue = palette::sky::Accent;
+    constexpr auto SubtleBorder = palette::sky::Border, PaleBorder = palette::sky::PaleBorder;
+    constexpr auto PaleBlue = palette::sky::Pale, ViewportBlue = palette::sky::Viewport;
+    constexpr auto FocusBlue = palette::sky::Focus, RowBlue = palette::sky::Row;
+    constexpr auto DeepBlue = palette::sky::Ink, MutedBlue = palette::sky::Muted;
+    constexpr auto SoftTextBlue = palette::sky::SoftText, DisabledBlue = palette::sky::Disabled;
 
     namespace layout
     {

@@ -1,5 +1,6 @@
 #pragma once
 #include "MRG_Core.h"
+#include "Presentation/UiColors.h"
 #include <array>
 #include <stdexcept>
 
@@ -43,25 +44,25 @@ namespace logo_ui
 
     inline void ApplyButtonSelectionStyle(mrg::visual2d::Visual2DNode &button, const bool selected)
     {
+        namespace colors = finger_drum::presentation::ui_colors;
         mrg::visual2d::VisualStyle style{};
         if (selected)
         {
-            style.normal = {0.22F, 0.56F, 0.88F, 0.94F};
-            style.hovered = {0.30F, 0.66F, 0.96F, 1.0F};
-            style.pressed = {0.12F, 0.39F, 0.72F, 1.0F};
-            style.disabled = {0.20F, 0.35F, 0.52F, 0.55F};
+            style.normal = colors::logo::Selected;
+            style.hovered = colors::logo::SelectedHover;
+            style.pressed = colors::logo::SelectedPressed;
+            style.disabled = colors::logo::SelectedDisabled;
         }
         else
         {
-            style.normal = {0.78F, 0.89F, 0.98F, 0.88F};
+            style.normal = colors::logo::Button;
             style.hovered = style.normal;
-            style.pressed = {0.20F, 0.48F, 0.78F, 1.0F};
-            style.disabled = {0.55F, 0.64F, 0.72F, 0.50F};
+            style.pressed = colors::logo::Pressed;
+            style.disabled = colors::logo::Disabled;
         }
 
         RequireComponent<mrg::visual2d::SpriteVisualComponent>(button).SetStyle(style);
-        RequireComponent<mrg::visual2d::TextVisualComponent>(button).SetTextColor(
-            selected ? mrg::visual2d::Color{1.0F, 1.0F, 1.0F, 1.0F}
-                     : mrg::visual2d::Color{0.08F, 0.28F, 0.52F, 1.0F});
+        RequireComponent<mrg::visual2d::TextVisualComponent>(button).SetTextColor(selected ? colors::White
+                                                                                           : colors::Ink);
     }
 } // namespace logo_ui

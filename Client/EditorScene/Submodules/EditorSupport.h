@@ -2,6 +2,7 @@
 #include "Editing/IEditorDocument.h"
 #include "EditorValueParsing.h"
 #include "MRG_Core.h"
+#include "Presentation/UiColors.h"
 #include "Texts/EditorScene/EditorTexts.h"
 #include <Windows.h>
 #include <cmath>
@@ -11,9 +12,10 @@ namespace editor_ui
 {
     namespace chart = finger_drum::chart;
     namespace v = mrg::visual2d;
-    constexpr v::Color Background{.914F, .961F, 1, 1}, Paper{.973F, .988F, 1, 1};
-    constexpr v::Color Ink{.17F, .34F, .47F, 1}, Blue{.31F, .62F, .88F, 1}, Pale{.82F, .91F, .96F, 1},
-        White{1, 1, 1, 1};
+    namespace palette = finger_drum::presentation::ui_colors;
+    constexpr auto Background = palette::editor::Background, Paper = palette::editor::Paper;
+    constexpr auto Ink = palette::editor::Ink, Blue = palette::editor::Accent, Pale = palette::editor::Pale;
+    constexpr auto White = palette::White;
     inline std::wstring Wide(const std::string &s)
     {
         const int n =

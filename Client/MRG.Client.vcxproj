@@ -207,6 +207,7 @@
     <ClInclude Include="Presentation\MarqueeTextComponent.h" />
     <ClCompile Include="Presentation\OptionsPanel.cpp" />
     <ClInclude Include="Presentation\OptionsPanel.h" />
+    <ClInclude Include="Presentation\UiColors.h" />
     <ClCompile Include="Texts\EditorScene\EditorTexts.cpp" />
     <ClInclude Include="Texts\EditorScene\EditorTexts.h" />
     <ClCompile Include="Texts\GameScene\FingerDrumLogoScene\LogoTexts.cpp" />

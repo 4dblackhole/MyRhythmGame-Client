@@ -55,7 +55,11 @@ SongSelectCommand MusicSelectView::Update(const mrg::platform::InputState &input
     if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
         options_.Toggle();
     ProcessPointer(input);
-    options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_);
+    if (options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_))
+    {
+        static_cast<void>(canvas_->TakeActions());
+        return command_;
+    }
     if (!ProcessActions())
         ProcessKeyboard(input);
     return command_;

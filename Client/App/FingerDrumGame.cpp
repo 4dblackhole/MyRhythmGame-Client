@@ -2,12 +2,13 @@
 
 #include "App/AssetPaths.h"
 #include "Catalog/SongCatalog.h"
-#include "GameFlow/FingerDrumSceneIds.h"
 #include "EditorScene/EditorScene.h"
+#include "GameFlow/FingerDrumSceneIds.h"
 #include "GameScene/FingerDrumLogoScene/FingerDrumLogoScene.h"
 #include "GameScene/MusicSelectScene/MusicSelectScene.h"
 #include "GameScene/ResultScene/ResultScene.h"
 #include "GameScene/RhythmTestScene/RhythmTestScene.h"
+#include "Presentation/UiColors.h"
 
 #include <Windows.h>
 
@@ -39,7 +40,8 @@ mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
     config.windowTitle = L"FingerDrum";
     config.windowWidth = 1280;
     config.windowHeight = 720;
-    config.clearColor = {240.0F / 255.0F, 248.0F / 255.0F, 1.0F, 1.0F};
+    const auto color = finger_drum::presentation::ui_colors::ClearBackground;
+    config.clearColor = {color.red, color.green, color.blue, color.alpha};
     config.audio.preferredBackend = optionSettings_.Values().audioOutput;
     // Restore the named device after enumeration instead of trusting a stale index.
     config.audio.driverIndex = -1;

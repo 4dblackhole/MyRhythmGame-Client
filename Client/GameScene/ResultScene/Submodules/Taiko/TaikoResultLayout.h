@@ -1,5 +1,6 @@
 #pragma once
 #include "MRG_Core.h"
+#include "Presentation/UiColors.h"
 #include <array>
 #include <format>
 #include <string>
@@ -14,11 +15,11 @@ namespace taiko_result_ui::layout
     }
     constexpr v::Color Color(unsigned rgb, float alpha = 1)
     {
-        return {static_cast<float>((rgb >> 16) & 255) / 255, static_cast<float>((rgb >> 8) & 255) / 255,
-                static_cast<float>(rgb & 255) / 255, alpha};
+        return finger_drum::presentation::ui_colors::Rgb(rgb, alpha);
     }
-    inline constexpr auto Ink = Color(0x285374), Muted = Color(0x5783A0), Accent = Color(0x4F9FDF);
-    inline constexpr auto Surface = Color(0xF9FDFF), Plot = Color(0xEAF6FF), Keyline = Color(0xBEDFF3);
+    namespace palette = finger_drum::presentation::ui_colors::result;
+    inline constexpr auto Ink = palette::Ink, Muted = palette::Muted, Accent = palette::Accent;
+    inline constexpr auto Surface = palette::Surface, Plot = palette::Plot, Keyline = palette::Keyline;
     inline constexpr std::array<v::Color, 8> Markers{Color(0xFFFFFF), Color(0x2DDFFF), Color(0x28FF28),
                                                      Color(0xFFBF20), Color(0x4018FF), Accent,
                                                      Color(0x829AB3), Color(0xFF3A26)};

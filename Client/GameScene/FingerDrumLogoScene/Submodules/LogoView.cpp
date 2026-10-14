@@ -63,7 +63,11 @@ std::optional<std::size_t> LogoView::Update(const mrg::platform::InputState &inp
     if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
         options_.Toggle();
     ProcessPointer(input);
-    options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_);
+    if (options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_))
+    {
+        static_cast<void>(canvas_->TakeActions());
+        return command_;
+    }
     const bool handled = ApplyMenuActions();
     if (!options_.IsVisible())
         UpdateSelectionFromPointer(input);
