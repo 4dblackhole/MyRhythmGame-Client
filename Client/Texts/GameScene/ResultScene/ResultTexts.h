@@ -1,15 +1,18 @@
 #pragma once
 #include "Texts/TextCatalog.h"
 #include <array>
-
 namespace finger_drum::texts
 {
     struct ResultTextSet
     {
-        std::wstring_view title, completed, interrupted, totalAccuracy, noteCounts;
+        std::wstring_view accuracy, percent, noteCounts;
         std::array<std::wstring_view, 3> groups;
-        std::wstring_view groupFormat, timingStatistics, noTimingData, timeGraph, histogram;
-        std::wstring_view timeAxis, errorAxis, back, inputCount, judgementHelp, tickCounts;
+        std::wstring_view hpGraph, hpFuture, noHpData, timeAxis, start, end;
+        std::wstring_view judgements, ticks, tickFormat, groupTitle;
+        std::wstring_view rank, score, song, pattern, creator;
+        std::wstring_view histogram, peakFormat, frequency, errorAxis, early, late;
+        std::wstring_view scatter, mean, standardDeviation, variance, noTimingData;
+        std::wstring_view replay, retry, back, backShortcut;
     };
     const ResultTextSet &Result(Language language) noexcept;
 } // namespace finger_drum::texts

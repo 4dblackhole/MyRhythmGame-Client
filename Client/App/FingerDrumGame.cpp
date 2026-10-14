@@ -64,36 +64,48 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
                              song->audioPath, song->patterns.front().pattern.mode});
     }
     if (!scenes.RegisterScene<FingerDrumLogoScene>(std::string(finger_drum::scene_ids::Logo),
-                                                   mrg::scene::SceneRetention::KeepAlive,
-                                                   std::ref(ScreenVisuals()), std::ref(texts_), std::ref(optionSettings_)) ||
-        !scenes.RegisterScene<MusicSelectScene>(
-            std::string(finger_drum::scene_ids::Lobby), mrg::scene::SceneRetention::KeepAlive,
-            std::ref(ScreenVisuals()), std::ref(AudioPlayback()), launchRequest_,
-            SongSelectPurpose::Gameplay, std::ref(texts_), std::ref(optionSettings_)) ||
-        !scenes.RegisterScene<MusicSelectScene>(
-            std::string(finger_drum::scene_ids::EditorSongSelect),
-            mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),
-            std::ref(AudioPlayback()), launchRequest_, SongSelectPurpose::Editor,
-            std::ref(texts_), std::ref(optionSettings_)) ||
+                                                   mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),
+                                                   std::ref(texts_), std::ref(optionSettings_)) ||
+        !scenes.RegisterScene<MusicSelectScene>(std::string(finger_drum::scene_ids::Lobby),
+                                                mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),
+                                                std::ref(AudioPlayback()), launchRequest_, SongSelectPurpose::Gameplay,
+                                                std::ref(texts_), std::ref(optionSettings_)) ||
+        !scenes.RegisterScene<MusicSelectScene>(std::string(finger_drum::scene_ids::EditorSongSelect),
+                                                mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),
+                                                std::ref(AudioPlayback()), launchRequest_, SongSelectPurpose::Editor,
+                                                std::ref(texts_), std::ref(optionSettings_)) ||
         !scenes.RegisterScene<EditorScene>(std::string(finger_drum::scene_ids::Editor),
-                                           mrg::scene::SceneRetention::DestroyOnExit,
-                                           std::ref(ScreenVisuals()), launchRequest_,
-                                           std::ref(texts_)) ||
-        !scenes.RegisterScene<RhythmTestScene>(
-            std::string(finger_drum::scene_ids::RhythmTest),
-            // Gameplay routes keep only their factory while inactive. The
-            // concrete mode Scene is constructed on entry and destroyed as
-            // soon as it transfers its result.
-            mrg::scene::SceneRetention::DestroyOnExit, launchRequest_, std::ref(AudioPlayback()),
-            std::ref(ScreenVisuals()), rhythmDebugMode_, std::ref(texts_), std::ref(pendingResult_)) ||
-        !scenes.RegisterScene(std::string(finger_drum::scene_ids::Result),
-                              mrg::scene::SceneRetention::DestroyOnExit,
-                              [this] {
-                                  return std::make_unique<ResultScene>(std::move(pendingResult_), ScreenVisuals(), texts_);
-                              }))
+                                           mrg::scene::SceneRetention::DestroyOnExit, std::ref(ScreenVisuals()),
+                                           launchRequest_, std::ref(texts_)) ||
+        !scenes.RegisterScene<RhythmTestScene>(std::string(finger_drum::scene_ids::RhythmTest),
+                                               // Gameplay routes keep only their factory while inactive. The
+                                               // concrete mode Scene is constructed on entry and destroyed as
+                                               // soon as it transfers its result.
+                                               mrg::scene::SceneRetention::DestroyOnExit, launchRequest_,
+                                               std::ref(AudioPlayback()), std::ref(ScreenVisuals()), rhythmDebugMode_,
+                                               std::ref(texts_), std::ref(pendingResult_)) ||
+        !scenes.RegisterScene(std::string(finger_drum::scene_ids::Result), mrg::scene::SceneRetention::DestroyOnExit,
+                              [this] { return CreateResultScene(); }))
     {
         throw std::runtime_error("Failed to register the FingerDrum Scenes.");
     }
+}
+
+std::unique_ptr<mrg::scene::GameScene> FingerDrumGame::CreateResultScene()
+{
+    auto launch = launchRequest_->Snapshot();
+    ResultViewContext display{launch.songTitle, launch.patternCreator, launch.IsValid()};
+    ResultScene::RetryHandler retry;
+    if (display.canRetry)
+        retry = [store = launchRequest_, snapshot = std::move(launch)](mrg::scene::SceneManager &scenes)
+        {
+            // A retry owns a fresh session; restore the played selection without
+            // retaining any note, timer or voice from the completed session.
+            store->Set(snapshot);
+            return scenes.ChangeScene(finger_drum::scene_ids::RhythmTest);
+        };
+    return std::make_unique<ResultScene>(std::move(pendingResult_), ScreenVisuals(), texts_, std::move(display),
+                                         std::move(retry));
 }
 
 std::string_view FingerDrumGame::InitialSceneId() const noexcept

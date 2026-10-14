@@ -117,8 +117,9 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
     if (purpose_ == SongSelectPurpose::Editor)
     {
         selection_->ClearLaunchError();
-        launchRequest_->Set(
-            {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode});
+        launchRequest_->Set({pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode,
+                             SongTitle(song),
+                             pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())});
         if (!scenes.ChangeScene(finger_drum::scene_ids::Editor))
         {
             throw std::runtime_error("Failed to enter the editor scene.");
@@ -152,7 +153,9 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
 
     selection_->ClearLaunchError();
     launchRequest_->SetValidated(
-        {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode}, std::move(prepared));
+        {pattern.patternPath, pattern.effectPath, song.audioPath, pattern.pattern.mode, SongTitle(song),
+         pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())},
+        std::move(prepared));
     if (!scenes.ChangeScene(finger_drum::scene_ids::RhythmTest))
     {
         throw std::runtime_error("Failed to enter transient gameplay.");

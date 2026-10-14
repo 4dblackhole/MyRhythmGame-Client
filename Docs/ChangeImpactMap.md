@@ -24,7 +24,7 @@
 | 정확도/특수 노트 표시 | 같은 폴더 `GameplayFeedbackVisuals.cpp` | NoteTypes.h의 이벤트/정확도; AccuracyTests/GameplayJudgementTests |
 | 판정 구간·타이밍 마커·링/문구 | 같은 폴더 `GameplayJudgementView.*`, GameplayFeedbackVisuals.cpp | AccuracyRange, LaneKeyBeam의 색상/입력 응답; GameplayJudgementTests |
 | 점수 정밀도·결과 수집·입력 로그 | `Judgement/AccuracyScore.h`, `Mode/Results`, `Taiko/Results` | NoteAccuracy/PlaySession, TaikoSessionBuilder; PlayResultTests |
-| Result 전환·모드별 통계/그래프 | `Client/GameScene/ResultScene`, `Texts/GameScene/ResultScene` | FingerDrumGame/RhythmTestScene/Controller; ResultPresentationTests |
+| Result 디자인·전환·리트라이·모드별 통계/그래프 | `Client/GameScene/ResultScene`, `Texts/GameScene/ResultScene`, `Default Skin/Result` | FingerDrumGame/GameplayLaunchRequest/MusicSelectScene; ResultPresentationTests; Noto Sans KR/엔진 fontWeight |
 | 키 불빛 | 같은 폴더 `GameplayKeys.cpp`, `Client/Presentation/LaneKeyBeam.*` | GameplayFeedback.h; gameplay smoke |
 | 에디터 모드 추가/파일 교체 | `Client/EditorScene/Submodules/Modes/IEditorMode.h`, EditorModeFactory; `FingerDrum.Chart/Editing/IEditorDocument.h` | ChartEditor의 교체 경계; EditorModeTests, editor smoke |
 | 에디터 상단 메뉴·저장 입력 | `Client/EditorScene/Submodules/EditorMenuBar.*`, EditorView / EditorInput | EditorWorkspace Save, EditorTexts; EditorMenuTests / EditorAudioViewTests, editor smoke |

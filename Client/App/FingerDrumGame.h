@@ -32,6 +32,7 @@ class FingerDrumGame final : public mrg::scene::SceneGameClient
 
   private:
     void RefreshPerformanceText(const mrg::PerformanceStatistics &performance);
+    std::unique_ptr<mrg::scene::GameScene> CreateResultScene();
     void RestoreSavedAudioDriver(mrg::audio::AudioSystem &audio);
     static void SubmitPerformanceLine(mrg::graphics::TextRenderSystem &textRendering,
                                       std::wstring_view text, const mrg::graphics::FontHandle &font,

@@ -196,11 +196,13 @@ After a solution build, run in an x64 Visual Studio developer PowerShell with `F
 
 This links the production Result Scene/view/factory/graphs and gameplay objects.
 It checks six-decimal accuracy text, Korean/English strings, signed scatter axes,
-histogram counts, empty samples, narrow/wide layout, pointer-router return actions,
+histogram counts, empty samples, narrow/wide layout, pointer-router return/retry actions,
+disabled replay and catalog metadata snapshots,
 and one immutable graph batch for 10,003 samples. It then runs D3D12/FMOD with a
 hidden window and a one-note regression session: the production gameplay Scene
 waits three seconds after automatic judgement, moves its result to the lazy Result
-factory, and destroys its own Canvas. Leaving Result destroys its Canvas too.
+factory, and destroys its own Canvas. Clicking retry constructs a fresh gameplay
+session after destroying Result and its Canvas; the return route then cleans gameplay.
 The test source uses MSVC Code Analysis and does not write user options/songs/skins.
 This is automation, not a manual pixel/physical keyboard/mouse/listening check.
 ESC routing is connected in production; its interrupted scoring and tied-us input

@@ -16,6 +16,10 @@ namespace mrg_client::asset_paths
 
     namespace fonts
     {
+        [[nodiscard]] inline std::filesystem::path Result()
+        {
+            return finger_drum::assets::ResolveBuiltInAsset(L"assets\\fonts\\NotoSansKR.ttf");
+        }
         [[nodiscard]] inline std::filesystem::path FingerDrum()
         {
             return finger_drum::assets::ResolveBuiltInAsset(
@@ -31,6 +35,10 @@ namespace mrg_client::asset_paths
 
     namespace skin
     {
+        [[nodiscard]] inline std::filesystem::path Result(const std::filesystem::path &file)
+        {
+            return SkinSetSelection::Instance().Resolve(std::filesystem::path(L"Result") / file);
+        }
         [[nodiscard]] inline std::filesystem::path InGame(
             const std::filesystem::path& file)
         {

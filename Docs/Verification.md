@@ -69,6 +69,38 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-14 Penpot 리절트와 엔진 글꼴 굵기
+
+- [플레이 결과](Gameplay/Results.md)에 엔진 기능 점검표·3열 표시·리트라이·책임 경계를,
+  [BuiltInAssets](BuiltInAssets.md)에 Scene별 PNG와 글꼴/라이선스를 기록했습니다.
+  엔진 fontWeight를 먼저 원격 main에 반영하고 Client gitlink를 갱신했습니다.
+- Client/엔진 Debug·Release x64 전체 solution Rebuild 성공. 일반 빌드 경고/오류 0.
+  Client 두 구성의 로직·기본곡 카탈로그 각각 58개, 네 smoke 경로씩 총 8개 성공.
+  최종 자산팩 갱신 뒤에도 두 구성 Build·ResultPresentation·smoke-test를 다시 성공했습니다.
+- ResultPresentation 두 구성 성공: 소수점 6자리·실제 표시 정보·한국어/영어·빈 그래프·
+  10,003개 입력의 단일 불변 배치·다른 화면비·Back/Retry 클릭·비활성 Replay를 검사했습니다.
+  실제 숨김 D3D12/FMOD 실행에서 노트 처리 후 3초 대기→결과 이동→게임플레이 파기→
+  Retry 클릭→새 플레이 세션/Canvas 생성→복귀/정리를 확인했습니다.
+  SceneStateTests는 선택이 바뀌어도 이전 곡명/제작자 snapshot을 보존하고 Clear 시 지우는지 검사합니다.
+- 두 구성 MusicSelectView, EditorPresentation(Audio/Mode/Menu/Playback), GameplayJudgement,
+  OptionsPanel 회귀 성공. 옵션 검사는 실제 FMOD Automatic→WASAPI/driver 전환도 포함합니다.
+- 엔진 기본 SDK·`--text-rendering`·`--text-pixels` 두 구성 성공. 기본 굵기 400,
+  1..999 경계와 잘못된 값 거절, payload/측정 무효화, 400/800 layout·글리프 분리를 검사했습니다.
+  Debug 텍스트 검사의 D3D12 ERROR/CORRUPTION 0.
+- MSVC 14.44.35207 Code Analysis를 MRG.Client와 Rhythm.Tests의 실제 Debug/Release x64
+  include/define/PCH/C++20 설정으로 `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`
+  실행했습니다. Presentation 소스도 각 스크립트의 `/analyze`로 검사했습니다. 신규 진단/파싱 오류 0.
+  기존 C26115(EditorAnalysisController:51), C28020(GameplaySessionController:112),
+  Release C6236(GameplayInput:60)는 유지하고 억제/범위 밖 수정을 하지 않았습니다.
+- 변경 코드/직접 호출부의 결과·callback·Canvas 수명, 선택 snapshot, 파일별 스킨 fallback,
+  인덱스/변환, 그림과 입력 좌표, 글꼴 굵기 cache key를 검토했습니다.
+  CheckArchitecture(11프로젝트), 양쪽 git diff --check 성공.
+- **실제 눈으로 확인:** 1920×1080 한국어 D3D12 렌더 캡처를 Penpot의 좌표/색/폰트/장식과
+  비교했습니다. 실제 AngelDream 채보에 자동 입력을 넣은 통계/그래프와 빈 그래프 화면을 확인했습니다.
+  캡처의 D3D12 오류 없음도 확인했습니다. 물리 키보드/마우스 조작·청음은 수동 확인하지 않았습니다.
+- 원시 로그와 SVG/PNG/BMP/capture probe는 ignored `build/result-penpot-2026-10-14`에 있습니다.
+  사용자 LaneKeyBeam.cpp와 두 구성 Option.ini의 SHA256을 대조해 보존했고 사용자 Songs/Skins는 변경하지 않았습니다.
+
 ## 2026-10-14 텍스트 렌더링 후속 개선
 
 - Client/엔진 Debug·Release x64 전체 solution Rebuild 성공. 일반 빌드 경고/오류 0.

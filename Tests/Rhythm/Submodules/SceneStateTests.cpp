@@ -49,12 +49,18 @@ namespace finger_drum::tests
         auto transferred = store.TakeValidatedSession();
         Require(transferred.get() == identity && !store.TakeValidatedSession(),
                 "A validated play session must transfer ownership once without reparsing.");
-        store.Set({"first.ymp", {}, "first.mp3", "Taiko"});
+        store.Set({"first.ymp", {}, "first.mp3", "Taiko", L"Played title", L"Played creator"});
         auto playing = store.Snapshot();
         store.Set({"second.ymp", "second.yme", "second.mp3", "Taiko"});
         playing.musicPath = "local.mp3";
         Require(playing.patternPath == "first.ymp" && store.Snapshot().musicPath == "second.mp3",
                 "An active session and a later selection must own independent launch values.");
+        Require(playing.songTitle == L"Played title" && playing.patternCreator == L"Played creator" &&
+                    store.Snapshot().songTitle.empty(),
+                "Result display metadata must belong to the played selection snapshot.");
+        playing.Clear();
+        Require(!playing.IsValid() && playing.songTitle.empty() && playing.patternCreator.empty(),
+                "Clearing a launch must also clear result display metadata.");
 
         for (const auto &tool : editor_tools::Tools)
             Require(mode::FindTaikoNote(static_cast<int>(tool.note)) != nullptr,

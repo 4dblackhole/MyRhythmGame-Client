@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+리절트 Penpot 구현(2026-10-14): [플레이 결과](Gameplay/Results.md).
+엔진 TextStyle/Visual2D fontWeight를 먼저 반영하고 Noto Sans KR의 네 굵기로 시안의
+3열 배치·장식·실제 통계를 구현했습니다. Retry는 같은 선택 경로의 새 세션,
+Replay는 비활성이며 SCORE/RANK/HP는 미구현 상태를 명시합니다.
+Scene별 PNG는 내장 Default Skin/Result 아래에 있고 사용자 스킨의 파일별 fallback을 사용합니다.
+
 최근 성능 수정(2026-10-14): [8개 병목 수정 기록](Reviews/PerformanceFixes-2026-10-14.md).
 객체별 표시 구간 조회/Render 갱신, 효과 시각 인덱스, 편집 롱 구간 인덱스, FFT 타일,
 비동기 카탈로그/가시 카드, 비동기 플레이 자원, 엔진 텍스트 LRU/업로드 fence/2ms 오디오

@@ -2,7 +2,9 @@
 
 모든 논리 노트가 완료/MISS로 확정된 뒤 3초가 지나면 Result로 이동합니다.
 ESC는 즉시 이동합니다. 이미 모든 노트를 처리한 상태라면 ESC도 완료 결과이며,
-그 외에는 중도 종료 결과입니다. Result의 버튼·ESC·Enter는 곡 선택으로 돌아갑니다.
+그 외에는 중도 종료 결과입니다. BACK·ESC·Enter는 곡 선택으로 돌아갑니다.
+리트라이는 방금 플레이한 패턴·효과·음원 경로로 새 세션을 생성합니다.
+리플레이 버튼은 비활성 표시이며 입력 로그의 재생 기능을 제공하지 않습니다.
 
 ## 수집과 소유권
 
@@ -28,7 +30,7 @@ ESC는 즉시 이동합니다. 이미 모든 노트를 처리한 상태라면 ES
 최종 정확도는 **전체 유효 논리 노트 점수의 합 / 전체 유효 논리 노트 수**입니다.
 중도 종료의 미처리 노트와 진행 중 롱노트는 0점이며 별도로 미처리 개수를 표시합니다.
 실제 MISS를 만들어 넣지 않습니다. 완료된 롱노트의 부분 점수는 기존 규칙대로 보존합니다.
-노트가 없는 그룹은 화면에 `— (0/0)`을 표시합니다.
+노트가 없는 그룹은 화면에 `— %`를 표시합니다.
 
 Taiko는 일반(Don/Kat), 큰(BigDon/BigKat/Purple), 롤 계열의 정확도를 각각 표시합니다.
 롤 계열에는 Roll/BigRoll/TickRoll/BigTickRoll/Balloon/DengDeng/Buzz가 포함됩니다.
@@ -56,6 +58,39 @@ Taiko는 일반(Don/Kat), 큰(BigDon/BigKat/Purple), 롤 계열의 정확도를 
 히스토그램은 같은 오차 범위를 41개 구간으로 나눈 입력 개수이며 최고 개수를 표시합니다.
 범위는 최소 ±100ms이고 실제 입력 오차를 포함하도록 확장합니다.
 두 그래프는 한 RectangleBatch로 그리고 진입·언어/해상도 변경 시에만 재구성합니다.
+
+## Penpot 표시와 책임 경계
+
+[Result · Sky](../DesignReferences.md)의 1920×1080 배치를 사용합니다.
+왼쪽은 HP/점수/정확도/판정/그룹 통계, 가운데는 랭크 장식과 곡·패턴·제작자,
+오른쪽은 히스토그램·시간별 오차와 액션 버튼입니다. 화면이 좁으면 내용 전체를
+축소하고 BACK은 화면 왼쪽 아래에 유지합니다. 한국어·영어 문구는 ResultTexts가 소유합니다.
+
+곡명과 첫 제작자명은 곡 선택의 GameplayLaunchRequest 값 snapshot에 보관합니다.
+결과 화면에서 카탈로그/채보 파일을 다시 읽지 않습니다. 패턴명과 통계는 IPlayResult에서 읽습니다.
+SCORE·RANK는 아직 계산 규칙이 없으므로 `—`, HP는 데이터 없음/추가 예정으로 표시합니다.
+시안의 빈 자리를 채우기 위한 임의 점수·기록·HP 데이터는 생성하지 않습니다.
+
+- ResultScene은 결과의 소유권·화면 수명·전환만 담당합니다. View는 Back/Retry 액션을 반환합니다.
+- FingerDrumGame은 선택 snapshot을 캡처한 retry callback을 조립합니다. 이전 세션의
+  노트·타이머·음성을 재사용하지 않고 DestroyOnExit route에서 새 플레이 객체를 생성합니다.
+- TaikoResultView는 Canvas·입력·스킨/글꼴을 소유합니다. Panels는 통계/메타데이터/버튼,
+  GraphView는 그래프 장식/축/범례, Graphs는 실제 입력에서 범위/빈/점 좌표를 도출합니다.
+- TaikoResultLayout은 좌표계·색상·패널 위치를 소유하고 모드의 점수/판정 규칙을 변경하지 않습니다.
+
+디자인 대응에 필요한 엔진 기능을 먼저 점검했습니다.
+
+| 표현 | 엔진 기능과 조치 |
+| --- | --- |
+| 1920×1080 배치·화면 축소·레이어·버튼 입력 | 기존 Canvas/Transform/Z-order/입력 router 재사용 |
+| 투명 배경·구름·드럼·링 장식 PNG | 기존 이미지 등록·Sprite·tint 재사용 |
+| 둥근 패널·테두리 | 기존 corner radius의 안쪽/바깥쪽 사각형 조합 |
+| 실제 입력 수가 많은 그래프 | 기존 RectangleBatch, 노드 수는 샘플 수와 무관 |
+| Noto Sans KR 500/600/700/800 굵기 | 엔진 TextStyle/TextContent/Visual2D의 fontWeight 추가 |
+
+글꼴 굵기는 DirectWrite layout cache key·유지 payload·측정 무효화에 포함됩니다.
+기본값은 기존과 같은 400이며 1..999 범위를 사용합니다. 리절트만 라이선스와 함께 내장한
+Noto Sans KR 글꼴을 사용합니다. 새 PNG의 경로·제작 크기는 [BuiltInAssets](../BuiltInAssets.md)에 있습니다.
 
 ## 입력 로그와 종료 시각
 

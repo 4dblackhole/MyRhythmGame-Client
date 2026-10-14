@@ -26,7 +26,7 @@ namespace
       public:
         v::ImageHandle LoadImage(const std::filesystem::path &) override
         {
-            return {};
+            return {++imageId_};
         }
         v::Size GetImageSize(v::ImageHandle) const noexcept override
         {
@@ -48,6 +48,9 @@ namespace
                              const mrg::graphics::RenderContext &) override
         {
         }
+
+      private:
+        std::uint64_t imageId_{};
     };
     bool HasText(const v::Visual2DCanvas &canvas, std::wstring_view text)
     {
@@ -90,7 +93,7 @@ namespace
         Check(data.maximumBinCount == 1 && data.halfRangeMilliseconds == 100 && data.startSeconds == -2 &&
                   data.endSeconds == 1,
               "Graph axes must cover real time/error samples and retain signed timing.");
-        Check(data.rectangles.size() == 10,
+        Check(data.rectangles.size() == 8,
               "Three timing inputs must yield three scatter points and three histogram bars.");
         for (const auto &rect : data.rectangles)
             Check(std::isfinite(rect.bounds.x) && std::isfinite(rect.bounds.y) && rect.bounds.width > 0 &&
@@ -106,25 +109,50 @@ namespace
         mrg::graphics::MeshRenderSystem meshes;
         mrg::graphics::TextRenderSystem textRendering;
         mrg::audio::AudioSystem audio;
-        auto view = CreateResultView(*result, visuals, texts);
+        auto view = CreateResultView(*result, visuals, texts, {L"Recorded song", L"Recorded creator", true});
         view->Initialize({meshes, textRendering, renderer, audio, 1280, 720});
         view->SetVisible(true);
         auto *canvas = visuals.FindCanvas(1);
         if (!canvas)
             throw std::runtime_error("Result Canvas must exist.");
-        Check(HasText(*canvas, L"플레이 결과") &&
+        Check(HasText(*canvas, L"정확도") && HasText(*canvas, L"Recorded song") &&
+                  HasText(*canvas, L"Recorded creator") &&
                   HasText(*canvas, std::format(L"{:.6f}%", taiko->summary.accuracy.Percent())),
               "Result view must display the recorded six-decimal accuracy.");
         const auto packets = canvas->BuildDrawList();
         Check(std::ranges::count(packets, v::DrawPacketType::RectangleBatch, &v::DrawPacket::type) == 1 &&
-                  packets.size() < 60,
+                  packets.size() < 200,
               "Large result graphs must use one batch with constant widget count.");
         mrg::platform::InputState input;
         for (int i = 0; i < 20; ++i)
-            Check(!view->Update(input), "Idle result view must not leave the Scene.");
+            Check(view->Update(input) == ResultAction::None, "Idle result view must not leave the Scene.");
         Check(canvas->BuildDrawList().size() == packets.size(), "Idle updates must not rebuild graph nodes.");
+        const auto *retry = FindNode(canvas->Root(), "Result.Retry");
+        const auto *replay = FindNode(canvas->Root(), "Result.Replay");
+        if (!retry || !replay)
+            throw std::runtime_error("Result retry/replay nodes must exist.");
+        Check(retry->IsEnabled() && !replay->IsEnabled(),
+              "Retry is available for a played selection; replay remains disabled.");
+        const auto click = [&](const v::Visual2DNode &button)
+        {
+            const auto b = button.BoundsInCanvas();
+            v::Visual2DInputRouter router;
+            v::PointerInput p;
+            p.available = true;
+            p.position = {b.x + b.width / 2, b.y + b.height / 2};
+            p.leftButtonDown = p.leftButtonPressed = true;
+            router.Process(*canvas, p);
+            p.leftButtonDown = p.leftButtonPressed = false;
+            p.leftButtonReleased = true;
+            router.Process(*canvas, p);
+            router.Reset(*canvas);
+        };
+        click(*retry);
+        Check(view->Update(input) == ResultAction::Retry, "A retry click must emit the neutral retry action.");
+        click(*replay);
+        Check(view->Update(input) == ResultAction::None, "Disabled replay must not emit any action.");
         texts.SetLanguage(finger_drum::texts::Language::English);
-        Check(!view->Update(input) && HasText(*canvas, L"Play Result"),
+        Check(view->Update(input) == ResultAction::None && HasText(*canvas, L"Judgement counts"),
               "Result strings must follow the shared language catalog.");
         for (const v::Size size : {v::Size{1024, 768}, v::Size{2560, 1080}, v::Size{720, 1280}})
         {
@@ -149,13 +177,14 @@ namespace
         pointer.leftButtonDown = pointer.leftButtonPressed = false;
         pointer.leftButtonReleased = true;
         pointerRouter.Process(*canvas, pointer);
-        Check(view->Update(input), "The result button click must request returning to song select.");
+        Check(view->Update(input) == ResultAction::Back,
+              "The result button click must request returning to song select.");
         pointerRouter.Reset(*canvas);
         view->Shutdown();
         Check(visuals.CanvasCount() == 0, "Result view must release its owned Canvas.");
         taiko->timingErrors.clear();
         data = taiko_result_ui::BuildGraphs(*taiko, scatter, histogram);
-        Check(data.rectangles.size() == 4 && data.maximumBinCount == 0, "Empty graphs must not invent samples.");
+        Check(data.rectangles.size() == 2 && data.maximumBinCount == 0, "Empty graphs must not invent samples.");
     }
     class ReturnRoute final : public mrg::scene::GameScene
     {
@@ -195,28 +224,29 @@ namespace
         }
         void RegisterScenes(mrg::scene::SceneManager &scenes) override
         {
-            finger_drum::chart::PatternDocument pattern;
-            pattern.name = "Automatic completion regression";
-            pattern.mode = "Taiko";
-            pattern.notes.push_back({.keyType = 1});
-            auto loaded = mode::TaikoMode{}.CreateSession(pattern);
-            Check(loaded.Succeeded(), "Transition fixture must load.");
             launch_ = std::make_shared<finger_drum::GameplayLaunchStore>();
-            launch_->SetValidated({}, std::move(loaded.session));
+            PrepareSession();
             Check(scenes.RegisterScene<RhythmTestScene>(std::string(finger_drum::scene_ids::RhythmTest),
                                                         mrg::scene::SceneRetention::DestroyOnExit, launch_,
                                                         std::ref(AudioPlayback()), std::ref(ScreenVisuals()), false,
                                                         std::ref(texts_), std::ref(pending_)),
                   "Register production gameplay Scene.");
-            Check(scenes.RegisterScene(
-                      std::string(finger_drum::scene_ids::Result), mrg::scene::SceneRetention::DestroyOnExit,
-                      [this]
-                      {
-                          ++resultCreations_;
-                          resultData_ = pending_.get();
-                          Check(resultData_ != nullptr, "Factory requires moved play data.");
-                          return std::make_unique<ResultScene>(std::move(pending_), ScreenVisuals(), texts_);
-                      }),
+            Check(scenes.RegisterScene(std::string(finger_drum::scene_ids::Result),
+                                       mrg::scene::SceneRetention::DestroyOnExit,
+                                       [this]
+                                       {
+                                           ++resultCreations_;
+                                           resultData_ = pending_.get();
+                                           Check(resultData_ != nullptr, "Factory requires moved play data.");
+                                           return std::make_unique<ResultScene>(
+                                               std::move(pending_), ScreenVisuals(), texts_,
+                                               ResultViewContext{L"Retry fixture", L"Regression", true},
+                                               [this](mrg::scene::SceneManager &manager)
+                                               {
+                                                   PrepareSession();
+                                                   return manager.ChangeScene(finger_drum::scene_ids::RhythmTest);
+                                               });
+                                       }),
                   "Register production Result Scene.");
             Check(scenes.RegisterScene<ReturnRoute>(std::string(finger_drum::scene_ids::Lobby),
                                                     mrg::scene::SceneRetention::KeepAlive),
@@ -226,7 +256,7 @@ namespace
         void OnClientUpdated(const mrg::UpdateContext &context) override
         {
             Check(context.totalSeconds < 12, "Result transition regression timed out.");
-            if (Scenes().CurrentSceneId() == finger_drum::scene_ids::Result && !returnRequested_)
+            if (Scenes().CurrentSceneId() == finger_drum::scene_ids::Result && !retryRequested_)
             {
                 const auto &summary = resultData_->Summary();
                 Check(summary.endReason == mode::PlayEndReason::Completed && summary.processedNotes == 1 &&
@@ -235,7 +265,33 @@ namespace
                 Check(resultCreations_ == 1 && !pending_ && ScreenVisuals().CanvasCount() == 1 &&
                           !ScreenVisuals().FindCanvas(1),
                       "The moved result must survive gameplay Scene/Canvas destruction.");
-                Check(Scenes().ChangeScene(finger_drum::scene_ids::Lobby), "Queue returning to song select.");
+                auto *canvas = ScreenVisuals().FindCanvas(2);
+                if (!canvas)
+                    throw std::runtime_error("The production Result Canvas must be active.");
+                const auto *retry = FindNode(canvas->Root(), "Result.Retry");
+                if (!retry)
+                    throw std::runtime_error("The retry button must exist.");
+                Check(retry->IsEnabled(), "The retry button must be enabled.");
+                const auto bounds = retry->BoundsInCanvas();
+                v::PointerInput p;
+                p.available = true;
+                p.position = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
+                p.leftButtonDown = p.leftButtonPressed = true;
+                v::Visual2DInputRouter router;
+                router.Process(*canvas, p);
+                p.leftButtonDown = p.leftButtonPressed = false;
+                p.leftButtonReleased = true;
+                router.Process(*canvas, p);
+                router.Reset(*canvas);
+                retryRequested_ = true;
+            }
+            else if (Scenes().CurrentSceneId() == finger_drum::scene_ids::RhythmTest && retryRequested_ &&
+                     !returnRequested_)
+            {
+                Check(sessionCreations_ == 2 && resultCreations_ == 1 && !pending_ &&
+                          ScreenVisuals().CanvasCount() == 1 && !ScreenVisuals().FindCanvas(2),
+                      "Retry must construct fresh gameplay after destroying Result and its Canvas.");
+                Check(Scenes().ChangeScene(finger_drum::scene_ids::Lobby), "Queue returning after retry.");
                 returnRequested_ = true;
             }
             else if (Scenes().CurrentSceneId() == finger_drum::scene_ids::Lobby && returnRequested_)
@@ -248,8 +304,21 @@ namespace
         }
 
       private:
+        void PrepareSession()
+        {
+            finger_drum::chart::PatternDocument pattern;
+            pattern.name = "Automatic completion regression";
+            pattern.mode = "Taiko";
+            pattern.notes.push_back({.keyType = 1});
+            auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+            Check(loaded.Succeeded(), "Transition fixture must load.");
+            launch_->SetValidated({}, std::move(loaded.session));
+            ++sessionCreations_;
+        }
         bool &verified_;
+        bool retryRequested_{};
         bool returnRequested_{};
+        std::size_t sessionCreations_{};
         std::size_t resultCreations_{};
         std::shared_ptr<finger_drum::GameplayLaunchStore> launch_;
         std::unique_ptr<mode::IPlayResult> pending_;
@@ -261,9 +330,9 @@ int main()
 {
     try
     {
-        TestGraphsAndView();
         std::string error;
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
+        TestGraphsAndView();
         bool verified{};
         Check(mrg::Run(std::make_unique<TransitionGame>(verified)) == 0 && verified,
               "Actual D3D12/FMOD Result transition must complete.");

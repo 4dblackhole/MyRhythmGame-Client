@@ -11,6 +11,7 @@ Client/Texts/
   GameScene/FingerDrumLogoScene/        로고 화면
   GameScene/MusicSelectScene/           플레이/에디터 곡 선택
   GameScene/RhythmTestScene/            플레이 화면
+  GameScene/ResultScene/                리절트 문구·통계 축·액션
   EditorScene/                          공통 에디터 화면
     Taiko/TaikoEditorTexts.*            Taiko 도구/동·캇 이펙트 문구
 ```
@@ -25,6 +26,9 @@ Client/Texts/
 관리합니다. 현재 한국어와 영어는 Windows의 `Segoe UI`를 사용합니다. 시스템
 글꼴은 `TextFontSource::System`, 배포 글꼴 파일은 `TextFontSource::File`로
 지정할 수 있습니다. 파일 글꼴을 배포할 때는 글꼴 파일 옆에 라이선스를 함께 둡니다.
+리절트는 Penpot 지정 글꼴인 내장 Noto Sans KR을 별도로 사용합니다.
+경로는 `AssetPaths::fonts::Result`, 굵기·크기는 TaikoResultView의 Label/Button 호출에서
+정하며 두 언어에 같은 글꼴을 적용합니다. 파일·라이선스는 [BuiltInAssets](BuiltInAssets.md)에 있습니다.
 
 언어를 추가할 때는 다음을 함께 변경합니다.
 
@@ -39,7 +43,7 @@ Client/Texts/
 ## 렌더링 수명
 
 TextCatalog는 문구와 글꼴 선택을 소유하고, 엔진 TextVisual/ComboBox는 공유
-`TextContent` payload를 게시합니다. 문자열·글꼴·크기·정렬이 바뀔 때 payload를
+`TextContent` payload를 게시합니다. 문자열·글꼴·굵기·크기·정렬이 바뀔 때 payload를
 교체하며 색상·위치·clip 변경에는 같은 payload를 유지합니다. D3D12 renderer가
 글꼴과 배치 handle을 유지하므로 Client에 DirectWrite 객체나 아틀라스 UV를 저장하지 않습니다.
 직접 DrawPacket을 만드는 에디터도 `packet.text`에 이 payload를 전달합니다.

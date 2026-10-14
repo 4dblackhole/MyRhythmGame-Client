@@ -1,5 +1,5 @@
 #include "TaikoResultGraphs.h"
-#include "Presentation/LaneKeyBeam.h"
+#include "TaikoResultLayout.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -21,13 +21,12 @@ namespace taiko_result_ui
         data.halfRangeMilliseconds = std::ceil(data.halfRangeMilliseconds / 10) * 10;
         data.startSeconds = static_cast<double>(first.count()) / 1'000'000;
         data.endSeconds = std::max(data.startSeconds + .001, static_cast<double>(last.count()) / 1'000'000);
-        const v::Color grid{.3F, .38F, .48F, 1};
-        const v::Color background{.06F, .08F, .12F, 1};
+        const v::Color grid = layout::Color(0x4F9FDF, .65F);
         data.rectangles.reserve(result.timingErrors.size() + 50);
-        data.rectangles.push_back({scatter, background, 0});
-        data.rectangles.push_back({histogram, background, 0});
-        data.rectangles.push_back({{scatter.x, scatter.y + scatter.height / 2, scatter.width, 1}, grid, 0});
-        data.rectangles.push_back({{histogram.x + histogram.width / 2, histogram.y, 1, histogram.height}, grid, 0});
+        // The view owns decorative backgrounds/grid. These zero references
+        // are part of interpreting the data range, followed by points/bins.
+        data.rectangles.push_back({{scatter.x, scatter.y + scatter.height / 2 - 1, scatter.width, 2}, grid, 0});
+        data.rectangles.push_back({{histogram.x + histogram.width / 2 - 1, histogram.y, 2, histogram.height}, grid, 0});
         constexpr std::size_t BinCount = 41;
         std::array<std::size_t, BinCount> bins{};
         for (const auto &sample : result.timingErrors)
@@ -36,7 +35,8 @@ namespace taiko_result_ui
             const double error = static_cast<double>(sample.error.count()) / 1000;
             const float x = static_cast<float>((seconds - data.startSeconds) / (data.endSeconds - data.startSeconds));
             const float y = static_cast<float>((error / data.halfRangeMilliseconds + 1) / 2);
-            const auto color = finger_drum::presentation::LaneKeyBeam::GradeColor(sample.grade);
+            const auto gradeIndex = static_cast<std::size_t>(sample.grade);
+            const auto color = gradeIndex < 5 ? layout::Markers[gradeIndex] : layout::Markers[6];
             data.rectangles.push_back(
                 {{scatter.x + x * (scatter.width - 3), scatter.y + y * (scatter.height - 3), 3, 3}, color, 0});
             const auto bin = static_cast<std::size_t>(std::clamp(
@@ -54,7 +54,7 @@ namespace taiko_result_ui
                 histogram.height * static_cast<float>(bins[i]) / static_cast<float>(data.maximumBinCount);
             data.rectangles.push_back(
                 {{histogram.x + static_cast<float>(i) * binWidth, histogram.y, std::max(1.0F, binWidth - 1), height},
-                 {.2F, .72F, 1, 1},
+                 layout::Accent,
                  0});
         }
         return data;

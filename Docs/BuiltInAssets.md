@@ -7,7 +7,7 @@
 ## 포함 범위
 
 - `Assets/Skins/Default Skin` 전체
-- `Assets/Fonts`의 두 글꼴과 각각의 라이선스
+- `Assets/Fonts`의 세 글꼴과 각각의 라이선스(리절트용 Noto Sans KR 포함)
 
 AngelDream Handshaking MP3 1개·YMM 1개·YMP/YME 5쌍과 이펙트 테스트 WAV 2개는
 EXE에 넣지 않습니다. 추가 WAV는 기본 스킨의 Don/Kat 원본을 재사용한 테스트 파일입니다.
@@ -71,7 +71,7 @@ source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어�
 다음 실행 때 복원됩니다. 설정 파일의 계약은 [TextManagement](TextManagement.md)에 있습니다.
 폴더가 사라지면 내장 기본 스킨을 선택합니다.
 스킨 전환 후 로고 이미지는 즉시 다시 읽고, 플레이/에디터 자산은 해당 화면에
-진입할 때 선택된 스킨에서 읽습니다.
+진입할 때 선택된 스킨에서 읽습니다. 리절트 PNG도 진입 시 선택한 스킨의 `Result`에서 읽습니다.
 
 풍선 완료 효과음은 `HitSounds/TaikoMode/pop.wav`입니다. 다른 스킨에서 이 파일을
 제공하면 해당 파일을 사용하고, 없으면 내장 기본 스킨의 소리로 대체합니다.
@@ -81,6 +81,24 @@ fallback을 사용합니다. 인디케이터는 별도 색 구간 요소로 구�
 상단 진행바는 `InGame/Progress/{Background,Track,Fill,Marker}.png` 네 파일을 사용합니다.
 각 요소는 따로 교체할 수 있고 누락 파일만 내장본으로 대체합니다. 시간 문구는 PNG에
 포함하지 않고 런타임에 표시합니다. 제작 크기와 시간 기준은 같은 Presentation 문서에 있습니다.
+
+## Scene별 PNG
+
+내장 원본은 `FingerDrum.Assets/Assets/Skins/Default Skin` 아래 실제 폴더/VS 필터로 정리합니다.
+플레이는 `InGame`, 기존 로고는 `TitleImage/Logo`, 리절트는 `Result`를 사용합니다.
+리절트의 장식은 Penpot Result · Sky의 SVG/PNG에서 내보내고 래스터화한 자산입니다.
+텍스트·실제 통계·그래프·패널·버튼은 런타임 요소로 남겨 언어/값/해상도에 대응합니다.
+
+| 리절트 상대 경로 | PNG 크기 | 용도 |
+| --- | --- | --- |
+| `Result/Background/Sky.png` | 1920×1080 | 시안의 RightFade 배경과 하늘 veil |
+| `Result/Background/Clouds.png` | 1920×168 | 하단 투명 구름 |
+| `Result/Mode/Taiko.png` | 48×48 | 모드 드럼 아이콘 |
+| `Result/Rank/Frame.png` | 509×336 | 링·날개 장식(배치 폭 508.5) |
+
+외부 스킨도 같은 상대 경로로 각각 교체합니다. 글꼴은 내장 `Assets/Fonts/NotoSansKR.ttf`이며,
+원본 Google Fonts의 가변 굵기 파일과 `NotoSansKR-OFL.txt`(SIL OFL 1.1)를 함께 배포합니다.
+원본 파일: https://github.com/google/fonts/tree/main/ofl/notosanskr . 글꼴 bytes는 수정하지 않았습니다.
 
 곡 선택은 선택한 자산 루트의 `Songs`만 읽습니다. 곡을 캐시에서 다시 생성하지
 않으며, YMP의 `Effect file`이 참조하는 YME도 사용자가 직접 편집할 수 있습니다.

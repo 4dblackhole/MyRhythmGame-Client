@@ -166,6 +166,9 @@
     <ClInclude Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultGraphs.h"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClInclude>
     <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultView.cpp"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClCompile>
     <ClInclude Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultView.h"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClInclude>
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultPanels.cpp"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClCompile>
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultGraphView.cpp"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClCompile>
+    <ClInclude Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultLayout.h"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClInclude>
     <ClCompile Include="Texts\GameScene\ResultScene\ResultTexts.cpp"><Filter>Texts\GameScene\ResultScene</Filter></ClCompile>
     <ClInclude Include="Texts\GameScene\ResultScene\ResultTexts.h"><Filter>Texts\GameScene\ResultScene</Filter></ClInclude>
   </ItemGroup>

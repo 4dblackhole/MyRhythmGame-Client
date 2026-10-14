@@ -14,6 +14,10 @@ namespace finger_drum
         std::optional<std::filesystem::path> effectPath;
         std::filesystem::path musicPath;
         std::string mode;
+        // Display values decoded from the same catalog selection as the paths.
+        // Result/retry uses this snapshot rather than reopening metadata files.
+        std::wstring songTitle;
+        std::wstring patternCreator;
 
         [[nodiscard]] bool IsValid() const noexcept
         {
@@ -26,6 +30,8 @@ namespace finger_drum
             effectPath.reset();
             musicPath.clear();
             mode.clear();
+            songTitle.clear();
+            patternCreator.clear();
         }
     };
 } // namespace finger_drum

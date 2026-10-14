@@ -13,13 +13,23 @@
     <Filter Include="Assets">
       <UniqueIdentifier>{B6666666-6666-4666-8666-666666666664}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets\Fonts" />
+    <Filter Include="Assets\Skins" />
+    <Filter Include="Assets\Skins\Default Skin" />
+    <Filter Include="Assets\Skins\Default Skin\Result" />
+    <Filter Include="Assets\Skins\Default Skin\Result\Background" />
+    <Filter Include="Assets\Skins\Default Skin\Result\Mode" />
+    <Filter Include="Assets\Skins\Default Skin\Result\Rank" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Public\FingerDrumAssets.h"><Filter>Public</Filter></ClInclude>
     <ClCompile Include="Source\FingerDrumAssets.cpp"><Filter>Source</Filter></ClCompile>
     <None Include="Scripts\GenerateAssetPack.ps1"><Filter>Scripts</Filter></None>
-    <None Include="Assets\Fonts\*.*"><Filter>Assets</Filter></None>
-    <None Include="Assets\Skins\Default Skin\**\*.*"><Filter>Assets</Filter></None>
+    <None Include="Assets\Fonts\*.*"><Filter>Assets\Fonts</Filter></None>
+    <None Include="Assets\Skins\Default Skin\**\*.*" Exclude="Assets\Skins\Default Skin\Result\**\*.*"><Filter>Assets</Filter></None>
+    <None Include="Assets\Skins\Default Skin\Result\Background\*.*"><Filter>Assets\Skins\Default Skin\Result\Background</Filter></None>
+    <None Include="Assets\Skins\Default Skin\Result\Mode\*.*"><Filter>Assets\Skins\Default Skin\Result\Mode</Filter></None>
+    <None Include="Assets\Skins\Default Skin\Result\Rank\*.*"><Filter>Assets\Skins\Default Skin\Result\Rank</Filter></None>
     <None Include="Assets\Songs\Music\Angeldream\*.*"><Filter>Assets</Filter></None>
     <None Include="Assets\Songs\Patterns\angeldream\**\*.*"><Filter>Assets</Filter></None>
   </ItemGroup>
