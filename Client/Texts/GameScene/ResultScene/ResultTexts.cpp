@@ -14,13 +14,13 @@ namespace finger_drum::texts
                                               L"시작",
                                               L"종료",
                                               L"판정 개수",
-                                              L"틱 처리 (성공/실패)",
+                                              L"틱 처리",
                                               L"{} / {}",
                                               L"노트별 정확도",
                                               L"RANK",
                                               L"SCORE",
                                               L"곡명",
-                                              L"패턴명",
+                                              L"난이도",
                                               L"제작자",
                                               L"오차 · 빈도",
                                               L"최대 빈도 {}",
@@ -36,7 +36,8 @@ namespace finger_drum::texts
                                               L"리플레이",
                                               L"리트라이",
                                               L"BACK",
-                                              L"ESC / ENTER"};
+                                              L"ESC / ENTER",
+                                              L"아티스트"};
         static constexpr ResultTextSet English{L"Accuracy",
                                                L"{:.6f}%",
                                                L"Total {} · Processed {} · Unprocessed {}",
@@ -48,13 +49,13 @@ namespace finger_drum::texts
                                                L"Start",
                                                L"End",
                                                L"Judgement counts",
-                                               L"Ticks (hit / miss)",
+                                               L"Ticks",
                                                L"{} / {}",
                                                L"Accuracy by note group",
                                                L"RANK",
                                                L"SCORE",
-                                               L"Song",
-                                               L"Pattern",
+                                               L"TITLE",
+                                               L"DIFFICULTY",
                                                L"Creator",
                                                L"Error · frequency",
                                                L"Peak count {}",
@@ -70,7 +71,8 @@ namespace finger_drum::texts
                                                L"Replay",
                                                L"Retry",
                                                L"BACK",
-                                               L"ESC / ENTER"};
+                                               L"ESC / ENTER",
+                                               L"ARTIST"};
         return language == Language::Korean ? Korean : English;
     }
 } // namespace finger_drum::texts

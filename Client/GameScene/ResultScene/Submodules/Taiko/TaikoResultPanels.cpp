@@ -59,7 +59,7 @@ void TaikoResultView::BuildJudgements(v::Visual2DNode &root)
         Label(root, {444, y, 102, 26}, std::to_wstring(counts[i]), 17, 700, v::TextAlignment::Trailing);
     }
     Panel(root, {76, 764, 472, 1}, Keyline, 0);
-    Label(root, {76, 774, 230, 28}, std::wstring(text.ticks), 15, 500, v::TextAlignment::Leading, Muted);
+    Label(root, {76, 774, 210, 28}, std::wstring(text.ticks), 15, 500, v::TextAlignment::Leading, Muted);
     Label(root, {316, 774, 230, 28}, Format(text.tickFormat, result_.acceptedTicks, result_.missedTicks), 18, 600,
           v::TextAlignment::Trailing);
 }
@@ -95,28 +95,42 @@ void TaikoResultView::BuildSummary(v::Visual2DNode &root)
     BuildJudgements(root);
     BuildGroups(root);
 }
+void TaikoResultView::BuildSongBanner(v::Visual2DNode &root)
+{
+    const auto &text = finger_drum::texts::Result(texts_.CurrentLanguage());
+    auto &banner = v::CreatePanel(root, Bounds(Banner), "Result.SongBanner");
+    banner.GetComponent<v::SpriteVisualComponent>()->SetTint(palette::Banner);
+    static_cast<void>(v::CreateSprite(root, Bounds({48, 18, 48, 48}), modeIcon_, "Result.ModeIcon"));
+    const auto white = Color(0xFFFFFF);
+    Label(root, {112, 20, 192, 48}, L"TAIKO", 25, 700, v::TextAlignment::Leading, white);
+    for (const float x : {304.0F, 1392.0F})
+        Panel(root, {x, 20, 1, 48}, Color(0xFFFFFF, .25F), 0);
+    Label(root, {344, 14, 84, 20}, std::wstring(text.song), 11, 600, v::TextAlignment::Leading, white);
+    Label(root, {444, 8, 916, 38}, context_.songTitle.empty() ? L"—" : context_.songTitle, 25, 700,
+          v::TextAlignment::Leading, white);
+    Label(root, {344, 53, 84, 18}, std::wstring(text.artist), 10, 600, v::TextAlignment::Leading, white);
+    Label(root, {444, 45, 916, 30}, context_.songArtist.empty() ? L"—" : context_.songArtist, 16, 500,
+          v::TextAlignment::Leading, white);
+    Label(root, {1424, 14, 448, 20}, std::wstring(text.pattern), 11, 600, v::TextAlignment::Trailing, white);
+    Label(root, {1424, 38, 448, 36}, Decode(result_.summary.patternName), 22, 700, v::TextAlignment::Trailing, white);
+}
 void TaikoResultView::BuildMetadata(v::Visual2DNode &root)
 {
     const auto &text = finger_drum::texts::Result(texts_.CurrentLanguage());
-    static_cast<void>(v::CreateSprite(root, Bounds({609.75F, 234, 508.5F, 336}), rankFrame_, "Result.RankFrame"));
-    Label(root, {764, 290, 200, 24}, std::wstring(text.rank), 13, 700, v::TextAlignment::Center, Muted);
-    Label(root, {728, 316, 272, 166}, L"—", 104, 800, v::TextAlignment::Center, Accent);
-    Label(root, {660, 616, 408, 22}, std::wstring(text.song), 13, 500, v::TextAlignment::Center, Muted);
-    Label(root, {648, 644, 432, 46}, context_.songTitle.empty() ? L"—" : context_.songTitle, 28, 700,
-          v::TextAlignment::Center);
-    Label(root, {660, 714, 408, 22}, std::wstring(text.pattern), 13, 700, v::TextAlignment::Center, Muted);
-    Label(root, {648, 740, 432, 42}, Decode(result_.summary.patternName), 22, 700, v::TextAlignment::Center);
-    Label(root, {660, 804, 408, 22}, std::wstring(text.creator), 13, 500, v::TextAlignment::Center, Muted);
-    Label(root, {648, 832, 432, 36}, context_.patternCreator.empty() ? L"—" : context_.patternCreator, 19, 600,
+    static_cast<void>(v::CreateSprite(root, Bounds({705.75F, 234, 508.5F, 336}), rankFrame_, "Result.RankFrame"));
+    Label(root, {860, 290, 200, 24}, std::wstring(text.rank), 13, 700, v::TextAlignment::Center, Muted);
+    Label(root, {824, 316, 272, 166}, L"—", 104, 800, v::TextAlignment::Center, Accent);
+    Label(root, {756, 616, 408, 22}, std::wstring(text.creator), 13, 500, v::TextAlignment::Center, Muted);
+    Label(root, {744, 644, 432, 40}, context_.patternCreator.empty() ? L"—" : context_.patternCreator, 19, 600,
           v::TextAlignment::Center);
 }
 void TaikoResultView::BuildActions(v::Visual2DNode &root)
 {
     const auto &text = finger_drum::texts::Result(texts_.CurrentLanguage());
-    auto &replay = Button(root, {1152, 914, 352, 62}, "Result.Replay", std::wstring(text.replay), true);
+    auto &replay = Button(root, ReplayButton, "Result.Replay", std::wstring(text.replay), true);
     replay.SetEnabled(false);
     replay.Children().back()->SetEnabled(false);
-    auto &retry = Button(root, {1520, 914, 352, 62}, "Result.Retry", std::wstring(text.retry), false);
+    auto &retry = Button(root, RetryButton, "Result.Retry", std::wstring(text.retry), false);
     retry.SetEnabled(context_.canRetry);
     retry.Children().back()->SetEnabled(context_.canRetry);
     retryId_ = retry.Id();

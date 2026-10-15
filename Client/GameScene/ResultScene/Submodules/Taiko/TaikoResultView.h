@@ -21,7 +21,8 @@ class TaikoResultView final : public IResultView
   private:
     void Build();
     void LoadAssets();
-    void BuildBackground(mrg::visual2d::Visual2DNode &root);
+    void BuildBackground();
+    void BuildSongBanner(mrg::visual2d::Visual2DNode &root);
     void BuildSummary(mrg::visual2d::Visual2DNode &root);
     void BuildHpGraph(mrg::visual2d::Visual2DNode &root);
     void BuildJudgements(mrg::visual2d::Visual2DNode &root);

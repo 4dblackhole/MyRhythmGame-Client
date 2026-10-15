@@ -93,7 +93,7 @@ fallback을 사용합니다. 인디케이터는 별도 색 구간 요소로 구�
 | --- | --- | --- |
 | `Result/Background/Sky.png` | 1920×1080 | 시안의 RightFade 배경과 하늘 veil |
 | `Result/Background/Clouds.png` | 1920×168 | 하단 투명 구름 |
-| `Result/Mode/Taiko.png` | 48×48 | 모드 드럼 아이콘 |
+| `Result/Mode/Taiko.png` | 48×48 | 짙은 상단 배너용 모드 드럼 아이콘(흰색 채, 2026-10-15 Penpot 갱신본) |
 | `Result/Rank/Frame.png` | 509×336 | 링·날개 장식(배치 폭 508.5) |
 
 외부 스킨도 같은 상대 경로로 각각 교체합니다. 글꼴은 내장 `Assets/Fonts/NotoSansKR.ttf`이며,

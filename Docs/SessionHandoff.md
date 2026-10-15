@@ -26,10 +26,13 @@ Retire는 미완료 롱을 포함한 남은 노트를 0점·MISS로 확정합니
 해당 시도에서 복구되지 않으며 Retry가 새 시도로 초기화합니다. 음악 소스 seek·음수 대기 예약과
 정수 us 제어 마커를 연결했습니다. HP/리플레이 자체는 미구현이며 위 문서의 계약을 따라야 합니다.
 
-리절트 Penpot 구현(2026-10-14): [플레이 결과](Gameplay/Results.md).
+리절트 Penpot 구현·배치 갱신(2026-10-14~15): [플레이 결과](Gameplay/Results.md).
 엔진 TextStyle/Visual2D fontWeight를 먼저 반영하고 Noto Sans KR의 네 굵기로 시안의
 3열 배치·장식·실제 통계를 구현했습니다. Retry는 같은 선택 경로의 새 세션,
 Replay는 비활성이며 SCORE/RANK/HP는 미구현 상태를 명시합니다.
+갱신한 시안의 상단 배너에 모드·곡명·아티스트·난이도를 표시하고, 중앙 랭크/제작자와
+오른쪽 528px 그래프 열을 맞췄습니다. 아티스트도 선택 Snapshot으로 전달하며 파일을 다시 읽지 않습니다.
+이번 배치 변경은 기존 엔진 기능을 사용하고 내장 드럼 PNG만 Penpot에서 다시 내보냈습니다.
 Scene별 PNG는 내장 Default Skin/Result 아래에 있고 사용자 스킨의 파일별 fallback을 사용합니다.
 
 최근 성능 수정(2026-10-14): [8개 병목 수정 기록](Reviews/PerformanceFixes-2026-10-14.md).

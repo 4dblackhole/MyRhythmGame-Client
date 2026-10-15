@@ -96,7 +96,7 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
 std::unique_ptr<mrg::scene::GameScene> FingerDrumGame::CreateResultScene()
 {
     auto launch = launchRequest_->Snapshot();
-    ResultViewContext display{launch.songTitle, launch.patternCreator, launch.IsValid()};
+    ResultViewContext display{launch.songTitle, launch.patternCreator, launch.IsValid(), launch.songArtist};
     ResultScene::RetryHandler retry;
     if (display.canRetry)
         retry = [store = launchRequest_, snapshot = std::move(launch)](mrg::scene::SceneManager &scenes)

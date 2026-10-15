@@ -44,6 +44,7 @@ namespace finger_drum::presentation::ui_colors
     } // namespace editor
     namespace result
     {
+        inline constexpr auto Banner = Rgb(0x4B7897);
         inline constexpr auto Ink = Rgb(0x285374), Muted = Rgb(0x5783A0), Accent = Rgb(0x4F9FDF);
         inline constexpr auto Surface = Rgb(0xF9FDFF), Plot = Rgb(0xEAF6FF), Keyline = Rgb(0xBEDFF3);
     } // namespace result

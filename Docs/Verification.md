@@ -71,6 +71,38 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-15 Penpot 리절트 배치 갱신
+
+- 현재 연결된 Result · Sky 보드를 다시 확인하여 88px 상단 배너의 모드·곡명·아티스트·난이도,
+  중앙 랭크/제작자, 오른쪽 528px 그래프 열과 256px 액션 버튼을 반영했습니다.
+  TaikoResultView의 조립, Panels의 정보/버튼, GraphView의 축/범례와 Layout의 좌표 경계를 유지합니다.
+  아티스트는 GameplayLaunchRequest → ResultViewContext의 값 snapshot으로 전달합니다.
+  ResultTexts/UiColors가 문구와 배너 색을 소유하고, 내장 Result/Mode/Taiko.png는 Penpot에서 재출력했습니다.
+  이번 갱신에는 기존 Canvas/PNG/텍스트/RectangleBatch 기능으로 충분하여 엔진 변경이 없습니다.
+- Client Debug/Release x64 전체 solution Build 성공, 일반 빌드 경고/오류 0.
+  영향 프로젝트의 분석 Rebuild 후 최종 solution Build도 성공했습니다.
+  두 구성 전체 로직·기본곡 카탈로그 각각 63개/실패 0, 네 Client smoke 경로씩 총 8개 성공했습니다.
+- ResultPresentation 회귀 두 구성 성공: 새로운 배너/곡·아티스트/제작자/랭크 위치,
+  좁아진 그래프 내 실제 샘플 경계, 버튼 너비/클릭·Replay 비활성, 6자리 점수,
+  언어·portrait/wide resize·Canvas 정리·실제 deferred Result/Retry 전환을 검사했습니다.
+  SceneStateTests는 선택 snapshot의 아티스트 독립 소유와 Clear를 검사합니다.
+  MusicSelectView 회귀도 두 구성 성공했습니다. 그래프는 샘플 수와 무관하게 한 batch를 유지합니다.
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 MRG.Client, ClientLogic, Rhythm.Tests의 실제
+  Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했으며 신규 진단·파싱 오류 0.
+  기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지합니다.
+  두 표시 회귀 소스도 실행 스크립트의 `/analyze`로 검사했습니다.
+- 변경 코드와 직접 호출부의 선택/결과/Retry 데이터 수명, 빈 메타데이터 fallback,
+  좌표 변환·문구 clipping·새 그래프 범위, Canvas 재구성과 함수 책임을 검토했습니다.
+  CheckArchitecture(11프로젝트), 양쪽 git diff --check 성공.
+  LaneKeyBeam.cpp와 Debug/Release Option.ini의 SHA256을 대조해 보존했고 사용자 Songs/Skins를 수정하지 않았습니다.
+  로그와 캡처는 ignored `build/result-update-2026-10-15`에 있습니다.
+- **화면 확인:** 실제 D3D12의 1920×1080 한국어(입력 오차 있음)/영어(입력 오차 없음),
+  720×1280 한국어 offscreen 캡처를 Penpot과 비교하여 배너·중앙 정렬·그래프/버튼 표시를 눈으로 확인했습니다.
+  캡처에는 실제 기본곡 메타데이터와 플레이 규칙으로 만든 결과를 사용했습니다.
+  실행 창에서 물리 키/마우스 조작 또는 청음하는 수동 검증은 미실시입니다.
+  버튼 입력과 Scene 전환은 자동 검사입니다.
+
 ## 2026-10-15 해상도·모드별 키·글로벌 오프셋 옵션
 
 - [TextManagement](TextManagement.md)의 해상도 즉시 적용/저장, Taiko 기본·보조 8키,

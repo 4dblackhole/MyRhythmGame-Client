@@ -7,6 +7,7 @@
 - `Gameplay · Sky`: 페이지 `618d0170-ff55-8025-8008-80646ceaa9d9`.
 - `Result · Sky`: 페이지 `3ef1606b-c70d-804e-8008-c87342f13d4e`,
   보드 `3ef1606b-c70d-804e-8008-c87343546e9d` (리절트 화면 · Result · 1920×1080).
+  2026-10-15 갱신: 짙은 상단 정보 배너, 중앙 랭크·제작자, 오른쪽 528px 그래프/버튼 열.
   표시·리트라이·미구현 데이터의 계약은 [플레이 결과](Gameplay/Results.md)에 있습니다.
 - `Special Note Focus · PNG Sources · Export Ready`: BalloonProcessing,
   BalloonBurst, DengDengProcessing 투명 PNG와 200ms 처리 성공 상태.

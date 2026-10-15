@@ -101,7 +101,7 @@ v::Visual2DNode &TaikoResultView::Button(v::Visual2DNode &root, v::Rect designBo
     text.SetTextColor(outlined ? Ink : Color(0xFFFFFF));
     return button;
 }
-void TaikoResultView::BuildBackground(v::Visual2DNode &root)
+void TaikoResultView::BuildBackground()
 {
     const auto size = canvas_->LogicalSize();
     auto &anchor = canvas_->AnchorNode(v::Anchor::Center);
@@ -113,8 +113,6 @@ void TaikoResultView::BuildBackground(v::Visual2DNode &root)
         v::CreateSprite(anchor, {-size.width / 2, -size.height / 2, size.width, 168}, clouds_, "Result.Clouds");
     clouds.SetZIndex(1);
     footerId_ = clouds.Id();
-    static_cast<void>(v::CreateSprite(root, Bounds({48, 30, 48, 48}), modeIcon_, "Result.ModeIcon"));
-    Label(root, {112, 32, 192, 48}, L"TAIKO", 25, 700);
 }
 void TaikoResultView::Build()
 {
@@ -128,7 +126,8 @@ void TaikoResultView::Build()
     const float scale = std::min(canvas_->LogicalSize().width / Width, 1.0F);
     root.Transform().SetScale(scale, scale, 1);
     contentId_ = root.Id();
-    BuildBackground(root);
+    BuildBackground();
+    BuildSongBanner(root);
     BuildSummary(root);
     BuildMetadata(root);
     BuildGraphs(root);

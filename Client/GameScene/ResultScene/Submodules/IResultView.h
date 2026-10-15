@@ -13,6 +13,7 @@ struct ResultViewContext
     std::wstring songTitle;
     std::wstring patternCreator;
     bool canRetry{};
+    std::wstring songArtist;
 };
 class IResultView
 {

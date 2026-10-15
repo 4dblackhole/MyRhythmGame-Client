@@ -24,6 +24,7 @@ namespace finger_drum
         // Freeze settings for this attempt, including a Result retry.
         std::int32_t globalOffsetMs{};
         std::map<std::string, std::vector<std::uint16_t>> inputKeys;
+        std::wstring songArtist;
 
         [[nodiscard]] bool IsValid() const noexcept
         {
@@ -40,6 +41,7 @@ namespace finger_drum
             patternCreator.clear();
             globalOffsetMs = 0;
             inputKeys.clear();
+            songArtist.clear();
         }
     };
 } // namespace finger_drum

@@ -117,6 +117,7 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
         song.audioPath,      pattern.pattern.mode,
         SongTitle(song),     pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())};
     request.globalOffsetMs = options_.Values().globalOffsetMs;
+    request.songArtist = SongArtist(song);
     if (const auto keys = options_.Values().modeKeys.find(request.mode); keys != options_.Values().modeKeys.end())
         request.inputKeys = keys->second;
     if (purpose_ == SongSelectPurpose::Editor)

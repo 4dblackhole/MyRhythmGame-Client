@@ -13,6 +13,7 @@ namespace finger_drum::texts
         std::wstring_view histogram, peakFormat, frequency, errorAxis, early, late;
         std::wstring_view scatter, mean, standardDeviation, variance, noTimingData;
         std::wstring_view replay, retry, back, backShortcut;
+        std::wstring_view artist;
     };
     const ResultTextSet &Result(Language language) noexcept;
 } // namespace finger_drum::texts

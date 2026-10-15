@@ -67,6 +67,16 @@ namespace
                 return found;
         return nullptr;
     }
+    const v::Visual2DNode *FindText(const v::Visual2DNode &node, std::wstring_view value)
+    {
+        const auto *text = node.GetComponent<v::TextVisualComponent>();
+        if (text && text->Text() == value)
+            return &node;
+        for (const auto &child : node.Children())
+            if (const auto *found = FindText(*child, value))
+                return found;
+        return nullptr;
+    }
     std::unique_ptr<mode::IPlayResult> FixtureResult()
     {
         finger_drum::chart::PatternDocument pattern;
@@ -109,17 +119,41 @@ namespace
         mrg::graphics::MeshRenderSystem meshes;
         mrg::graphics::TextRenderSystem textRendering;
         mrg::audio::AudioSystem audio;
-        auto view = CreateResultView(*result, visuals, texts, {L"Recorded song", L"Recorded creator", true});
+        auto view = CreateResultView(*result, visuals, texts,
+                                     {L"Recorded song", L"Recorded creator", true, L"Recorded artist"});
         view->Initialize({meshes, textRendering, renderer, audio, 1280, 720});
         view->SetVisible(true);
         auto *canvas = visuals.FindCanvas(1);
         if (!canvas)
             throw std::runtime_error("Result Canvas must exist.");
         Check(HasText(*canvas, L"정확도") && HasText(*canvas, L"Recorded song") &&
-                  HasText(*canvas, L"Recorded creator") &&
+                  HasText(*canvas, L"Recorded creator") && HasText(*canvas, L"Recorded artist") &&
                   HasText(*canvas, std::format(L"{:.6f}%", taiko->summary.accuracy.Percent())),
               "Result view must display the recorded six-decimal accuracy.");
         const auto packets = canvas->BuildDrawList();
+        const auto *banner = FindNode(canvas->Root(), "Result.SongBanner");
+        const auto *song = FindText(canvas->Root(), L"Recorded song");
+        const auto *artist = FindText(canvas->Root(), L"Recorded artist");
+        const auto *creator = FindText(canvas->Root(), L"Recorded creator");
+        const auto *rank = FindNode(canvas->Root(), "Result.RankFrame");
+        if (!banner || !song || !artist || !creator || !rank)
+            throw std::runtime_error("Result must retain each metadata element independently.");
+        Check(banner->Bounds().width == 1920 && banner->Bounds().height == 88 && song->Bounds().x == 444 &&
+                  song->Bounds().y == 1034 && artist->Bounds().x == 444 && artist->Bounds().y == 1005 &&
+                  creator->Bounds().x == 744 && creator->Bounds().y == 396 && rank->Bounds().x == 705.75F,
+              "Song/artist occupy the new top banner, while rank and creator match the centered Penpot column.");
+        for (const auto &packet : packets)
+            if (packet.type == v::DrawPacketType::RectangleBatch)
+                for (const auto &primitive : *packet.rectangles)
+                {
+                    const auto b = primitive.bounds;
+                    const bool inHistogram =
+                        b.x >= 1420 && b.x + b.width <= 1844.01F && b.y >= 692 && b.y + b.height <= 898.01F;
+                    const bool inScatter =
+                        b.x >= 1434 && b.x + b.width <= 1844.01F && b.y >= 272 && b.y + b.height <= 460.01F;
+                    Check(inHistogram || inScatter,
+                          "Actual graph samples must remain inside the narrower design plots.");
+                }
         Check(std::ranges::count(packets, v::DrawPacketType::RectangleBatch, &v::DrawPacket::type) == 1 &&
                   packets.size() < 200,
               "Large result graphs must use one batch with constant widget count.");
@@ -133,6 +167,9 @@ namespace
             throw std::runtime_error("Result retry/replay nodes must exist.");
         Check(retry->IsEnabled() && !replay->IsEnabled(),
               "Retry is available for a played selection; replay remains disabled.");
+        Check(replay->Bounds().x == 1344 && retry->Bounds().x == 1616 && replay->Bounds().width == 256 &&
+                  retry->Bounds().width == 256,
+              "Actions must fit the new 528px right column.");
         const auto click = [&](const v::Visual2DNode &button)
         {
             const auto b = button.BoundsInCanvas();
