@@ -32,7 +32,7 @@ std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::Creat
 std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::CreateDemoSession()
 {
     finger_drum::chart::PatternDocument pattern;
-    pattern.name = "FingerDrum architecture test";
+    pattern.name = "Architecture test";
     pattern.mode = "Taiko";
     pattern.baseBpm = 120.0;
     pattern.judgementLevel = 50;

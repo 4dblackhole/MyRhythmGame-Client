@@ -9,6 +9,11 @@
 
 ## 작업 위치와 경계
 
+게임 표시 이름(2026-10-16): `Client/Texts/GameIdentity.h`의 `GameName` 한 곳에서 변경합니다.
+게임 창·시작/자산 오류창과 에디터 확인창이 참조하며 언어 표에는 에디터 접미사만 둡니다.
+기존 FingerDrum 클래스/Scene ID·캐시와 MyRhythmGame.exe는 내부 식별자로 유지합니다.
+범위와 변경 방법은 [TextManagement](TextManagement.md#게임-이름-변경)를 참고합니다.
+
 옵션 패널 선행 변경(2026-10-15): [TextManagement](TextManagement.md).
 공통 UI 색상을 UiColors.h로 모으고 기존 하늘색을 재사용하여 옵션 배경/필드 대비를 높였습니다.
 ESC는 마우스 위치와 무관하게 목록/드래그를 정리하고 패널을 닫으며 뒤 화면에 전달하지 않습니다.

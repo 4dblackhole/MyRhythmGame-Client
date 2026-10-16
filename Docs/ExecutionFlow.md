@@ -1,4 +1,4 @@
-# FingerDrum 실행 흐름과 객체 수명
+# Client 실행 흐름과 객체 수명
 
 엔진은 Win32, D3D12, 입력, FMOD와 프레임 루프를 소유하고 Client는
 게임 설정과 Scene을 소유합니다.
@@ -39,7 +39,7 @@ flowchart TD
    파일이 없으면 기본 설정을 저장합니다. 저장된 스킨
    폴더가 없으면 `Default Skin`을 사용합니다. 상세 형식은 [TextManagement](TextManagement.md)입니다.
 3. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
-   초기화합니다.
+   초기화합니다. 창 제목은 공통 `Texts/GameIdentity.h`의 `GameName`을 사용합니다.
 4. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest, Result route를 등록합니다.
 5. `SceneManager`가 최초 Scene을 활성화하고 `Initialize`를 한 번 호출합니다.
    Client 초기화 hook은 첫 update/render 전에 현재 출력 장치 목록에서 저장된

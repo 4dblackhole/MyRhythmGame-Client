@@ -11,6 +11,7 @@
 | 곡/난이도 이동·검색·정렬 | 같은 폴더 `SongSelectionState.*`, 입력 연결은 SongSelectInput.cpp | SceneStateTests.cpp |
 | 곡 미리듣기 | 같은 폴더 `SongPreviewController.*` | AudioPlayback 공개 계약, lobby smoke |
 | 문구·언어·글꼴 | `Client/Texts/TextCatalog.*`, 해당 화면의 `Texts/**/<화면>*Texts.*` | TextManagement; 해당 화면 smoke |
+| 게임 표시 이름 | `Client/Texts/GameIdentity.h` | FingerDrumGame의 창 제목, Main의 오류창, EditorInput/EditorTexts의 확인창; TextManagement, 네 smoke |
 | 텍스트 배치·clip·아틀라스/업로드·긴 제목 | 엔진 `Graphics.D3D12/Text`, `Graphics.D3D12/Visual2D`, `Core/Visual2D`; `Client/Presentation/MarqueeTextComponent.*` | 엔진 TextRendering 문서/SDK --text-rendering·--text-pixels; MusicSelectViewTests; Client 직접 DrawPacket 생성/검사, 네 smoke |
 | 로고/곡 선택 옵션 패널·ESC 닫기 | `Client/Presentation/OptionsPanel.*` | LogoView/MusicSelectView 입력 소비; OptionsPanelTests; logo/lobby smoke |
 | 공통 UI 색상 | `Client/Presentation/UiColors.h` | LogoStyle / SongSelectLayout / EditorSupport / TaikoResultLayout / GameplayPauseMenu; Options/MusicSelect/Editor/Result/Pause 표시 회귀 |

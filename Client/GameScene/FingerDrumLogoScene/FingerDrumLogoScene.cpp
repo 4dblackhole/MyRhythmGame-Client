@@ -35,7 +35,7 @@ void FingerDrumLogoScene::Update(const mrg::UpdateContext &context,
     {
         if (!scenes.ChangeScene(finger_drum::scene_ids::Lobby))
         {
-            throw std::runtime_error("Failed to enter the temporary FingerDrum Lobby Scene.");
+            throw std::runtime_error("Failed to enter the song select Scene.");
         }
         return;
     }

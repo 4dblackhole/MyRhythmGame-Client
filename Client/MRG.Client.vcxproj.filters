@@ -46,6 +46,7 @@
     <ClInclude Include="App\OptionSettings.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\FingerDrumGame.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\FingerDrumGame.h"><Filter>App</Filter></ClInclude>
+    <ClInclude Include="Texts\GameIdentity.h"><Filter>Texts</Filter></ClInclude>
     <ClCompile Include="App\Main.cpp"><Filter>App</Filter></ClCompile>
     <ClCompile Include="Audio\GameplayAudioRouter.cpp"><Filter>Audio</Filter></ClCompile>
     <ClInclude Include="Audio\GameplayAudioRouter.h"><Filter>Audio</Filter></ClInclude>

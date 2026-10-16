@@ -7,6 +7,7 @@
 ```text
 Client/Texts/
   TextCatalog.*                         언어 목록, 현재 언어, 언어별 글꼴
+  GameIdentity.h                        언어와 무관한 제품 표시 이름
   Options/OptionTexts.*                 공통 옵션 패널
   GameScene/FingerDrumLogoScene/        로고 화면
   GameScene/MusicSelectScene/           플레이/에디터 곡 선택
@@ -19,6 +20,19 @@ Client/Texts/
 물리 폴더와 `MRG.Client.vcxproj.filters`의 `Texts` 트리는 같습니다. 문구는 사용
 화면의 `*TextSet`에 한국어·영어를 같은 필드 순서로 작성합니다. 새 화면 문구를
 공용 대형 표에 모으지 않고 그 화면의 파일에 추가합니다.
+
+## 게임 이름 변경
+
+`Client/Texts/GameIdentity.h`의 `finger_drum::texts::GameName`이 제품 표시 이름의 유일한 정의입니다.
+이 값을 바꾸고 다시 빌드하면 게임 창 제목과 시작/내장 자산 오류창에 함께 적용됩니다.
+에디터의 미저장 변경 확인창은 같은 이름에 EditorTexts의 언어별 `editorTitleSuffix`를 붙입니다.
+접미사 표에 게임 이름을 복사하거나 언어마다 같은 이름을 따로 정의하지 않습니다.
+이름은 정적 수명의 UTF-16 문자열이므로 Win32 제목에도 변환 없이 전달합니다.
+
+저장소·프로젝트/클래스명, Scene/Canvas ID, EXE 파일명과 자산 캐시 경로는 표시 이름과
+분리된 내부 식별자입니다. 표시 이름을 바꿔도 기존 설정/캐시/스킨 참조는 유지됩니다.
+재사용 엔진의 기본 창 제목은 Client가 GetEngineConfig에서 덮어씁니다.
+현재 로고 PNG의 `Logo` 문구는 별도의 임시 그림이며 게임 이름 문자열을 포함하지 않습니다.
 
 ## 언어와 글꼴 추가
 

@@ -128,6 +128,7 @@
     <ClInclude Include="App\OptionSettings.h" />
     <ClCompile Include="App\FingerDrumGame.cpp" />
     <ClInclude Include="App\FingerDrumGame.h" />
+    <ClInclude Include="Texts\GameIdentity.h" />
     <ClCompile Include="App\Main.cpp" />
     <ClCompile Include="Audio\GameplayAudioRouter.cpp" />
     <ClInclude Include="Audio\GameplayAudioRouter.h" />

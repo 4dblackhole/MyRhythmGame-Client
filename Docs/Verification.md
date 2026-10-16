@@ -71,6 +71,36 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-16 게임 표시 이름 중앙화·변경
+
+- 기존 창 제목, 시작/내장 자산 오류창 제목과 에디터 확인창의 한국어/영어 표에
+  FingerDrum이 각각 하드코딩되어 있었습니다. 먼저 공통 GameIdentity.h의 GameName으로
+  참조를 모은 뒤 요청한 새 표시 이름으로 변경했습니다. 이름의 코드 정의는 한 곳입니다.
+  FingerDrumGame은 창 제목, Main의 ReportStartupError는 UTF-8 진단의 Unicode 오류창을 담당합니다.
+  EditorTexts는 언어별 접미사만 보관하고 EditorInput에서 공통 이름과 조합합니다.
+  내부 Scene 오류/데모 제목에서 불필요한 제품 이름도 제거했습니다.
+  프로젝트/필터에 헤더를 등록했고 변경 방법은 [TextManagement](TextManagement.md#게임-이름-변경)에 기록했습니다.
+- Client Debug/Release x64 전체 solution Build 성공, 일반 빌드 경고/오류 0.
+  두 구성 로직·기본곡 카탈로그 각각 63개/실패 0, 네 Client smoke 경로씩 총 8개 성공했습니다.
+  EditorPresentation 회귀(오디오/모드/메뉴/재생)도 두 구성 성공했습니다.
+  소스 감사에서 이전 표시 이름 리터럴/제목 필드 잔여가 없음을 확인하고,
+  두 구성 EXE의 UTF-16 데이터에 새 이름이 반영되었는지 확인했습니다.
+- MSVC Code Analysis(`/analyze`)를 영향 프로젝트 MRG.Client의 실제 Debug/Release x64
+  include/define/PCH/C++20 설정으로 실행했습니다.
+  `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했으며 신규 진단·파싱 오류 0.
+  기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지합니다.
+  에디터 표시 회귀 소스도 실행 스크립트의 `/analyze`로 검사했습니다.
+- 변경 코드와 직접 호출부의 이름 수명/NUL 종료, Win32 wide 문자열 전달,
+  에디터 임시 제목의 동기 호출 수명, 언어 표의 constexpr/noexcept 유지,
+  오류 디코딩·smoke 표시 정책과 함수 책임을 검토했습니다.
+  CheckArchitecture(11프로젝트), Client/엔진 git diff --check 성공.
+  사용자 LaneKeyBeam.cpp와 Debug/Release Option.ini의 SHA256을 대조해 보존했습니다.
+  사용자 곡·스킨/로고 PNG, 캐시 경로, 내부 식별자와 EXE 파일명은 변경하지 않았습니다.
+  엔진 변경은 없으며 로그는 ignored `build/game-name-2026-10-16`에 있습니다.
+- **실제 수동 확인:** 창 제목·오류창/미저장 확인창을 직접 열어 확인하는 수동 조작은 미실시입니다.
+  위 검증은 자동 빌드/분석·로직/표시 회귀·숨김 smoke와 소스/바이너리 감사입니다.
+  기본 로고 PNG를 눈으로 확인했으며 제품 이름이 아닌 임시 `Logo` 문구가 들어 있습니다.
+
 ## 2026-10-15 Penpot 리절트 배치 갱신
 
 - 현재 연결된 Result · Sky 보드를 다시 확인하여 88px 상단 배너의 모드·곡명·아티스트·난이도,

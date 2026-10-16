@@ -60,7 +60,7 @@ namespace finger_drum::texts
             L"음악 FFT 스펙트로그램",
             L"예상 히트사운드 FFT 스펙트로그램",
             L"저장하지 않은 변경을 버리고 나가시겠습니까?",
-            L"FingerDrum 에디터",
+            L"에디터",
             L"확인",
             L"취소"};
 
@@ -122,7 +122,7 @@ namespace finger_drum::texts
             L"MUSIC FFT SPECTROGRAM",
             L"EXPECTED HIT-SOUND FFT SPECTROGRAM",
             L"Discard unsaved changes and leave?",
-            L"FingerDrum Editor",
+            L"Editor",
             L"OK",
             L"Cancel"};
         return language == Language::Korean ? Korean : English;

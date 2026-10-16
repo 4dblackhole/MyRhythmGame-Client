@@ -69,7 +69,7 @@ void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::Sce
     if (command == SongSelectCommand::Back)
     {
         if (!scenes.ChangeScene(finger_drum::scene_ids::Logo))
-            throw std::runtime_error("Failed to return to the FingerDrum Logo.");
+            throw std::runtime_error("Failed to return to the title Scene.");
     }
     else if (command == SongSelectCommand::Launch)
         StartSelectedPattern(scenes);

@@ -29,7 +29,7 @@ namespace logo_ui
         ComponentType *component = node.GetComponent<ComponentType>();
         if (component == nullptr)
         {
-            throw std::logic_error("The FingerDrum menu node is missing a component.");
+            throw std::logic_error("The title menu node is missing a component.");
         }
         return *component;
     }

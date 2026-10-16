@@ -9,6 +9,7 @@
 #include "GameScene/ResultScene/ResultScene.h"
 #include "GameScene/RhythmTestScene/RhythmTestScene.h"
 #include "Presentation/UiColors.h"
+#include "Texts/GameIdentity.h"
 
 #include <Windows.h>
 
@@ -37,7 +38,7 @@ FingerDrumGame::FingerDrumGame(const bool smokeTest, std::string initialSceneId,
 mrg::EngineConfig FingerDrumGame::GetEngineConfig() const
 {
     mrg::EngineConfig config;
-    config.windowTitle = L"FingerDrum";
+    config.windowTitle = finger_drum::texts::GameName;
     config.windowWidth = optionSettings_.Values().windowWidth;
     config.windowHeight = optionSettings_.Values().windowHeight;
     const auto color = finger_drum::presentation::ui_colors::ClearBackground;
@@ -89,7 +90,7 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
         !scenes.RegisterScene(std::string(finger_drum::scene_ids::Result), mrg::scene::SceneRetention::DestroyOnExit,
                               [this] { return CreateResultScene(); }))
     {
-        throw std::runtime_error("Failed to register the FingerDrum Scenes.");
+        throw std::runtime_error("Failed to register the game Scenes.");
     }
 }
 

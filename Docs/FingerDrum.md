@@ -1,7 +1,10 @@
-# FingerDrum 첫 화면
+# 첫 화면과 게임 표시 이름
 
 `FingerDrumGame`은 현재 Client의 게임 진입점이며, 첫 Scene은
 `FingerDrumLogoScene`이다. 배경 clear color는 AliceBlue (`#F0F8FF`)다.
+제품 표시 이름은 [GameIdentity.h](../Client/Texts/GameIdentity.h)의 `GameName`을 참조한다.
+창/오류창/에디터 확인창의 이름 변경 방법과 내부 식별자와의 구분은
+[문구 관리](TextManagement.md#게임-이름-변경)를 따른다.
 
 ## 로고 asset과 배치
 

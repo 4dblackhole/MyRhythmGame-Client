@@ -1,5 +1,7 @@
 #include "EditorView.h"
+#include "Texts/GameIdentity.h"
 #include <algorithm>
+#include <format>
 #include <sstream>
 using namespace editor_ui;
 
@@ -112,7 +114,8 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
             state_.RequestRebuild();
         }
         else if (!state_.Document().Dirty() ||
-                 MessageBoxW(GetActiveWindow(), Texts().discardChanges.data(), Texts().editorTitle.data(),
+                 MessageBoxW(GetActiveWindow(), Texts().discardChanges.data(),
+                             std::format(L"{} {}", finger_drum::texts::GameName, Texts().editorTitleSuffix).c_str(),
                              MB_YESNO | MB_ICONQUESTION) == IDYES)
             leave = true;
     }

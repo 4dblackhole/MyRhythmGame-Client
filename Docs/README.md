@@ -20,7 +20,7 @@
 | Penpot 결과 화면·상단 곡 정보·리트라이·판정 통계·오차 그래프·us 입력 로그 | [플레이 결과](Gameplay/Results.md) | `FingerDrum.Modes/Mode/Results`, `Taiko/Results`, `Client/GameScene/ResultScene`; 내장 Result PNG |
 | 플레이 디버그 조작·전체 노트/Buzz 재현 | [디버깅](Gameplay/Debugging.md) | `RhythmTestScene/Submodules/GameplayInput.cpp`, `Tests/Rhythm/Submodules/BuzzReplayTests.cpp` |
 | 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
-| 문구·언어·글꼴·공통 UI 색상·옵션/ESC·해상도·키·글로벌 오프셋·Option.ini | [TextManagement](TextManagement.md) | `Client/Texts`, `Client/Presentation/UiColors.h` / `OptionsPanel.*`, `Client/App/OptionSettings.*` |
+| 게임 표시 이름·문구·언어·글꼴·공통 UI 색상·옵션/ESC·해상도·키·글로벌 오프셋·Option.ini | [TextManagement](TextManagement.md) | `Client/Texts/GameIdentity.h`, 화면별 Texts; `Client/Presentation/UiColors.h` / `OptionsPanel.*`, `Client/App/OptionSettings.*` |
 | Canvas·입력·클리핑 API 사용 | [Visual2DGuide](Visual2DGuide.md) | 해당 Scene의 Submodules |
 | 개발/배포 자산 경로·난이도별 YMP/YME·스킨/fallback | [BuiltInAssets](BuiltInAssets.md) | `Client/App/SkinSetSelection.*`, `AssetPaths.h`, `FingerDrum.Assets` |
 | 시작·Scene 전환·종료·소유권 | [ExecutionFlow](ExecutionFlow.md) | `Client/App`, `Client/GameFlow` |

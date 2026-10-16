@@ -9,6 +9,7 @@
 #include "App/FingerDrumGame.h"
 #include "FingerDrumAssets.h"
 #include "GameFlow/FingerDrumSceneIds.h"
+#include "Texts/GameIdentity.h"
 
 #include <Windows.h>
 
@@ -34,6 +35,19 @@ namespace
 #endif
     }
 
+    void ReportStartupError(const char *error, const bool showWindow)
+    {
+        // Both startup failure paths decode UTF-8 and use the shared game name.
+        const int length = MultiByteToWideChar(CP_UTF8, 0, error, -1, nullptr, 0);
+        std::wstring message(static_cast<std::size_t>(std::max(length, 1)), L'\0');
+        if (length > 0)
+            MultiByteToWideChar(CP_UTF8, 0, error, -1, message.data(), length);
+        else
+            message = L"Unable to decode the startup error.";
+        OutputDebugStringW(message.c_str());
+        if (showWindow)
+            MessageBoxW(nullptr, message.c_str(), finger_drum::texts::GameName, MB_OK | MB_ICONERROR);
+    }
 }
 
 int WINAPI wWinMain(
@@ -47,11 +61,7 @@ int WINAPI wWinMain(
     std::string assetError;
     if (!finger_drum::assets::InitializeBuiltInAssets(assetError))
     {
-        MessageBoxA(
-            nullptr,
-            assetError.c_str(),
-            "FingerDrum built-in asset error",
-            MB_OK | MB_ICONERROR);
+        ReportStartupError(assetError.c_str(), true);
         return EXIT_FAILURE;
     }
 
@@ -97,17 +107,7 @@ int WINAPI wWinMain(
     }
     catch (const std::exception &error)
     {
-        // Application/engine failures are not necessarily option errors. Decode
-        // UTF-8 explicitly so paths and localized diagnostics survive Win32 UI.
-        const int length = MultiByteToWideChar(CP_UTF8, 0, error.what(), -1, nullptr, 0);
-        std::wstring message(static_cast<std::size_t>(std::max(length, 1)), L'\0');
-        if (length > 0)
-            MultiByteToWideChar(CP_UTF8, 0, error.what(), -1, message.data(), length);
-        else
-            message = L"Unable to decode the startup error.";
-        OutputDebugStringW(message.c_str());
-        if (!smokeTest)
-            MessageBoxW(nullptr, message.c_str(), L"FingerDrum", MB_OK | MB_ICONERROR);
+        ReportStartupError(error.what(), !smokeTest);
         return EXIT_FAILURE;
     }
 }
