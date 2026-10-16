@@ -71,6 +71,30 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 에디터 분석 worker C26115 해소
+
+- AudioAnalysisWorker의 대기·대기열 꺼내기를 WaitAndDequeue로 분리했습니다.
+  unique_lock은 정상 반환과 취소 반환 모두 같은 RAII 범위에서 자동 해제됩니다.
+  Run은 잠금 범위를 벗어난 뒤 분석 작업과 큰 결과의 해제를 실행합니다.
+  수동 unlock과 자동 해제를 섞던 구조를 정리했으며 진단 억제나 분석 옵션 변경은 없습니다.
+- 기존 단일 worker·FIFO 대기열·stop_token·완료 결과의 release/acquire 공개와
+  Scene 종료 시 취소/프로세스 종료 시 join 수명은 유지했습니다. 변경 함수와 직접 호출부의
+  잠금 범위, 예외, 결과 소유권, Scene/renderer 비참조, 멤버 파괴 순서를 검토했습니다.
+- Debug/Release x64 전체 solution Build 및 MRG.Client MSVC 14.44 Code Analysis Build
+  (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
+  변경된 EditorAnalysisController도 각 구성의 CL.command.1.tlog 인수로 /analyze:only를
+  실행했습니다. 두 구성 모두 C26115가 사라졌으며 신규 경고·분석 진단·파싱 오류가 없습니다.
+- EditorPresentation 회귀를 두 구성에서 /W4 /analyze로 빌드·실행했습니다.
+  분석을 연속 8회 요청·취소하고 요청한 에디터를 파괴한 뒤 다음 실제 음악/히트사운드의
+  PCM·FFT 분석이 정상 완료되는지 확인했습니다. 기존 오디오 뷰·메뉴·모드·재생/seek·
+  메트로놈 검사와 테스트 프로세스 종료도 통과했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0, 네 smoke 경로는 총 8개 exit 0입니다.
+- CheckArchitecture(11프로젝트), Client/엔진 git diff --check 통과. 엔진 소스/포인터 변경 없음.
+  사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 en/ko.ini의 해시 일치로
+  보존을 확인했습니다. 로그·분석 인수는 ignored build/analysis-lock-2026-10-17에 있습니다.
+  위 결과는 자동 검증이며 실제 창에서 물리 키·마우스로 조작하거나 오디오를 직접 청취한
+  수동 검증은 미실시입니다.
+
 ## 2026-10-17 Penpot 일시정지 UI
 
 - 연결된 Penpot의 Gameplay · Sky / b0134a97-87eb-801a-8008-cca341851088 보드를

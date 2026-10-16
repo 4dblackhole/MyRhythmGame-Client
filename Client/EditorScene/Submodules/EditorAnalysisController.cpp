@@ -46,15 +46,25 @@ namespace
         {
             while (!stop.stop_requested())
             {
-                std::unique_lock lock(mutex_);
-                if (!wake_.wait(lock, stop, [this] { return !operations_.empty(); }))
+                std::function<void()> operation;
+                if (!WaitAndDequeue(stop, operation))
                     break;
-                auto operation = std::move(operations_.front());
-                operations_.pop_front();
-                lock.unlock();
+                // Queue access has finished and its lock has left scope before
+                // running work, including destruction of retired audio data.
                 try { operation(); }
                 catch (...) { /* Keep the worker available if a cleanup task fails. */ }
             }
+        }
+        bool WaitAndDequeue(std::stop_token stop, std::function<void()> &operation)
+        {
+            std::unique_lock lock(mutex_);
+            if (!wake_.wait(lock, stop, [this] { return !operations_.empty(); }))
+                return false;
+            operation = std::move(operations_.front());
+            operations_.pop_front();
+            // Both the dequeue and cancellation paths release through the same
+            // RAII lifetime. No manual unlock is mixed with scope-based release.
+            return true;
         }
         std::mutex mutex_;
         std::condition_variable_any wake_;

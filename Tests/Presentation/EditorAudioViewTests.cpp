@@ -161,6 +161,9 @@ int main()
             Check(playback.PlaybackCount() == 0, "Leaving preview must stop its own voice");
             for (int i = 0; i < 10; ++i) preview.UpdatePreviewAudio(.02);
         }
+        // Cancellation must leave the shared queue available for the next real
+        // analysis, including when the requesting editor has been destroyed.
+        for (int attempt = 0; attempt < 8; ++attempt)
         {
             EditorWorkspace cancelled({selected.patternPath, selected.effectPath, song.audioPath, selected.pattern.mode});
             cancelled.Initialize();

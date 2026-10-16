@@ -145,8 +145,9 @@ dense cue deadlines, alias/voice reuse, expired-cue skipping and cleanup through
 EditorModeTests checks time zoom at five scales, stable lane/head dimensions and zoomed snapping,
 unchanged chart timing/revision and consecutive Z/X, last-tail/music-end destinations,
 missing/stale duration rejection, retry and manual-seek/direction reset behavior.
-preview failure retry suppression/selection recovery/owned voice cleanup and
-detaching a cancelled analysis job. Drawing assertions do not initialize a GPU;
+Additional checks cover preview failure retry suppression, selection recovery, owned voice cleanup,
+and eight consecutive cancelled analysis jobs followed by successful real audio analysis.
+Drawing assertions do not initialize a GPU;
 this does not replace visual inspection, listening or mouse testing in the app.
 
 ## Options panel and Option.ini regression
