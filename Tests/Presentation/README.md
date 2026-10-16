@@ -44,6 +44,8 @@ and clamped markers, all seven overlays, MISS without invented input timing,
 POOR only on red-beam rejection, out-of-range/release/unjudged-tick suppression,
 200ms fade/retrigger/reset, inherited circle centre, resize, node/image reuse,
 and accepted-hit priority over a passive MISS.
+It moves the shared ScrollGear parent and checks that every descendant moves together while
+the screen HUD stays fixed, and that the outer gear bottom remains on the centre line after resizing.
 It checks coincident note/measure centres under Whole and Separate at several times and viewport sizes,
 and all four count-only roll heads for suppressed timing feedback, white beams and OK/MISS completion.
 Both DengDeng starting colors cover repeated-action rejection with a stable count/next action,

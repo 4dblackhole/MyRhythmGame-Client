@@ -30,6 +30,78 @@ ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 Balloon/D
 입력 패널 오른쪽에서 Lane 높이의 절반만큼 떨어져 있어, 중심에서 입력 패널과
 Lane 위·아래까지의 거리가 같습니다. Lane과 ScrollGear 표면은 오른쪽 논리 화면
 끝까지 이어지고 마지막 `Lane.png` 타일만 UV로 잘립니다.
+기어의 바깥 테두리 하단은 화면 중앙 가로선(Y=0)에 맞춥니다. `ScrollGear` 부모 아래에
+테두리·배경·`ScrollGear.Lane`·`InputPresentation`을 두고, 기어 전체의 이동은 이 부모의
+Transform 한 곳에서 지정합니다. Lane 아래의 노트·판정원·키빔과 입력 패널 아래의 키
+오버레이도 이 변환을 상속합니다. 선택 스킨의 Lane 폭과 입력 패널 높이 중 큰 값에
+테두리 여백을 반영해 부모 높이를 계산합니다. 세로 고정 Canvas이므로 16:9의 해상도
+변경이나 다른 화면비에서도 같은 중앙선 기준을 유지합니다. 화면 배경·진행바·정확도와
+화면 하단 타이밍 인디케이터는 기어 밖의 HUD로 유지합니다.
+
+## 인게임 World 부모·자식 관계
+
+아래는 실제 표시 노드의 Transform 계층입니다. `*`는 여러 개, 괄호는 노트 종류나
+표시 상태에 따라 생성되는 요소입니다. Canvas의 비표시 앵커는 생략했습니다.
+
+```text
+플레이 Canvas 루트 (화면 중앙 원점, +Y 위쪽)
+├─ Background                         화면 배경
+├─ ScrollGear                         기어 전체의 위치·회전·배율
+│  ├─ ScrollGear.Border               기어 테두리
+│  ├─ ScrollGear.Surface              기어 바탕
+│  ├─ ScrollGear.Lane                 레인 로컬 +Y, Taiko에서 -90° 회전
+│  │  ├─ Lane.SurfaceTile *           레인 배경 타일
+│  │  ├─ Lane.KeyBeam                 입력 키빔
+│  │  ├─ Lane.JudgementCircle         판정원
+│  │  │  └─ Lane.Judgement.{등급}      MAX/PERFECT/GREAT/GOOD/BAD/MISS/POOR/OK 링·문구
+│  │  ├─ Lane.MeasureLine *           마디선
+│  │  └─ Lane.Note.{id} *             노트별 표시 루트
+│  │     ├─ AmbientHead              헤드
+│  │     ├─ UntintedOverlay           헤드 무채색 덧그림 (일반 이미지)
+│  │     ├─ AmbientBody / BodyOverlay 롱노트 몸통 (해당 종류)
+│  │     ├─ AmbientTail / TailOverlay 롱노트 테일 (해당 종류)
+│  │     └─ LongNote.Tick *           현재 보이는 미처리 틱 (해당 종류)
+│  └─ InputPresentation
+│     └─ Input.Panel                  키 오버레이 바탕
+│        ├─ Input.Key.Glow ×4         강/약 키 점등
+│        ├─ Input.Key.Face ×4         키 이미지
+│        └─ Input.Key.PressFlash ×4   누를 때 섬광
+├─ Hud.GameProgress                   상단 진행바 바탕
+│  ├─ Progress.Track / Progress.Fill / Progress.Marker
+│  └─ Progress.CurrentTime / Progress.TotalTime
+├─ Hud.Accuracy                       정확도 텍스트
+├─ Hud.Error                          오류 메시지
+├─ Hud.JudgementGuide                 화면 하단 타이밍 인디케이터
+│  ├─ Judgement.Margin / Judgement.Band.0~4
+│  ├─ Judgement.Caption.0~2           EARLY / 0 / LATE
+│  ├─ Judgement.Zero                  0 기준선
+│  └─ Judgement.Marker
+│     └─ Judgement.MarkerFill
+├─ Hud.NoteProcessing.{id} *          중앙 풍선/뎅뎅 처리 이미지
+├─ Hud.NoteSuccess.{id} *             중앙 풍선 완료 이미지
+├─ Hud.NoteCounter.{id} *             중앙 남은 타격 수 바탕
+│  └─ RemainingHits                   남은 타격 수 텍스트
+└─ Debug.NoteState                    Debug 구성의 상태 텍스트
+
+일시정지 Canvas (별도 화면 레이어 10)
+└─ Center 앵커 → Pause.Root
+   ├─ Pause.Dim                       화면 어둡게 덮기
+   └─ Pause.Panel                     메뉴 패널
+      ├─ Pause.Label ×3               제목 / 연습 안내 / 조작 안내
+      └─ Pause.0~3                    Resume / Rewind / Retry / Retire
+         └─ Pause.Label ×2            항목 이름 / 설명
+```
+
+`ScrollGear`의 Transform을 바꾸면 그 아래의 모든 표시 요소가 함께 이동합니다.
+레인의 회전은 레인 하위에만 적용되므로 입력 키 이미지는 같은 기어 아래에서도 바로 서 있습니다.
+판정 링·문구는 판정원을 따라가되 Taiko의 레인 회전을 반대로 보정하여 글자를 세웁니다.
+중앙 풍선/뎅뎅 처리 이미지와 하단 타이밍 인디케이터·일시정지 메뉴는 화면 기준 UI입니다.
+
+Canvas가 표시 노드를 소유하고 `GameplayPresenter`는 비소유 포인터만 보관합니다.
+`Shutdown`은 포인터를 해제한 뒤 소유 Canvas handle을 반납합니다. 판정용 노트·타이밍·점수는
+`PlaySession` 데이터이며 World 계층에는 해당 노트의 표시 노드만 들어갑니다.
+
+## 노트 스크롤과 자산
 
 노트가 처음 표시되는 위치는 고정 픽셀 거리가 아니라 현재 Canvas 논리 폭으로
 정해지는 Lane 길이와 가장 큰 노트 head의 반지름에서 계산합니다. Taiko의 회전된

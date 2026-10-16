@@ -101,6 +101,7 @@ void GameplayPresenter::Shutdown() noexcept
     keyPressFlashes_.fill(nullptr);
     keyPressFlashRemainingSeconds_.fill(0.0);
     background_ = nullptr;
+    scrollGearRoot_ = nullptr;
     scrollGearBorder_ = nullptr;
     scrollGearSurface_ = nullptr;
     inputPresentationRoot_ = nullptr;

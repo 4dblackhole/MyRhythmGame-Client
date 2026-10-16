@@ -81,7 +81,7 @@ class GameplayPresenter final
     };
 
     void CreatePresentation();
-    void CreateLaneVisuals(mrg::visual2d::Visual2DNode &sceneRoot);
+    void CreateLaneVisuals(mrg::visual2d::Visual2DNode &gearRoot);
     void CreateLaneSurface();
     void UpdateLaneSurfaceLayout(const float laneLength);
     void CreateKeyIndicators(mrg::visual2d::Visual2DNode &inputPanel);
@@ -142,6 +142,7 @@ class GameplayPresenter final
     std::array<mrg::visual2d::Visual2DNode *, 4> keyPressFlashes_{};
     std::array<double, 4> keyPressFlashRemainingSeconds_{};
     mrg::visual2d::Visual2DNode *background_{};
+    mrg::visual2d::Visual2DNode *scrollGearRoot_{};
     mrg::visual2d::Visual2DNode *scrollGearBorder_{};
     mrg::visual2d::Visual2DNode *scrollGearSurface_{};
     mrg::visual2d::Visual2DNode *inputPresentationRoot_{};

@@ -50,23 +50,15 @@ void GameplayPresenter::CreatePresentation()
     debugText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
 #endif
 
-    scrollGearBorder_ = &mrg::visual2d::CreatePanel(
-        root,
-        {-CanvasReferenceWidth * 0.5F + GearMargin - GearPadding,
-         LaneCenterY - laneWidth_ * 0.5F - GearPadding,
-         CanvasReferenceWidth - GearMargin - GearRightMargin + GearPadding * 2.0F,
-         laneWidth_ + GearPadding * 2.0F},
-        "ScrollGear.Border");
+    // All gear parts inherit one transform. Final bounds depend on skin sizes.
+    scrollGearRoot_ = &root.CreateChild("ScrollGear");
+    scrollGearBorder_ = &mrg::visual2d::CreatePanel(*scrollGearRoot_, {}, "ScrollGear.Border");
     SetColor(*scrollGearBorder_, {0.16F, 0.31F, 0.58F, 1.0F});
-    scrollGearSurface_ = &mrg::visual2d::CreatePanel(
-        root,
-        {-CanvasReferenceWidth * 0.5F + GearMargin, LaneCenterY - laneWidth_ * 0.5F,
-         CanvasReferenceWidth - GearMargin - GearRightMargin, laneWidth_},
-        "ScrollGear.Surface");
+    scrollGearSurface_ = &mrg::visual2d::CreatePanel(*scrollGearRoot_, {}, "ScrollGear.Surface");
     SetColor(*scrollGearSurface_, {0.73F, 0.82F, 0.93F, 1.0F});
 
-    CreateLaneVisuals(root);
-    inputPresentationRoot_ = &root.CreateChild("InputPresentation");
+    CreateLaneVisuals(*scrollGearRoot_);
+    inputPresentationRoot_ = &scrollGearRoot_->CreateChild("InputPresentation");
     inputPresentationRoot_->SetZIndex(2);
     const auto inputPanelImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"InputPanel"));
     inputPanelSize_ = ScaledImageSize(screenVisuals_, inputPanelImage);
@@ -79,18 +71,16 @@ void GameplayPresenter::CreatePresentation()
     UpdatePresentationLayout();
 }
 
-void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &sceneRoot)
+void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &gearRoot)
 {
     // Author the lane in its reusable default orientation: local +Y is the
     // future-note direction and every lane-owned visual is a descendant.
     const float laneScreenLeft = GearMargin + inputPanelSize_.width;
     const float laneLength =
         std::max(canvas_->LogicalSize().width - laneScreenLeft - GearRightMargin, 1.0F);
-    laneRoot_ = &sceneRoot.CreateChild("ScrollGear.Lane");
+    laneRoot_ = &gearRoot.CreateChild("ScrollGear.Lane");
     laneRoot_->SetPivot({0.5F, 0.5F});
     laneRoot_->SetSize({laneWidth_, laneLength});
-    laneRoot_->SetPosition(
-        {-canvas_->LogicalSize().width * 0.5F + laneScreenLeft + laneLength * 0.5F, LaneCenterY});
     laneRoot_->SetZIndex(1);
 
     // Taiko is a presentation of the same vertical lane rotated clockwise.
@@ -188,6 +178,10 @@ void GameplayPresenter::UpdatePresentationLayout()
     const float laneScreenLeft = GearMargin + inputPanelSize_.width;
     const float laneLength = std::max(logicalWidth - laneScreenLeft - GearRightMargin, 1.0F);
     const float gearHeight = std::max(laneWidth_, inputPanelSize_.height);
+    // Canvas +Y points up. Only the shared parent positions the entire gear:
+    // its outer frame's bottom touches the screen's horizontal centre.
+    if (scrollGearRoot_ != nullptr)
+        scrollGearRoot_->SetPosition({0.0F, gearHeight * 0.5F + GearPadding});
 
     if (background_ != nullptr)
     {
@@ -207,28 +201,28 @@ void GameplayPresenter::UpdatePresentationLayout()
     {
         scrollGearBorder_->SetBounds(
             {-logicalWidth * 0.5F + GearMargin - GearPadding,
-             LaneCenterY - gearHeight * 0.5F - GearPadding,
+             -gearHeight * 0.5F - GearPadding,
              std::max(logicalWidth - GearMargin - GearRightMargin + GearPadding * 2.0F, 1.0F),
              gearHeight + GearPadding * 2.0F});
     }
     if (scrollGearSurface_ != nullptr)
     {
         scrollGearSurface_->SetBounds(
-            {-logicalWidth * 0.5F + GearMargin, LaneCenterY - gearHeight * 0.5F,
+            {-logicalWidth * 0.5F + GearMargin, -gearHeight * 0.5F,
              std::max(logicalWidth - GearMargin - GearRightMargin, 1.0F), gearHeight});
     }
     if (laneRoot_ != nullptr)
     {
         laneRoot_->SetSize({laneWidth_, laneLength});
         laneRoot_->SetPosition(
-            {-logicalWidth * 0.5F + laneScreenLeft + laneLength * 0.5F, LaneCenterY});
+            {-logicalWidth * 0.5F + laneScreenLeft + laneLength * 0.5F, 0.0F});
         UpdateLaneSurfaceLayout(laneLength);
         UpdateNoteTravelLayout();
     }
     if (inputPresentationRoot_ != nullptr)
     {
         inputPresentationRoot_->SetPosition(
-            {-logicalWidth * 0.5F + GearMargin, LaneCenterY - inputPanelSize_.height * 0.5F});
+            {-logicalWidth * 0.5F + GearMargin, -inputPanelSize_.height * 0.5F});
     }
 }
 

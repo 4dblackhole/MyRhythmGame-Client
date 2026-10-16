@@ -52,7 +52,6 @@ namespace gameplay
     constexpr float GearMargin = 20.0F;
     constexpr float GearPadding = 4.0F;
     constexpr float GearRightMargin = 0.0F;
-    constexpr float LaneCenterY = 0.0F;
     constexpr double KeyPressFlashDurationSeconds = 0.1;
     // A sixteenth note spans 85% of the normal head diameter at scroll 1x.
     constexpr float SixteenthSpacingInHeadDiameters = 0.85F;

@@ -71,6 +71,33 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 공통 기어 Transform·화면 중앙선 배치
+
+- GameplayLayout이 ScrollGear 부모 아래에 테두리·바탕·레인·입력 오버레이를 조립합니다.
+  선택 스킨의 Lane 폭/입력 패널 높이와 테두리 여백으로 부모 Y를 한 번 계산하여
+  바깥 테두리 하단을 화면 중앙선에 맞춥니다. 각 자식은 부모 기준 로컬 좌표만 사용하고,
+  기존 Lane 하위 노트·마디선·판정원·키빔의 회전과 스크롤은 그대로 상속합니다.
+- GameplayPresenter는 새 부모의 비소유 포인터를 보관하고 Shutdown에서 함께 해제합니다.
+  노드 소유권은 기존 Canvas에 유지합니다. 화면 배경·상하단 HUD·중앙 풍선/뎅뎅 처리 UI와
+  별도 일시정지 Canvas는 기어 밖에 유지합니다. 전체 실제 노드 계층은 Gameplay/Presentation에
+  정리했습니다. 생성 순서·부모/자식 좌표·직접 호출부·정리 경로를 검토했습니다.
+- Debug/Release x64 전체 solution Build, MRG.Client의 MSVC 14.44 Code Analysis Build
+  (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
+  신규 컴파일 경고·분석 진단·파싱 오류는 없으며 기존 EditorAnalysisController.cpp:51 C26115는 남았습니다.
+- GameplayJudgementTests를 두 구성에서 /W4 /analyze로 빌드·실행했습니다. 부모 하나를
+  이동하면 모든 자식의 World 위치가 같은 만큼 이동하고 진행바는 고정되는지 확인했습니다.
+  기본 화면과 네 resize 크기에서 테두리 하단 Y=0도 확인했습니다. 기존 판정 링·문구,
+  노트/마디선 속도효과·처리한 틱 숨김·롤 완료·진행바 회귀도 통과했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0, smoke-test/lobby/gameplay/editor 총 8개 exit 0입니다.
+- 기본 Angel Dream 채보와 production Presenter의 D3D12 offscreen 캡처를
+  1920×1080, 1280×720, 2560×1080에서 생성했습니다. 세 크기 모두 기어 테두리 하단 Y=0,
+  레인/입력 패널/판정원 중심 Y=80(논리 좌표)이며 1920/2560 캡처를 육안 확인했습니다.
+  1080p에서는 테두리 하단이 화면 y=540px입니다. 자동 캡처/좌표 검사이며 실제 창에서의
+  물리 키·마우스 조작은 미실시입니다.
+- CheckArchitecture(11프로젝트), Client/엔진 git diff --check 통과. 엔진 소스/포인터 변경 없음.
+  사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 en/ko.ini의 해시 일치로 보존을 확인했습니다.
+  로그·검사 helper·BMP/PNG는 ignored build/gameplay-gear-2026-10-17에 있습니다.
+
 ## 2026-10-17 리절트 1ms 판정별 빈도 막대
 
 - TaikoResultGraphs는 오차를 가까운 정수 ms로 대칭 반올림하여 입력이 있는 1ms 구간만

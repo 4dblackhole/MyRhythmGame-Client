@@ -198,6 +198,38 @@ namespace
               "JudgeLevel 100 must halve the base BAD band length.");
         strictView.Shutdown();
     }
+    void CheckGearTransform(v::Visual2DNode &root)
+    {
+        auto &gear = Node(root, "ScrollGear");
+        Check(Near(Node(root, "ScrollGear.Border").BoundsInCanvas().y, 0),
+              "The outer gear bottom must touch the screen's horizontal centre.");
+        std::vector<std::pair<v::Visual2DNode *, v::Rect>> descendants;
+        const auto collect = [&](const auto &self, v::Visual2DNode &parent) -> void
+        {
+            for (const auto &child : parent.Children())
+            {
+                descendants.emplace_back(child.get(), child->BoundsInCanvas());
+                self(self, *child);
+            }
+        };
+        collect(collect, gear);
+        for (const auto name : {"ScrollGear.Border", "ScrollGear.Surface", "ScrollGear.Lane", "InputPresentation"})
+            Check(Node(root, name).Parent() == &gear, "Every gear branch must share the same transform parent.");
+        const auto hud = Node(root, "Hud.GameProgress").BoundsInCanvas();
+        const auto position = gear.Position();
+        gear.SetPosition({position.x + 37, position.y + 29});
+        for (const auto &[node, before] : descendants)
+        {
+            const auto after = node->BoundsInCanvas();
+            Check(Near(after.x - before.x, 37) && Near(after.y - before.y, 29) &&
+                      Near(after.width, before.width) && Near(after.height, before.height),
+                  "One gear transform must move all nested keys, lane parts, notes and judgements together.");
+        }
+        const auto unchangedHud = Node(root, "Hud.GameProgress").BoundsInCanvas();
+        Check(Near(hud.x, unchangedHud.x) && Near(hud.y, unchangedHud.y),
+              "Screen HUD must stay independent of the gear transform.");
+        gear.SetPosition(position);
+    }
     void TestGameplayProgress()
     {
         AssetRenderer renderer;
@@ -238,6 +270,7 @@ namespace
         Check(!fill.IsVisible() && currentText.Text() == L"0:00", "Pre-roll must not show negative elapsed time.");
         presenter.UpdatePresentation(r::RhythmTime{2'000'000});
         checkFraction(.5F);
+        CheckGearTransform(root);
         Check(fill.IsVisible() && currentText.Text() == L"0:02", "The current time label must be dynamic.");
 
         r::RhythmTimer timer;
@@ -255,6 +288,7 @@ namespace
             visuals.OnResize(width, height);
             presenter.OnResize(width, height);
             checkFraction(.5F);
+            CheckGearTransform(root);
             Check(Near(progress.Bounds().width, std::max(viewport.width / viewport.height * 720 - 40, 1.0F)),
                   "Progress must fit the actual logical viewport width.");
             Check(marker.Bounds().x >= 0 && marker.Bounds().x + marker.Bounds().width <= progress.NodeSize().width,
