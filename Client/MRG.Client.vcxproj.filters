@@ -196,4 +196,15 @@
   <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsOffset.cpp"><Filter>Presentation\OptionsPanel\Submodules</Filter></ClCompile></ItemGroup>
   <ItemGroup><ClInclude Include="Presentation\OptionsPanel\Submodules\OptionsPanelStyle.h"><Filter>Presentation\OptionsPanel\Submodules</Filter></ClInclude></ItemGroup>
   <ItemGroup><Filter Include="Presentation\OptionsPanel"/><Filter Include="Presentation\OptionsPanel\Submodules"/></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="EditorScene\Submodules\EditorMetronome.h"><Filter>EditorScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="EditorScene\Submodules\EditorMetronome.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
+    <ClCompile Include="EditorScene\Submodules\EditorAudioControls.cpp"><Filter>EditorScene\Submodules</Filter></ClCompile>
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\EditorPatternCreation.h"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\EditorPatternCreation.cpp"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\NewDifficultyDialog.h"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClInclude>
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\NewDifficultyDialog.cpp"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClCompile>
+  </ItemGroup>
 </Project>

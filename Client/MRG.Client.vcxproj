@@ -280,4 +280,15 @@
   <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsKeys.cpp" /></ItemGroup>
   <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsOffset.cpp" /></ItemGroup>
   <ItemGroup><ClInclude Include="Presentation\OptionsPanel\Submodules\OptionsPanelStyle.h" /></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="EditorScene\Submodules\EditorMetronome.h" />
+    <ClCompile Include="EditorScene\Submodules\EditorMetronome.cpp" />
+    <ClCompile Include="EditorScene\Submodules\EditorAudioControls.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\EditorPatternCreation.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\EditorPatternCreation.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\NewDifficultyDialog.h" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\NewDifficultyDialog.cpp" />
+  </ItemGroup>
 </Project>

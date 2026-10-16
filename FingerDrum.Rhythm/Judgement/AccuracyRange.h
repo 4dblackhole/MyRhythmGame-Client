@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common/RhythmTypes.h"
+#include "Judgement/JudgeLevel.h"
 
 #include <array>
 #include <cstddef>
@@ -38,15 +39,15 @@ class AccuracyRange final
 {
   public:
     static constexpr std::size_t BandCount = 5;
-    static constexpr std::size_t DefaultLevel = 50;
+    static constexpr double DefaultLevel = JudgeLevel::Default;
 
-    explicit AccuracyRange(std::string id = "default", std::size_t level = DefaultLevel);
-    AccuracyRange(std::string id, std::size_t level, std::array<JudgementBand, BandCount> level50Bands,
+    explicit AccuracyRange(std::string id = "default", JudgeLevel level = {});
+    AccuracyRange(std::string id, JudgeLevel level, std::array<JudgementBand, BandCount> level50Bands,
                   RhythmDuration extraHalfWindow = RhythmDuration::zero());
 
     [[nodiscard]] std::string_view Id() const noexcept;
-    [[nodiscard]] std::size_t Level() const noexcept;
-    void SetLevel(std::size_t level);
+    [[nodiscard]] JudgeLevel Level() const noexcept;
+    void SetLevel(JudgeLevel level);
     [[nodiscard]] const std::array<JudgementBand, BandCount> &Bands() const noexcept;
     [[nodiscard]] RhythmDuration HalfWindow(JudgementGrade grade) const noexcept;
     [[nodiscard]] JudgementResult Evaluate(RhythmTime noteTime, RhythmTime inputTime) const noexcept;
@@ -59,7 +60,7 @@ class AccuracyRange final
 
     RhythmDuration extraHalfWindow_{};
     std::string id_;
-    std::size_t level_{DefaultLevel};
+    JudgeLevel level_;
     std::array<JudgementBand, BandCount> level50Bands_{};
     std::array<JudgementBand, BandCount> scaledBands_{};
 };

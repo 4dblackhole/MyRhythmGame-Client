@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Judgement/AccuracyScore.h"
+#include "Judgement/JudgeLevel.h"
 #include "Mode/Results/PlayControlEvent.h"
 #include "Note/Submodules/NoteTypes.h"
 #include <filesystem>
@@ -28,7 +29,7 @@ namespace finger_drum::mode
         PlayEndReason endReason{PlayEndReason::Interrupted};
         rhythm::RhythmTime initialTime{};
         rhythm::RhythmTime endTime{};
-        std::size_t judgementLevel{};
+        rhythm::JudgeLevel judgementLevel;
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping;
         // Append order resolves ties at the same microsecond. These are the
         // exact mapped press/release events passed to judgement, including blanks.

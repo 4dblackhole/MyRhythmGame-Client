@@ -137,12 +137,14 @@ namespace finger_drum::chart
             }
             else if (key == "JudgeLevel")
             {
-                if (!ParseInteger(value, result.document.judgementLevel) ||
-                    result.document.judgementLevel == 0)
+                double level{};
+                if (!ParseDouble(value, level) || !rhythm::JudgeLevel::IsValid(level))
                 {
                     AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
-                                  "JudgeLevel must be a positive integer.");
+                                  "JudgeLevel must be 1.00..100.00 in steps of 0.01.");
                 }
+                else
+                    result.document.judgementLevel = level;
             }
             else if (key == "Tags")
             {

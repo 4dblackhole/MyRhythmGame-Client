@@ -1,6 +1,6 @@
 # 차트 에디터
 
-타이틀 → Editor → 곡/난이도 선택으로 진입합니다. Penpot `Editor UI`의 Pattern,
+타이틀 → Editor → 곡/난이도 선택으로 진입합니다. 새 난이도는 [곡 카드의 +](EditorSongSelect.md#새-난이도-생성)로 만듭니다. Penpot `Editor UI`의 Pattern,
 Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성했습니다.
 일반 실행은 여전히 로고 화면에서 시작합니다.
 
@@ -15,6 +15,7 @@ Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성�
 `EditorMenuBar`는 에디터 전용 Canvas 상단 메뉴와 열림/강조 상태를 맡고,
 저장 의도만 View로 반환합니다. 문서·모드·Scene을 참조하지 않습니다.
 `EditorAnalysisController`는 worker와 marker 캐시를 맡습니다.
+`EditorMetronome`은 문서 revision/음원 길이별 박자 눈금과 재생 전용 클릭 cue를 캐시합니다.
 `EditorPlayback`은 에디터 전용 Voice/Clip과 DSP 기준 재생 시각을 소유합니다.
 모드가 제공하는 파일/예상 cue만 소비하며 문서·화면·노트 규칙은 참조하지 않습니다.
 PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
@@ -85,10 +86,18 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
 - 오디오 탭은 음악 파형, 음악 FFT 스펙트로그램, 예상 히트사운드 FFT 스펙트로그램의
   세 영역을 같은 시간축으로 표시합니다. 하단 타임라인/현재 시간 입력으로 탐색하며,
   +/− 버튼은 현재 시각을 기준으로 보이는 시간 범위를 확대/축소합니다.
+  하단 OFFSET 직접 입력 또는 −1/+1ms로 패턴 offset을 수정합니다. 양수는 음악의 0ms를
+  유지하면서 노트·타이밍·효과를 늦추며 문서 변경으로 저장됩니다. 글로벌 옵션 offset과는 별개입니다.
+  파형 상단의 파란 눈금은 4분음표 박자(마디 첫 박자 강조), 히트사운드 FFT 상단의 파란
+  눈금은 예상 타격 위치입니다. 메트로놈은 기본 꺼짐이며 켜면 Space 재생 시 함께 들립니다.
+  BPM·마디 길이·offset·글로벌 offset·delay와 음수 delay의 제거 구간을 같은 MusicalTimeline으로
+  컴파일합니다. 메트로놈 토글은 음악을 다시 로드/seek하지 않고 재생 cue만 갱신합니다.
+  클릭은 FFT 분석 입력에 넣지 않으며 설정은 편집 세션에만 유지합니다. 기본 클릭 WAV 두 개는
+  내장 Default Skin/Editor에 있고 별도 클럭이나 프레임별 템포 적분은 사용하지 않습니다.
 - 박자표에서 마디/위치/BPM과 마디 길이를 편집합니다. 마디 밖으로 넘친 노트는 초과분을
   다음 마디로 이월합니다. 마디 밖 BPM/이펙트가 생기는 변경은 데이터 손실 대신 오류를 표시합니다.
   롱노트 시작과 끝이 역전되거나 같은 위치가 되는 변경도 전체 취소하고 원본을 보존합니다.
-- 메타데이터에서 YMM 상대경로, 이름, 제작자, 태그, offset, 기본 BPM, 히트사운드 표를 편집합니다.
+- 메타데이터에서 YMM 상대경로, 이름, 제작자, 태그, offset, 기본 BPM, Accuracy Difficulty(JudgeLevel 1.00~100.00, 0.01 단위), 히트사운드 표를 편집합니다.
   표의 소유 파일은 YME이며 사운드 상대경로도 YME 폴더 기준입니다.
 - 이펙트 목록 선택 후 같은 위치의 값을 수정하거나 삭제할 수 있습니다. 동/캇 변경은 각각
   독립 지시문입니다. 각 입력 필드는 Unicode 입력을 지원하는 Windows 텍스트 창에서 편집합니다.

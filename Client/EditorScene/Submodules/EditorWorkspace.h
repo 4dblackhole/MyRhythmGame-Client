@@ -1,6 +1,7 @@
 #pragma once
 #include "EditorAnalysisController.h"
 #include "EditorForms.h"
+#include "EditorMetronome.h"
 #include "EditorPlayback.h"
 #include "Modes/IEditorMode.h"
 
@@ -22,6 +23,17 @@ class EditorWorkspace final : public IEditorContext
     void ShutdownPlayback() noexcept { playback_.Shutdown(); }
     void UpdatePlayback();
     void TogglePlayback();
+    void ToggleMetronome()
+    {
+        metronome_.SetEnabled(!metronome_.Enabled());
+        RequestRebuild();
+    }
+    void PrepareAudioPreview();
+    const EditorMetronome &Metronome() const noexcept
+    {
+        return metronome_;
+    }
+    void SetPatternOffset(double milliseconds);
     void SeekFirstNote();
     void SeekLastNote();
     void SetRealtimeZoom(double factor);
@@ -114,6 +126,7 @@ class EditorWorkspace final : public IEditorContext
     std::unique_ptr<IEditorMode> mode_;
     EditorAnalysisController analysis_;
     EditorPlayback playback_;
+    EditorMetronome metronome_;
     EditorScoreState score_;
     double timeMs_{};
     finger_drum::rhythm::RhythmTime lastPlaybackPresentation_{};

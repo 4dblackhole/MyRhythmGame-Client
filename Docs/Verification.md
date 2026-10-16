@@ -71,6 +71,45 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-16 새 난이도·offset 도구·JudgeLevel·Release 기본 배포본
+
+- 에디터 곡 카드의 +, 메타데이터 입력/검증, 새 난이도 폴더의 빈 YMP/YME 생성과 기존 Editor 전환을 연결했습니다.
+  Scene은 조립/전환, NewDifficultyDialog는 Unicode 입력/오류 표시, EditorPatternCreation은 경로/새 파일 생성과 정리를 담당합니다.
+  기존 파일은 덮어쓰지 않으며 취소/잘못된 메타데이터에서는 생성하지 않습니다. 기본 Taiko/120 BPM/0ms/4/4입니다.
+  공통 JudgeLevel 값은 1.00~100.00/0.01 단위 정수로 저장하며 파서/저장/판정 프로필/HUD/결과 snapshot에서 공유합니다.
+  기본 50.00이고 두 메타데이터 화면에서 수정합니다. 유효한 소수 셋째 자리, 범위 밖, 비유한 값은 거부합니다.
+- EditorWorkspace의 offset 변경과 EditorAudioControls의 입력/±1ms, 박자/예상 타격 눈금을 추가했습니다.
+  EditorMetronome은 문서/음원 길이 revision별 박자·재생 cue를 캐시하고 기존 EditorPlayback의 DSP 예약에 전달합니다.
+  분석용 히트사운드 FFT에는 섞지 않으며 토글은 음악 재로딩/seek를 하지 않습니다. 기본 클릭 WAV 두 개는 Default Skin/Editor에 내장합니다.
+- Debug/Release x64 전체 solution Build 성공, 일반 빌드 새 경고/오류 0.
+  두 구성 MSVC 14.44 Code Analysis(/analyze) Rebuild를 Rhythm, Chart, Modes, MRG.Client,
+  Rhythm.Tests의 실제 include/define/C++20/x64 구성으로 실행했습니다. 파싱 오류·신규 진단 0.
+  기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지했습니다.
+- 두 구성 전체 로직·기본곡 카탈로그 각각 63개/실패 0, 네 Client smoke씩 총 8개 성공했습니다.
+  NewDifficulty, MusicSelectView, EditorPresentation(Audio/Mode/Menu/Playback/Metronome), LanguageFile,
+  GameplayJudgement와 ResultPresentation의 생산 코드 연결 회귀도 두 구성에서 모두 성공했습니다.
+  신규 테스트는 별도 build fixture만 사용하여 Unicode·취소·오류 후 수정·중복/경로 거부·상대경로·카탈로그 재발견,
+  fractional JudgeLevel의 실제 판정범위/결과 보존, BPM/마디/offset/음수 delay의 메트로놈 grid와 cue 캐시를 확인합니다.
+- 변경 코드와 직접 호출부에서 파일/폴더 소유권, CREATE_NEW/롤백 범위, modal 콜백 예외/문자열 수명,
+  선택 상태/생성 결과의 이동, 값 범위/고정소수점과 us 변환, 분석 worker와 재생 전용 캐시 분리,
+  프레임별 파일 I/O·템포 재적분 부재, 함수 책임을 검토했습니다.
+  CheckArchitecture(11프로젝트), Client/엔진 git diff --check 성공. 엔진 변경은 없습니다.
+  사용자 LaneKeyBeam.cpp, 개발 Debug/Release Option.ini, Client/Assets의 외부 en/ko.ini SHA256을 대조해 보존했습니다.
+- 사용자의 명시적 승인으로 기존 C:/Users/AA/Desktop/demo 경로/링크 부재를 확인하고 삭제/재생성했습니다.
+  곡 0개, Asset/Songs/Music·Patterns·Skins·Languages, 검증한 Release EXE/fmod.dll과 기본 설정,
+  폰트 고지, Microsoft 서명이 Valid인 공식 VC_redist.x64.exe를 포함했습니다. 설치는 수행하지 않았습니다.
+  실제 배포 위치에서 로고/빈 목록 smoke 종료 코드 0, 개발 자산 override 경로 부재와 Release EXE 해시 일치를 확인했습니다.
+  곡 없는 묶음이므로 그 위치의 editor smoke는 실행하지 않았습니다. 원본 저장소의 editor smoke는 두 구성 성공했습니다.
+  공개 배포에 필요한 음악/미들웨어 사용권·크레딧/로고 조건의 확정은 이 파일 검증 범위가 아닙니다.
+- **화면 확인:** 실제 Win32 메타데이터 창의 자동 캡처에서 필드/기본 50.00과 버튼 배치를 확인했습니다.
+  실제 D3D12 1920×1080 offscreen 캡처를 눈으로 확인하여 에디터 카드의 +,
+  세 오디오 영역·박자/타격 눈금·offset/메트로놈 컨트롤을 확인했습니다.
+  물리 키/마우스 조작, 실제 청음, 다른 PC에서의 새 런타임 설치 검증은 미실시입니다.
+  자동 FMOD NoSound/MP3 seek와 입력/타이밍 회귀는 청음 수동 확인과 구분합니다.
+  로그/캡처는 ignored build/new-difficulty-2026-10-16에 있습니다.
+- 공용 미디어·라이선스·랭크 변조 검증은 RankedContentProposal의 설계 조언만 작성했습니다.
+  현재 런타임/파일 문법에 배경 ID·BGA·서버 검증·라이선스 인증을 추가하지 않았습니다.
+
 ## 2026-10-16 skin.ini 씬별 폴더·이미지 경로
 
 - Debug/Release x64 솔루션 빌드 성공. 실제 프로젝트 설정으로 Client 전체를 MSVC 14.44 Code Analysis(`/p:RunCodeAnalysis=true`, x64, 두 구성)로 Rebuild했고, 캡처에서 찾은 로고 배경 tint 수정도 두 구성으로 재빌드/분석했습니다.

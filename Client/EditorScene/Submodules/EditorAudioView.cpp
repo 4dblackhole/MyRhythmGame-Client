@@ -306,7 +306,7 @@ void EditorView::DrawAudio()
     const auto &text = Texts();
     try
     {
-        state_.Analysis().CacheAudioMarkers(state_.Document(), state_.Mode());
+        state_.PrepareAudioPreview();
     }
     catch (const std::exception &error)
     {
@@ -340,6 +340,7 @@ void EditorView::DrawAudio()
     DrawAudioWaveform(musicColumns_);
     DrawAudioSpectrum(MusicSpectrum, minimumHz, maximumHz);
     DrawAudioSpectrum(HitSpectrum, minimumHz, maximumHz);
+    DrawAudioAlignment(begin);
     DrawAudioTimeRuler(begin);
     Button({1620, 85, 54, 32}, std::wstring(texts_.Get("Common.zoomIn")),
            [this]
@@ -357,4 +358,5 @@ void EditorView::DrawAudio()
     if (state_.Analysis().Running())
         Text({570, 90, 700, 28}, std::wstring(text.analyzingAudio), 18, Blue);
     DrawTimeline();
+    DrawAudioControls();
 }

@@ -61,6 +61,15 @@ namespace
                 return true;
         return false;
     }
+    v::Visual2DNode *Find(v::Visual2DNode &node, std::string_view name)
+    {
+        if (node.Name() == name)
+            return &node;
+        for (const auto &child : node.Children())
+            if (auto *found = Find(*child, name))
+                return found;
+        return nullptr;
+    }
     finger_drum::chart::SongCatalogLoadResult AwaitCatalog(SongCatalogLoader &loader)
     {
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
@@ -141,6 +150,7 @@ int main()
         MusicSelectView view(visuals, selection, SongSelectPurpose::Gameplay, texts, options);
         view.Initialize({meshes, textRendering, renderer, audio, 1280, 720});
         auto *canvas = visuals.FindCanvas(1);
+        Check(canvas && !Find(canvas->Root(), "AddDifficulty.0"), "Gameplay cards must not offer chart creation.");
         Check(canvas != nullptr && Cards(canvas->Root()) > 0 && Cards(canvas->Root()) < 20,
               "A 5,000-song library must create only viewport cards.");
         for (const auto target : {2500U, 4999U, 0U})
@@ -158,6 +168,31 @@ int main()
         Check(Cards(canvas->Root()) == 0, "Empty searches must remove the former cards.");
         view.Shutdown();
         Check(visuals.CanvasCount() == 0, "Virtualized view must release its Canvas.");
+        selection.searchText_.clear();
+        selection.catalog_.songs[0].patterns.clear();
+        MusicSelectView editor(visuals, selection, SongSelectPurpose::Editor, texts, options);
+        editor.Initialize({meshes, textRendering, renderer, audio, 1280, 720});
+        canvas = visuals.FindCanvas(2);
+        if (!canvas)
+            throw std::runtime_error("Editor song-select Canvas missing.");
+        auto *add = Find(canvas->Root(), "AddDifficulty.0");
+        if (!add)
+            throw std::runtime_error("Songs without a chart must offer the plus button.");
+        Check(add->IsEnabled(), "Chart creation must be enabled after catalog loading.");
+        const auto bounds = add->BoundsInCanvas();
+        v::Visual2DInputRouter router;
+        v::PointerInput pointer{};
+        pointer.available = true;
+        pointer.position = {bounds.x + bounds.width * .5F, bounds.y + bounds.height * .5F};
+        pointer.leftButtonDown = pointer.leftButtonPressed = true;
+        router.Process(*canvas, pointer);
+        pointer.leftButtonDown = pointer.leftButtonPressed = false;
+        pointer.leftButtonReleased = true;
+        router.Process(*canvas, pointer);
+        mrg::platform::InputState input;
+        Check(editor.Update(input, 0) == SongSelectCommand::CreateDifficulty && selection.focusedSongPosition_ == 0,
+              "Plus must select its song and emit chart creation rather than launch.");
+        editor.Shutdown();
         std::cout << "Music selection viewport and catalog worker tests passed.\n";
         return 0;
     }

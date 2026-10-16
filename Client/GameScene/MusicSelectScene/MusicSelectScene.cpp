@@ -3,6 +3,7 @@
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "Mode/PlayGameModeFactory.h"
 #include "Submodules/MusicSelectView.h"
+#include "Submodules/NewDifficultyDialog.h"
 #include "Submodules/SongPreviewController.h"
 #include "Submodules/SongSelectionText.h"
 #include <stdexcept>
@@ -13,7 +14,7 @@ MusicSelectScene::MusicSelectScene(mrg::visual2d::ScreenVisual2DManager &visuals
                                    mrg::audio::AudioPlaybackManager &playback,
                                    std::shared_ptr<finger_drum::GameplayLaunchStore> request, SongSelectPurpose purpose,
                                    finger_drum::texts::TextCatalog &texts, mrg_client::OptionSettings &options)
-    : launchRequest_(std::move(request)), purpose_(purpose), options_(options),
+    : launchRequest_(std::move(request)), purpose_(purpose), options_(options), texts_(texts),
       selection_(std::make_unique<SongSelectionState>()),
       view_(std::make_unique<MusicSelectView>(visuals, *selection_, purpose, texts, options)),
       preview_(std::make_unique<SongPreviewController>(playback))
@@ -73,6 +74,30 @@ void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::Sce
     }
     else if (command == SongSelectCommand::Launch)
         StartSelectedPattern(scenes);
+    else if (command == SongSelectCommand::CreateDifficulty)
+        CreateDifficulty(scenes);
+}
+void MusicSelectScene::CreateDifficulty(mrg::scene::SceneManager &scenes)
+{
+    if (purpose_ != SongSelectPurpose::Editor || selection_->catalogLoading_ ||
+        selection_->focusedSongPosition_ >= selection_->visibleSongIndices_.size())
+        return;
+    auto &song = selection_->catalog_.songs[selection_->visibleSongIndices_[selection_->focusedSongPosition_]];
+    preview_->StopPreviewAudio();
+    try
+    {
+        if (auto created = CreateDifficultyWithDialog(mrg_client::asset_paths::UserSongs(), song, texts_))
+        {
+            song.patterns.push_back(std::move(*created));
+            selection_->selectedPatternIndex_ = song.patterns.size() - 1;
+            StartSelectedPattern(scenes);
+        }
+    }
+    catch (const std::exception &error)
+    {
+        selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::Pattern, error.what());
+        view_->RefreshSelectionPresentation();
+    }
 }
 void MusicSelectScene::Render(const mrg::graphics::RenderContext &)
 {

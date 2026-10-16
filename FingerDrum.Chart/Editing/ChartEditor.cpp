@@ -768,7 +768,7 @@ std::string ChartEditor::WritePattern(const PatternDocument &pattern)
     for (std::size_t i = 0; i < pattern.tags.size(); ++i)
         out << (i ? ", " : "") << pattern.tags[i];
     out << "\nPattern Offset: " << pattern.patternOffsetMilliseconds << "\nBase BPM: " << pattern.baseBpm
-        << "\n[Difficulty]\nMode: " << pattern.mode << "\nJudgeLevel: " << pattern.judgementLevel << '\n';
+        << "\n[Difficulty]\nMode: " << pattern.mode << "\nJudgeLevel: " << pattern.judgementLevel.Format() << '\n';
     out << "[Time Signature]\n";
     auto timing = pattern.timing;
     std::ranges::stable_sort(timing, {}, &TimingDirective::position);

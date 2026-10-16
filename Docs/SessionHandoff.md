@@ -9,6 +9,20 @@
 
 ## 작업 위치와 경계
 
+새 난이도·offset 도구·JudgeLevel(2026-10-16): [EditorSongSelect](EditorSongSelect.md), [ChartEditor](ChartEditor.md).
+에디터 곡 카드 + → 메타데이터 입력 → 새 YMP/YME 검증/생성 → 기존 진입 snapshot을 사용합니다.
+NewDifficultyDialog는 입력/오류, EditorPatternCreation은 새 폴더·파일 생성/정리를 소유합니다.
+JudgeLevel은 1.00~100.00/0.01 단위의 공통 고정소수점 값이며 YMP·AccuracyRange·HUD·결과까지 전달합니다.
+기본 Taiko/120 BPM/offset0/4/4/50.00이며 메타데이터 탭에서도 JudgeLevel을 수정합니다.
+오디오 탭에 offset 직접 입력/±1ms·박자/타격 눈금·메트로놈 토글을 추가했습니다.
+EditorMetronome은 박자/재생 cue만 캐시하고 기존 EditorPlayback DSP 시계를 사용합니다. FFT 입력에는 넣지 않습니다.
+사용자 LaneKeyBeam.cpp와 개발 Option.ini/외부 언어파일은 보존합니다.
+
+배포 기본본(같은 날짜): 사용자의 명시적 지시로 바탕화면 demo를 삭제/재생성했습니다.
+곡 없이 Asset/Songs/Music·Patterns, Asset/Skins, 원본 언어파일, Release EXE/fmod.dll,
+기본 Option.ini와 서명 확인한 Microsoft VC++ 설치 파일을 배치했습니다. [배포 절차](BuiltInAssets.md#release-배포-절차).
+공용 배경/BGA와 라이선스/랭크 무결성은 [설계 제안](RankedContentProposal.md)만 작성했으며 아직 구현하지 않았습니다.
+
 skin.ini(2026-10-16): [BuiltInAssets의 경로·키·fallback](BuiltInAssets.md#skinini와-씬별-이미지).
 `[Folders]`에서 Logo/InGame/MusicSelect/Result 폴더, 각 씬 섹션에서 파일을 지정합니다.
 SkinManifest는 UTF-8 경로/기본본을 해석하고 SkinSetSelection은 선택 revision당 캐시합니다.

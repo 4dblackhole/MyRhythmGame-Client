@@ -45,6 +45,54 @@ Release 배포 폴더에는 `MyRhythmGame.exe`와 같은 위치의 `fmod.dll`이
 다른 곡과 사용자 스킨은 팩에 자동 포함하지 않습니다. 빌드 스크립트의 명시적인
 source group만 포함되므로 사용자 데이터가 우연히 EXE에 들어가지 않습니다.
 
+## Release 배포 절차
+
+Visual Studio x64 개발자 PowerShell에서 FMOD SDK 경로를 설정하고 빌드합니다.
+
+```powershell
+$env:FMOD_ROOT = 'C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows'
+msbuild MyRhythmGame-Client.sln /m /p:Configuration=Release /p:Platform=x64
+```
+
+게임 실행에 필요한 직접 배포 파일은 bin/x64/Release의 MyRhythmGame.exe와 fmod.dll입니다.
+MRG.Core 등 정적 라이브러리는 이미 EXE에 링크되므로 .lib/.pdb/테스트 EXE/fmodL.dll은 제외합니다.
+OsuTaikoConverter.exe는 별도 선택 도구이며 게임 실행에는 필요하지 않습니다.
+
+곡 없는 기본본의 배치는 다음과 같습니다. 사용자 파일 폴더는 비워 둬도 됩니다.
+
+```text
+demo/
+  MyRhythmGame.exe
+  fmod.dll
+  Option.ini                 처음 실행 시 기본값으로 자동 생성 가능
+  README.txt
+  Asset/                     Assets가 아닌 단수 Asset
+    Languages/en.ini
+    Languages/ko.ini
+    Songs/Music/             음원과 YMM
+    Songs/Patterns/           곡/난이도별 YMP·YME 쌍
+    Skins/                   사용자 스킨셋
+  Prerequisites/VC_redist.x64.exe
+  Licenses/                  배포 폰트 고지
+```
+
+언어파일은 Client/Texts/Languages의 원본 두 개를 복사합니다. 개발 PC의 Option.ini는 장치명/키 등
+개인 설정일 수 있으므로 그대로 배포하지 말고 새 기본 설정을 사용합니다. 기본 스킨/글꼴의 외부
+복사본은 필요하지 않습니다. 배포할 곡이 생기면 Songs-relative YMM 참조와 YMP-relative YME 참조를
+유지한 채 Asset/Songs에 추가합니다. 음악·이미지의 배포/사용 권한은 해당 계약으로 확인합니다.
+
+MSVCP140/VCRUNTIME 런타임 의존성은 [Microsoft 공식 x64 재배포 패키지](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)로 설치합니다.
+빌드 도구 이상 버전의 런타임이 필요하며 OS DLL을 임의로 복사하지 않습니다. 2026-10-16의 로컬 demo에는
+Microsoft 공식 설치 파일을 받아 Authenticode Valid/Microsoft Corporation 서명을 확인하여 동봉했고,
+설치 프로그램 자체는 실행하지 않았습니다. 폴더 전체를 묶어 전달하고 안내에 따라 수신자가 설치합니다.
+
+FMOD DLL을 동봉할 수 있는 조건과 크레딧/로고는 [FMOD 라이선스](https://www.fmod.com/licensing)와
+[표기 조건](https://www.fmod.com/attribution)을 확인합니다. 파일 구성과 실행 성공이 공개 배포에 필요한
+라이선스/표기 조건 충족을 대신하지 않습니다.
+
+배포 위치에서 --smoke-test와 --smoke-lobby로 기본 시작/빈 목록을 확인합니다.
+--smoke-editor는 실제 외부 채보가 필요한 검증 경로이므로 곡 없는 기본본에서는 사용하지 않습니다.
+
 ## 빌드와 실행 흐름
 
 1. `FingerDrum.Assets/Scripts/GenerateAssetPack.ps1`이 상대 경로, 크기, offset과 원본 bytes를
@@ -211,3 +259,10 @@ source group을 함께 갱신합니다. Scene에는 물리 경로를 새로 하�
 
 기본 스킨의 사용되지 않는 `JudgeImage` PNG 7개와 resolver는 제거했습니다.
 현재 판정 자산은 `InGame/Judgements`가 소유합니다. 사용자 외부 스킨은 삭제하지 않습니다.
+
+## 에디터 메트로놈
+
+Default Skin/Editor의 `MetronomeBeat.wav`와 `MetronomeAccent.wav`는 내장 클릭 샘플입니다.
+48kHz 모노 PCM16, 50ms의 짧은 감쇠 정현파(일반 1400Hz / 마디 첫 박자 2200Hz)이며 외부
+소스/라이선스 의존성이 없습니다. AssetPaths의 EditorSound로 선택 스킨의 같은 상대 경로를
+찾고 없으면 내장 기본본을 사용합니다. 에디터의 재생 cue 전용이며 FFT 분석에는 넣지 않습니다.

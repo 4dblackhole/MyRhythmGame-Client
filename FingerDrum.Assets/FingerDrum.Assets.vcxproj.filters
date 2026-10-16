@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Assets\Skins\Default Skin\Editor" />
     <Filter Include="Public">
       <UniqueIdentifier>{B6666666-6666-4666-8666-666666666661}</UniqueIdentifier>
     </Filter>
@@ -52,5 +53,8 @@
     <None Include="Assets\Skins\Default Skin\TitleImage\Widget\*.*"><Filter>Assets\Skins\Default Skin\TitleImage\Widget</Filter></None>
     <None Include="Assets\Songs\Music\Angeldream\*.*"><Filter>Assets</Filter></None>
     <None Include="Assets\Songs\Patterns\angeldream\**\*.*"><Filter>Assets</Filter></None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\Skins\Default Skin\Editor\*.*"><Filter>Assets\Skins\Default Skin\Editor</Filter></None>
   </ItemGroup>
 </Project>

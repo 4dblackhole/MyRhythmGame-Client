@@ -28,6 +28,7 @@ namespace finger_drum::texts
                 texts.Get("MusicSelect.unsupportedModePrefix"),
                 texts.Get("MusicSelect.patternErrorPrefix"),
                 texts.Get("MusicSelect.unknownChartError"),
-                texts.Get("MusicSelect.loadingSongs")};
+                texts.Get("MusicSelect.loadingSongs"),
+                texts.Get("MusicSelect.addDifficulty")};
     }
 } // namespace finger_drum::texts

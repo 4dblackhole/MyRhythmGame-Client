@@ -108,7 +108,7 @@ through the actual menu/option/editor/result/gameplay views.
 ## Editor audio view regression
 
 After building both configurations, run in an x64 Visual Studio developer PowerShell.
-The script obtains the editor object list from the Client project and compiles the four
+The script obtains the editor object list from the Client project and compiles the editor
 test translation units with MSVC Code Analysis. Set `FMOD_ROOT` for a custom SDK install.
 
 ```powershell
@@ -261,3 +261,16 @@ scene-folder/image relativity, invalid paths/encoding/duplicates, per-component 
 partial skins, cache/reload, button states, full-screen logo replacement, procedural-fill
 hiding/restoration and virtualized song-card bindings using the real bundled catalog.
 The test source uses MSVC Code Analysis. Native captures/manual input are reported separately.
+
+## New difficulty metadata and file creation
+
+After building the solution, run `RunNewDifficultyTests.ps1 -Configuration Debug` and `Release`.
+The test links production creation/dialog objects with MSVC `/W4 /analyze`. It uses an isolated
+ignored `build/new-difficulty-tests/<pid>` Songs fixture. It checks Unicode metadata, default
+empty Taiko timing, sibling YME and Songs-relative YMM paths, no overwrites, invalid names/BPM,
+JudgeLevel 1.00..100.00 in 0.01 steps, cancellation, correcting invalid fields in the same native
+dialog, and rediscovery by SongCatalog. Timers drive the owned dialog automatically; this is
+not physical mouse/keyboard validation. The real user Songs, Skins and Option.ini are untouched.
+MusicSelectViewTests additionally checks Editor-only plus buttons and their creation intent.
+EditorMetronomeTests checks cached grid generation, tempo/meter/offset/delay changes and
+separation of playback clicks from the original hit-sound analysis markers.

@@ -81,6 +81,15 @@ bool MusicSelectView::ProcessActions()
         }
         for (std::size_t position = 0; position < songCards_.size(); ++position)
         {
+            if (IsEditorSongSelect() && songCards_[position].createDifficultyId != 0 &&
+                action.source == songCards_[position].createDifficultyId)
+            {
+                searchFocused_ = false;
+                SelectVisibleSong(songCards_[position].visiblePosition);
+                RefreshSearchPresentation();
+                command_ = SongSelectCommand::CreateDifficulty;
+                return true;
+            }
             if (songCards_[position].button != nullptr &&
                 action.source == songCards_[position].button->Id())
             {

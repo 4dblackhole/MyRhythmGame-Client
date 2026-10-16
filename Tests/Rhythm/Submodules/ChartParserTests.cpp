@@ -336,6 +336,19 @@ Base BPM: 120
             parser.ParsePattern("Version: nope\nBase BPM: 120\nJudgeLevel: 0\n", "invalid.ymp");
         Require(!pattern.Succeeded() && pattern.diagnostics.size() >= 2,
                 "Invalid YMP integer fields must produce parse diagnostics.");
+        for (const auto level : {0, 101, -1})
+            Require(!parser.ParsePattern("Base BPM: 120\nJudgeLevel: " + std::to_string(level)).Succeeded(),
+                    "JudgeLevel outside 1..100 must be rejected.");
+        for (const auto level : {1, 50, 100})
+        {
+            const auto valid = parser.ParsePattern("Base BPM: 120\nJudgeLevel: " + std::to_string(level));
+            Require(valid.Succeeded() && valid.document.judgementLevel == static_cast<double>(level),
+                    "JudgeLevel boundaries must be preserved.");
+        }
+        const auto fractionalLevel = parser.ParsePattern("Base BPM: 120\nJudgeLevel: 50.25");
+        Require(fractionalLevel.Succeeded() && fractionalLevel.document.judgementLevel == 50.25 &&
+                    !parser.ParsePattern("Base BPM: 120\nJudgeLevel: 50.001").Succeeded(),
+                "JudgeLevel uses exact hundredths and rejects excess precision.");
 
         const auto effects = parser.ParseEffect("Version: nope\n[AudioAutomation]\n"
                                                 "0/1,#BusVolume,HitSound,invalid,0.5,-1,Linear\n",

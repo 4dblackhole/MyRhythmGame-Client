@@ -2,6 +2,7 @@
 #include "Catalog/SongCatalog.h"
 #include "Editing/ChartEditor.h"
 #include "EditorMenuTests.h"
+#include "EditorMetronomeTests.h"
 #include "EditorModeTests.h"
 #include "EditorPlaybackTests.h"
 #include "EditorScene/Submodules/EditorView.h"
@@ -88,6 +89,7 @@ int main()
         Check(finger_drum::assets::InitializeBuiltInAssets(assetError), assetError.c_str());
         TestEditorMenu();
         TestEditorPlayback();
+        TestEditorMetronome();
         namespace chart = finger_drum::chart;
         chart::PatternDocument pattern;
         pattern.baseBpm = 120;
@@ -319,6 +321,8 @@ int main()
         visuals.Render({});
         Check(hasText(L"AUDIO") && hasText(L"MUSIC FFT SPECTROGRAM") && hasText(L"File"),
               "Audio and menu labels not localized");
+        Check(hasText(L"METRONOME: OFF") && hasText(L"−1 ms") && hasText(L"+1 ms"),
+              "Audio tab must expose offset adjustment and metronome controls.");
         visuals.OnResize(900, 720);
         view.Resize(900, 720);
         view.Build();

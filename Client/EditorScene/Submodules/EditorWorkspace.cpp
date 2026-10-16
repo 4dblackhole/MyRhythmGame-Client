@@ -36,7 +36,7 @@ void EditorWorkspace::UpdatePlayback()
         return;
     try
     {
-        analysis_.CacheAudioMarkers(Document(), *mode_);
+        PrepareAudioPreview();
     }
     catch (const std::exception &error)
     {
@@ -44,7 +44,7 @@ void EditorWorkspace::UpdatePlayback()
         SetStatus(error.what());
         return;
     }
-    playback_.Update(analysis_.Files(), analysis_.FilesRevision(), analysis_.Markers(), Document().Revision(),
+    playback_.Update(metronome_.Files(), analysis_.FilesRevision(), metronome_.Cues(), metronome_.CueRevision(),
                      Document().NoteTimeRange().second);
     const auto time = playback_.Position();
     timeMs_ = time.count() / 1000.0;
@@ -56,6 +56,20 @@ void EditorWorkspace::UpdatePlayback()
     }
     if (!playback_.Error().empty() && status_ != playback_.Error())
         SetStatus(playback_.Error());
+}
+void EditorWorkspace::PrepareAudioPreview()
+{
+    analysis_.CacheAudioMarkers(Document(), *mode_);
+    const double end = std::max(Document().NoteTimeRange().second.count() / 1'000'000.0,
+                                analysis_.MusicDurationSeconds().value_or(8.0));
+    metronome_.Prepare(Document(), end, analysis_.Files(), analysis_.FilesRevision(), analysis_.Markers());
+}
+void EditorWorkspace::SetPatternOffset(double milliseconds)
+{
+    static_cast<void>(editor_time::Microseconds(milliseconds));
+    auto pattern = Document().Pattern();
+    pattern.patternOffsetMilliseconds = milliseconds;
+    Replace(std::move(pattern), Document().Effects());
 }
 void EditorWorkspace::TogglePlayback()
 {

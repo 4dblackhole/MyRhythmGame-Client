@@ -32,7 +32,7 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
     const auto &p = state.Document().Pattern();
     metadata(225, text.ymmRelativePath.data(), Utf8(p.musicMetadataFile.wstring()),
              [](auto &d, const auto &value) { d.musicMetadataFile = std::filesystem::path(Wide(value)); });
-    metadata(305, text.patternName.data(), p.name, [](auto &d, const auto &value) { d.name = value; });
+    metadata(295, text.patternName.data(), p.name, [](auto &d, const auto &value) { d.name = value; });
     auto join = [](const std::vector<std::string> &values) {
         std::string r;
         for (const auto &s : values)
@@ -56,17 +56,19 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
         }
         return r;
     };
-    metadata(385, text.makers.data(), join(p.makers), [lines](auto &d, const auto &value) { d.makers = lines(value); });
-    metadata(465, text.tags.data(), join(p.tags), [lines](auto &d, const auto &value) { d.tags = lines(value); });
-    metadata(545, text.offsetMilliseconds.data(), std::to_string(p.patternOffsetMilliseconds),
+    metadata(365, text.makers.data(), join(p.makers), [lines](auto &d, const auto &value) { d.makers = lines(value); });
+    metadata(435, text.tags.data(), join(p.tags), [lines](auto &d, const auto &value) { d.tags = lines(value); });
+    metadata(505, text.offsetMilliseconds.data(), std::to_string(p.patternOffsetMilliseconds),
              [](auto &d, const auto &value) { d.patternOffsetMilliseconds = Number(value); });
-    metadata(625, text.baseBpm.data(), std::to_string(p.baseBpm),
+    metadata(575, text.baseBpm.data(), std::to_string(p.baseBpm),
              [](auto &d, const auto &value) { d.baseBpm = Number(value); });
+    metadata(645, catalog.Get("Editor.accuracyDifficulty").data(), p.judgementLevel.Format(),
+             [](auto &d, const auto &value) { d.judgementLevel = editor_values::JudgeLevel(value); });
     std::string sounds;
     for (const auto &[id, path] : state.Document().Effects().hitSounds)
         sounds += id + ": " + Utf8(path.wstring()) + "\n";
-    canvas.Text({156, 705, 360, 40}, text.hitSoundTable.data(), 22);
-    canvas.Button({520, 705, 1295, 44}, Wide(sounds),
+    canvas.Text({156, 715, 360, 40}, text.hitSoundTable.data(), 22);
+    canvas.Button({520, 715, 1295, 44}, Wide(sounds),
                   [&state, &catalog, sounds]
                   {
                       const auto &labels = finger_drum::texts::Editor(catalog);

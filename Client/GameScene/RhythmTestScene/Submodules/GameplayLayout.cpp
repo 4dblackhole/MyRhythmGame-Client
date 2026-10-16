@@ -111,7 +111,7 @@ void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &sceneRoot
          judgementSize.width, judgementSize.height},
         judgementImage, "Lane.JudgementCircle");
     judgementLine.SetZIndex(4);
-    std::size_t level = finger_drum::rhythm::AccuracyRange::DefaultLevel;
+    finger_drum::rhythm::JudgeLevel level;
     const auto &lanes = session_->Gear().Lanes();
     if (!lanes.empty() && !lanes.front()->Notes().empty())
         level = lanes.front()->Notes().front()->Profile().Level();

@@ -7,6 +7,30 @@ namespace finger_drum::tests
         using namespace finger_drum;
         {
             chart::PatternDocument pattern;
+            chart::ChartEditor document(pattern);
+            const auto revision = document.Revision();
+            for (const double level : {0.0, 101.0, 50.001})
+            {
+                bool rejected = false;
+                try
+                {
+                    pattern.judgementLevel = level;
+                    document.Replace(pattern, {});
+                }
+                catch (const std::invalid_argument &)
+                {
+                    rejected = true;
+                }
+                Require(rejected && document.Revision() == revision && document.Pattern().judgementLevel == 50,
+                        "Invalid JudgeLevel edits must preserve the complete document.");
+            }
+            pattern.judgementLevel = 50.25;
+            document.Replace(pattern, {});
+            Require(document.Pattern().judgementLevel == 50.25 && document.Pattern().judgementLevel.Format() == "50.25",
+                    "Fractional JudgeLevel must be editable.");
+        }
+        {
+            chart::PatternDocument pattern;
             pattern.mode = "Taiko";
             pattern.musicMetadataFile = "fixture.ymm";
             pattern.notes = {{{0, {}}, 11, 1, {}, {"HitCount=3", "Custom=keep"}, {}, 10},

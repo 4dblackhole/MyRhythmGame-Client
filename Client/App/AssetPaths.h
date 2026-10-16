@@ -35,6 +35,10 @@ namespace mrg_client::asset_paths
 
     namespace skin
     {
+        [[nodiscard]] inline std::filesystem::path EditorSound(const std::filesystem::path &file)
+        {
+            return SkinSetSelection::Instance().Resolve(std::filesystem::path(L"Editor") / file);
+        }
         [[nodiscard]] inline std::filesystem::path Result(const std::filesystem::path &file)
         {
             return SkinSetSelection::Instance().Image("Result", file.generic_string());

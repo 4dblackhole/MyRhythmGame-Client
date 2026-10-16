@@ -33,9 +33,11 @@ class MusicSelectScene final : public mrg::scene::GameScene
 
   private:
     bool StartSelectedPattern(mrg::scene::SceneManager &scenes);
+    void CreateDifficulty(mrg::scene::SceneManager &scenes);
     std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest_;
     SongSelectPurpose purpose_;
     mrg_client::OptionSettings &options_;
+    finger_drum::texts::TextCatalog &texts_;
     std::unique_ptr<SongSelectionState> selection_;
     std::unique_ptr<MusicSelectView> view_;
     std::unique_ptr<SongPreviewController> preview_;

@@ -34,4 +34,8 @@ namespace editor_values
             throw std::invalid_argument("Use a one-based measure and N/D without internal spaces.");
         return result;
     }
+    inline finger_drum::rhythm::JudgeLevel JudgeLevel(const std::string &value)
+    {
+        return finger_drum::rhythm::JudgeLevel{Number(value)};
+    }
 } // namespace editor_values

@@ -21,15 +21,14 @@ namespace
 }
 } // namespace
 
-AccuracyRange::AccuracyRange(std::string id, const std::size_t level)
+AccuracyRange::AccuracyRange(std::string id, const JudgeLevel level)
     : AccuracyRange(std::move(id), level, DefaultLevel50Bands())
 {
 }
 
-AccuracyRange::AccuracyRange(std::string id, const std::size_t level, std::array<JudgementBand, BandCount> level50Bands,
+AccuracyRange::AccuracyRange(std::string id, const JudgeLevel level, std::array<JudgementBand, BandCount> level50Bands,
                              const RhythmDuration extraHalfWindow)
-    : extraHalfWindow_(extraHalfWindow), id_(std::move(id)), level_(std::max<std::size_t>(level, 1)),
-      level50Bands_(level50Bands)
+    : extraHalfWindow_(extraHalfWindow), id_(std::move(id)), level_(level), level50Bands_(level50Bands)
 {
     if (id_.empty())
     {
@@ -52,14 +51,14 @@ std::string_view AccuracyRange::Id() const noexcept
     return id_;
 }
 
-std::size_t AccuracyRange::Level() const noexcept
+JudgeLevel AccuracyRange::Level() const noexcept
 {
     return level_;
 }
 
-void AccuracyRange::SetLevel(const std::size_t level)
+void AccuracyRange::SetLevel(const JudgeLevel level)
 {
-    level_ = std::max<std::size_t>(level, 1);
+    level_ = level;
     RebuildScaledBands();
 }
 
@@ -122,7 +121,7 @@ std::array<JudgementBand, AccuracyRange::BandCount> AccuracyRange::DefaultLevel5
 
 void AccuracyRange::RebuildScaledBands()
 {
-    const long double scale = static_cast<long double>(DefaultLevel) / static_cast<long double>(level_);
+    const long double scale = static_cast<long double>(DefaultLevel) / static_cast<long double>(level_.Value());
     for (std::size_t index = 0; index < scaledBands_.size(); ++index)
     {
         scaledBands_[index] = level50Bands_[index];

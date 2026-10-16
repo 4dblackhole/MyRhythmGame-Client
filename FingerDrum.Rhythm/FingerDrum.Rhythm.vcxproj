@@ -54,4 +54,7 @@
   <ItemGroup>
     <ClInclude Include="Judgement\AccuracyScore.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Judgement\JudgeLevel.h" />
+  </ItemGroup>
 </Project>

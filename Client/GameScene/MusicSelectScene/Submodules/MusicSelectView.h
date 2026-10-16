@@ -10,7 +10,8 @@ enum class SongSelectCommand
 {
     None,
     Back,
-    Launch
+    Launch,
+    CreateDifficulty
 };
 class MusicSelectView final
 {
@@ -44,6 +45,7 @@ class MusicSelectView final
         mrg::visual2d::Visual2DNode *title{};
         mrg::visual2d::Visual2DNode *artist{};
         std::size_t visiblePosition{};
+        mrg::visual2d::NodeId createDifficultyId{};
     };
 
     void CreateCategoryBar();
@@ -63,6 +65,7 @@ class MusicSelectView final
     void UpdateVisibleSongCards();
     void CreateSongCard(const std::size_t visiblePosition, const std::size_t catalogIndex,
                         const float top, const float height, const bool focused);
+    mrg::visual2d::NodeId CreateDifficultyButton(mrg::visual2d::Visual2DNode &card, std::size_t visiblePosition);
     void RefreshSearchPresentation();
     void EnsureFocusedCardVisible();
     void ApplyScrollOffset();

@@ -13,6 +13,9 @@ namespace finger_drum::tests
         Require(profile.HalfWindow(rhythm::JudgementGrade::Max).count() == 2'250 &&
                     profile.HalfWindow(rhythm::JudgementGrade::Perfect).count() == 4'750,
                 "Level 100 windows must be exactly half of level 50.");
+        profile.SetLevel(50.25);
+        Require(profile.Level() == 50.25 && profile.HalfWindow(rhythm::JudgementGrade::Bad).count() == 89'552,
+                "Fractional JudgeLevel must reach actual judgement window scaling without integer truncation.");
 
         const std::array<rhythm::JudgementBand, rhythm::AccuracyRange::BandCount> bands{{
             {rhythm::JudgementGrade::Max, rhythm::RhythmDuration{5'000}, 1.0},
@@ -66,7 +69,7 @@ namespace finger_drum::tests
         chart::PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 120.0;
-        pattern.judgementLevel = 50;
+        pattern.judgementLevel = 50.25;
         pattern.notes.push_back(
             chart::PatternNote{.position = {0, chart::Rational{0, 1}},
                                .keyType = static_cast<int>(mode::TaikoNoteType::BigDon),
@@ -92,6 +95,9 @@ namespace finger_drum::tests
             'J', rhythm::InputEdge::Pressed, rhythm::RhythmTime{1'000});
         Require(second.audioCues.empty() && HasEvent(second, rhythm::NoteEventType::Completed),
                 "The second large-note hit must complete without replaying the first-hit cue.");
+        const auto result = loaded.session->TakeResult(mode::PlayEndReason::Completed, rhythm::RhythmTime{1'000});
+        Require(result && result->Summary().judgementLevel == 50.25,
+                "Result snapshots must preserve fractional JudgeLevel.");
     }
 
     void TestHoldTicksAreExactlyOnce()

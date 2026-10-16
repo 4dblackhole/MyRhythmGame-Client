@@ -70,6 +70,8 @@ class EditorView final : public IEditorModeCanvas
     void UpdateWaveformColumns(double begin, double columnSeconds);
     void DrawAudioWaveform(const std::vector<finger_drum::editor::SpectrumFrame> &columns);
     void DrawAudioTimeRuler(double begin);
+    void DrawAudioAlignment(double begin);
+    void DrawAudioControls();
     void DrawAudioSpectrum(v::Rect rect, double minimumHz, double maximumHz);
     void DrawTimeline();
     void SyncTimelineSlider();

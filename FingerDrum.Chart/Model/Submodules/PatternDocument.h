@@ -1,4 +1,5 @@
 #pragma once
+#include "Judgement/JudgeLevel.h"
 #include "Model/Submodules/ChartTypes.h"
 
 namespace finger_drum::chart
@@ -42,7 +43,7 @@ namespace finger_drum::chart
         std::string mode;
         double patternOffsetMilliseconds{};
         double baseBpm{120.0};
-        std::size_t judgementLevel{50};
+        rhythm::JudgeLevel judgementLevel;
         std::vector<TimingDirective> timing;
         std::vector<PatternNote> notes;
         // Each entry is the zero-based measure that starts a new notation

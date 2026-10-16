@@ -7,6 +7,7 @@
 | 작업 | 처음 열 파일/폴더 | 함께 확인할 계약·테스트 |
 | --- | --- | --- |
 | 곡 선택 배치 | `Client/GameScene/MusicSelectScene/Submodules/SongSelectLayout.*`, `SongSelectPanels.cpp` | MusicSelectView.h; lobby smoke |
+| 새 난이도 메타데이터/파일 생성 | MusicSelectScene/Submodules의 NewDifficultyDialog / EditorPatternCreation; SongSelectCards / SongSelectInput | EditorSongSelect; RunNewDifficultyTests / MusicSelectViewTests; Editor 진입 snapshot |
 | 곡 카드/난이도 모양 | 같은 폴더 `SongSelectCards.cpp` | MusicSelectView.h; lobby/editor selector |
 | 곡/난이도 이동·검색·정렬 | 같은 폴더 `SongSelectionState.*`, 입력 연결은 SongSelectInput.cpp | SceneStateTests.cpp |
 | 곡 미리듣기 | 같은 폴더 `SongPreviewController.*` | AudioPlayback 공개 계약, lobby smoke |
@@ -36,7 +37,9 @@
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
 | BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace/ReplaceTiming/ReplaceEffects, 저장 왕복 |
 | 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
+| 에디터 offset/메트로놈·박자/예상 타격 눈금 | EditorAudioControls / EditorMetronome / EditorWorkspace | MusicalTimeline / EditorPlayback의 DSP 예약; EditorMetronomeTests / EditorAudioViewTests |
 | 에디터 재생·시간축 줌 | EditorPlayback / EditorWorkspace / EditorScoreView | EditorInput / EditorScene / TaikoEditorScore; EditorPlaybackTests / EditorModeTests; 엔진 AudioClip/Voice |
+| JudgeLevel 고정소수점/범위 | `FingerDrum.Rhythm/Judgement/JudgeLevel.h`, AccuracyRange; PatternDocument / PatternParser / ChartEditor | TaikoSessionBuilder / IPlayResult / GameplayLayout; RhythmCoreTests / ChartParserTests / NewDifficultyTests |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |

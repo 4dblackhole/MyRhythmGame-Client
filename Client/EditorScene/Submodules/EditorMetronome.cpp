@@ -1,0 +1,68 @@
+#include "EditorMetronome.h"
+#include "App/AssetPaths.h"
+#include "EditorTime.h"
+#include <algorithm>
+
+namespace
+{
+    constexpr const char *BeatId = "Editor.Metronome.Beat";
+    constexpr const char *AccentId = "Editor.Metronome.Accent";
+    std::vector<EditorMetronome::Beat> CompileBeats(const finger_drum::chart::MusicalTimeline &timeline,
+                                                    double endSeconds)
+    {
+        namespace chart = finger_drum::chart;
+        const auto end = editor_time::Microseconds(endSeconds * 1000);
+        const auto last = editor_time::MeasureNearTime(timeline, endSeconds * 1000);
+        std::vector<EditorMetronome::Beat> beats;
+        for (std::int64_t measure = 0; measure <= last; ++measure)
+        {
+            const auto length = timeline.MeasureLength(measure);
+            const auto origin = timeline.PositionToWholeNotes({measure, {}});
+            // Quarter-note clicks, with an accent at each surviving measure start.
+            for (chart::Rational offset{}; offset < length; offset = offset + chart::Rational{1, 4})
+            {
+                const auto position = timeline.PositionAtWholeNotes(origin + offset);
+                if (!timeline.IsPositionActive(position))
+                    continue;
+                const auto time = timeline.Compile(position);
+                if (time > end)
+                    break;
+                beats.push_back({time.count() / 1'000'000.0, offset == chart::Rational{}});
+            }
+        }
+        std::ranges::stable_sort(beats, {}, &EditorMetronome::Beat::seconds);
+        return beats;
+    }
+} // namespace
+
+void EditorMetronome::Prepare(const finger_drum::chart::IEditorDocument &document, double endSeconds,
+                              const std::map<std::string, std::filesystem::path> &files, std::uint64_t filesRevision,
+                              const std::vector<AudioMarker> &markers)
+{
+    if (filesRevision_ != filesRevision)
+    {
+        auto prepared = files;
+        prepared[BeatId] = mrg_client::asset_paths::skin::EditorSound(L"MetronomeBeat.wav");
+        prepared[AccentId] = mrg_client::asset_paths::skin::EditorSound(L"MetronomeAccent.wav");
+        files_ = std::move(prepared);
+        filesRevision_ = filesRevision;
+    }
+    const bool gridChanged =
+        document_ != &document || documentRevision_ != document.Revision() || endSeconds_ != endSeconds;
+    if (!gridChanged && preparedEnabled_ == enabled_)
+        return;
+    // Publish complete caches only after compilation succeeds. No tempo integration per frame.
+    auto beats = gridChanged ? CompileBeats(document.Timeline(), endSeconds) : beats_;
+    auto cues = markers;
+    if (enabled_)
+        for (const auto &beat : beats)
+            cues.push_back({beat.seconds, beat.accent ? AccentId : BeatId});
+    std::ranges::stable_sort(cues, {}, &AudioMarker::seconds);
+    beats_ = std::move(beats);
+    cues_ = std::move(cues);
+    document_ = &document;
+    documentRevision_ = document.Revision();
+    endSeconds_ = endSeconds;
+    preparedEnabled_ = enabled_;
+    ++cueRevision_;
+}
