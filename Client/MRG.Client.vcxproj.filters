@@ -121,6 +121,7 @@
     <ClCompile Include="GameFlow\Submodules\GameplaySessionController.cpp"><Filter>GameFlow\Submodules</Filter></ClCompile>
     <ClCompile Include="GameFlow\Submodules\GameplayPause.cpp"><Filter>GameFlow\Submodules</Filter></ClCompile>
     <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPauseMenu.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
+    <ClCompile Include="GameScene\RhythmTestScene\Submodules\GameplayPauseLayout.cpp"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClCompile>
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseMenu.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseAction.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClInclude Include="GameFlow\IPlaySessionController.h"><Filter>GameFlow</Filter></ClInclude>

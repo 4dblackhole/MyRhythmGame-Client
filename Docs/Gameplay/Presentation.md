@@ -86,10 +86,17 @@ Transform 한 곳에서 지정합니다. Lane 아래의 노트·판정원·키�
 일시정지 Canvas (별도 화면 레이어 10)
 └─ Center 앵커 → Pause.Root
    ├─ Pause.Dim                       화면 어둡게 덮기
-   └─ Pause.Panel                     메뉴 패널
-      ├─ Pause.Label ×3               제목 / 연습 안내 / 조작 안내
-      └─ Pause.0~3                    Resume / Rewind / Retry / Retire
-         └─ Pause.Label ×2            항목 이름 / 설명
+   └─ Pause.Panel                     메뉴 컨테이너
+      ├─ Pause.SkinPanel              사용자 스킨의 전체 패널 (지정 시)
+      └─ Pause.Row.0~3                각 행의 테두리 또는 사용자 스킨
+         ├─ Pause.RowFill             선택/일반 상태 바탕
+         ├─ Pause.0~3                 Resume / Rewind / Retry / Retire 실행 영역
+         │  └─ Pause.Label            액션 이름
+         └─ Pause.Selector            Resume/Rewind 값 선택기
+            ├─ Pause.SelectorFill
+            ├─ Pause.{0/1}.Previous/Next
+            │  └─ Pause.Arrow → Pause.ArrowStroke ×2
+            └─ Pause.Label            현재 값
 ```
 
 `ScrollGear`의 Transform을 바꾸면 그 아래의 모든 표시 요소가 함께 이동합니다.

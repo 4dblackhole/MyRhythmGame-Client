@@ -57,6 +57,7 @@ MAX/PERFECT/GREAT/GOOD/BAD/MISS/POOR와 롤 성공의 OK 링·문구를 표시�
 동작과 스킨 경로는 [플레이 표시](Docs/Gameplay/Presentation.md)에 있습니다.
 모든 노트 처리 3초 뒤 [Result](Docs/Gameplay/Results.md)에 이동합니다. ESC는
 [일시정지 메뉴](Docs/Gameplay/Pause.md)를 열어 Resume/Rewind/Retry/Retire를 선택합니다.
+메뉴는 Penpot의 네 버튼 배치를 사용하며 Resume/Rewind 값은 ←→ 또는 오른쪽 선택기의 화살표로 조절합니다.
 Resume은 판정을 유지하고 0.5~3초 이전부터 재생하며 Rewind는 지정 마디 시작 이후 판정을 취소합니다.
 Retire는 남은 노트를 0점·MISS로 확정합니다. 메뉴 사용 시 해당 시도의 클리어/HP 자격을 해제합니다.
 일반·큰·롤 계열 및 최종 정확도는 소수점 6자리로 기록/표시하고 판정 개수,

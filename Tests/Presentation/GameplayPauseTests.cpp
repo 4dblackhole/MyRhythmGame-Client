@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <stdexcept>
 #include <thread>
@@ -85,6 +86,42 @@ namespace
         auto *canvas = visuals.FindCanvas(1);
         if (!canvas)
             throw std::runtime_error("Pause Canvas missing.");
+        const auto *firstRow = Find(canvas->Root(), "Pause.Row.0");
+        const auto *secondRow = Find(canvas->Root(), "Pause.Row.1");
+        if (!firstRow || !secondRow)
+            throw std::runtime_error("The Penpot action rows must exist.");
+        const auto firstBounds = firstRow->BoundsInCanvas(), secondBounds = secondRow->BoundsInCanvas();
+        Check(std::abs(firstBounds.width - 480) < .001F && std::abs(firstBounds.height - 48) < .001F &&
+                  std::abs(firstBounds.y - secondBounds.y - 88.0F * 2 / 3) < .001F,
+              "Pause rows must match Penpot's 720x72px dimensions and 16px gaps at 1080p.");
+        const auto clickSelector = [&](std::string_view name)
+        {
+            const auto *button = Find(canvas->Root(), name);
+            if (!button)
+                throw std::runtime_error("Selector button must exist.");
+            const auto bounds = button->BoundsInCanvas();
+            v::PointerInput pointer;
+            pointer.available = true;
+            pointer.position = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
+            pointer.leftButtonDown = pointer.leftButtonPressed = true;
+            v::Visual2DInputRouter clicks;
+            clicks.Process(*canvas, pointer);
+            menu.Show(1280, 720, true, 12);
+            pointer.leftButtonDown = pointer.leftButtonPressed = false;
+            pointer.leftButtonReleased = true;
+            clicks.Process(*canvas, pointer);
+            clicks.Reset(*canvas);
+            return menu.Update({});
+        };
+        auto adjusted = clickSelector("Pause.0.Next");
+        Check(adjusted.action == GameplayPauseAction::None && adjusted.leadIn.count() == 1'000'000,
+              "A Resume selector click must adjust the value without resuming the game.");
+        adjusted = clickSelector("Pause.1.Next");
+        Check(adjusted.action == GameplayPauseAction::None && adjusted.measures == 2,
+              "A Rewind selector click must adjust the value without rewinding the game.");
+        adjusted = clickSelector("Pause.1.Previous");
+        Check(adjusted.action == GameplayPauseAction::None && adjusted.measures == 1,
+              "The previous selector must apply the same lower bound as keyboard adjustment.");
         const auto *retire = Find(canvas->Root(), "Pause.3");
         if (!retire)
             throw std::runtime_error("Retire row missing.");
@@ -126,9 +163,12 @@ namespace
         static_cast<void>(menu.Update(input));
         const auto packets = canvas->BuildDrawList();
         Check(std::ranges::any_of(packets,
-                                  [](const auto &packet) { return packet.text && packet.text->value == L"Paused"; }),
+                                  [](const auto &packet) { return packet.text && packet.text->value == L"Resume"; }),
               "Pause menu must use the current language.");
         menu.OnResize(720, 1280);
+        const auto *panel = Find(canvas->Root(), "Pause.Panel");
+        Check(panel != nullptr && panel->BoundsInCanvas().width <= canvas->LogicalSize().width - 31.9F,
+              "The complete menu, including selectors, must fit narrow viewports.");
         menu.OnResize(2560, 1080);
         menu.Hide();
         Check(menu.HandleKey(VK_RETURN).action == GameplayPauseAction::None, "Hidden menus cannot accept keys.");

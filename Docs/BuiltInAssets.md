@@ -7,7 +7,7 @@
 ## 포함 범위
 
 - `Assets/Skins/Default Skin` 전체
-- `Assets/Fonts`의 세 글꼴과 각각의 라이선스(리절트용 Noto Sans KR 포함)
+- `Assets/Fonts`의 세 글꼴과 각각의 라이선스(리절트·일시정지용 Noto Sans KR 포함)
 
 AngelDream Handshaking MP3 1개·YMM 1개·YMP/YME 5쌍과 이펙트 테스트 WAV 2개는
 EXE에 넣지 않습니다. 추가 WAV는 기본 스킨의 Don/Kat 원본을 재사용한 테스트 파일입니다.
@@ -166,7 +166,7 @@ UTF-8 BOM과 CRLF/LF를 허용합니다. `;`/`#`로 시작하는 전체 줄만 �
 | 섹션 | 이미지 항목 |
 | --- | --- |
 | `Logo` | `LogoCenter/LogoLeft/LogoRight`, `SelectionCursor`; 선택 `Background`, `StartButton/EditorButton/OptionsButton/ExitButton` |
-| `InGame` | 노트·오버레이·롱노트·틱·특수 노트, 레인·판정원·키/불빛, `Judgements.MAX`~`OK`, `Progress.Background/Track/Fill/Marker`; 선택 `PausePanel`, `PauseResume/Rewind/Retry/Retire` |
+| `InGame` | 노트·오버레이·롱노트·틱·특수 노트, 레인·판정원·키/불빛, `Judgements.MAX`~`OK`, `Progress.Background/Track/Fill/Marker`, `PauseBackdrop`; 선택 `PausePanel`, `PauseResume/Rewind/Retry/Retire` |
 | `MusicSelect` | 배경·카테고리·기록/곡정보/브라우저 패널, 검색/정렬 필드, 스크롤바, `OptionSelect/Back/Go`, `SongCard/SongCardFocused`, `Difficulty/DifficultySelected` |
 | `Result` | `Background.Sky/Background.Clouds`, `Mode.Taiko`, `Rank.Frame`; 선택 `BackButton/RetryButton/ReplayButton` |
 
@@ -203,6 +203,10 @@ fallback을 사용합니다. 인디케이터는 별도 색 구간 요소로 구�
 플레이는 `InGame`, 로고는 `Logo`, 곡 선택은 `MusicSelect`, 리절트는 `Result`를 사용합니다.
 각 폴더는 루트의 `skin.ini`와 같은 레벨입니다. 곡 선택의 기본본은 코드의 색상 패널을 유지하므로
 PNG가 필수는 아닙니다.
+일시정지의 `InGame/Pause/Backdrop.png`는 Penpot Pause Backdrop의 #17344E/38%를
+1×1 RGBA(23,52,78,97)로 기록한 단색 텍스처입니다. 화면 전체에 확장하여 기존 Sprite의
+알파 합성으로 덮습니다. 버튼과 화살표는 둥근 Sprite 도형을 조합합니다.
+
 리절트의 장식은 Penpot Result · Sky의 SVG/PNG에서 내보내고 래스터화한 자산입니다.
 텍스트·실제 통계·그래프·패널·버튼은 런타임 요소로 남겨 언어/값/해상도에 대응합니다.
 

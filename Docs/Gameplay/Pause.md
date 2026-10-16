@@ -23,6 +23,28 @@ Rewind는 현재 BPM으로 시간을 빼지 않고 컴파일된 원본 마디 �
 기존 Space 정지/재개와 R 초기화는 유지하며 메뉴를 열지 않는 Space 정지는 아래 메뉴 사용 플래그를
 설정하지 않습니다. 디버그 시간 조작은 [Debugging](Debugging.md)을 참고합니다.
 
+## 일시정지 화면
+
+Penpot `Gameplay · Sky`의 `인게임 일시정지 · Pause Controls · 1920×1080` 보드를 따릅니다.
+화면 중앙에 네 액션만 배치하며, 1080p 기준 전체 720×336px, 각 행 720×72px,
+행 간격 16px, 모서리 반경 20px입니다. 선택 행은 Result와 같은 하늘색/흰색 글자,
+다른 행은 밝은 바탕/하늘색 테두리/짙은 글자이며 배경은 #17344E의 38% 덮개입니다.
+Noto Sans KR 700을 내장 폰트에서 공유하고 제목/설명/별도 큰 패널은 표시하지 않습니다.
+
+Resume/Rewind 오른쪽에는 앞·뒤 화살표와 현재 값이 있는 선택기를 둡니다.
+화살표 클릭은 키보드 ←→와 같은 `AdjustValue`를 사용하여 값만 바꾸고 게임을 재개하지 않습니다.
+왼쪽 액션 영역 클릭이나 Enter가 동작을 실행합니다. 준비 중에는 두 액션과 선택기를 비활성화합니다.
+좁은 화면에서는 메뉴 부모를 함께 축소하여 버튼·선택기·텍스트가 화면 안에 남습니다.
+
+`GameplayPauseLayout`은 Canvas 노드와 배치를, `GameplayPauseMenu`는 포커스·값·입력 의도를
+관리합니다. 세션·오디오 변경은 기존 Controller에 남습니다. 기본 모양과 화살표는 기존
+Sprite/Transform으로 구성하고 기존 `skin.ini`의 PausePanel/PauseResume/Rewind/Retry/Retire
+매핑을 유지합니다. 반투명 배경은 `InGame/Pause/Backdrop.png`의 1×1 RGBA 이미지를
+화면 전체로 확장하며 `PauseBackdrop` 매핑으로 교체합니다. 화면용 단색 Panel의 불투명
+경로 대신 기존 이미지 Sprite의 알파 합성을 사용합니다.
+선택기 문구는 언어 INI의 `Pause.resumeValueFormat`/`rewindValueFormat`이며
+누락 시 내장 영어를 사용합니다. 개발 폴더의 기존 편집 언어파일은 빌드로 덮어쓰지 않습니다.
+
 ## 모든 모드의 실행 상태
 
 `Client/GameFlow/IPlaySessionController.h`는 Loading / Gameplay / Pause / Ending 네 상태와

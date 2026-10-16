@@ -71,6 +71,38 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 Penpot 일시정지 UI
+
+- 연결된 Penpot의 Gameplay · Sky / b0134a97-87eb-801a-8008-cca341851088 보드를
+  직접 조회하고 내보낸 화면·치수·색상·글꼴과 비교했습니다. 중앙 720×336px 메뉴,
+  72px 높이/16px 간격의 네 행, 252×48px 값 선택기와 Noto Sans KR 700을 반영했습니다.
+- GameplayPauseLayout은 조립/배치, GameplayPauseMenu는 포커스/값/입력 의도,
+  PauseTexts/언어 INI는 문구를 맡습니다. 키보드와 화살표 클릭은 같은 AdjustValue를
+  사용하며 선택기 클릭으로 재개/되감기를 실행하지 않습니다. Controller/상태머신은 그대로입니다.
+  좁은 화면에서는 메뉴 부모를 함께 축소합니다. 기존 사용자 스킨 버튼/패널 매핑도 유지합니다.
+- 기존 Noto Sans KR 자산 경로 함수는 Result 전용 이름 대신 NotoSansKR로 공유했습니다.
+  배경은 Default Skin/InGame/Pause/Backdrop.png의 1×1 RGBA(23,52,78,97)와
+  skin.ini의 PauseBackdrop을 사용합니다. 화면 단색 Panel의 불투명 경로 대신 이미지 Sprite의
+  알파 합성을 사용하여 배경을 38% 덮습니다. 버튼·화살표는 기존 Sprite 도형으로 조합하며
+  엔진 소스/API/포인터는 변경하지 않았습니다.
+- Debug/Release x64 전체 solution Build 및 MRG.Client MSVC 14.44 Code Analysis Build
+  (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
+  최종 GameplayPauseLayout도 두 구성의 CL.command.1.tlog 인수로 /analyze:only를 실행했습니다.
+  초기 C4834와 테스트 C6011을 수정했고 최종 빌드/분석/테스트에 신규 경고·파싱 오류가 없습니다.
+  범위 밖의 기존 EditorAnalysisController.cpp:51 C26115는 프로젝트 분석에 남았습니다.
+- 두 구성 GameplayPause/ResultPresentation/Skin 회귀를 /W4 /analyze로 빌드·실행했습니다.
+  시안의 행 크기/간격, 선택기 클릭과 값 제한, 실행 버튼·키보드·언어·좁은 화면·소유 Canvas 정리,
+  실제 음악 seek·Resume/Rewind/Retry/Retire·노트/점수 복원·결과 전환·스킨 fallback을 통과했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0, 네 smoke 경로는 총 8개 exit 0입니다.
+- production Presenter와 PauseMenu를 겹친 D3D12 offscreen 캡처를 1920×1080,
+  720×1280에서 육안 확인했습니다. 메뉴 배치·글자·선택기·배경 투명도를 확인했으며,
+  빈 배경 픽셀 RGB(157,173,188)로 반투명 합성도 확인했습니다. 자동 캡처/입력 검사이며
+  실제 창에서 물리 키·마우스로 조작하거나 오디오를 직접 청취한 수동 검증은 미실시입니다.
+- CheckArchitecture(11프로젝트), Client/엔진 git diff --check 통과.
+  사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 en/ko.ini 해시 일치로 보존했습니다.
+  기존 외부 언어파일에서 새 선택기 키가 빠지면 내장 영어가 사용됩니다. 원본 ko/en 템플릿은 갱신했습니다.
+  최종 로그/분석 인수는 ignored build/pause-design-2026-10-17/final, BMP/PNG는 그 상위 폴더입니다.
+
 ## 2026-10-17 공통 기어 Transform·화면 중앙선 배치
 
 - GameplayLayout이 ScrollGear 부모 아래에 테두리·바탕·레인·입력 오버레이를 조립합니다.

@@ -25,7 +25,7 @@ void TaikoResultView::LoadAssets()
     clouds_ = load(L"Background.Clouds");
     modeIcon_ = load(L"Mode.Taiko");
     rankFrame_ = load(L"Rank.Frame");
-    font_ = {v::TextFontSource::File, mrg_client::asset_paths::fonts::Result().wstring()};
+    font_ = {v::TextFontSource::File, mrg_client::asset_paths::fonts::NotoSansKR().wstring()};
 }
 void TaikoResultView::Initialize(const mrg::EngineServices &services)
 {

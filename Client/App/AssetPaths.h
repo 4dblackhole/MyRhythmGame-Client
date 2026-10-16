@@ -16,7 +16,7 @@ namespace mrg_client::asset_paths
 
     namespace fonts
     {
-        [[nodiscard]] inline std::filesystem::path Result()
+        [[nodiscard]] inline std::filesystem::path NotoSansKR()
         {
             return finger_drum::assets::ResolveBuiltInAsset(L"assets\\fonts\\NotoSansKR.ttf");
         }

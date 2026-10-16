@@ -9,7 +9,6 @@ namespace v = mrg::visual2d;
 namespace
 {
     namespace colors = finger_drum::presentation::ui_colors;
-    constexpr auto White = colors::White, Muted = colors::pause::Muted;
     constexpr std::array<GameplayPauseAction, 4> Actions{GameplayPauseAction::Resume, GameplayPauseAction::Rewind,
                                                          GameplayPauseAction::Retry, GameplayPauseAction::Retire};
 } // namespace
@@ -37,78 +36,84 @@ void GameplayPauseMenu::Show(std::uint32_t width, std::uint32_t height, bool can
     Build();
     static_cast<void>(handle_.SetVisible(true));
 }
-v::Visual2DNode &GameplayPauseMenu::Label(v::Visual2DNode &parent, v::Rect bounds, std::wstring text, float size,
-                                          v::Color color)
-{
-    auto &node = v::CreateLabel(parent, bounds, std::move(text), "Pause.Label");
-    auto &component = *node.GetComponent<v::TextVisualComponent>();
-    texts_.ApplyFont(component);
-    component.SetFontSize(size);
-    component.SetTextColor(color);
-    return node;
-}
-void GameplayPauseMenu::Build()
-{
-    auto &canvas = *handle_.Get();
-    router_.Reset(canvas);
-    if (rootId_)
-        static_cast<void>(canvas.RemoveNode(rootId_));
-    const auto size = canvas.LogicalSize();
-    auto &root = canvas.CreateNode(v::Anchor::Center, "Pause.Root");
-    rootId_ = root.Id();
-    auto &dim = v::CreatePanel(root, {-size.width / 2, -size.height / 2, size.width, size.height}, "Pause.Dim");
-    dim.GetComponent<v::SpriteVisualComponent>()->SetTint({0, 0, 0, .7F});
-    const float width = std::min(500.0F, std::max(220.0F, size.width - 32));
-    auto &panel = v::CreatePanel(root, {-width / 2, -250, width, 500}, "Pause.Panel");
-    auto &visual = *panel.GetComponent<v::SpriteVisualComponent>();
-    visual.SetTint(colors::pause::Surface);
-    visual.SetCornerRadius(20);
-    finger_drum::presentation::BindSkinImage(panel, visuals_, "InGame", "PausePanel");
-    const auto &text = finger_drum::texts::Pause(texts_);
-    Label(panel, {24, 444, width - 48, 40}, std::wstring(text.title), 28, White);
-    Label(panel, {24, 414, width - 48, 24}, std::wstring(text.practice), 15, Muted);
-    for (std::size_t i = 0; i < rows_.size(); ++i)
-    {
-        auto &row = v::CreateButton(panel, {24, 320 - static_cast<float>(i) * 78, width - 48, 68}, L"",
-                                    std::format("Pause.{}", i));
-        row.GetComponent<v::SpriteVisualComponent>()->SetCornerRadius(10);
-        Label(row, {16, 34, width - 80, 28}, std::wstring(text.actions[i]), 20, White);
-        descriptions_[i] = Label(row, {16, 6, width - 80, 24}, L"", 13, Muted).Id();
-        rows_[i] = row.Id();
-        constexpr std::array keys{"PauseResume", "PauseRewind", "PauseRetry", "PauseRetire"};
-        finger_drum::presentation::BindSkinImage(row, visuals_, "InGame", keys[i]);
-    }
-    Label(panel, {24, 18, width - 48, 26}, std::wstring(text.controls), 13, Muted);
-    textRevision_ = texts_.Revision();
-    RefreshRows();
-    router_.InvalidateHitTest();
-}
 void GameplayPauseMenu::RefreshRows()
 {
     if (!handle_)
         return;
     const auto &text = finger_drum::texts::Pause(texts_);
     const double seconds = static_cast<double>(choice_.leadIn.count()) / 1'000'000;
-    const std::array<std::wstring, 4> descriptions{
-        canResume_ ? std::vformat(text.resumeFormat, std::make_wformat_args(seconds)) : std::wstring(text.preparing),
-        canResume_ ? std::vformat(text.rewindFormat, std::make_wformat_args(choice_.measures))
-                   : std::wstring(text.preparing),
-        std::wstring(text.retry), std::wstring(text.retire)};
+    const std::array<std::wstring, 2> values{
+        canResume_ ? std::vformat(text.resumeValueFormat, std::make_wformat_args(seconds)) : std::wstring(text.preparing),
+        canResume_ ? std::vformat(text.rewindValueFormat, std::make_wformat_args(choice_.measures))
+                   : std::wstring(text.preparing)};
+    auto &canvas = *handle_.Get();
     for (std::size_t i = 0; i < rows_.size(); ++i)
     {
-        auto *row = handle_.Get()->FindNode(rows_[i]);
-        if (!row)
+        const bool available = i >= 2 || canResume_;
+        auto *row = canvas.FindNode(rows_[i]);
+        auto *frame = canvas.FindNode(frames_[i]);
+        if (!row || !frame)
             continue;
-        row->SetEnabled(i >= 2 || canResume_);
-        v::VisualStyle style;
-        style.normal = i == focus_ ? colors::pause::Focus : colors::pause::Row;
-        style.hovered = colors::pause::Hover;
-        style.pressed = colors::pause::Pressed;
-        style.disabled = colors::pause::Disabled;
-        finger_drum::presentation::SetSkinBaseStyle(*row, style);
-        if (auto *label = handle_.Get()->FindNode(descriptions_[i]))
-            label->GetComponent<v::TextVisualComponent>()->SetText(descriptions[i]);
+        row->SetEnabled(available);
+        if (auto *fill = canvas.FindNode(fills_[i]))
+            fill->GetComponent<v::SpriteVisualComponent>()->SetTint(
+                available ? (i == focus_ ? colors::pause::Focus : colors::pause::Surface) : colors::pause::Disabled);
+        if (auto *caption = canvas.FindNode(captions_[i]))
+            caption->GetComponent<v::TextVisualComponent>()->SetTextColor(
+                i == focus_ && available ? colors::White : colors::pause::Ink);
+        if (i < values_.size())
+        {
+            if (auto *value = canvas.FindNode(values_[i]))
+                value->GetComponent<v::TextVisualComponent>()->SetText(values[i]);
+            for (const auto id : {previous_[i], next_[i]})
+                if (auto *arrow = canvas.FindNode(id))
+                    arrow->SetEnabled(available);
+        }
     }
+}
+
+void GameplayPauseMenu::AdjustValue(std::size_t index, int direction)
+{
+    if (index == 0)
+        choice_.leadIn = finger_drum::rhythm::RhythmDuration{
+            std::clamp(choice_.leadIn.count() + direction * 500'000, 500'000LL, 3'000'000LL)};
+    if (index == 1)
+    {
+        if (direction < 0 && choice_.measures > 1)
+            --choice_.measures;
+        if (direction > 0 && choice_.measures < maxMeasures_)
+            ++choice_.measures;
+    }
+}
+void GameplayPauseMenu::ProcessActions(GameplayPauseChoice &result)
+{
+    const auto actions = handle_.Get()->TakeActions();
+    for (const auto &action : actions)
+    {
+        if (action.type != v::ActionType::Clicked)
+            continue;
+        for (std::size_t i = 0; i < rows_.size(); ++i)
+        {
+            if (action.source != rows_[i] || (i < 2 && !canResume_))
+                continue;
+            focus_ = i;
+            result = choice_;
+            result.action = Actions[i];
+        }
+        for (std::size_t i = 0; i < values_.size(); ++i)
+        {
+            const int direction = static_cast<int>(action.source == next_[i]) -
+                                  static_cast<int>(action.source == previous_[i]);
+            if (!direction || !canResume_)
+                continue;
+            focus_ = i;
+            AdjustValue(i, direction);
+            result = choice_;
+            result.action = GameplayPauseAction::None;
+        }
+    }
+    if (!actions.empty())
+        RefreshRows();
 }
 void GameplayPauseMenu::ProcessPointer(const mrg::platform::InputState &input)
 {
@@ -121,7 +126,7 @@ void GameplayPauseMenu::ProcessPointer(const mrg::platform::InputState &input)
     if (p && (!lastPointer_ || p->x != lastPointer_->x || p->y != lastPointer_->y))
         for (std::size_t i = 0; i < rows_.size(); ++i)
         {
-            const auto *row = canvas.FindNode(rows_[i]);
+            const auto *row = canvas.FindNode(frames_[i]);
             if (!row)
                 continue;
             const auto b = row->BoundsInCanvas();
@@ -149,16 +154,8 @@ GameplayPauseChoice GameplayPauseMenu::HandleKey(std::uint16_t key)
     if (key == VK_DOWN)
         focus_ = (focus_ + 1) % 4;
     const int direction = static_cast<int>(key == VK_RIGHT) - static_cast<int>(key == VK_LEFT);
-    if (focus_ == 0 && direction)
-        choice_.leadIn = finger_drum::rhythm::RhythmDuration{
-            std::clamp(choice_.leadIn.count() + direction * 500'000, 500'000LL, 3'000'000LL)};
-    if (focus_ == 1 && direction)
-    {
-        if (direction < 0 && choice_.measures > 1)
-            --choice_.measures;
-        if (direction > 0 && choice_.measures < maxMeasures_)
-            ++choice_.measures;
-    }
+    if (direction && canResume_)
+        AdjustValue(focus_, direction);
     if (oldFocus != focus_ || result.leadIn != choice_.leadIn || result.measures != choice_.measures)
         RefreshRows();
     result = choice_;
@@ -182,14 +179,7 @@ GameplayPauseChoice GameplayPauseMenu::Update(const mrg::platform::InputState &i
     for (const auto key : {VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_RETURN})
         if (input.WasKeyPressed(static_cast<std::uint16_t>(key)))
             result = HandleKey(static_cast<std::uint16_t>(key));
-    for (const auto &action : handle_.Get()->TakeActions())
-        if (action.type == v::ActionType::Clicked)
-            for (std::size_t i = 0; i < rows_.size(); ++i)
-                if (action.source == rows_[i])
-                {
-                    focus_ = i;
-                    result.action = Actions[i];
-                }
+    ProcessActions(result);
     return result;
 }
 void GameplayPauseMenu::Hide() noexcept
@@ -218,6 +208,11 @@ void GameplayPauseMenu::Shutdown() noexcept
     Hide();
     handle_.Reset();
     rows_ = {};
-    descriptions_ = {};
+    frames_ = {};
+    fills_ = {};
+    captions_ = {};
+    values_ = {};
+    previous_ = {};
+    next_ = {};
     rootId_ = 0;
 }

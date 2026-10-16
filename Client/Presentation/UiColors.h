@@ -50,9 +50,8 @@ namespace finger_drum::presentation::ui_colors
     } // namespace result
     namespace pause
     {
-        inline constexpr Color Muted{.65F, .8F, .95F, 1}, Surface{.07F, .14F, .24F, 1};
-        inline constexpr Color Row{.11F, .22F, .35F, 1}, Focus{.15F, .38F, .62F, 1};
-        inline constexpr Color Hover{.18F, .43F, .68F, 1}, Pressed{.08F, .28F, .48F, 1};
-        inline constexpr Color Disabled{.11F, .18F, .25F, 1};
+        inline constexpr auto Ink = result::Ink, Surface = result::Surface, Focus = result::Accent;
+        inline constexpr auto Keyline = result::Keyline, Selector = result::Plot;
+        inline constexpr auto Hover = sky::AccentHover, Pressed = sky::Ink, Disabled = sky::Disabled;
     } // namespace pause
 } // namespace finger_drum::presentation::ui_colors

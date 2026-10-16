@@ -28,7 +28,11 @@ class GameplayPauseMenu final
 
   private:
     void Build();
+    void BuildRow(mrg::visual2d::Visual2DNode &parent, std::size_t index);
+    void BuildSelector(mrg::visual2d::Visual2DNode &parent, std::size_t index);
     void RefreshRows();
+    void AdjustValue(std::size_t index, int direction);
+    void ProcessActions(GameplayPauseChoice &result);
     void ProcessPointer(const mrg::platform::InputState &input);
     mrg::visual2d::Visual2DNode &Label(mrg::visual2d::Visual2DNode &parent, mrg::visual2d::Rect bounds,
                                        std::wstring text, float size, mrg::visual2d::Color color);
@@ -36,7 +40,8 @@ class GameplayPauseMenu final
     finger_drum::texts::TextCatalog &texts_;
     mrg::visual2d::ScreenCanvasHandle handle_;
     mrg::visual2d::Visual2DInputRouter router_;
-    std::array<mrg::visual2d::NodeId, 4> rows_{}, descriptions_{};
+    std::array<mrg::visual2d::NodeId, 4> rows_{}, frames_{}, fills_{}, captions_{};
+    std::array<mrg::visual2d::NodeId, 2> values_{}, previous_{}, next_{};
     mrg::visual2d::NodeId rootId_{};
     std::optional<mrg::visual2d::Point> lastPointer_;
     std::size_t focus_{}, maxMeasures_{4};

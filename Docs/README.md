@@ -16,7 +16,7 @@
 | 곡 목록·포커스·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
 | 에디터용 곡 선택·새 난이도 생성 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성 |
 | 플레이 화면·노트/마디선 스크롤·키빔·판정 인디케이터/문구·상단 진행바 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
-| 공통 플레이 상태머신·ESC·Resume/Rewind/Retry/Retire·향후 HP/리플레이 계약 | [플레이 일시정지](Gameplay/Pause.md) | GameFlow의 IPlaySessionController / GameplayState; GameplayPauseMenu / PlaySessionSeeking / PlayControlEvent |
+| 공통 플레이 상태머신·ESC·Penpot 일시정지 UI·Resume/Rewind/Retry/Retire·향후 HP/리플레이 계약 | [플레이 일시정지](Gameplay/Pause.md) | GameFlow의 IPlaySessionController / GameplayState; GameplayPauseMenu / GameplayPauseLayout / PlaySessionSeeking / PlayControlEvent |
 | Penpot 결과 화면·상단 곡 정보·리트라이·판정 통계·오차 그래프·us 입력 로그 | [플레이 결과](Gameplay/Results.md) | `FingerDrum.Modes/Mode/Results`, `Taiko/Results`, `Client/GameScene/ResultScene`; 내장 Result PNG |
 | 플레이 디버그 조작·전체 노트/Buzz 재현 | [디버깅](Gameplay/Debugging.md) | `GameFlow/Submodules/GameplayInput.cpp`, `Tests/Rhythm/Submodules/BuzzReplayTests.cpp` |
 | 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
