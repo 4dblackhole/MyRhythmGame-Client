@@ -114,7 +114,8 @@ void TaikoResultView::BuildBackground()
     backgroundId_ = sky.Id();
     auto &clouds =
         v::CreateSprite(anchor, {-size.width / 2, -size.height / 2, size.width, 168}, clouds_, "Result.Clouds");
-    clouds.SetZIndex(1);
+    // Footer decoration stays above the sky and behind all result content.
+    clouds.SetZIndex(-9);
     footerId_ = clouds.Id();
 }
 void TaikoResultView::Build()

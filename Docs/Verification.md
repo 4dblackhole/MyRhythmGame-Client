@@ -71,6 +71,26 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 리절트 하단 구름의 렌더링 순서
+
+- TaikoResultView::BuildBackground에서 하단 구름 ZIndex를 1에서 -9로 변경했습니다.
+  같은 Center anchor의 하늘(-10) 위, 결과 콘텐츠(0) 뒤에 배치합니다. 화면 재구성/resize에서도
+  같은 순서를 사용하며 버튼·통계의 배치, 입력 처리와 소유권은 변경하지 않았습니다.
+- Debug/Release x64 전체 solution Build, MRG.Client의 MSVC 14.44 Code Analysis Build
+  (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
+  변경 파일과 직접 호출부를 검토했으며 신규 경고·분석 진단·파싱 오류는 없습니다.
+  범위 밖의 기존 EditorAnalysisController.cpp:51 C26115는 두 구성에 남았습니다.
+- 두 구성 로직/기본곡 카탈로그 각각 63개/실패 0, smoke-test/lobby/gameplay/editor 총 8개 exit 0.
+  기존 ResultPresentation 회귀도 두 구성 통과: 결과 표시·버튼 클릭·언어/resize·Canvas 정리·실제 Result/Retry 전환.
+  낮은 영향의 Z-order 수정이므로 새 회귀 테스트는 추가하지 않았습니다.
+- 실제 production View의 D3D12 offscreen 캡처를 육안 비교했습니다.
+  1920×1080에서 구름이 하단 통계 패널·버튼 일부를 덮던 문제가 해결되고,
+  720×1280에서도 결과·버튼과 BACK이 구름 앞에 표시됩니다.
+  자동 캡처 확인이며 물리 키·마우스를 이용한 실제 창 조작은 미실시입니다.
+- CheckArchitecture(11프로젝트), Client/엔진 git diff --check 통과. 엔진 소스/포인터 변경 없음.
+  사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 en/ko.ini 해시 일치로 보존을 확인했습니다.
+  로그와 수정 전후 BMP/PNG는 ignored build/result-cloud-z-2026-10-17에 있습니다.
+
 ## 2026-10-17 모드 공통 플레이 상태머신·음악 재개 동기화
 
 - IPlaySessionController의 Loading/Gameplay/Pause/Ending 계약과 공통 Controller/Feedback를
