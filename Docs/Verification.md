@@ -71,6 +71,48 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 난이도 클릭·에디터 선택 도구·스트림 재재생
+
+- SongSelectInput은 펼쳐진 난이도 상자 클릭에서 선택 갱신 후 기존 Launch 명령을 한 번
+  전달합니다. 플레이/에디터 곡 선택이 같은 코드를 사용하고 Scene의 기존 모드·파일 검증을
+  거칩니다. 곡 카드 포커스와 옵션 패널의 입력 차단은 유지합니다.
+- TaikoEditorTools의 Q는 선택 도구를 활성화하고 미완성 배치를 취소합니다.
+  기존 여섯 도구 묶음의 다음 종류 조회를 TaikoEditorTool.h의 editor_tools::NextInGroup에 모아 팔레트와
+  우측 TaikoEditorNoteInspector가 함께 사용합니다. Inspector 적용도 원본 노트의
+  묶음을 검사하며, 다른 묶음의 초안은 원본/revision을 보존하고 거부합니다.
+  같은 묶음의 롱노트 변경은 시작·끝의 안정 ID와 기존 마디/박자 입력 계약을 유지합니다.
+- 실제 MP3에서 첫 재생 후 정지·재재생 시 setPosition의 NOTREADY(46)를 재현했습니다.
+  FMOD가 Play 내부에서 스트림을 0으로 탐색하는 동안 목표 위치 탐색을 겹쳐 요청한 문제입니다.
+  EditorPlayback과 GameplayAudioRouter는 paused Voice 생성과 목표 위치 Restart를 나누고,
+  각 단계의 Ready/Playing을 확인한 뒤 새 DSP 기준으로 재생을 예약합니다.
+  준비 중 시각은 고정하며 Clip을 재사용하고 준비 단계 사이에 같은 Voice를 유지합니다.
+  20ms 시작 여유와 음수 pre-roll도 유지합니다.
+  Resume/Rewind의 노트·점수 복원 정책, 입력 로그와 엔진 API/소스는 바꾸지 않았습니다.
+- My Rhythm Game Penpot 작업 세션에 사용자가 요청한 세 탭 디자인을 전달했습니다.
+  Editor UI의 기존 Time Signature/Metadata/Effects 보드 ID를 유지하고 현재 구현의
+  입력·목록·적용/삭제·보간 방식에 맞게 재배치했습니다. 디자인 세션은 1920×1080 PNG
+  3종을 확인했고 표시 텍스트 넘침/부모 영역 이탈 0건을 보고했습니다.
+  보드 ID는 DesignReferences에 기록했습니다. 이번 세 탭 작업은 Penpot 시안 갱신이며
+  게임 안의 탭 배치 적용은 포함하지 않습니다.
+- Debug/Release x64 전체 solution Build 및 MRG.Client MSVC Code Analysis Build
+  (실제 프로젝트의 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
+  EditorPresentation/GameplayPause/MusicSelectView 회귀도 두 구성에서 MSVC /analyze로
+  빌드·실행했습니다. 추가 검사에서 생긴 테스트 함수의 C6262는 역할별 함수 분리로 해결했고,
+  최종 컴파일·정적 분석·테스트에 신규 경고·분석 진단·파싱 오류가 없습니다.
+- 실제 MP3의 12회 재생/정지/재재생·일시정지 중 seek·음수 pre-roll·음원 끝 탐색,
+  각 준비 단계 동안 고정 시각·새 DSP 기준 예약, 연속 Resume/Rewind와 기존 노트·점수/자격/결과
+  복원 검사를 통과했습니다. 모의 backend는 초기 준비와 목표 seek 각각의 지연을 분리해
+  완료 전 unpause를 거부합니다. 다른 난이도/선택된 난이도 클릭의 단발 Launch, Q 배치 취소,
+  여섯 묶음의 속성 순환/다른 묶음 거부와 마디·박자/끝점 ID 보존도 통과했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0, 네 smoke 경로는 총 8개 exit 0입니다.
+- CheckArchitecture(11프로젝트), Client/엔진 git diff --check 통과.
+  변경 함수와 직접 호출부의 수명·Voice/Clip 소유권·취소/예외·경계/변환·입력 차단과
+  준비 단계 순서를 검토했습니다. 사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와
+  외부 en/ko.ini의 SHA-256이 작업 전과 일치합니다. 로그·재현 코드·검증 실행기는
+  ignored build/editor-controls-2026-10-17에 있습니다.
+  게임 검증은 FMOD NoSound/D3D12 및 합성 입력을 이용한 자동 검사입니다.
+  실제 창의 물리 키·마우스 조작과 오디오 직접 청취는 미실시입니다.
+
 ## 2026-10-17 에디터 분석 worker C26115 해소
 
 - AudioAnalysisWorker의 대기·대기열 꺼내기를 WaitAndDequeue로 분리했습니다.

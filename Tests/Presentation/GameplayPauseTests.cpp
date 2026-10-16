@@ -215,8 +215,16 @@ namespace
         {
             return playing_;
         }
-        bool Restart(const a::AudioPlaybackSettings &, a::IAudioBusBackend *, std::string &) override
+        bool Restart(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *, std::string &) override
         {
+            if (state_->music)
+            {
+                Check(std::chrono::steady_clock::now() >= state_->readyAt && settings.startPaused &&
+                          settings.startDspClock == 0,
+                      "The target seek must wait for Play's internal seek and retain its paused voice.");
+                musicStarts.back() = settings;
+                state_->readyAt = std::chrono::steady_clock::now() + std::chrono::milliseconds{40};
+            }
             return true;
         }
         bool Stop(std::string &) override
@@ -287,8 +295,8 @@ namespace
                     error = "Injected music preparation failure.";
                     return nullptr;
                 }
-                Check(settings.startPaused && settings.startDspClock == 0,
-                      "Music seeks must create a paused voice without a stale DSP deadline.");
+                Check(settings.startPaused && settings.startDspClock == 0 && settings.startPositionMicroseconds == 0,
+                      "Create the paused voice at zero before requesting a target source seek.");
                 musicStarts.push_back(settings);
                 state_->readyAt = std::chrono::steady_clock::now() + std::chrono::milliseconds{40};
             }
@@ -713,7 +721,9 @@ namespace
         Check(clip->GetDurationMicroseconds(duration, error), error.c_str());
         const r::RhythmTime nearEnd{static_cast<r::RhythmTime::rep>(duration - 100'000)};
         using Preparation = finger_drum::audio::GameplayAudioRouter::MusicPreparation;
-        for (const auto position : {r::RhythmTime{1'000'000}, r::RhythmTime{}, nearEnd})
+        for (const auto position : {r::RhythmTime{1'000'000}, r::RhythmTime{500'000}, r::RhythmTime{5'000'000},
+                                    r::RhythmTime{1'000'000}, r::RhythmTime{500'000}, r::RhythmTime{5'000'000},
+                                    r::RhythmTime{}, nearEnd})
         {
             router.StopAllVoices();
             auto prepared = router.PrepareMusicAt(position);

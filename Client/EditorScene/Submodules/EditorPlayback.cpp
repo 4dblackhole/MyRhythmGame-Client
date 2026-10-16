@@ -39,7 +39,7 @@ void EditorPlayback::StopVoices() noexcept
 {
     voices_.StopAll();
     musicVoice_ = 0;
-    running_ = primed_ = false;
+    running_ = primed_ = musicPositioned_ = false;
     for (auto &[path, track] : tracks_)
     {
         track.voice = 0;
@@ -162,7 +162,8 @@ void EditorPlayback::PrimeMusic()
     {
         a::AudioPlaybackSettings settings;
         settings.startPaused = true;
-        settings.startPositionMicroseconds = static_cast<std::uint64_t>(std::max(position_.count(), Time::rep{}));
+        // Replaying a nonblocking stream can itself start an async seek to zero.
+        // Wait for that operation before requesting the editor's source position.
         musicVoice_ = voices_.Play(music_, settings, nullptr, error);
         Require(musicVoice_ != 0, error);
     }
@@ -177,6 +178,19 @@ bool EditorPlayback::BeginPreparedPlayback()
         throw std::runtime_error(error);
     if (state != a::AudioClipLoadState::Ready && state != a::AudioClipLoadState::Playing)
         return false;
+    if (musicVoice_ && !musicPositioned_)
+    {
+        if (position_ > Time{})
+        {
+            a::AudioPlaybackSettings settings;
+            settings.startPaused = true;
+            settings.startPositionMicroseconds = static_cast<std::uint64_t>(position_.count());
+            Require(voices_.Restart(musicVoice_, settings, nullptr, error), error);
+            musicPositioned_ = true;
+            return false; // Poll the requested seek before anchoring either clock.
+        }
+        musicPositioned_ = true;
+    }
     const auto snapshot = audio_->CaptureClockSnapshot();
     if (snapshot.sampleRate <= 0)
         throw std::runtime_error("The audio mixer has no sample clock.");

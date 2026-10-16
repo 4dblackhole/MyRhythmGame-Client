@@ -69,6 +69,6 @@ class EditorPlayback final
     std::optional<finger_drum::rhythm::RhythmTime> musicDuration_;
     finger_drum::rhythm::RhythmTimer clock_;
     finger_drum::rhythm::RhythmTime position_{}, startPosition_{}, end_{};
-    bool wanted_{}, running_{}, primed_{};
+    bool wanted_{}, running_{}, primed_{}, musicPositioned_{};
     std::string error_;
 };

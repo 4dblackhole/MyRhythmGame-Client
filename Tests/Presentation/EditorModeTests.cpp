@@ -635,23 +635,24 @@ namespace
     {
         EditorWorkspace state(CreateEditorMode("Taiko"),
                               std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
-        state.AddNote({0, {}}, 1);
+        state.AddNote({0, {}}, 12, chart::MusicalPosition{0, {1, 4}});
         const auto id = state.Document().Notes().front().note.sourceOrder;
         TaikoEditorNoteInspector inspector;
         inspector.Select(state.Document(), id);
-        inspector.Form().tool = 12;
+        inspector.Form().tool = 1;
         const auto initialRevision = state.Document().Revision();
-        bool missingEnd = false;
+        bool groupRejected = false;
         try
         {
             inspector.Apply(state);
         }
         catch (const std::exception &)
         {
-            missingEnd = true;
+            groupRejected = true;
         }
-        Check(missingEnd && state.Document().Revision() == initialRevision && state.Document().Notes().size() == 1,
-              "Converting a tap must require an explicit musical end and preserve the source on failure.");
+        Check(groupRejected && state.Document().Revision() == initialRevision && state.Document().Notes().size() == 2,
+              "Changing to another tool group must preserve the source note and its paired end.");
+        inspector.Form().tool = 14;
         inspector.Form().startMeasure = "2";
         inspector.Form().startBeat = "1/8";
         inspector.Form().endMeasure = "3";
@@ -660,10 +661,10 @@ namespace
         const auto selected = *state.Document().FindNote(id);
         Check(selected.head.note.position == chart::MusicalPosition{1, {1, 8}} && selected.tail &&
                   selected.tail->note.position == chart::MusicalPosition{2, {1, 4}} &&
-                  selected.head.note.keyType == 12 && selected.tail->note.keyType == 12 &&
+                  selected.head.note.keyType == 14 && selected.tail->note.keyType == 14 &&
                   selected.head.timing == finger_drum::rhythm::RhythmTime{2'250'000} &&
                   selected.tail->timing == finger_drum::rhythm::RhythmTime{4'500'000},
-              "Musical input must use one-based measures, exact whole-note fractions and allocate a paired end.");
+              "Musical input must use one-based measures, exact whole-note fractions and preserve the paired end.");
         for (const auto language : {finger_drum::texts::Language::Korean, finger_drum::texts::Language::English})
         {
             RecordingCanvas panel;
@@ -719,14 +720,16 @@ namespace
                   "Invalid musical fields must preserve both endpoints and all document caches.");
         }
         inspector.Select(state.Document(), id);
-        inspector.Form().tool = 2;
+        inspector.Form().tool = 12;
         inspector.Form().startMeasure = "4";
         inspector.Form().startBeat = "3/8";
+        inspector.Form().endMeasure = "5";
         inspector.Apply(state);
-        Check(state.Document().Notes().size() == 1 && !state.Document().FindNote(id)->tail &&
+        Check(state.Document().Notes().size() == 2 && state.Document().FindNote(id)->tail &&
                   state.Document().FindNote(id)->head.note.position == chart::MusicalPosition{3, {3, 8}} &&
-                  state.Document().NotesInMeasures(1, 3).empty() && state.Document().NotesInMeasures(3, 4).size() == 1,
-              "Converting back to a tap must discard only the paired end and move the stable head in the index.");
+                  state.Document().FindNote(id)->tail->note.sourceOrder == selected.tail->note.sourceOrder &&
+                  state.Document().NotesInMeasures(1, 3).empty() && state.Document().NotesInMeasures(3, 5).size() == 2,
+              "Changing variants must retain the paired end IDs and update both musical positions in the index.");
     }
 
     void TestCustomSeparateRealtimeVisibility()
@@ -761,12 +764,7 @@ Dip: 1-3*u*(1-u)
                   state.Document().Notes().front().note.position == chart::MusicalPosition{4, {}},
               "A custom Separate grid must remain visible/snappable without an authored minimum-speed note.");
     }
-} // namespace
-
-void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineServices &services,
-                     finger_drum::texts::TextCatalog &texts,
-                     const std::function<const std::vector<v::DrawPacket> &()> &packets)
-{
+    void TestTaikoToolGroups(finger_drum::texts::TextCatalog &texts)
     {
         constexpr std::array keys{'W', 'E', 'R', 'T', 'Y', 'U'};
         const std::array<std::vector<int>, 6> groups{{{1, 2}, {3, 4, 5}, {11, 13}, {12, 14}, {15, 16}, {17, 18}}};
@@ -803,7 +801,49 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
             const auto head = state.Document().NotesInMeasures(measure, measure + 1).front().note;
             Check(head.keyType == (expected == 18 ? 17 : expected),
                   "Pressing an active tool button must cycle its group.");
+
+            // The inspector must share precisely the same six categories as the palette.
+            TaikoEditorNoteInspector inspector;
+            inspector.Select(state.Document(), head.sourceOrder);
+            for (std::size_t variant = 0; variant < groups[group].size(); ++variant)
+            {
+                RecordingCanvas panel;
+                inspector.Draw(panel, state, texts);
+                panel.actions.front()();
+                const int next = groups[group][(variant + 2) % groups[group].size()];
+                Check(inspector.Form().tool == next, "The inspector cycled outside its note category.");
+                inspector.Apply(state);
+                Check(state.Document().FindNote(head.sourceOrder)->head.note.keyType == (next == 18 ? 17 : next),
+                      "The inspector must apply each variant within its category.");
+            }
+            const auto revision = state.Document().Revision();
+            inspector.Form().tool = groups[(group + 1) % groups.size()].front();
+            bool rejected = false;
+            try { inspector.Apply(state); }
+            catch (const std::invalid_argument &) { rejected = true; }
+            Check(rejected && state.Document().Revision() == revision,
+                  "Cross-category inspector drafts must not modify the chart.");
+
+            state.SelectTool(11);
+            state.PlaceNote({100, {}});
+            Check(state.Mode().HasPendingPlacement(), "Q test requires an unfinished long note.");
+            Check(static_cast<TaikoEditorMode &>(state.Mode()).HandleToolKey(state, 'Q') &&
+                      !state.Mode().HasPendingPlacement(),
+                  "Q must activate selection and cancel an unfinished placement.");
+            const auto notesBefore = state.Document().Notes().size();
+            state.PlaceNote({100, {}});
+            Check(state.Document().Notes().size() == notesBefore && !state.Mode().HasPendingPlacement(),
+                  "Q selection must not place another note or start another long note.");
         }
+    }
+} // namespace
+
+void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineServices &services,
+                     finger_drum::texts::TextCatalog &texts,
+                     const std::function<const std::vector<v::DrawPacket> &()> &packets)
+{
+    {
+        TestTaikoToolGroups(texts);
         EditorWorkspace state(CreateEditorMode("Taiko"),
                               std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
         state.AddNote({0, {}}, 15, chart::MusicalPosition{0, {1, 2}}, {"HitCount=4", "Custom=keep"});

@@ -52,6 +52,20 @@ namespace editor_tools
                 return &tool;
         return nullptr;
     }
+    constexpr int NextInGroup(int id) noexcept
+    {
+        const auto *current = Find(id);
+        if (!current)
+            return id;
+        const auto index = static_cast<std::size_t>(current - Tools.data());
+        for (std::size_t offset = 1; offset <= Tools.size(); ++offset)
+        {
+            const auto &next = Tools[(index + offset) % Tools.size()];
+            if (next.group == current->group)
+                return next.id;
+        }
+        return id;
+    }
     inline std::wstring_view Name(int id, const std::array<std::wstring_view, Tools.size()> &names) noexcept
     {
         for (std::size_t i = 0; i < Tools.size(); ++i)

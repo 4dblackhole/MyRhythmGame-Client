@@ -70,6 +70,19 @@ namespace
                 return found;
         return nullptr;
     }
+    void Click(v::Visual2DCanvas &canvas, const v::Visual2DNode &node)
+    {
+        const auto bounds = node.BoundsInCanvas();
+        v::Visual2DInputRouter router;
+        v::PointerInput pointer{};
+        pointer.available = true;
+        pointer.position = {bounds.x + bounds.width * .5F, bounds.y + bounds.height * .5F};
+        pointer.leftButtonDown = pointer.leftButtonPressed = true;
+        router.Process(canvas, pointer);
+        pointer.leftButtonDown = pointer.leftButtonPressed = false;
+        pointer.leftButtonReleased = true;
+        router.Process(canvas, pointer);
+    }
     finger_drum::chart::SongCatalogLoadResult AwaitCatalog(SongCatalogLoader &loader)
     {
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
@@ -80,6 +93,34 @@ namespace
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         } while (std::chrono::steady_clock::now() < deadline);
         throw std::runtime_error("Catalog worker timed out.");
+    }
+    void TestDifficultyClick(v::ScreenVisual2DManager &visuals, SongSelectionState &selection,
+                             finger_drum::texts::TextCatalog &texts, mrg_client::OptionSettings &options,
+                             const mrg::EngineServices &services)
+    {
+        for (const auto purpose : {SongSelectPurpose::Gameplay, SongSelectPurpose::Editor})
+        {
+            selection.SelectVisibleSong(0);
+            selection.selectedPatternIndex_ = 0;
+            MusicSelectView clickable(visuals, selection, purpose, texts, options);
+            clickable.Initialize(services);
+            auto *canvas = visuals.FindCanvas(purpose == SongSelectPurpose::Gameplay ? 2 : 3);
+            if (!canvas)
+                throw std::runtime_error("Clickable selection Canvas missing.");
+            for (int attempt = 0; attempt < 2; ++attempt)
+            {
+                const auto *difficulty = Find(canvas->Root(), "Difficulty.1");
+                if (!difficulty)
+                    throw std::runtime_error("Clickable difficulty missing.");
+                Click(*canvas, *difficulty);
+                mrg::platform::InputState noKeys;
+                Check(clickable.Update(noKeys, 0) == SongSelectCommand::Launch && selection.selectedPatternIndex_ == 1,
+                      "A difficulty click must select that pattern and launch, including an already selected pattern.");
+                Check(clickable.Update(noKeys, 0) == SongSelectCommand::None,
+                      "A difficulty click must emit the launch command only once.");
+            }
+            clickable.Shutdown();
+        }
     }
 } // namespace
 
@@ -169,26 +210,18 @@ int main()
         view.Shutdown();
         Check(visuals.CanvasCount() == 0, "Virtualized view must release its Canvas.");
         selection.searchText_.clear();
+        TestDifficultyClick(visuals, selection, texts, options, {meshes, textRendering, renderer, audio, 1280, 720});
         selection.catalog_.songs[0].patterns.clear();
         MusicSelectView editor(visuals, selection, SongSelectPurpose::Editor, texts, options);
         editor.Initialize({meshes, textRendering, renderer, audio, 1280, 720});
-        canvas = visuals.FindCanvas(2);
+        canvas = visuals.FindCanvas(4);
         if (!canvas)
             throw std::runtime_error("Editor song-select Canvas missing.");
         auto *add = Find(canvas->Root(), "AddDifficulty.0");
         if (!add)
             throw std::runtime_error("Songs without a chart must offer the plus button.");
         Check(add->IsEnabled(), "Chart creation must be enabled after catalog loading.");
-        const auto bounds = add->BoundsInCanvas();
-        v::Visual2DInputRouter router;
-        v::PointerInput pointer{};
-        pointer.available = true;
-        pointer.position = {bounds.x + bounds.width * .5F, bounds.y + bounds.height * .5F};
-        pointer.leftButtonDown = pointer.leftButtonPressed = true;
-        router.Process(*canvas, pointer);
-        pointer.leftButtonDown = pointer.leftButtonPressed = false;
-        pointer.leftButtonReleased = true;
-        router.Process(*canvas, pointer);
+        Click(*canvas, *add);
         mrg::platform::InputState input;
         Check(editor.Update(input, 0) == SongSelectCommand::CreateDifficulty && selection.focusedSongPosition_ == 0,
               "Plus must select its song and emit chart creation rather than launch.");

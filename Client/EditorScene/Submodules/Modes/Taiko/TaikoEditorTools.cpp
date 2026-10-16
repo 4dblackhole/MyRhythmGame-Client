@@ -17,18 +17,18 @@ void TaikoEditorMode::ActivateGroup(IEditorContext &state, std::size_t group)
     if (tool_ == next)
     {
         // Cycle only within the active set; returning to another set keeps its variant.
-        std::vector<int> members;
-        for (const auto &tool : editor_tools::Tools)
-            if (static_cast<std::size_t>(tool.group) == group)
-                members.push_back(tool.id);
-        const auto current = std::ranges::find(members, next);
-        next = current + 1 == members.end() ? members.front() : *(current + 1);
+        next = editor_tools::NextInGroup(next);
     }
     state.SelectTool(next);
 }
 
 void TaikoEditorMode::HandleToolKeys(IEditorContext &state, const mrg::platform::InputState &input)
 {
+    if (input.WasKeyPressed('Q'))
+    {
+        HandleToolKey(state, 'Q');
+        return;
+    }
     for (const auto key : ToolKeys)
         if (input.WasKeyPressed(key))
             HandleToolKey(state, key);
@@ -36,6 +36,11 @@ void TaikoEditorMode::HandleToolKeys(IEditorContext &state, const mrg::platform:
 
 bool TaikoEditorMode::HandleToolKey(IEditorContext &state, std::uint16_t key)
 {
+    if (key == 'Q')
+    {
+        state.SelectTool(0);
+        return true;
+    }
     const auto found = std::ranges::find(ToolKeys, key);
     if (found == ToolKeys.end())
         return false;
@@ -50,6 +55,7 @@ void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, IEditorContext &state
     canvas.Box({24, 76, 70, 918}, Paper, 18);
     canvas.Text({38, 86, 55, 25}, std::wstring(finger_drum::texts::Editor(catalog).tools), 16);
     canvas.Button({35, 122, 48, 48}, L"", [&state] { state.SelectTool(0); }, tool_ == 0);
+    canvas.Text({75, 125, 16, 18}, L"Q", 12);
     canvas.Text({27, 171, 67, 25}, std::wstring(text.toolGroups[0]), 13);
     for (std::size_t i = 0; i < groupTools_.size(); ++i)
     {

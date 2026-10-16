@@ -248,6 +248,18 @@ void TestEditorPlayback()
     update();
     Check(probes.back()->path == "music" && probes.back()->settings.startPositionMicroseconds == 500'000 && loads == 2,
           "Resume must seek the music without loading sources again.");
+    Check(probes.back()->paused && probes.back()->settings.startDspClock == 0,
+          "A requested source seek must remain paused without anchoring a stale DSP deadline.");
+    loadState = a::AudioClipLoadState::Loading;
+    dspClock += 48000;
+    update();
+    Check(playback.Active() && playback.Position() == Time{500'000} && probes.back()->paused,
+          "Waiting for an async source seek must freeze the timeline and leave the prepared voice paused.");
+    loadState = a::AudioClipLoadState::Playing;
+    update();
+    Check(!probes.back()->paused && probes.back()->settings.startDspClock == dspClock + 960,
+          "A completed seek must anchor playback to the current DSP clock.");
+    loadState = a::AudioClipLoadState::Ready;
     playback.Seek(Time{-100'000});
     update();
     Check(playback.Active() && probes.back()->settings.startPositionMicroseconds == 0 &&
@@ -255,6 +267,7 @@ void TestEditorPlayback()
           "Negative pre-roll must schedule the song at timeline zero.");
     playback.Seek(Time{900'000});
     update();
+    update(); // The requested source seek must finish before the new DSP anchor.
     const auto anchor = dspClock + 960;
     dspClock = anchor + 48000; // A suspended UI skips a past one-second cue.
     update();
@@ -326,15 +339,35 @@ void TestEditorPlaybackWithFmod(const std::filesystem::path &musicPath)
 
     EditorPlayback playback;
     playback.Initialize(audio);
+    const std::map<std::string, std::filesystem::path> files{{"Music", musicPath}};
+    const auto update = [&]
+    {
+        playback.Update(files, 1, {}, 1, Time{});
+        if (!playback.Error().empty())
+            throw std::runtime_error(playback.Error());
+    };
+    for (int attempt = 0; attempt < 12; ++attempt)
+    {
+        // Cover ordinary Space pause/resume and seeks made while paused.
+        if (attempt % 3 == 1)
+            playback.Seek(Time{1'000'000});
+        if (attempt % 3 == 2)
+            playback.Seek(Time{-100'000});
+        const auto start = playback.Position();
+        playback.Toggle();
+        waitFor([&] { update(); return playback.Position() >= start + Time{100'000}; });
+        Check(playback.Active(), "Repeated actual MP3 playback must remain active after preparing the seek.");
+        playback.Toggle();
+        const auto paused = playback.Position();
+        update();
+        Check(!playback.Active() && playback.Position() == paused, "Space pause must freeze the actual music cursor.");
+    }
     playback.Seek(Time{static_cast<Time::rep>(duration - 300'000)});
     playback.Toggle();
-    const std::map<std::string, std::filesystem::path> files{{"Music", musicPath}};
     waitFor(
         [&]
         {
-            playback.Update(files, 1, {}, 1, Time{});
-            if (!playback.Error().empty())
-                throw std::runtime_error(playback.Error());
+            update();
             return !playback.Active();
         });
     Check(playback.Position() == Time{static_cast<Time::rep>(duration)},

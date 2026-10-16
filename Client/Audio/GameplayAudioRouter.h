@@ -94,6 +94,7 @@ namespace finger_drum::audio
         // Only IDs for this play session. Voice ownership belongs to the Client.
         std::vector<mrg::audio::AudioPlaybackId> voices_;
         mrg::audio::AudioPlaybackId musicVoice_{mrg::audio::InvalidAudioPlaybackId};
+        bool musicPositioned_{};
         // Aliased SoundIds share this entry by their common AudioClip address.
         // Sample playback therefore has at most one active native channel per
         // loaded sound resource.

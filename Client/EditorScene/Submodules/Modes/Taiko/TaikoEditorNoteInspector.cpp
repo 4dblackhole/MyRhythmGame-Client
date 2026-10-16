@@ -124,10 +124,7 @@ void TaikoEditorNoteInspector::Draw(IEditorModeCanvas &canvas, IEditorContext &s
     canvas.Button({1530, 182, 340, 38}, std::wstring(editor_tools::Name(draft_.tool, text.toolVariants)),
                   [this, &state]
                   {
-                      const auto current = std::ranges::find(editor_tools::Tools, draft_.tool, &editor_tools::Tool::id);
-                      draft_.tool = current == editor_tools::Tools.end() || current + 1 == editor_tools::Tools.end()
-                                        ? editor_tools::Tools.front().id
-                                        : (current + 1)->id;
+                      draft_.tool = editor_tools::NextInGroup(draft_.tool);
                       draftChanged_ = true;
                       state.RequestRebuild();
                   });
@@ -182,6 +179,9 @@ void TaikoEditorNoteInspector::Apply(IEditorContext &state)
     const auto *tool = editor_tools::Find(draft_.tool);
     if (!tool)
         throw std::invalid_argument("Unknown Taiko note type.");
+    const auto *sourceTool = editor_tools::Find(selected_->head.note.keyType);
+    if (!sourceTool || tool->group != sourceTool->group)
+        throw std::invalid_argument("Note type changes must stay within the selected note's tool group.");
     auto head = selected_->head.note;
     head.position = Position(draft_.startMeasure, draft_.startBeat);
     head.keyType = static_cast<int>(tool->note);

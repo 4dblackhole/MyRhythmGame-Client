@@ -14,7 +14,14 @@
   표시·리트라이·미구현 데이터의 계약은 [플레이 결과](Gameplay/Results.md)에 있습니다.
 - `Special Note Focus · PNG Sources · Export Ready`: BalloonProcessing,
   BalloonBurst, DengDengProcessing 투명 PNG와 200ms 처리 성공 상태.
-- 에디터: `Editor UI`의 Pattern / Realtime View / Time Signature / Metadata / Effects.
+- 에디터: `Editor UI`, 페이지 `85e98a9d-d3bd-80e7-8008-a3ca1370f7ea`의
+  Pattern / Realtime View / Time Signature / Metadata / Effects.
+  2026-10-17 현재 편집 기능 기준으로 정리한 세 보드:
+  Time Signature `7e23fd69-9559-80e8-8008-aa6c679a0a94`,
+  Metadata `7e23fd69-9559-80e8-8008-aa6c70ebd483`,
+  Effects `7e23fd69-9559-80e8-8008-aa6c72475143`.
+  디자인 세션에서 1920×1080 PNG 3종과 텍스트/부모 경계를 확인했습니다.
+  시안 갱신이며 이 세 탭의 게임 내 배치 적용은 별도 작업입니다.
 - 과거 DX11/RPG 규칙 참조: `D:\Projects\c++\asdf\RPG`. API/소유권 기준은 현재 프로젝트입니다.
 
 실제 데이터만 사용하고 요청에 없는 기능을 시안에서 추론하여 추가하지 않습니다.

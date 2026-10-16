@@ -106,7 +106,8 @@ bool MusicSelectView::ProcessActions()
                 searchFocused_ = false;
                 SelectPattern(patternIndex);
                 RefreshSearchPresentation();
-                return false;
+                command_ = SongSelectCommand::Launch;
+                return true;
             }
         }
     }

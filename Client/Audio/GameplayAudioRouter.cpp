@@ -185,7 +185,23 @@ namespace finger_drum::audio
             return MusicPreparation::Failed;
         }
         if (musicVoice_ != mrg::audio::InvalidAudioPlaybackId)
+        {
+            if (!musicPositioned_ && position > rhythm::RhythmTime{})
+            {
+                mrg::audio::AudioPlaybackSettings settings;
+                settings.startPaused = true;
+                settings.startPositionMicroseconds = static_cast<std::uint64_t>(position.count());
+                const auto bus = buses_.find("Music");
+                if (!playback_.Restart(musicVoice_, settings, bus == buses_.end() ? nullptr : bus->second, error))
+                {
+                    lastError_ = std::move(error);
+                    return MusicPreparation::Failed;
+                }
+                musicPositioned_ = true;
+                return MusicPreparation::Loading; // Wait for this source seek as well.
+            }
             return MusicPreparation::Ready;
+        }
         std::uint64_t duration{};
         if (!found->second.clip->GetDurationMicroseconds(duration, error))
         {
@@ -196,8 +212,9 @@ namespace finger_drum::audio
         if (sourcePosition >= duration)
             return MusicPreparation::Ready; // The chart may extend beyond the music file.
         mrg::audio::AudioPlaybackSettings settings;
-        settings.startPositionMicroseconds = sourcePosition;
         settings.startPaused = true;
+        // A reused nonblocking stream may seek to zero inside Play. Request the
+        // target only on a later Ready/Playing poll, using the same paused voice.
         const auto bus = buses_.find("Music");
         musicVoice_ = playback_.Play(found->second.clip, settings, bus == buses_.end() ? nullptr : bus->second, error);
         if (musicVoice_ == mrg::audio::InvalidAudioPlaybackId)
@@ -206,6 +223,7 @@ namespace finger_drum::audio
             return MusicPreparation::Failed;
         }
         voices_.push_back(musicVoice_);
+        musicPositioned_ = false;
         // A nonblocking source seek can become Loading after Play. Never
         // unpause it until a subsequent poll observes Ready/Playing.
         return MusicPreparation::Loading;
@@ -377,6 +395,7 @@ namespace finger_drum::audio
         }
         voices_.clear();
         musicVoice_ = mrg::audio::InvalidAudioPlaybackId;
+        musicPositioned_ = false;
         sampleVoices_.clear();
         appliedValues_.clear();
     }

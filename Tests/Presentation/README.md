@@ -24,6 +24,8 @@ and the same command with Release from the developer PowerShell.
 The test links production view/state objects, checks that 5,000 in-memory songs
 create only viewport cards across focus/search/resize, and polls real catalog
 loads/cache reuse/error results. It writes no song or option files.
+Both gameplay and editor selection check one-shot launch from a difficulty click,
+including a different difficulty and a second click on the selected difficulty.
 It also checks marquee Unicode preservation, shared repeated text payloads,
 pixel displacement and stopping after the label becomes wide enough.
 
@@ -142,9 +144,13 @@ Immutable rectangle batches are expanded only in the recording renderer for visu
 It also checks actual asynchronous MP3 opening/playback with the FMOD NoSound output,
 accurate music duration/near-end seeking, editor DSP transport, pause/resume/negative pre-roll,
 dense cue deadlines, alias/voice reuse, expired-cue skipping and cleanup through EditorPlaybackTests.
+Twelve actual MP3 pause/resume cycles cover reused stream initialization and target seeks separately,
+including negative pre-roll and seeks made while paused. The timeline stays frozen until both preparations finish.
 EditorModeTests checks time zoom at five scales, stable lane/head dimensions and zoomed snapping,
 unchanged chart timing/revision and consecutive Z/X, last-tail/music-end destinations,
 missing/stale duration rejection, retry and manual-seek/direction reset behavior.
+Q cancels an unfinished placement and selects notes; inspector cycles stay within each of the six
+tool groups, retain paired endpoint IDs and reject cross-group drafts without modifying the chart.
 Additional checks cover preview failure retry suppression, selection recovery, owned voice cleanup,
 and eight consecutive cancelled analysis jobs followed by successful real audio analysis.
 Drawing assertions do not initialize a GPU;
