@@ -2,6 +2,7 @@
 #include "TaikoResultLayout.h"
 #include "TaikoResultView.h"
 #include "Texts/GameScene/ResultScene/ResultTexts.h"
+#include <algorithm>
 #include <cmath>
 namespace v = mrg::visual2d;
 using namespace taiko_result_ui::layout;
@@ -37,7 +38,11 @@ void TaikoResultView::BuildGraphs(v::Visual2DNode &root)
     // derivation from the immutable mode result.
     Panel(root, Histogram, Plot, 8, 1, Keyline);
     Panel(root, Scatter, Plot, 8, 1, Keyline);
-    auto data = taiko_result_ui::BuildGraphs(result_, Bounds(Scatter), Bounds(Histogram));
+    // Content fits both viewport dimensions. A one-pixel minimum keeps isolated
+    // 1ms bins visible after that scaling without merging their input counts.
+    const float pixelsPerUnit = std::min(static_cast<float>(width_) / Width, static_cast<float>(height_) / Height);
+    auto data = taiko_result_ui::BuildGraphs(result_, Bounds(Scatter), Bounds(Histogram),
+                                             pixelsPerUnit > 0 ? 1.0F / pixelsPerUnit : 1.0F);
     for (const float portion : {.25F, .5F, .75F})
     {
         Panel(root, {Histogram.x, Histogram.y + Histogram.height * portion, Histogram.width, 1}, Keyline, 0);

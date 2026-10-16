@@ -71,6 +71,33 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 리절트 1ms 판정별 빈도 막대
+
+- TaikoResultGraphs는 오차를 가까운 정수 ms로 대칭 반올림하여 입력이 있는 1ms 구간만
+  집계합니다. 실제 판정을 산점도와 같은 색으로 MAX→BAD 순서로 아래부터 쌓으며,
+  막대 높이와 최고 빈도는 구간 전체 입력 수를 사용합니다. 큰 오차에도 범위 크기에
+  비례하는 배열을 만들지 않고 기존의 불변 RectangleBatch 하나로 전달합니다.
+- TaikoResultGraphView는 화면 배율에 맞춰 막대의 그리기 폭만 최소 한 픽셀로 유지합니다.
+  축소 화면에서도 1ms 집계와 색상별 개수를 합치지 않습니다. 판정·점수·입력 로그의
+  수집이나 소유권은 변경하지 않았으며 변경 함수와 직접 호출부의 범위·변환·수명을 검토했습니다.
+- Debug/Release x64 전체 solution Build 성공. MRG.Client를 실제 프로젝트 설정으로
+  MSVC 14.44 Code Analysis Build(RunCodeAnalysis=true/BuildProjectReferences=false)했습니다.
+  최종 변경된 두 구현 파일은 각 구성의 CL.command.1.tlog에서 얻은 실제 C++20/include/define/
+  PCH/CRT 인수를 사용하여 별도 출력 경로에서 /analyze:only도 성공했습니다.
+  신규 경고·분석 진단·파싱 오류는 없고 기존 EditorAnalysisController.cpp:51 C26115는 남았습니다.
+- ResultPresentation 회귀를 두 구성에서 /W4 /analyze로 빌드·실행했습니다. ±0.5ms 경계와
+  1ms 간격, 혼합 판정의 색상·누적 높이·최고 빈도, 입력 순서 독립성, 큰 오차의 희소 집계,
+  최소 그리기 폭·경계와 기존 10,003개 입력의 단일 배치·실제 Result/Retry 전환을 통과했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0, smoke-test/lobby/gameplay/editor 총 8개 exit 0입니다.
+- 기본 Angel Dream 채보의 실제 판정 결과를 production View에 전달한 D3D12 offscreen 캡처를
+  1920×1080, 720×1280에서 육안 확인했습니다. 4.500ms MAX와 4.501ms PERFECT가 같은
+  5ms 막대에 쌓이고 12ms GREAT 막대와 분리됩니다. 720px 캡처의 해당 그래프 영역에서도
+  MAX/PERFECT/GREAT 색상 픽셀이 각각 38/38/76개 남는 것을 확인했습니다.
+  자동 캡처 확인이며 물리 키·마우스를 이용한 실제 창 조작은 미실시입니다.
+- CheckArchitecture(11프로젝트), Client/엔진 git diff --check 통과. 엔진 소스/포인터 변경 없음.
+  사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 en/ko.ini의 해시 일치로 보존을 확인했습니다.
+  로그·분석 인수·BMP/PNG는 ignored build/result-histogram-2026-10-17에 있습니다.
+
 ## 2026-10-17 리절트 하단 구름의 렌더링 순서
 
 - TaikoResultView::BuildBackground에서 하단 구름 ZIndex를 1에서 -9로 변경했습니다.

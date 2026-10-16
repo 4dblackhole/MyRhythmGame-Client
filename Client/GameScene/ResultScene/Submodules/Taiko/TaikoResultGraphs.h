@@ -11,5 +11,5 @@ namespace taiko_result_ui
         std::size_t maximumBinCount{};
     };
     GraphData BuildGraphs(const finger_drum::mode::TaikoPlayResult &result, mrg::visual2d::Rect scatter,
-                          mrg::visual2d::Rect histogram);
+                          mrg::visual2d::Rect histogram, float minimumBarWidth = 1.0F);
 } // namespace taiko_result_ui

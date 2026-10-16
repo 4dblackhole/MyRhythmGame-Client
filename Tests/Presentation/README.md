@@ -240,7 +240,9 @@ After a solution build, run in an x64 Visual Studio developer PowerShell with `F
 
 This links the production Result Scene/view/factory/graphs and gameplay objects.
 It checks six-decimal accuracy text, Korean/English strings, signed scatter axes,
-histogram counts, empty samples, narrow/wide layout, pointer-router return/retry actions,
+1ms histogram rounding/spacing, per-grade stacked colors matching scatter points,
+peak totals, sparse outliers, minimum pixel widths without bin merging, empty samples,
+narrow/wide layout, pointer-router return/retry actions,
 disabled replay and catalog metadata snapshots,
 and one immutable graph batch for 10,003 samples. It then runs D3D12/FMOD with a
 hidden window and a one-note regression session: the production gameplay Scene

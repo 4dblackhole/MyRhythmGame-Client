@@ -92,6 +92,85 @@ namespace
             static_cast<void>(loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{us}));
         return loaded.session->TakeResult(mode::PlayEndReason::Completed, r::RhythmTime{1'000'000});
     }
+    void TestMillisecondHistogram()
+    {
+        mode::TaikoPlayResult result;
+        for (const std::int64_t error : {-1500, -500, -499, 0, 499, 500, 1500})
+            result.timingErrors.push_back({.error = r::RhythmDuration{error}, .grade = r::JudgementGrade::Max});
+        const v::Rect scatter{0, 0, 400, 100}, histogram{0, 200, 400, 120};
+        auto graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
+        const auto firstBar = 2 + result.timingErrors.size();
+        Check(graph.maximumBinCount == 3 && graph.rectangles.size() == firstBar + 5,
+              "Symmetric half-ms boundaries must produce five occupied 1ms bins and three zero-bin inputs.");
+        const auto &zero = graph.rectangles[firstBar + 2].bounds;
+        Check(zero.x < histogram.width / 2 && zero.x + zero.width > histogram.width / 2 &&
+                  std::abs(zero.height - histogram.height) < .001F,
+              "The zero-ms bin must be centered on zero and its height must represent the full count.");
+        for (std::size_t i = firstBar + 1; i < graph.rectangles.size(); ++i)
+            Check(std::abs(graph.rectangles[i].bounds.x - graph.rectangles[i - 1].bounds.x - 2) < .001F,
+                  "Adjacent histogram bars must be exactly 1ms apart on the shared error axis.");
+        const auto narrow = taiko_result_ui::BuildGraphs(result, scatter, histogram, 3);
+        Check(narrow.maximumBinCount == graph.maximumBinCount && narrow.rectangles.size() == graph.rectangles.size(),
+              "A minimum pixel width must never merge the 1ms bins or change their counts.");
+        for (std::size_t i = firstBar; i < narrow.rectangles.size(); ++i)
+            Check(narrow.rectangles[i].bounds.width >= 3 && narrow.rectangles[i].bounds.x >= histogram.x &&
+                      narrow.rectangles[i].bounds.x + narrow.rectangles[i].bounds.width <= histogram.x + histogram.width,
+                  "Small viewports must keep bars visible and inside the plot.");
+        result.timingErrors = {{.error = r::RhythmDuration{-125'000}}, {.error = r::RhythmDuration{126'000}}};
+        graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
+        Check(graph.halfRangeMilliseconds == 130 && graph.maximumBinCount == 1 && graph.rectangles.size() == 6 &&
+                  graph.rectangles.back().bounds.width < 2,
+              "Expanding the error axis must preserve 1ms bin resolution instead of keeping 41 wide bins.");
+        result.timingErrors = {{.error = r::RhythmDuration{-1'000'000'000'000}},
+                               {.error = r::RhythmDuration{1'000'000'000'000}}};
+        graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
+        Check(graph.rectangles.size() == 6 && graph.maximumBinCount == 1,
+              "Large outliers must allocate only the occupied bins.");
+        for (const auto &rectangle : graph.rectangles)
+            Check(std::isfinite(rectangle.bounds.x) && std::isfinite(rectangle.bounds.width) &&
+                      rectangle.bounds.width > 0,
+                  "Sparse outlier graphs must keep finite positive geometry.");
+    }
+    bool SameColor(v::Color left, v::Color right)
+    {
+        return left.red == right.red && left.green == right.green && left.blue == right.blue &&
+               left.alpha == right.alpha;
+    }
+    void TestHistogramJudgementColors()
+    {
+        mode::TaikoPlayResult result;
+        result.timingErrors = {{.error = r::RhythmDuration{4500}, .grade = r::JudgementGrade::Max},
+                               {.error = r::RhythmDuration{4501}, .grade = r::JudgementGrade::Perfect},
+                               {.error = r::RhythmDuration{4900}, .grade = r::JudgementGrade::Perfect},
+                               {.error = r::RhythmDuration{15000}, .grade = r::JudgementGrade::Great},
+                               {.error = r::RhythmDuration{35000}, .grade = r::JudgementGrade::Good},
+                               {.error = r::RhythmDuration{70000}, .grade = r::JudgementGrade::Bad}};
+        const v::Rect scatter{0, 0, 400, 100}, histogram{0, 200, 400, 120};
+        const auto graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
+        const auto firstBar = 2 + result.timingErrors.size();
+        Check(graph.maximumBinCount == 3 && graph.rectangles.size() == firstBar + 5,
+              "Peak frequency must sum every judgement in the same 1ms bin.");
+        const auto &max = graph.rectangles[firstBar];
+        const auto &perfect = graph.rectangles[firstBar + 1];
+        Check(max.bounds.x == perfect.bounds.x && max.bounds.width == perfect.bounds.width &&
+                  std::abs(max.bounds.y - histogram.y) < .001F &&
+                  std::abs(max.bounds.height - histogram.height / 3) < .001F &&
+                  std::abs(perfect.bounds.y - max.bounds.y - max.bounds.height) < .001F &&
+                  std::abs(perfect.bounds.y + perfect.bounds.height - histogram.y - histogram.height) < .001F,
+              "Mixed MAX/PERFECT must stack in one bin, preserving each count and the total height.");
+        for (const auto [bar, sample] :
+             {std::pair{0, 0}, std::pair{1, 1}, std::pair{2, 3}, std::pair{3, 4}, std::pair{4, 5}})
+            Check(SameColor(graph.rectangles[firstBar + bar].color, graph.rectangles[2 + sample].color),
+                  "Every histogram judgement color must match the corresponding scatter sample.");
+        std::ranges::reverse(result.timingErrors);
+        const auto reversed = taiko_result_ui::BuildGraphs(result, scatter, histogram);
+        for (std::size_t i = firstBar; i < graph.rectangles.size(); ++i)
+            Check(SameColor(graph.rectangles[i].color, reversed.rectangles[i].color) &&
+                      graph.rectangles[i].bounds.x == reversed.rectangles[i].bounds.x &&
+                      graph.rectangles[i].bounds.y == reversed.rectangles[i].bounds.y &&
+                      graph.rectangles[i].bounds.height == reversed.rectangles[i].bounds.height,
+                  "Histogram stack order must be stable regardless of the input record order.");
+    }
     void TestGraphsAndView()
     {
         auto result = FixtureResult();
@@ -369,6 +448,8 @@ int main()
     {
         std::string error;
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
+        TestMillisecondHistogram();
+        TestHistogramJudgementColors();
         TestGraphsAndView();
         bool verified{};
         Check(mrg::Run(std::make_unique<TransitionGame>(verified)) == 0 && verified,
