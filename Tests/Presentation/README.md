@@ -247,3 +247,17 @@ The test source uses MSVC Code Analysis and does not write user options/songs/sk
 This is automation, not a manual pixel/physical keyboard/mouse/listening check.
 ESC routing is connected in production; its interrupted scoring and tied-us input
 order are covered by domain tests, without claiming a physical ESC test.
+
+## Skin manifest and scene images
+
+```powershell
+./Tests/Presentation/RunSkinTests.ps1 -Configuration Debug
+./Tests/Presentation/RunSkinTests.ps1 -Configuration Release
+```
+
+Links production SkinManifest/selection/binding and Logo/MusicSelect views in an isolated
+deployment directory, without writing user skins or Option.ini. Checks UTF-8/BOM/CRLF/Unicode paths,
+scene-folder/image relativity, invalid paths/encoding/duplicates, per-component embedded fallback,
+partial skins, cache/reload, button states, full-screen logo replacement, procedural-fill
+hiding/restoration and virtualized song-card bindings using the real bundled catalog.
+The test source uses MSVC Code Analysis. Native captures/manual input are reported separately.

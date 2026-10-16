@@ -52,11 +52,11 @@ void GameplayProgressView::Initialize(mrg::visual2d::ScreenVisual2DManager &visu
     displayedSeconds_ = -1;
     fraction_ = 0;
     const auto image = [&visuals](const wchar_t *name)
-    { return visuals.RegisterImage(mrg_client::asset_paths::skin::InGame(std::filesystem::path{L"Progress"} / name)); };
-    const auto background = image(L"Background.png");
-    const auto track = image(L"Track.png");
-    const auto fill = image(L"Fill.png");
-    const auto marker = image(L"Marker.png");
+    { return visuals.RegisterImage(mrg_client::asset_paths::skin::InGame(std::wstring{L"Progress."} + name)); };
+    const auto background = image(L"Background");
+    const auto track = image(L"Track");
+    const auto fill = image(L"Fill");
+    const auto marker = image(L"Marker");
     height_ = visuals.GetImageSize(background).height * AssetScale;
     trackHeight_ = visuals.GetImageSize(track).height * AssetScale;
     const auto markerNative = visuals.GetImageSize(marker);

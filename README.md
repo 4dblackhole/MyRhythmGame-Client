@@ -99,7 +99,8 @@ Debug/Release 모두 게임 Scene만 포함합니다. 배포할 때는 깨끗한
 YMP/YME는 `Songs/Patterns/<곡>/<난이도>`에 한 쌍씩 정리합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는
 [실행 흐름](Docs/ExecutionFlow.md), 외부 파일 우선 및 내장 fallback/배포곡 정책은
-[자산](Docs/BuiltInAssets.md)에서 설명합니다. 스킨은 선택한 자산 루트의
+[자산](Docs/BuiltInAssets.md)에서 설명합니다. 스킨의 `skin.ini`에서 씬 폴더와 이미지 상대 경로를
+지정할 수 있습니다. 스킨은 선택한 자산 루트의
 `Skins` 폴더를 옵션 패널에서 선택하며 다음 실행에도 유지됩니다.
 한국어/영어와 옵션 패널은
 [텍스트 관리](Docs/TextManagement.md)에서 관리합니다. 패널에서 FMOD, 일반(자동)/WASAPI/ASIO,

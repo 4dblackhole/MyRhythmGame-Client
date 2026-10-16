@@ -1,11 +1,17 @@
-#include "LogoView.h"
-#include "LogoStyle.h"
 #include "App/AssetPaths.h"
+#include "LogoStyle.h"
+#include "LogoView.h"
+#include "Presentation/SkinVisualComponent.h"
 #include "Texts/GameScene/FingerDrumLogoScene/LogoTexts.h"
 using namespace logo_ui;
 
 void LogoView::CreateLogoStrip()
 {
+    background_ = &mrg::visual2d::CreateSprite(canvas_->AnchorNode(mrg::visual2d::Anchor::Center), {}, {},
+                                               "FingerDrum.LogoBackground");
+    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*background_).SetTint({1, 1, 1, 1});
+    background_->SetZIndex(-1);
+    background_->SetVisible(false);
     auto &strip = canvas_->CreateNode(mrg::visual2d::Anchor::Center, "FingerDrum.LogoStrip");
     strip.SetPivot({0.5F, 0.5F});
     logoStrip_ = &strip;
@@ -60,6 +66,9 @@ void LogoView::CreateMenu()
     {
         RequireComponent<mrg::visual2d::TextVisualComponent>(*button).SetFontSize(25.0F);
     }
+    constexpr std::array keys{"StartButton", "EditorButton", "OptionsButton", "ExitButton"};
+    for (std::size_t i = 0; i < menuButtons_.size(); ++i)
+        finger_drum::presentation::BindSkinImage(*menuButtons_[i], screenVisuals_, "Logo", keys[i]);
 
     const mrg::visual2d::ImageHandle cursorImage = screenVisuals_.RegisterImage(
         mrg_client::asset_paths::skin::title::SelectionCursor());
@@ -87,6 +96,14 @@ void LogoView::RefreshSkinImages()
         screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::RightFade()));
     RequireComponent<mrg::visual2d::SpriteVisualComponent>(*selectionCursor_).SetImage(
         screenVisuals_.RegisterImage(mrg_client::asset_paths::skin::title::SelectionCursor()));
+    const auto background = mrg_client::SkinSetSelection::Instance().Image("Logo", "Background");
+    background_->SetVisible(!background.empty());
+    logoStrip_->SetVisible(background.empty());
+    if (!background.empty())
+        RequireComponent<mrg::visual2d::SpriteVisualComponent>(*background_)
+            .SetImage(screenVisuals_.RegisterImage(background));
+    for (auto *button : menuButtons_)
+        button->GetComponent<finger_drum::presentation::SkinVisualComponent>()->Update(0);
     skinRevision_ = revision;
 }
 
@@ -118,6 +135,8 @@ void LogoView::UpdateLogoStripLayout()
     // Extra horizontal art remains outside the viewport instead of distorting
     // the source aspect ratio.
     const mrg::visual2d::Size logicalSize = canvas_->LogicalSize();
+    background_->SetBounds(
+        {-logicalSize.width * 0.5F, -logicalSize.height * 0.5F, logicalSize.width, logicalSize.height});
     const float scale = logicalSize.height / StripSourceHeight;
 
     const mrg::visual2d::Size leftSize{LeftFadeSourceSize.width * scale,

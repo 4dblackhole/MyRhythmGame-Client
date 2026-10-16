@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+skin.ini(2026-10-16): [BuiltInAssets의 경로·키·fallback](BuiltInAssets.md#skinini와-씬별-이미지).
+`[Folders]`에서 Logo/InGame/MusicSelect/Result 폴더, 각 씬 섹션에서 파일을 지정합니다.
+SkinManifest는 UTF-8 경로/기본본을 해석하고 SkinSetSelection은 선택 revision당 캐시합니다.
+버튼/패널의 SkinVisualComponent는 노드와 함께 소멸하므로 가상 카드 참조를 남기지 않습니다.
+기본 로고는 TitleImage/Logo에서 Logo로 이동했습니다. 에디터도 InGame 이미지 키를 공유합니다.
+
 UI 언어파일(2026-10-16): [TextManagement의 경로·문법·소유권](TextManagement.md#언어파일-교체).
 모든 고정 UI 문구를 UTF-8 INI에서 읽고 선택 언어 → 외부 en → 내장 영어 순서로 대체합니다.
 원본은 Client/Texts/Languages, 실제 편집본은 자산 루트의 Languages이며 재실행 때 한 번 읽습니다.

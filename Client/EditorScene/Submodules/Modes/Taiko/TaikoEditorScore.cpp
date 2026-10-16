@@ -437,9 +437,9 @@ void TaikoEditorMode::Circle(IEditorModeCanvas &canvas, float x, float y, int ty
                        : type == 5                          ? v::Color{.65F, .30F, .85F, 1}
                        : type > 5 && type < 17              ? Gold
                                                             : Don;
-    const auto file = type == 15 ? L"Balloon.png" : type == 16 ? L"DengDeng.png" : big ? L"bignote.png" : L"note.png";
+    const auto file = type == 15 ? L"Balloon" : type == 16 ? L"DengDeng" : big ? L"bignote" : L"note";
     const v::Rect bounds{x - radius, y - radius, radius * 2, radius * 2};
     canvas.Image(bounds, SkinImage(file), custom ? White : color);
     if (!custom)
-        canvas.Image(bounds, SkinImage(big ? L"bigcircleoverlay.png" : L"noteoverlay.png"), White);
+        canvas.Image(bounds, SkinImage(big ? L"bigcircleoverlay" : L"noteoverlay"), White);
 }

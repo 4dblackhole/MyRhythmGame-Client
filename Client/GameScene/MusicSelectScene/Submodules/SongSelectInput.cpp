@@ -248,6 +248,8 @@ void MusicSelectView::SelectPattern(const std::size_t index)
             const bool selected = patternIndex == selection_.selectedPatternIndex_;
             ApplyButtonStyle(*button, selected ? AccentBlue : PureWhite,
                              selected ? AccentHover : PaleBlue, selected ? PureWhite : DeepBlue);
+            finger_drum::presentation::BindSkinImage(*button, screenVisuals_, "MusicSelect",
+                                                     selected ? "DifficultySelected" : "Difficulty");
         }
     }
     RefreshSelectionPresentation();

@@ -30,6 +30,7 @@ void MusicSelectView::CreateRecordPanel()
     recordSelectorId_ = selector.Id();
     ApplySpriteStyle(selector, PaleBlue, PaleBlue);
     SetCornerRadius(selector, 10.0F);
+    finger_drum::presentation::BindSkinImage(selector, screenVisuals_, "MusicSelect", "RecordSelector");
     auto &recordBehavior = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(selector);
     recordBehavior.SetFontSize(CanvasFontSize(10.0F));
     texts_.ApplyFont(recordBehavior);
@@ -96,6 +97,7 @@ void MusicSelectView::CreateSongBrowser()
     searchFieldId_ = search.Id();
     ApplyButtonStyle(search, PureWhite, PaleBlue, SoftTextBlue);
     SetCornerRadius(search, 12.0F);
+    finger_drum::presentation::BindSkinImage(search, screenVisuals_, "MusicSelect", "SearchField");
     auto &searchText = RequireComponent<mrg::visual2d::TextVisualComponent>(search);
     searchText.SetFontSize(CanvasFontSize(11.0F));
     texts_.ApplyFont(searchText);
@@ -114,6 +116,7 @@ void MusicSelectView::CreateSongBrowser()
     sort.SetZIndex(10);
     ApplySpriteStyle(sort, PaleBlue, FocusBlue);
     SetCornerRadius(sort, 10.0F);
+    finger_drum::presentation::BindSkinImage(sort, screenVisuals_, "MusicSelect", "SortSelector");
     auto &sortBehavior = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(sort);
     sortBehavior.SetItemHeight(38.0F * DesignToCanvasScale);
     sortBehavior.SetMaxVisibleItems(3);
@@ -174,6 +177,7 @@ void MusicSelectView::CreateFooter()
                               AccentBlue, name + ".Fill", 24.0F);
         auto &label = AddLabel(button, labelBounds, text, 27.0F, PureWhite, name + ".Label",
                                mrg::visual2d::TextAlignment::Center);
+        finger_drum::presentation::BindSkinImage(button, screenVisuals_, "MusicSelect", name, name + ".Fill");
         return {button.Id(), &button, &fill, &label};
     };
     const EdgeButtonNodes back =
@@ -200,6 +204,8 @@ mrg::visual2d::Visual2DNode &MusicSelectView::AddPanel(mrg::visual2d::Visual2DNo
         parent, ScaleTopLeftBounds(penpotBounds, parent.NodeSize().height), std::move(name));
     ApplyFlatStyle(panel, color);
     SetCornerRadius(panel, penpotCornerRadius);
+    if (panel.Name() != "Surface" && !panel.Name().ends_with(".Fill"))
+        finger_drum::presentation::BindSkinImage(panel, screenVisuals_, "MusicSelect", panel.Name());
     return panel;
 }
 
@@ -214,6 +220,7 @@ mrg::visual2d::Visual2DNode &MusicSelectView::AddBorderedPanel(
               std::max(penpotBounds.width - penpotBorderWidth * 2.0F, 0.0F),
               std::max(penpotBounds.height - penpotBorderWidth * 2.0F, 0.0F)},
              fill, "Surface", std::max(penpotCornerRadius - penpotBorderWidth, 0.0F));
+    finger_drum::presentation::BindSkinImage(outer, screenVisuals_, "MusicSelect", outer.Name(), "Surface");
     return outer;
 }
 

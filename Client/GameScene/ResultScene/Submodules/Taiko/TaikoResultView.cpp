@@ -1,5 +1,6 @@
 #include "TaikoResultView.h"
 #include "App/AssetPaths.h"
+#include "Presentation/SkinVisualComponent.h"
 #include "TaikoResultLayout.h"
 #include "Texts/GameScene/ResultScene/ResultTexts.h"
 #include <algorithm>
@@ -20,10 +21,10 @@ void TaikoResultView::LoadAssets()
 {
     const auto load = [this](const auto &path)
     { return visuals_.RegisterImage(mrg_client::asset_paths::skin::Result(path)); };
-    sky_ = load(L"Background/Sky.png");
-    clouds_ = load(L"Background/Clouds.png");
-    modeIcon_ = load(L"Mode/Taiko.png");
-    rankFrame_ = load(L"Rank/Frame.png");
+    sky_ = load(L"Background.Sky");
+    clouds_ = load(L"Background.Clouds");
+    modeIcon_ = load(L"Mode.Taiko");
+    rankFrame_ = load(L"Rank.Frame");
     font_ = {v::TextFontSource::File, mrg_client::asset_paths::fonts::Result().wstring()};
 }
 void TaikoResultView::Initialize(const mrg::EngineServices &services)
@@ -89,6 +90,8 @@ v::Visual2DNode &TaikoResultView::Button(v::Visual2DNode &root, v::Rect designBo
         inner.GetComponent<v::SpriteVisualComponent>()->SetCornerRadius(17);
         inner.SetZIndex(-1);
     }
+    const auto key = button.Name().substr(std::string_view("Result.").size()) + "Button";
+    finger_drum::presentation::BindSkinImage(button, visuals_, "Result", key, "Result.ButtonInset");
     // Child text paints after the inset. Parent-component text would be hidden
     // by the inset's later rectangle/depth contribution.
     auto &caption =

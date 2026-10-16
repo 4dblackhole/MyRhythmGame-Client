@@ -3,58 +3,58 @@
 using namespace gameplay;
 namespace
 {
-    constexpr std::wstring_view NoteImageFiles[]{L"note.png",
-                                                 L"noteoverlay.png",
-                                                 L"bignote.png",
-                                                 L"bigcircleoverlay.png",
-                                                 L"LNBody.png",
-                                                 L"LNBodyOverlay.png",
-                                                 L"LNTail.png",
-                                                 L"LNTailOverlay.png",
-                                                 L"BigLNBody.png",
-                                                 L"BigLNBodyOverlay.png",
-                                                 L"BigLNTail.png",
-                                                 L"BigLNTailOverlay.png",
-                                                 L"TickMarker.png",
-                                                 L"BuzzTickDiamond.png",
-                                                 L"Balloon.png",
-                                                 L"DengDeng.png",
-                                                 L"BalloonProcessing.png",
-                                                 L"BalloonBurst.png",
-                                                 L"DengDengProcessing.png",
-                                                 L"HitCounterCloud.png"};
+    constexpr std::wstring_view NoteImageKeys[]{L"note",
+                                                L"noteoverlay",
+                                                L"bignote",
+                                                L"bigcircleoverlay",
+                                                L"LNBody",
+                                                L"LNBodyOverlay",
+                                                L"LNTail",
+                                                L"LNTailOverlay",
+                                                L"BigLNBody",
+                                                L"BigLNBodyOverlay",
+                                                L"BigLNTail",
+                                                L"BigLNTailOverlay",
+                                                L"TickMarker",
+                                                L"BuzzTickDiamond",
+                                                L"Balloon",
+                                                L"DengDeng",
+                                                L"BalloonProcessing",
+                                                L"BalloonBurst",
+                                                L"DengDengProcessing",
+                                                L"HitCounterCloud"};
 }
 
 bool GameplayPresenter::PrepareAssets(const mrg::EngineServices &services)
 {
     if (preparingImages_.empty())
     {
-        for (const auto file : NoteImageFiles)
+        for (const auto file : NoteImageKeys)
             preparingImages_.push_back(InGameSkinAssetPath(file));
-        for (const auto file : {L"AccuracyIndicator.png",
-                                L"InputPanel.png",
-                                L"LaneLight.png",
-                                L"JudgementCircle.png",
-                                L"Lane.png",
-                                L"KeyButtonLeftKat.png",
-                                L"KeyButtonLeftDon.png",
-                                L"KeyButtonRightDon.png",
-                                L"KeyButtonRightKat.png",
-                                L"KeyLightStrong.png",
-                                L"KeyLightWeak.png",
-                                L"KeyPressFlash.png",
-                                L"Progress/Background.png",
-                                L"Progress/Track.png",
-                                L"Progress/Fill.png",
-                                L"Progress/Marker.png",
-                                L"Judgements/MAX.png",
-                                L"Judgements/PERFECT.png",
-                                L"Judgements/GREAT.png",
-                                L"Judgements/GOOD.png",
-                                L"Judgements/BAD.png",
-                                L"Judgements/MISS.png",
-                                L"Judgements/POOR.png",
-                                L"Judgements/OK.png"})
+        for (const auto file : {L"AccuracyIndicator",
+                                L"InputPanel",
+                                L"LaneLight",
+                                L"JudgementCircle",
+                                L"Lane",
+                                L"KeyButtonLeftKat",
+                                L"KeyButtonLeftDon",
+                                L"KeyButtonRightDon",
+                                L"KeyButtonRightKat",
+                                L"KeyLightStrong",
+                                L"KeyLightWeak",
+                                L"KeyPressFlash",
+                                L"Progress.Background",
+                                L"Progress.Track",
+                                L"Progress.Fill",
+                                L"Progress.Marker",
+                                L"Judgements.MAX",
+                                L"Judgements.PERFECT",
+                                L"Judgements.GREAT",
+                                L"Judgements.GOOD",
+                                L"Judgements.BAD",
+                                L"Judgements.MISS",
+                                L"Judgements.POOR",
+                                L"Judgements.OK"})
             preparingImages_.push_back(InGameSkinAssetPath(file));
     }
     std::string error;
@@ -151,11 +151,11 @@ mrg::visual2d::ImageHandle GameplayPresenter::NoteImage(std::wstring_view file)
 
 void GameplayPresenter::CreateNoteVisuals()
 {
-    for (const auto file : NoteImageFiles)
+    for (const auto file : NoteImageKeys)
         static_cast<void>(NoteImage(file));
-    const auto normalSize = ScaledImageSize(screenVisuals_, NoteImage(L"note.png"));
+    const auto normalSize = ScaledImageSize(screenVisuals_, NoteImage(L"note"));
     pixelsPerWholeNote_ = normalSize.width * 16.0F * SixteenthSpacingInHeadDiameters;
-    for (const auto file : {L"note.png", L"bignote.png", L"Balloon.png", L"DengDeng.png"})
+    for (const auto file : {L"note", L"bignote", L"Balloon", L"DengDeng"})
         largestHeadRadius_ = std::max(largestHeadRadius_, ScaledImageSize(screenVisuals_, NoteImage(file)).width * .5F);
     if (!laneRoot_)
         throw std::logic_error("Note visuals require a Lane root.");
@@ -167,36 +167,26 @@ void GameplayPresenter::CreateNoteVisuals()
 void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &source)
 {
     const auto *note = &source;
-    const auto noteImage = NoteImage(L"note.png");
-    const auto noteOverlay = NoteImage(L"noteoverlay.png");
-    const auto bigNoteImage = NoteImage(L"bignote.png");
-    const auto bigOverlay =
-        NoteImage(L"bigcircleoverlay.png");
-    const auto bodyImage = NoteImage(L"LNBody.png");
-    const auto bodyOverlayImage =
-        NoteImage(L"LNBodyOverlay.png");
-    const auto tailImage = NoteImage(L"LNTail.png");
-    const auto tailOverlayImage =
-        NoteImage(L"LNTailOverlay.png");
-    const auto bigBodyImage = NoteImage(L"BigLNBody.png");
-    const auto bigBodyOverlayImage =
-        NoteImage(L"BigLNBodyOverlay.png");
-    const auto bigTailImage = NoteImage(L"BigLNTail.png");
-    const auto bigTailOverlayImage =
-        NoteImage(L"BigLNTailOverlay.png");
-    const auto tickImage = NoteImage(L"TickMarker.png");
-    const auto buzzTickImage =
-        NoteImage(L"BuzzTickDiamond.png");
-    const auto balloonImage = NoteImage(L"Balloon.png");
-    const auto dengDengImage = NoteImage(L"DengDeng.png");
-    const auto balloonProcessingImage =
-        NoteImage(L"BalloonProcessing.png");
-    const auto balloonBurstImage =
-        NoteImage(L"BalloonBurst.png");
-    const auto dengDengProcessingImage =
-        NoteImage(L"DengDengProcessing.png");
-    const auto counterImage =
-        NoteImage(L"HitCounterCloud.png");
+    const auto noteImage = NoteImage(L"note");
+    const auto noteOverlay = NoteImage(L"noteoverlay");
+    const auto bigNoteImage = NoteImage(L"bignote");
+    const auto bigOverlay = NoteImage(L"bigcircleoverlay");
+    const auto bodyImage = NoteImage(L"LNBody");
+    const auto bodyOverlayImage = NoteImage(L"LNBodyOverlay");
+    const auto tailImage = NoteImage(L"LNTail");
+    const auto tailOverlayImage = NoteImage(L"LNTailOverlay");
+    const auto bigBodyImage = NoteImage(L"BigLNBody");
+    const auto bigBodyOverlayImage = NoteImage(L"BigLNBodyOverlay");
+    const auto bigTailImage = NoteImage(L"BigLNTail");
+    const auto bigTailOverlayImage = NoteImage(L"BigLNTailOverlay");
+    const auto tickImage = NoteImage(L"TickMarker");
+    const auto buzzTickImage = NoteImage(L"BuzzTickDiamond");
+    const auto balloonImage = NoteImage(L"Balloon");
+    const auto dengDengImage = NoteImage(L"DengDeng");
+    const auto balloonProcessingImage = NoteImage(L"BalloonProcessing");
+    const auto balloonBurstImage = NoteImage(L"BalloonBurst");
+    const auto dengDengProcessingImage = NoteImage(L"DengDengProcessing");
+    const auto counterImage = NoteImage(L"HitCounterCloud");
 
     const auto noteSize = ScaledImageSize(screenVisuals_, noteImage);
     pixelsPerWholeNote_ = noteSize.width * 16.0F * SixteenthSpacingInHeadDiameters;

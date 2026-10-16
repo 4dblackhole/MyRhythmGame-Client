@@ -1,7 +1,8 @@
 #include "LogoView.h"
-#include "LogoStyle.h"
 #include "App/AssetPaths.h"
+#include "LogoStyle.h"
 #include "Texts/GameScene/FingerDrumLogoScene/LogoTexts.h"
+#include <limits>
 using namespace logo_ui;
 
 LogoView::LogoView(mrg::visual2d::ScreenVisual2DManager &screenVisuals,
@@ -27,7 +28,8 @@ void LogoView::Initialize(const mrg::EngineServices &services)
 
     CreateLogoStrip();
     CreateMenu();
-    skinRevision_ = mrg_client::SkinSetSelection::Instance().Revision();
+    skinRevision_ = (std::numeric_limits<std::uint64_t>::max)();
+    RefreshSkinImages();
     options_.Initialize(*canvas_, services.audio, services.windowControl);
     ApplyTexts();
     UpdateLogoStripLayout();
@@ -107,6 +109,7 @@ void LogoView::Shutdown() noexcept
     centerLogo_ = nullptr;
     leftFade_ = nullptr;
     logoStrip_ = nullptr;
+    background_ = nullptr;
     canvas_ = nullptr;
     canvasHandle_.Reset();
 }

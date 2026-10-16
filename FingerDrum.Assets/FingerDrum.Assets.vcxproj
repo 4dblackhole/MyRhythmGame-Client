@@ -65,10 +65,19 @@
     <BuiltInAsset Include="Assets\Fonts\*.*" />
     <BuiltInAsset Include="Assets\Skins\Default Skin\**\*.*" />
     <None Include="Assets\Fonts\*.*" />
-    <None Include="Assets\Skins\Default Skin\**\*.*" Exclude="Assets\Skins\Default Skin\Result\**\*.*" />
+    <None Include="Assets\Skins\Default Skin\*.*" />
+    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\*.*" />
+    <None Include="Assets\Skins\Default Skin\InGame\*.*" />
+    <None Include="Assets\Skins\Default Skin\InGame\Judgements\*.*" />
+    <None Include="Assets\Skins\Default Skin\InGame\Progress\*.*" />
+    <None Include="Assets\Skins\Default Skin\Logo\*.*" />
+    <None Include="Assets\Skins\Default Skin\Logo\Menu\*.*" />
+    <None Include="Assets\Skins\Default Skin\MusicSelect\*.*" />
+    <None Include="Assets\Skins\Default Skin\NumberImage\*.*" />
     <None Include="Assets\Skins\Default Skin\Result\Background\*.*" />
     <None Include="Assets\Skins\Default Skin\Result\Mode\*.*" />
     <None Include="Assets\Skins\Default Skin\Result\Rank\*.*" />
+    <None Include="Assets\Skins\Default Skin\TitleImage\Widget\*.*" />
     <None Include="Assets\Songs\Music\Angeldream\*.*" />
     <None Include="Assets\Songs\Patterns\angeldream\**\*.*" />
     <None Include="Scripts\GenerateAssetPack.ps1" />

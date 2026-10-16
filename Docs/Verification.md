@@ -71,6 +71,19 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-16 skin.ini 씬별 폴더·이미지 경로
+
+- Debug/Release x64 솔루션 빌드 성공. 실제 프로젝트 설정으로 Client 전체를 MSVC 14.44 Code Analysis(`/p:RunCodeAnalysis=true`, x64, 두 구성)로 Rebuild했고, 캡처에서 찾은 로고 배경 tint 수정도 두 구성으로 재빌드/분석했습니다.
+- 신규 컴파일/분석 경고 없음. 기존 `EditorAnalysisController.cpp:51 C26115`(두 구성)와 `GameplayInput.cpp:66 C6236`(Release)는 이번 범위 밖의 기존 항목으로 남겼습니다.
+- 로직·카탈로그는 각 구성 63개, 실패 0개. `--smoke-test`, `--smoke-lobby`, `--smoke-gameplay`, `--smoke-editor`가 두 구성에서 모두 exit 0입니다.
+- `RunSkinTests.ps1`는 두 구성에서 UTF-8/BOM/CRLF/한글 폴더·파일명, 씬 폴더/파일 기준 경로, 절대/상위 경로 거부, 중복/누락/잘못된 UTF-8, 요소별 내장 fallback, 부분 스킨, revision 캐시/재선택 갱신을 확인했습니다. 실제 Logo/MusicSelect View를 조립해 버튼 상태, 전체 배경, 내부 채움 숨김·복원, 가상 카드 바인딩, Canvas 수명도 검사했습니다.
+- OptionsPanel, MusicSelectView, GameplayJudgement, GameplayPause, ResultPresentation, EditorPresentation, AllNotesGameplay 회귀를 두 구성에서 실행했습니다. 테스트 소스도 MSVC Code Analysis를 사용합니다. 모든 노트 이미지/진행바/판정 이미지와 실제 D3D12/FMOD 플레이·결과·일시정지 경로를 포함합니다.
+- `Scripts/CheckArchitecture.ps1`(11개 프로젝트)와 `git diff --check` 통과.
+- 자동 캡처 확인: production Logo/MusicSelect View의 D3D12 1920×1080 기본/사용자 스킨 네 캡처를 열어 확인했습니다. 기존 기본 표시 유지, INI의 사용자 배경·버튼·패널·카드 적용과 런타임 문구를 확인했고, 로고 전체 배경의 기본 tint를 흰색으로 수정한 뒤 다시 확인했습니다. D3D12 경고/오류 출력 없음. 캡처 fixture는 기존 PNG를 재사용하며 배포 스킨을 변경하지 않습니다.
+- 실제 수동 조작/청음: 물리 키보드·마우스 조작과 청음은 하지 않았습니다. UI 트리/입력·전환·음악 검사는 자동 회귀 결과입니다.
+- 사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 언어 INI의 SHA-256을 작업 전후 비교해 보존을 확인했습니다. 사용자 Songs/Skins는 쓰지 않았으며 새 테스트와 캡처는 ignored build의 독립 배포 폴더를 사용했습니다. 엔진 변경 없음.
+- 로그와 캡처: ignored `build/skin-2026-10-16/`.
+
 ## 2026-10-16 전체 고정 UI의 UTF-8 언어파일·영어 기본값
 
 - 로고/옵션/곡 선택/플레이/일시정지/리절트/공통·Taiko 에디터의 문구와 표 밖의

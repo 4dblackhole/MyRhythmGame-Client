@@ -24,8 +24,7 @@ void GameplayPresenter::CreatePresentation()
 
     progressView_.Initialize(screenVisuals_, root, *session_, texts_);
 
-    const auto accuracyImage =
-        screenVisuals_.RegisterImage(InGameSkinAssetPath(L"AccuracyIndicator.png"));
+    const auto accuracyImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"AccuracyIndicator"));
     const auto accuracySize = ScaledImageSize(screenVisuals_, accuracyImage);
     const float accuracyWidth = std::max(accuracySize.width, 270.0F);
     accuracyIndicator_ = &mrg::visual2d::CreateLabel(
@@ -69,8 +68,7 @@ void GameplayPresenter::CreatePresentation()
     CreateLaneVisuals(root);
     inputPresentationRoot_ = &root.CreateChild("InputPresentation");
     inputPresentationRoot_->SetZIndex(2);
-    const auto inputPanelImage =
-        screenVisuals_.RegisterImage(InGameSkinAssetPath(L"InputPanel.png"));
+    const auto inputPanelImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"InputPanel"));
     inputPanelSize_ = ScaledImageSize(screenVisuals_, inputPanelImage);
     inputPanel_ = &mrg::visual2d::CreateSprite(
         *inputPresentationRoot_, {0.0F, 0.0F, inputPanelSize_.width, inputPanelSize_.height},
@@ -102,11 +100,10 @@ void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &sceneRoot
 
     CreateLaneSurface();
 
-    const auto beamImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"LaneLight.png"));
+    const auto beamImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"LaneLight"));
     keyBeam_.Initialize(*laneRoot_, beamImage, ScaledImageSize(screenVisuals_, beamImage));
 
-    const auto judgementImage =
-        screenVisuals_.RegisterImage(InGameSkinAssetPath(L"JudgementCircle.png"));
+    const auto judgementImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"JudgementCircle"));
     const auto judgementSize = ScaledImageSize(screenVisuals_, judgementImage);
     auto &judgementLine = mrg::visual2d::CreateSprite(
         *laneRoot_,
@@ -131,7 +128,7 @@ void GameplayPresenter::CreateLaneSurface()
         throw std::logic_error("Lane background requires a Lane root.");
     }
 
-    laneImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"Lane.png"));
+    laneImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"Lane"));
     const auto tileSize = ScaledImageSize(screenVisuals_, laneImage_);
     laneWidth_ = tileSize.width;
     laneTileLength_ = tileSize.height;

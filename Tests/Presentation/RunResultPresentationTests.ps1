@@ -10,7 +10,7 @@ $units = @('Pch', 'ResultScene', 'ResultViewFactory', 'TaikoResultView', 'TaikoR
     'RhythmTestScene', 'GameplaySessionController', 'GameplaySessionFactory', 'GameplayInput', 'GameplayAudio',
     'GameplayPause', 'GameplayPauseMenu', 'PauseTexts',
     'GameplayPresenter', 'GameplayLayout', 'GameplayNoteVisuals', 'GameplayFeedbackVisuals', 'GameplayKeys',
-    'GameplayJudgementView', 'GameplayProgressView', 'LaneKeyBeam', 'GameplayTexts', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'GameplayAudioRouter')
+    'GameplayJudgementView', 'GameplayProgressView', 'LaneKeyBeam', 'GameplayTexts', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent', 'GameplayAudioRouter')
 $objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
 $libraries = @('Rhythm', 'Chart', 'Modes', 'Assets') | ForEach-Object { "bin/x64/$Configuration/FingerDrum.$_.lib" }
 $objectDirectory = "build/obj/ResultPresentationTests/$Configuration"

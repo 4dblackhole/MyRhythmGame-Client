@@ -9,7 +9,7 @@ $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/
 if ($Effects) { $runtime += '/DTEST_YME_EFFECTS' }
 $units = @('Pch', 'GameplayPresenter', 'GameplayLayout', 'GameplayNoteVisuals',
     'GameplayFeedbackVisuals', 'GameplayKeys', 'GameplayJudgementView', 'GameplayProgressView', 'LaneKeyBeam', 'GameplayTexts',
-    'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'GameplayAudioRouter')
+    'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent', 'GameplayAudioRouter')
 $objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
 $libraries = @('Rhythm', 'Chart', 'Modes', 'Assets') | ForEach-Object { "bin/x64/$Configuration/FingerDrum.$_.lib" }
 $objectDirectory = "build/obj/AllNotesGameplayTests/$Configuration"

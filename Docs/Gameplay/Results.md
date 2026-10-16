@@ -113,3 +113,6 @@ held 상태도 ESC 뒤의 edge를 되돌려 구하므로 뒤늦은 키 해제로
 
 이번 범위는 메모리 수집과 Result 표시입니다. 디스크 저장·리플레이 재생·곡 선택 기록
 표시는 아직 제공하지 않습니다. 검증은 [Verification](../Verification.md)을 참고합니다.
+
+리절트 PNG와 버튼 이미지는 스킨 `[Result]`의 요소 키와 폴더 상대 경로를 사용합니다.
+파일별 기본본 대체와 버튼 상태 이미지 규칙은 [skin.ini](../BuiltInAssets.md#skinini와-씬별-이미지)를 따릅니다.

@@ -3,6 +3,7 @@
 #include "Catalog/SongCatalog.h"
 #include "MRG_Core.h"
 #include "Presentation/MarqueeTextComponent.h"
+#include "Presentation/SkinVisualComponent.h"
 #include "Presentation/UiColors.h"
 #include <algorithm>
 #include <cmath>
@@ -256,7 +257,7 @@ namespace song_select
         style.hovered = color;
         style.pressed = color;
         style.disabled = {color.red, color.green, color.blue, 0.45F};
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetStyle(style);
+        finger_drum::presentation::SetSkinBaseStyle(node, style);
     }
 
     inline void ApplySpriteStyle(mrg::visual2d::Visual2DNode &node,
@@ -268,7 +269,7 @@ namespace song_select
         style.hovered = hovered;
         style.pressed = AccentBlue;
         style.disabled = DisabledBlue;
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetStyle(style);
+        finger_drum::presentation::SetSkinBaseStyle(node, style);
     }
 
     inline void ApplyButtonStyle(mrg::visual2d::Visual2DNode &node,

@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $FmodRoot) { throw 'Set FMOD_ROOT or pass -FmodRoot.' }
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/MD', '/DNDEBUG') }
 $units = @('Pch', 'GameplaySessionController', 'GameplaySessionFactory', 'GameplayInput', 'GameplayAudio',
-    'GameplayPause', 'GameplayPauseMenu', 'PauseTexts', 'GameplayAudioRouter', 'TextCatalog', 'LanguageFile', 'SkinSetSelection')
+    'GameplayPause', 'GameplayPauseMenu', 'PauseTexts', 'GameplayAudioRouter', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent')
 $objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
 $libraries = @('Rhythm', 'Chart', 'Modes', 'Assets') | ForEach-Object { "bin/x64/$Configuration/FingerDrum.$_.lib" }
 $objectDirectory = "build/obj/GameplayPauseTests/$Configuration"

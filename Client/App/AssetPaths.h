@@ -37,13 +37,12 @@ namespace mrg_client::asset_paths
     {
         [[nodiscard]] inline std::filesystem::path Result(const std::filesystem::path &file)
         {
-            return SkinSetSelection::Instance().Resolve(std::filesystem::path(L"Result") / file);
+            return SkinSetSelection::Instance().Image("Result", file.generic_string());
         }
         [[nodiscard]] inline std::filesystem::path InGame(
             const std::filesystem::path& file)
         {
-            return SkinSetSelection::Instance().Resolve(
-                std::filesystem::path(L"InGame") / file);
+            return SkinSetSelection::Instance().Image("InGame", file.generic_string());
         }
 
         [[nodiscard]] inline std::filesystem::path NumberImage(
@@ -64,26 +63,22 @@ namespace mrg_client::asset_paths
         {
             [[nodiscard]] inline std::filesystem::path LeftFade()
             {
-                return SkinSetSelection::Instance().Resolve(
-                    L"TitleImage\\Logo\\LeftFade.png");
+                return SkinSetSelection::Instance().Image("Logo", "LogoLeft");
             }
 
             [[nodiscard]] inline std::filesystem::path Center()
             {
-                return SkinSetSelection::Instance().Resolve(
-                    L"TitleImage\\Logo\\Center.png");
+                return SkinSetSelection::Instance().Image("Logo", "LogoCenter");
             }
 
             [[nodiscard]] inline std::filesystem::path RightFade()
             {
-                return SkinSetSelection::Instance().Resolve(
-                    L"TitleImage\\Logo\\RightFade.png");
+                return SkinSetSelection::Instance().Image("Logo", "LogoRight");
             }
 
             [[nodiscard]] inline std::filesystem::path SelectionCursor()
             {
-                return SkinSetSelection::Instance().Resolve(
-                    L"TitleImage\\Menu\\SelectionCursor.png");
+                return SkinSetSelection::Instance().Image("Logo", "SelectionCursor");
             }
         }
 

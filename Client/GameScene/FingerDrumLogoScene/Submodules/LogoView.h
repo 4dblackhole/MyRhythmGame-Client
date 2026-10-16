@@ -56,6 +56,7 @@ class LogoView final
     mrg::visual2d::Visual2DInputRouter inputRouter_;
     std::optional<mrg::visual2d::Point> canvasPointer_;
     mrg::visual2d::Visual2DNode *logoStrip_{};
+    mrg::visual2d::Visual2DNode *background_{};
     mrg::visual2d::Visual2DNode *leftFade_{};
     mrg::visual2d::Visual2DNode *centerLogo_{};
     mrg::visual2d::Visual2DNode *rightFade_{};

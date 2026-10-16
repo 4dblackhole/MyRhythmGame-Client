@@ -1,4 +1,5 @@
 #include "GameplayPauseMenu.h"
+#include "Presentation/SkinVisualComponent.h"
 #include "Presentation/UiColors.h"
 #include "Texts/GameScene/RhythmTestScene/PauseTexts.h"
 #include <algorithm>
@@ -62,6 +63,7 @@ void GameplayPauseMenu::Build()
     auto &visual = *panel.GetComponent<v::SpriteVisualComponent>();
     visual.SetTint(colors::pause::Surface);
     visual.SetCornerRadius(20);
+    finger_drum::presentation::BindSkinImage(panel, visuals_, "InGame", "PausePanel");
     const auto &text = finger_drum::texts::Pause(texts_);
     Label(panel, {24, 444, width - 48, 40}, std::wstring(text.title), 28, White);
     Label(panel, {24, 414, width - 48, 24}, std::wstring(text.practice), 15, Muted);
@@ -73,6 +75,8 @@ void GameplayPauseMenu::Build()
         Label(row, {16, 34, width - 80, 28}, std::wstring(text.actions[i]), 20, White);
         descriptions_[i] = Label(row, {16, 6, width - 80, 24}, L"", 13, Muted).Id();
         rows_[i] = row.Id();
+        constexpr std::array keys{"PauseResume", "PauseRewind", "PauseRetry", "PauseRetire"};
+        finger_drum::presentation::BindSkinImage(row, visuals_, "InGame", keys[i]);
     }
     Label(panel, {24, 18, width - 48, 26}, std::wstring(text.controls), 13, Muted);
     textRevision_ = texts_.Revision();
@@ -101,7 +105,7 @@ void GameplayPauseMenu::RefreshRows()
         style.hovered = colors::pause::Hover;
         style.pressed = colors::pause::Pressed;
         style.disabled = colors::pause::Disabled;
-        row->GetComponent<v::SpriteVisualComponent>()->SetStyle(style);
+        finger_drum::presentation::SetSkinBaseStyle(*row, style);
         if (auto *label = handle_.Get()->FindNode(descriptions_[i]))
             label->GetComponent<v::TextVisualComponent>()->SetText(descriptions[i]);
     }

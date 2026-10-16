@@ -1,5 +1,6 @@
 #pragma once
 #include "MRG_Core.h"
+#include "Presentation/SkinVisualComponent.h"
 #include "Presentation/UiColors.h"
 #include <array>
 #include <stdexcept>
@@ -61,7 +62,7 @@ namespace logo_ui
             style.disabled = colors::logo::Disabled;
         }
 
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(button).SetStyle(style);
+        finger_drum::presentation::SetSkinBaseStyle(button, style);
         RequireComponent<mrg::visual2d::TextVisualComponent>(button).SetTextColor(selected ? colors::White
                                                                                            : colors::Ink);
     }

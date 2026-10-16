@@ -107,6 +107,8 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
     SetCornerRadius(button, 14.0F);
     AddPanel(button, {2.0F, 2.0F, std::max(songContentWidth_ - 4.0F, 1.0F), height - 4.0F},
              focused ? FocusBlue : RowBlue, "Surface", 12.0F);
+    finger_drum::presentation::BindSkinImage(button, screenVisuals_, "MusicSelect",
+                                             focused ? "SongCardFocused" : "SongCard", "Surface");
 
     const float titleWidth = std::max(songContentWidth_ - 28.0F, 1.0F);
     auto &title =
@@ -138,6 +140,8 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
             ApplyButtonStyle(difficulty, selected ? AccentBlue : PureWhite,
                              selected ? AccentHover : PaleBlue, selected ? PureWhite : DeepBlue);
             SetCornerRadius(difficulty, 8.0F);
+            finger_drum::presentation::BindSkinImage(difficulty, screenVisuals_, "MusicSelect",
+                                                     selected ? "DifficultySelected" : "Difficulty");
             auto &difficultyText =
                 RequireComponent<mrg::visual2d::TextVisualComponent>(difficulty);
             difficultyText.SetFontSize(CanvasFontSize(12.0F));

@@ -113,7 +113,7 @@ void GameplayJudgementView::CreateJudgementImages(v::ScreenVisual2DManager &visu
     const float size = judgementCircle.NodeSize().width * 1.4F;
     for (std::size_t index = 0; index < judgementImages_.size(); ++index)
     {
-        const std::string file = "Judgements/" + std::string(ImageNames[index]) + ".png";
+        const std::string file = "Judgements." + std::string(ImageNames[index]);
         const auto image = visuals.RegisterImage(mrg_client::asset_paths::skin::InGame(file));
         const auto nativeSize = visuals.GetImageSize(image);
         if (nativeSize.width <= 0.0F || nativeSize.height <= 0.0F)

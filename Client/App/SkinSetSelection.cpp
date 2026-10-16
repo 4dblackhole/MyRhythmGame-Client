@@ -1,6 +1,7 @@
 #include "App/SkinSetSelection.h"
 #include "FingerDrumAssets.h"
 
+#include <Windows.h>
 #include <algorithm>
 #include <utility>
 
@@ -44,6 +45,7 @@ namespace mrg_client
         currentName_ = std::ranges::find(names, savedName) != names.end()
             ? savedName : L"Default Skin";
         ++revision_;
+        images_.reset();
     }
 
     const std::wstring &SkinSetSelection::CurrentName() const noexcept { return currentName_; }
@@ -62,6 +64,7 @@ namespace mrg_client
         {
             currentName_ = name;
             ++revision_;
+            images_.reset();
         }
         return true;
     }
@@ -69,5 +72,18 @@ namespace mrg_client
     std::filesystem::path SkinSetSelection::Resolve(const std::filesystem::path &relativePath) const
     {
         return finger_drum::assets::ResolveSkinAsset(SkinsRoot() / currentName_, relativePath);
+    }
+
+    std::filesystem::path SkinSetSelection::Image(std::string_view scene, std::string_view key) const
+    {
+        if (!images_)
+        {
+            const auto defaults = finger_drum::assets::BuiltInAssetRoot() / L"assets/skins/Default Skin";
+            images_ = LoadSkinImages(SkinsRoot() / currentName_, defaults);
+            for (const auto &diagnostic : images_->diagnostics)
+                OutputDebugStringA((diagnostic + "\n").c_str());
+        }
+        const auto found = images_->paths.find(SkinImageKey(scene, key));
+        return found == images_->paths.end() ? std::filesystem::path{} : found->second;
     }
 }

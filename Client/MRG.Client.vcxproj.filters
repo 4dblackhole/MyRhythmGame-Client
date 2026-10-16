@@ -42,6 +42,10 @@
     <ClCompile Include="EditorScene\Submodules\EditorForms.cpp">
       <Filter>EditorScene\Submodules</Filter>
     </ClCompile>
+    <ClCompile Include="App\SkinManifest.cpp"><Filter>App</Filter></ClCompile>
+    <ClInclude Include="App\SkinManifest.h"><Filter>App</Filter></ClInclude>
+    <ClCompile Include="Presentation\SkinVisualComponent.cpp"><Filter>Presentation</Filter></ClCompile>
+    <ClInclude Include="Presentation\SkinVisualComponent.h"><Filter>Presentation</Filter></ClInclude>
     <ClCompile Include="App\SkinSetSelection.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\SkinSetSelection.h"><Filter>App</Filter></ClInclude>
     <ClCompile Include="App\OptionSettings.cpp"><Filter>App</Filter></ClCompile>

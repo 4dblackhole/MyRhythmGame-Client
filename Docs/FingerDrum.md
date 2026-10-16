@@ -8,18 +8,19 @@
 
 ## 로고 asset과 배치
 
-세 PNG는 원본 크기와 가로 순서를 유지한다.
+세 PNG는 원본 크기와 가로 순서를 유지한다. 경로는 스킨의 `[Logo]` 항목에서
+지정하며 전체 화면 `Background`와 메뉴 버튼 이미지도 교체할 수 있다.
+문법·기본본 대체 규칙은 [skin.ini](BuiltInAssets.md#skinini와-씬별-이미지)를 따른다.
 
 | 순서 | source asset | 원본 크기 |
 | --- | --- | --- |
-| 왼쪽 | `FingerDrum.Assets/Assets/Skins/Default Skin/TitleImage/Logo/LeftFade.png` | 1680×1280 |
-| 가운데 | `FingerDrum.Assets/Assets/Skins/Default Skin/TitleImage/Logo/Center.png` | 2400×1280 |
-| 오른쪽 | `FingerDrum.Assets/Assets/Skins/Default Skin/TitleImage/Logo/RightFade.png` | 1680×1280 |
+| 왼쪽 | `FingerDrum.Assets/Assets/Skins/Default Skin/Logo/LeftFade.png` | 1680×1280 |
+| 가운데 | `FingerDrum.Assets/Assets/Skins/Default Skin/Logo/Center.png` | 2400×1280 |
+| 오른쪽 | `FingerDrum.Assets/Assets/Skins/Default Skin/Logo/RightFade.png` | 1680×1280 |
 
 세 node는 모두 `(0.5, 0.5)` pivot을 사용한다. 이 node들은 화면 중심 anchor를
-부모로 하는 하나의 strip 안에 놓인다. strip scale은 Canvas의 논리 폭과 높이 중
-더 제한적인 값으로 계산한다. 따라서 해상도·화면 비율이 바뀌어도 종횡비를 유지하고
-좌우 외곽이 잘리지 않는다.
+부모로 하는 하나의 strip 안에 놓인다. strip scale은 원본 높이 1280을 Canvas의 논리 높이에 맞춰 계산한다.
+세로와 종횡비를 유지하고 화면보다 넓은 좌우 외곽은 뷰포트 밖에 둔다.
 
 `Visual2DCanvas`는 `1280×720`, `FixedHeight` 기준이다. 세로 기준 크기는 유지하고
 와이드 화면에서는 논리 폭만 늘어나므로, 화면 확대 시에도 로고가 중심에서 흔들리지
@@ -40,11 +41,11 @@
 - `F7`: 모든 FingerDrum Scene 위 우측 하단 FPS/UPS 표시를 토글한다.
 
 옵션 패널은 16:9 논리 폭의 1/4인 320 단위, 화면 전체 높이 720 단위다.
-휠이나 가운데 버튼 드래그, 빈 영역 왼쪽 버튼 드래그로 스크롤하며 현재는
-한국어/영어 언어 선택기만 제공한다. 문구와 글꼴 소유권은
+휠이나 가운데 버튼 드래그, 빈 영역 왼쪽 버튼 드래그로 스크롤한다.
+옵션 항목과 문구·글꼴 소유권은
 [문구·언어·글꼴 관리](TextManagement.md)에 설명한다.
 
-커서 기본 자산은 `FingerDrum.Assets/Assets/Skins/Default Skin/TitleImage/Menu/SelectionCursor.png`이며
+커서 기본 자산은 `FingerDrum.Assets/Assets/Skins/Default Skin/Logo/Menu/SelectionCursor.png`이며
 투명 PNG다.
 마우스가 정지된 상태에서는 키보드로 옮긴 선택을 다시 빼앗지 않도록, 새 mouse
 event가 발생했을 때만 pointer hover를 선택 상태에 반영한다.

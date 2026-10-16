@@ -11,15 +11,15 @@ void GameplayPresenter::CreateKeyIndicators(mrg::visual2d::Visual2DNode &inputPa
         std::wstring_view image;
     };
     constexpr std::array<KeySpec, 4> keys{{
-        {{16.0F, 68.0F, 39.0F, 70.0F}, InputKeyBaseColors[0], L"KeyButtonLeftKat.png"},
-        {{68.0F, 92.0F, 39.0F, 70.0F}, InputKeyBaseColors[1], L"KeyButtonLeftDon.png"},
-        {{120.0F, 92.0F, 39.0F, 70.0F}, InputKeyBaseColors[2], L"KeyButtonRightDon.png"},
-        {{172.0F, 68.0F, 39.0F, 70.0F}, InputKeyBaseColors[3], L"KeyButtonRightKat.png"},
+        {{16.0F, 68.0F, 39.0F, 70.0F}, InputKeyBaseColors[0], L"KeyButtonLeftKat"},
+        {{68.0F, 92.0F, 39.0F, 70.0F}, InputKeyBaseColors[1], L"KeyButtonLeftDon"},
+        {{120.0F, 92.0F, 39.0F, 70.0F}, InputKeyBaseColors[2], L"KeyButtonRightDon"},
+        {{172.0F, 68.0F, 39.0F, 70.0F}, InputKeyBaseColors[3], L"KeyButtonRightKat"},
     }};
 
-    strongKeyLightImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"KeyLightStrong.png"));
-    weakKeyLightImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"KeyLightWeak.png"));
-    keyPressFlashImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"KeyPressFlash.png"));
+    strongKeyLightImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"KeyLightStrong"));
+    weakKeyLightImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"KeyLightWeak"));
+    keyPressFlashImage_ = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"KeyPressFlash"));
     const auto lightSize = ScaledImageSize(screenVisuals_, strongKeyLightImage_);
     const auto pressFlashSize = ScaledImageSize(screenVisuals_, keyPressFlashImage_);
     for (std::size_t index = 0; index < keys.size(); ++index)
