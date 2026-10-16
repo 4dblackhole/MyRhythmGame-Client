@@ -86,15 +86,14 @@ void TaikoEditorNoteInspector::Refresh(const chart::IEditorDocument &document)
     draft_.hitSound = note.hitSound;
 }
 void TaikoEditorNoteInspector::Field(IEditorModeCanvas &canvas, IEditorContext &state,
-                                     finger_drum::texts::Language language, float y, std::wstring_view label,
+                                     const finger_drum::texts::TextCatalog &catalog, float y, std::wstring_view label,
                                      std::string &value, float x, float width)
 {
     canvas.Text({x, y, width, 24}, std::wstring(label), 17);
     canvas.Button({x, y + 26, width, 34}, Wide(value),
-                  [this, &state, language, label = std::wstring(label), &value]
+                  [this, &state, &catalog, label = std::wstring(label), &value]
                   {
-                      if (const auto edited =
-                              EditText(std::wstring(label), value, finger_drum::texts::Editor(language)))
+                      if (const auto edited = EditText(std::wstring(label), value, finger_drum::texts::Editor(catalog)))
                       {
                           value = *edited;
                           draftChanged_ = true;
@@ -103,18 +102,18 @@ void TaikoEditorNoteInspector::Field(IEditorModeCanvas &canvas, IEditorContext &
                   });
 }
 void TaikoEditorNoteInspector::PositionFields(IEditorModeCanvas &canvas, IEditorContext &state,
-                                              finger_drum::texts::Language language, float y, std::wstring_view label,
-                                              std::string &measure, std::string &beat)
+                                              const finger_drum::texts::TextCatalog &catalog, float y,
+                                              std::wstring_view label, std::string &measure, std::string &beat)
 {
-    const auto &text = finger_drum::texts::TaikoEditor(language);
-    Field(canvas, state, language, y, std::wstring(label) + L" " + std::wstring(text.measure), measure, 1530, 110);
-    Field(canvas, state, language, y, text.beatPosition, beat, 1658, 212);
+    const auto &text = finger_drum::texts::TaikoEditor(catalog);
+    Field(canvas, state, catalog, y, std::wstring(label) + L" " + std::wstring(text.measure), measure, 1530, 110);
+    Field(canvas, state, catalog, y, text.beatPosition, beat, 1658, 212);
 }
 void TaikoEditorNoteInspector::Draw(IEditorModeCanvas &canvas, IEditorContext &state,
-                                    finger_drum::texts::Language language)
+                                    const finger_drum::texts::TextCatalog &catalog)
 {
     Refresh(state.Document());
-    const auto &text = finger_drum::texts::TaikoEditor(language);
+    const auto &text = finger_drum::texts::TaikoEditor(catalog);
     canvas.Box({1510, 116, 386, 678}, Pale, 8);
     canvas.Text({1530, 136, 340, 28}, std::wstring(text.noteInfo), 22);
     if (!selected_)
@@ -133,20 +132,27 @@ void TaikoEditorNoteInspector::Draw(IEditorModeCanvas &canvas, IEditorContext &s
                       state.RequestRebuild();
                   });
     const auto &head = selected_->head;
-    PositionFields(canvas, state, language, 238, text.startPosition, draft_.startMeasure, draft_.startBeat);
-    canvas.Text({1530, 302, 340, 24}, std::format(L"{:.3f} ms", head.timing.count() / 1000.0), 16);
+    PositionFields(canvas, state, catalog, 238, text.startPosition, draft_.startMeasure, draft_.startBeat);
+    const double headMilliseconds = head.timing.count() / 1000.0;
+    canvas.Text({1530, 302, 340, 24},
+                std::vformat(catalog.Get("Result.millisecondsFormat"), std::make_wformat_args(headMilliseconds)), 16);
     const auto *tool = editor_tools::Find(draft_.tool);
     if (tool && finger_drum::mode::FindTaikoNote(static_cast<int>(tool->note))->longNote)
     {
-        PositionFields(canvas, state, language, 332, text.endPosition, draft_.endMeasure, draft_.endBeat);
+        PositionFields(canvas, state, catalog, 332, text.endPosition, draft_.endMeasure, draft_.endBeat);
         if (selected_->tail)
-            canvas.Text({1530, 396, 340, 24}, std::format(L"{:.3f} ms", selected_->tail->timing.count() / 1000.0), 16);
+        {
+            const double tailMilliseconds = selected_->tail->timing.count() / 1000.0;
+            canvas.Text(
+                {1530, 396, 340, 24},
+                std::vformat(catalog.Get("Result.millisecondsFormat"), std::make_wformat_args(tailMilliseconds)), 16);
+        }
     }
     if (editor_tools::UsesHitCount(draft_.tool))
-        Field(canvas, state, language, 430, text.hitCount, draft_.hitCount);
+        Field(canvas, state, catalog, 430, text.hitCount, draft_.hitCount);
     if (editor_tools::UsesTickDivision(draft_.tool))
-        Field(canvas, state, language, 430, text.tickDivision, draft_.tickDivision);
-    Field(canvas, state, language, 508, text.hitSound, draft_.hitSound);
+        Field(canvas, state, catalog, 430, text.tickDivision, draft_.tickDivision);
+    Field(canvas, state, catalog, 508, text.hitSound, draft_.hitSound);
     if (selected_->tail && editor_tools::UsesTickDivision(head.note.keyType))
     {
         std::vector<chart::Diagnostic> diagnostics;

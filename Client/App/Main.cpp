@@ -10,6 +10,7 @@
 #include "FingerDrumAssets.h"
 #include "GameFlow/FingerDrumSceneIds.h"
 #include "Texts/GameIdentity.h"
+#include "Texts/TextCatalog.h"
 
 #include <Windows.h>
 
@@ -43,7 +44,7 @@ namespace
         if (length > 0)
             MultiByteToWideChar(CP_UTF8, 0, error, -1, message.data(), length);
         else
-            message = L"Unable to decode the startup error.";
+            message = finger_drum::texts::TextCatalog{}.Get("Startup.decodeError");
         OutputDebugStringW(message.c_str());
         if (showWindow)
             MessageBoxW(nullptr, message.c_str(), finger_drum::texts::GameName, MB_OK | MB_ICONERROR);

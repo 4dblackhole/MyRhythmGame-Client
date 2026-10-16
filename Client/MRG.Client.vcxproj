@@ -48,7 +48,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\Dependencies\MRG-Engine\Engine\SDK;$(ProjectDir)..\FingerDrum.Rhythm;$(ProjectDir)..\FingerDrum.Chart;$(ProjectDir)..\FingerDrum.Modes;$(ProjectDir)..\FingerDrum.Assets\Public;$(ProjectDir)..\FingerDrum.Editor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir)Generated;$(ProjectDir);$(ProjectDir)..\Dependencies\MRG-Engine\Engine\SDK;$(ProjectDir)..\FingerDrum.Rhythm;$(ProjectDir)..\FingerDrum.Chart;$(ProjectDir)..\FingerDrum.Modes;$(ProjectDir)..\FingerDrum.Assets\Public;$(ProjectDir)..\FingerDrum.Editor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
@@ -96,9 +96,12 @@
   </ItemGroup>
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <ItemGroup>
+      <LanguageFiles Include="Texts\Languages\*.ini" />
       <DefaultMusic Include="..\FingerDrum.Assets\Assets\Songs\Music\Angeldream\*.*" />
       <DefaultPattern Include="..\FingerDrum.Assets\Assets\Songs\Patterns\angeldream\**\*.*" />
     </ItemGroup>
+    <Copy SourceFiles="@(LanguageFiles)" DestinationFiles="@(LanguageFiles->'$(ProjectDir)Assets\Languages\%(Filename)%(Extension)')"
+          Condition="!Exists('$(ProjectDir)Assets\Languages\%(LanguageFiles.Filename)%(LanguageFiles.Extension)')" />
     <!-- Development builds share one Songs directory and never replace edited files. -->
     <Copy SourceFiles="@(DefaultMusic)" DestinationFiles="@(DefaultMusic->'$(ProjectDir)Assets\Songs\Music\Angeldream\%(Filename)%(Extension)')"
           Condition="!Exists('$(ProjectDir)Assets\Songs\Music\Angeldream\%(DefaultMusic.Filename)%(DefaultMusic.Extension)')" />
@@ -237,6 +240,17 @@
   <ItemGroup><ClCompile Include="Texts\EditorScene\Taiko\TaikoEditorTexts.cpp" /></ItemGroup>
   <ItemGroup><ClInclude Include="Texts\EditorScene\Taiko\TaikoEditorTexts.h" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="GenerateEnglishTexts" BeforeTargets="ClCompile"
+          Inputs="$(ProjectDir)Texts\Languages\en.ini;$(ProjectDir)..\Scripts\GenerateEnglishTexts.ps1"
+          Outputs="$(IntDir)Generated\EnglishTexts.generated.h">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)..\Scripts\GenerateEnglishTexts.ps1&quot; -Source &quot;$(ProjectDir)Texts\Languages\en.ini&quot; -Output &quot;$(IntDir)Generated\EnglishTexts.generated.h&quot;" />
+  </Target>
+  <ItemGroup>
+    <ClCompile Include="Texts\Submodules\LanguageFile.cpp" />
+    <ClInclude Include="Texts\Submodules\LanguageFile.h" />
+    <None Include="Texts\Languages\en.ini" />
+    <None Include="Texts\Languages\ko.ini" />
+  </ItemGroup>
   <ImportGroup Label="ExtensionTargets" />
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorPlacement.h" /></ItemGroup>
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorNoteInspector.h" /></ItemGroup>

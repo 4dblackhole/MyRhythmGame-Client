@@ -1,5 +1,6 @@
 #include "EditorView.h"
 #include <algorithm>
+#include <format>
 #include <sstream>
 using namespace editor_ui;
 
@@ -47,7 +48,7 @@ void EditorView::BuildContent()
     else if (state_.Tab() == EditorTab::Timing)
         DrawTiming();
     else if (state_.Tab() == EditorTab::Metadata)
-        state_.Mode().DrawMetadata(*this, state_, texts_.CurrentLanguage());
+        state_.Mode().DrawMetadata(*this, state_, texts_);
     else if (state_.Tab() == EditorTab::Effects)
         DrawEffects();
     else
@@ -104,9 +105,9 @@ void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
     visual->AddPacket(std::move(p));
 }
 
-const finger_drum::texts::EditorTextSet &EditorView::Texts() const noexcept
+finger_drum::texts::EditorTextSet EditorView::Texts() const noexcept
 {
-    return finger_drum::texts::Editor(texts_.CurrentLanguage());
+    return finger_drum::texts::Editor(texts_);
 }
 
 void EditorView::Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected)
@@ -158,7 +159,9 @@ void EditorView::DrawFooter()
     Button(
         {1740, 1035, 150, 36}, std::wstring(state_.Document().Dirty() ? text.saveDirty : text.save),
         [this] { state_.Save(); }, true);
-    Text({24, 1040, 1690, 32}, Wide(state_.Status()), 16);
+    const auto savedPath = state_.SavedPath().wstring();
+    Text({24, 1040, 1690, 32},
+         savedPath.empty() ? Wide(state_.Status()) : texts_.Format("Editor.savedFormat", savedPath), 16);
 }
 
 void EditorView::Build()

@@ -1,6 +1,7 @@
 #pragma once
 #include "../IEditorMode.h"
 #include "TaikoEditorNoteInspector.h"
+#include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
 #include <array>
 #include <cstdint>
 #include <map>
@@ -29,28 +30,29 @@ class TaikoEditorMode final : public IEditorMode
         popup_ = -1;
     }
     bool OpenToolMenu(mrg::visual2d::Point) override;
-    void DrawTools(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) override;
-    void DrawChart(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) override;
-    void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) override;
+    void DrawTools(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
+    void DrawChart(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
+    void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
     void EditScore(IEditorContext &, mrg::visual2d::Point, bool erase) override;
     void ScrollScore(IEditorContext &, int direction) override;
-    void DrawMetadata(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) override;
-    std::vector<EditorSoundChoice> SoundChoices(finger_drum::texts::Language) const override;
-    std::wstring_view SoundEffectHelp(finger_drum::texts::Language) const override;
+    void DrawMetadata(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
+    std::vector<EditorSoundChoice> SoundChoices(const finger_drum::texts::TextCatalog &) const override;
+    std::wstring_view SoundEffectHelp(const finger_drum::texts::TextCatalog &) const override;
     std::map<std::string, std::filesystem::path> AudioFiles(const finger_drum::chart::IEditorDocument &,
                                                             const finger_drum::GameplayLaunchRequest &) const override;
     std::vector<AudioMarker> AudioMarkers(const finger_drum::chart::IEditorDocument &) const override;
 
   private:
-    void DrawOverview(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language);
-    void DrawRealtime(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language);
+    void DrawOverview(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &);
+    void DrawRealtime(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &);
     void Circle(IEditorModeCanvas &, float x, float y, int type, float radius);
     const std::filesystem::path &SkinImage(std::wstring_view);
     std::uint64_t skinRevision_{};
     std::map<std::wstring, std::filesystem::path, std::less<>> skinImagePaths_;
     static int VisualTool(const finger_drum::chart::PatternNote &);
     std::wstring LongNoteCaption(const finger_drum::chart::IEditorDocument &, const finger_drum::chart::PatternNote &,
-                                 const finger_drum::chart::PatternNote &, finger_drum::texts::Language) const;
+                                 const finger_drum::chart::PatternNote &,
+                                 const finger_drum::texts::TaikoEditorTextSet &) const;
     struct NoteHit
     {
         mrg::visual2d::Point point;

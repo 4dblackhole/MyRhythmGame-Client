@@ -79,7 +79,7 @@ void MusicSelectView::UpdateVisibleSongCards()
                        row->visiblePosition == selection_.focusedSongPosition_);
     if (songRows_.empty())
     {
-        const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+        const auto &text = finger_drum::texts::MusicSelect(texts_);
         AddLabel(*songContent_,
                  {layout::EmptySongMessage.x, layout::EmptySongMessage.y, std::max(songContentWidth_ - 32.0F, 1.0F),
                   layout::EmptySongMessage.height},
@@ -96,7 +96,7 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
                                      const std::size_t catalogIndex, const float top,
                                      const float height, const bool focused)
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     const auto &song = selection_.catalog_.songs[catalogIndex];
     auto &button = mrg::visual2d::CreateButton(
         *songContent_,
@@ -165,7 +165,7 @@ void MusicSelectView::RefreshSelectionPresentation()
         RequireComponent<finger_drum::presentation::MarqueeTextComponent>(*selectedSongLabel_);
     auto &artistMarquee =
         RequireComponent<finger_drum::presentation::MarqueeTextComponent>(*selectedArtistLabel_);
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     const std::wstring launchError = LaunchErrorText(selection_, text);
     if (selection_.visibleSongIndices_.empty())
     {
@@ -223,7 +223,7 @@ void MusicSelectView::RefreshSelectionPresentation()
 
 void MusicSelectView::RefreshSearchPresentation()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     if (searchField_ != nullptr)
     {
         std::wstring display =

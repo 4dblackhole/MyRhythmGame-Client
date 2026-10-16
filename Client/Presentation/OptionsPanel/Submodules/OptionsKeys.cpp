@@ -7,7 +7,7 @@ namespace finger_drum::presentation
     using namespace options_ui;
     namespace
     {
-        std::wstring KeyName(std::uint16_t key)
+        std::wstring KeyName(std::uint16_t key, const texts::TextCatalog &catalog)
         {
             UINT scan = MapVirtualKeyW(key, MAPVK_VK_TO_VSC_EX);
             LONG flags = static_cast<LONG>((scan & 0xff) << 16);
@@ -16,7 +16,7 @@ namespace finger_drum::presentation
             wchar_t name[128]{};
             if (GetKeyNameTextW(flags, name, 128) > 0)
                 return name;
-            return L"VK " + std::to_wstring(key);
+            return std::wstring(catalog.Get("Options.virtualKeyPrefix")) + std::to_wstring(key);
         }
     } // namespace
     void OptionsPanel::CreateKeyControls()
@@ -51,7 +51,7 @@ namespace finger_drum::presentation
     }
     void OptionsPanel::RefreshKeyControls()
     {
-        const auto &text = texts::Options(texts_.CurrentLanguage());
+        const auto &text = texts::Options(texts_);
         std::size_t rowIndex = 0;
         for (std::size_t i = 0; i < inputLayouts_.size(); ++i)
         {
@@ -66,13 +66,14 @@ namespace finger_drum::presentation
                 for (std::size_t slot = 0; slot < binding.keys.size(); ++slot, ++rowIndex)
                 {
                     auto &row = keyRows_[rowIndex];
-                    auto name = texts::InputBindingName(texts_.CurrentLanguage(), row.mode, row.binding);
+                    auto name = texts::InputBindingName(texts_, row.mode, row.binding);
                     auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*row.label);
                     label.SetText((name.empty() ? WideText(row.displayName) : std::wstring(name)) + L" · " +
                                   std::wstring(slot == 0 ? text.primary : text.auxiliary));
                     texts_.ApplyFont(label);
                     auto &button = RequireComponent<mrg::visual2d::TextVisualComponent>(*row.button);
-                    button.SetText(captureRow_ == rowIndex ? std::wstring(text.pressKey) : KeyName(binding.keys[slot]));
+                    button.SetText(captureRow_ == rowIndex ? std::wstring(text.pressKey)
+                                                           : KeyName(binding.keys[slot], texts_));
                     texts_.ApplyFont(button);
                 }
         }

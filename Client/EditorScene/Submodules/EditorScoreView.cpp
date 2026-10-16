@@ -7,11 +7,11 @@ void EditorView::DrawScore()
 {
     const auto &text = Texts();
     DrawTools();
-    state_.Mode().DrawChart(*this, state_, texts_.CurrentLanguage());
+    state_.Mode().DrawChart(*this, state_, texts_);
     if (state_.Mode().HasPendingPlacement())
         Text({180, 740, 1550, 32}, std::wstring(text.finishLongNote), 22, Blue);
     DrawTimeline();
-    state_.Mode().DrawToolMenu(*this, state_, texts_.CurrentLanguage());
+    state_.Mode().DrawToolMenu(*this, state_, texts_);
 }
 
 void EditorView::DrawTools()
@@ -24,12 +24,18 @@ void EditorView::DrawTools()
         {292, 76, 180, 32}, std::wstring(text.realtime), [this] { state_.SetRealtime(true); }, state_.Score().realtime);
     if (state_.Score().realtime)
     {
-        Button({492, 76, 40, 32}, L"−", [this] {
-            state_.SetRealtimeZoom(std::max(EditorScoreState::MinimumRealtimeZoom, state_.Score().realtimeZoom / 2));
-        });
-        Button({542, 76, 40, 32}, L"+", [this] {
-            state_.SetRealtimeZoom(std::min(EditorScoreState::MaximumRealtimeZoom, state_.Score().realtimeZoom * 2));
-        });
+        Button({492, 76, 40, 32}, std::wstring(texts_.Get("Common.zoomOut")),
+               [this]
+               {
+                   state_.SetRealtimeZoom(
+                       std::max(EditorScoreState::MinimumRealtimeZoom, state_.Score().realtimeZoom / 2));
+               });
+        Button({542, 76, 40, 32}, std::wstring(texts_.Get("Common.zoomIn")),
+               [this]
+               {
+                   state_.SetRealtimeZoom(
+                       std::min(EditorScoreState::MaximumRealtimeZoom, state_.Score().realtimeZoom * 2));
+               });
         Text({600, 76, 230, 32}, std::wstring(text.realtimeZoom) + L" " +
             std::to_wstring(static_cast<int>(state_.Score().realtimeZoom * 100)) + L"%", 18, Blue);
     }
@@ -49,5 +55,5 @@ void EditorView::DrawTools()
             state_.SetDivision(Integer(*s));
         }
     });
-    state_.Mode().DrawTools(*this, state_, texts_.CurrentLanguage());
+    state_.Mode().DrawTools(*this, state_, texts_);
 }

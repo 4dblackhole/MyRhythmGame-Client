@@ -18,5 +18,5 @@ namespace finger_drum::texts
         std::wstring_view late;
     };
 
-    [[nodiscard]] const GameplayTextSet &Gameplay(Language language) noexcept;
+    [[nodiscard]] GameplayTextSet Gameplay(const TextCatalog &texts);
 } // namespace finger_drum::texts

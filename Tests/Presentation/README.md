@@ -94,6 +94,17 @@ empty error text when storing its error also fails. It deliberately omits the
 RCDATA pack, so initialization fails before installing or reading the user's cache.
 The test source is compiled with MSVC `/analyze`; this is not a game startup route.
 
+## External UTF-8 language files
+
+After building the Client, run `RunLanguageFileTests.ps1 -Configuration Debug` and `Release`.
+The runner checks that literal UI keys have authoritative English defaults, then compiles
+with `/W4 /analyze` and exercises BOM/Unicode/escapes/invalid UTF-8, entry isolation,
+English fallback without either external file, partial English/Korean packs, malformed
+format arguments, valid argument reordering, immutable string-view ownership and replacement
+on the next catalog construction. Fixtures stay in ignored build folders; user languages
+and Option.ini are not edited. Existing screen regressions cover the injected catalog
+through the actual menu/option/editor/result/gameplay views.
+
 ## Editor audio view regression
 
 After building both configurations, run in an x64 Visual Studio developer PowerShell.

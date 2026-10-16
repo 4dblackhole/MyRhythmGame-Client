@@ -225,8 +225,8 @@ int main()
         };
         visuals.Render({});
         Check(hasText(L"파일"), "Editor view must compose the top menu.");
-        Check(hasText(std::wstring(state.Document().Dirty() ? finger_drum::texts::Editor(texts.CurrentLanguage()).saveDirty
-                                                           : finger_drum::texts::Editor(texts.CurrentLanguage()).save)),
+        Check(hasText(std::wstring(state.Document().Dirty() ? finger_drum::texts::Editor(texts).saveDirty
+                                                            : finger_drum::texts::Editor(texts).save)),
               "Existing footer Save must remain available.");
         Check(hasText(L"타임라인") && !hasText(L"음악 FFT 스펙트로그램"),
               "Pattern tab must show the timeline without the audio analysis "

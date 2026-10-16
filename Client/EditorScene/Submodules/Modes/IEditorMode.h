@@ -44,12 +44,12 @@ class IEditorMode : public IEditorAudioSource
     virtual bool CancelInteraction() noexcept = 0;
     virtual void CloseToolMenu() noexcept = 0;
     virtual bool OpenToolMenu(mrg::visual2d::Point) = 0;
-    virtual void DrawTools(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
-    virtual void DrawChart(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
-    virtual void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
+    virtual void DrawTools(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) = 0;
+    virtual void DrawChart(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) = 0;
+    virtual void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) = 0;
     virtual void EditScore(IEditorContext &, mrg::visual2d::Point, bool erase) = 0;
     virtual void ScrollScore(IEditorContext &, int direction) = 0;
-    virtual void DrawMetadata(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) = 0;
-    virtual std::vector<EditorSoundChoice> SoundChoices(finger_drum::texts::Language) const = 0;
-    virtual std::wstring_view SoundEffectHelp(finger_drum::texts::Language) const = 0;
+    virtual void DrawMetadata(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) = 0;
+    virtual std::vector<EditorSoundChoice> SoundChoices(const finger_drum::texts::TextCatalog &) const = 0;
+    virtual std::wstring_view SoundEffectHelp(const finger_drum::texts::TextCatalog &) const = 0;
 };

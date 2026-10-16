@@ -27,7 +27,7 @@ namespace finger_drum::presentation
     }
     void OptionsPanel::RefreshOffsetControls()
     {
-        const auto &text = texts::Options(texts_.CurrentLanguage());
+        const auto &text = texts::Options(texts_);
         auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*offsetLabel_);
         label.SetText(std::wstring(text.globalOffset));
         texts_.ApplyFont(label);
@@ -36,7 +36,8 @@ namespace finger_drum::presentation
         texts_.ApplyFont(hint);
         auto &field = RequireComponent<mrg::visual2d::TextVisualComponent>(*offsetField_);
         field.SetText(editingOffset_ ? offsetDraft_ + L"_"
-                                     : std::to_wstring(options_.Values().globalOffsetMs) + L" ms");
+                                     : std::to_wstring(options_.Values().globalOffsetMs) +
+                                           std::wstring(texts_.Get("Common.millisecondsSuffix")));
         texts_.ApplyFont(field);
     }
     void OptionsPanel::CancelKeyboardEdit()

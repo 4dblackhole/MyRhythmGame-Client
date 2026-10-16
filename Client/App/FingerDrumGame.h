@@ -48,6 +48,6 @@ class FingerDrumGame final : public mrg::scene::SceneGameClient
     mrg_client::OptionSettings optionSettings_;
     mrg::graphics::FontHandle performanceFont_;
     std::uint64_t lastPerformanceMeasurementIndex_{};
-    std::wstring framesPerSecondText_{L"FPS: measuring..."};
-    std::wstring updatesPerSecondText_{L"UPS: measuring..."};
+    std::wstring framesPerSecondText_;
+    std::wstring updatesPerSecondText_;
 };

@@ -19,11 +19,12 @@ void EditorView::DrawTiming()
             t.type == chart::TimingDirectiveType::MeasureLength ? Fraction(t.ratio) : std::to_string(t.value);
         Button({156, y, 715, 40},
                std::to_wstring(t.position.measure + 1) + L"    " + Wide(Fraction(t.position.fraction)) + L"    " +
-                   (t.type == chart::TimingDirectiveType::Bpm             ? L"BPM"
+                   (t.type == chart::TimingDirectiveType::Bpm             ? texts_.Get("Editor.bpm").data()
                     : t.type == chart::TimingDirectiveType::MeasureLength ? std::wstring(text.measureType)
                                                                           : std::wstring(text.delayType)) +
                    L"    " + Wide(value),
-               [this, t] {
+               [this, t]
+               {
                    state_.timingForm.measure = std::to_string(t.position.measure + 1);
                    state_.timingForm.fraction = Fraction(t.position.fraction);
                    if (t.type == chart::TimingDirectiveType::Bpm)
@@ -36,7 +37,7 @@ void EditorView::DrawTiming()
     }
     Field({1104, 270, 180, 42}, text.startMeasure.data(), state_.timingForm.measure);
     Field({1310, 270, 210, 42}, text.changePosition.data(), state_.timingForm.fraction);
-    Field({1550, 270, 275, 42}, L"BPM", state_.timingForm.bpm);
+    Field({1550, 270, 275, 42}, texts_.Get("Editor.bpm").data(), state_.timingForm.bpm);
     Button({1540, 350, 285, 42}, std::wstring(text.addOrUpdateBpm), [this] { state_.ApplyBpm(); }, true);
     Field({1104, 460, 320, 42}, text.measureLength.data(), state_.timingForm.measureLength);
     Button({1470, 460, 355, 42}, std::wstring(text.applyMeasureLength), [this] { state_.ApplyMeasureLength(); }, true);

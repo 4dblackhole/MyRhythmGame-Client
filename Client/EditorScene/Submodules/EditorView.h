@@ -78,7 +78,7 @@ class EditorView final : public IEditorModeCanvas
     void Text(v::Rect r, std::wstring text, float size = 20, v::Color color = editor_ui::Ink) override;
     void Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected = false) override;
     void Field(v::Rect r, const wchar_t *label, std::string &value);
-    [[nodiscard]] const finger_drum::texts::EditorTextSet &Texts() const noexcept;
+    [[nodiscard]] finger_drum::texts::EditorTextSet Texts() const noexcept;
     mrg::visual2d::ScreenVisual2DManager &visuals;
     EditorWorkspace &state_;
     finger_drum::texts::TextCatalog &texts_;

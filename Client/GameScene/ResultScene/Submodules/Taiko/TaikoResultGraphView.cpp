@@ -30,7 +30,7 @@ namespace
 } // namespace
 void TaikoResultView::BuildGraphs(v::Visual2DNode &root)
 {
-    const auto &text = finger_drum::texts::Result(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Result(texts_);
     Panel(root, HistogramPanel, Surface, 24, 3);
     Panel(root, ScatterPanel, Surface, 24, 3);
     // Outlines/grid are UI decoration. The graph builder owns range/bin/point
@@ -59,7 +59,7 @@ void TaikoResultView::BuildGraphs(v::Visual2DNode &root)
 }
 void TaikoResultView::BuildHistogramLabels(v::Visual2DNode &root, const taiko_result_ui::GraphData &data)
 {
-    const auto &text = finger_drum::texts::Result(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Result(texts_);
     Label(root, {1372, 122, 244, 34}, std::wstring(text.histogram), 22, 700);
     Label(root, {1630, 127, 214, 26}, Format(text.peakFormat, data.maximumBinCount), 13, 500,
           v::TextAlignment::Trailing, Muted);
@@ -88,7 +88,7 @@ void TaikoResultView::BuildHistogramLabels(v::Visual2DNode &root, const taiko_re
 }
 void TaikoResultView::BuildScatterLabels(v::Visual2DNode &root, const taiko_result_ui::GraphData &data)
 {
-    const auto &text = finger_drum::texts::Result(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Result(texts_);
     Label(root, {1372, 494, 472, 34}, std::wstring(text.scatter), 22, 700);
     const std::array<std::wstring_view, 3> names{text.mean, text.standardDeviation, text.variance};
     const std::array<std::optional<double>, 3> values{
@@ -98,25 +98,34 @@ void TaikoResultView::BuildScatterLabels(v::Visual2DNode &root, const taiko_resu
         const float x = 1372 + static_cast<float>(i) * 164;
         Label(root, {x, 540, 144, 20}, std::wstring(names[i]), 11, 600, v::TextAlignment::Leading, Muted);
         Label(root, {x, 562, 144, 30},
-              values[i] ? Format(i == 2 ? L"{:.3f} ms²" : L"{:.3f} ms", *values[i]) : (i == 2 ? L"— ms²" : L"— ms"), 20,
-              700);
+              values[i] ? Format(i == 2 ? std::wstring(texts_.Get("Result.varianceFormat"))
+                                        : std::wstring(texts_.Get("Result.millisecondsFormat")),
+                                 *values[i])
+                        : (i == 2 ? std::wstring(texts_.Get("Result.emptyVariance"))
+                                  : std::wstring(texts_.Get("Result.emptyMilliseconds"))),
+              20, 700);
         if (i > 0)
             Panel(root, {x - 16, 540, 1, 46}, Keyline, 0);
     }
     Label(root, {1372, 612, 48, 20}, std::wstring(text.late), 10, 600, v::TextAlignment::Trailing, Muted);
     Label(root, {1372, 634, 48, 20}, Format(L"+{:.0f}", data.halfRangeMilliseconds), 11, 500,
           v::TextAlignment::Trailing, Muted);
-    Label(root, {1372, 702, 48, 24}, L"0 ms", 11, 600, v::TextAlignment::Trailing, Muted);
+    Label(root, {1372, 702, 48, 24}, std::wstring(texts_.Get("Result.zeroMilliseconds")), 11, 600,
+          v::TextAlignment::Trailing, Muted);
     Label(root, {1372, 768, 48, 20}, std::wstring(text.early), 10, 600, v::TextAlignment::Trailing, Muted);
     Label(root, {1372, 790, 48, 20}, Format(L"−{:.0f}", data.halfRangeMilliseconds), 11, 500,
           v::TextAlignment::Trailing, Muted);
-    Label(root, {1434, 819, 90, 22}, Format(L"{:.2f} s", data.startSeconds), 12, 500, v::TextAlignment::Leading, Muted);
+    Label(root, {1434, 819, 90, 22}, Format(std::wstring(texts_.Get("Result.secondsFormat")), data.startSeconds), 12,
+          500, v::TextAlignment::Leading, Muted);
     Label(root, {1549, 819, 180, 22}, std::wstring(text.timeAxis), 12, 500, v::TextAlignment::Center, Muted);
-    Label(root, {1754, 819, 90, 22}, Format(L"{:.2f} s", data.endSeconds), 12, 500, v::TextAlignment::Trailing, Muted);
+    Label(root, {1754, 819, 90, 22}, Format(std::wstring(texts_.Get("Result.secondsFormat")), data.endSeconds), 12, 500,
+          v::TextAlignment::Trailing, Muted);
 }
 void TaikoResultView::BuildGraphLegend(v::Visual2DNode &root)
 {
-    const std::array<std::wstring_view, 5> grades{L"MAX", L"PERFECT", L"GREAT", L"GOOD", L"BAD"};
+    const std::array<std::wstring_view, 5> grades{texts_.Get("Judgements.MAX"), texts_.Get("Judgements.PERFECT"),
+                                                  texts_.Get("Judgements.GREAT"), texts_.Get("Judgements.GOOD"),
+                                                  texts_.Get("Judgements.BAD")};
     for (std::size_t i = 0; i < grades.size(); ++i)
     {
         const float x = 1434 + static_cast<float>(i) * 82;

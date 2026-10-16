@@ -25,6 +25,7 @@ Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 
 - 저장소의 `bin/x64/Debug` 또는 `bin/x64/Release`에서 실행: `Client/Assets`
 - 다른 폴더로 EXE를 복사해 실행: `<EXE 폴더>/Asset`
 - 곡: `<자산 루트>/Songs`, 사용자 스킨: `<자산 루트>/Skins`
+- 편집 가능한 UTF-8 UI 문구: `<자산 루트>/Languages/{ko,en}.ini`
 - `Option.ini`: 자산 루트와 별개로 항상 EXE 옆
 
 개발용 폴더의 존재 여부로 구분하므로 배포 폴더는 저장소의 빌드 위치와 분리합니다.
@@ -33,6 +34,10 @@ Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 
 Release 배포 폴더에는 `MyRhythmGame.exe`와 같은 위치의 `fmod.dll`이 필요합니다.
 기본 곡을 제공할 때는 개발용 Songs에서 제공할 곡만 골라 `Asset/Songs`에 넣습니다. 로고·기본 스킨·
 글꼴만 필요하면 Songs 없이도 시작할 수 있으나 곡 목록은 비어 있습니다.
+한국어 문구/외부 편집 기능을 제공하려면 원본 `Client/Texts/Languages`의 INI를
+`Asset/Languages`에 함께 제공합니다. 언어파일 없이도 내장 영어 기본 문구로 실행됩니다.
+영어 기본본은 Client 빌드의 생성 헤더로 포함하며 RCDATA 자산 팩에는 넣지 않습니다.
+자세한 키/이스케이프/영어 fallback 규칙은 [TextManagement](TextManagement.md#언어파일-교체)를 참고합니다.
 `Client/Assets/Unused`의 예제 PNG는 어떤 구성에서도 복사하거나 로드하지 않습니다.
 기존 빌드 출력에 남아 있는 파일까지 빌드가 삭제하지는 않으므로 배포 파일은
 깨끗한 폴더에 필요한 파일만 복사해서 만듭니다.

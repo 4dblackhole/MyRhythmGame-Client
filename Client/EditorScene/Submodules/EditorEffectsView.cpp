@@ -11,7 +11,7 @@ std::wstring EditorView::EffectLabel(const EditorEffectSelection &selection) con
                                                            : std::wstring(Texts().effectTypes[definition->labelIndex]);
     }
     const int key = std::get<EditorHitSoundTarget>(selection).keyType;
-    for (const auto &choice : state_.Mode().SoundChoices(texts_.CurrentLanguage()))
+    for (const auto &choice : state_.Mode().SoundChoices(texts_))
         if (choice.keyType == key)
             return choice.effectLabel;
     return std::to_wstring(key);
@@ -21,7 +21,7 @@ void EditorView::CycleEffectType()
     std::vector<EditorEffectSelection> choices;
     for (const auto &definition : EditorEffectDefinitions)
         choices.emplace_back(definition.type);
-    for (const auto &sound : state_.Mode().SoundChoices(texts_.CurrentLanguage()))
+    for (const auto &sound : state_.Mode().SoundChoices(texts_))
         choices.emplace_back(EditorHitSoundTarget{sound.keyType});
     const auto matches = [&](const EditorEffectSelection &value) {
         if (value.index() != state_.effectForm.selection.index())
@@ -43,7 +43,7 @@ void EditorView::SelectEffectRow(std::size_t row)
     draft.Load(state_.Document().Effects(), row);
     if (const auto *sound = std::get_if<EditorHitSoundTarget>(&draft.selection))
     {
-        const auto choices = state_.Mode().SoundChoices(texts_.CurrentLanguage());
+        const auto choices = state_.Mode().SoundChoices(texts_);
         if (std::ranges::find(choices, sound->keyType, &EditorSoundChoice::keyType) == choices.end())
             throw std::runtime_error("This sound target is not supported by the selected editor mode.");
     }
@@ -58,7 +58,7 @@ void EditorView::DrawEffects()
     Text({156, 190, 1650, 38}, std::wstring(Texts().effectsColumns), 22);
     DrawEffectRows();
     DrawEffectFields();
-    Text({156, 800, 1620, 50}, std::wstring(state_.Mode().SoundEffectHelp(texts_.CurrentLanguage())), 18);
+    Text({156, 800, 1620, 50}, std::wstring(state_.Mode().SoundEffectHelp(texts_)), 18);
 }
 void EditorView::DrawEffectRows()
 {
@@ -78,7 +78,7 @@ void EditorView::DrawEffectRows()
         else
         {
             const auto &change = effects.hitSoundChanges[row - effects.commands.size()];
-            const auto choices = state_.Mode().SoundChoices(texts_.CurrentLanguage());
+            const auto choices = state_.Mode().SoundChoices(texts_);
             const auto found = std::ranges::find(choices, change.keyType, &EditorSoundChoice::keyType);
             const auto label = found == choices.end() ? std::to_wstring(change.keyType) : found->label;
             description = std::to_wstring(change.position.measure + 1) + L" / " +

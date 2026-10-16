@@ -12,7 +12,7 @@ class TaikoEditorNoteInspector final
     void Select(const finger_drum::chart::IEditorDocument &, std::size_t);
     bool Clear() noexcept;
     bool IsSelected(std::size_t id) const noexcept;
-    void Draw(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language);
+    void Draw(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &);
     void Apply(IEditorContext &);
     struct Draft
     {
@@ -29,9 +29,9 @@ class TaikoEditorNoteInspector final
 
   private:
     void Refresh(const finger_drum::chart::IEditorDocument &);
-    void Field(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language, float y, std::wstring_view label,
-               std::string &value, float x = 1530, float width = 340);
-    void PositionFields(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language, float y,
+    void Field(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &, float y,
+               std::wstring_view label, std::string &value, float x = 1530, float width = 340);
+    void PositionFields(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &, float y,
                         std::wstring_view label, std::string &measure, std::string &beat);
     std::optional<finger_drum::chart::EditorNoteSelection> selected_;
     std::uint64_t revision_{};

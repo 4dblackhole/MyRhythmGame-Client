@@ -7,7 +7,7 @@ using namespace song_select;
 
 void MusicSelectView::CreateCategoryBar()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     auto &bar = AddBorderedPanel(*board_, layout::CategoryBar, PanelWhite, BorderBlue, 3.0F, 20.0F,
                                  "Categories");
     categoryBar_ = &bar;
@@ -19,7 +19,7 @@ void MusicSelectView::CreateCategoryBar()
 
 void MusicSelectView::CreateRecordPanel()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     auto &panel = AddBorderedPanel(*board_, layout::RecordPanel, PanelWhite, BorderBlue, 3.0F,
                                    24.0F, "RecordPanel");
     recordPanel_ = &panel;
@@ -43,7 +43,7 @@ void MusicSelectView::CreateRecordPanel()
 
 void MusicSelectView::CreateSongInformationPanel()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     auto &panel = AddBorderedPanel(*board_, layout::InformationPanel, PanelWhite, BorderBlue, 3.0F,
                                    24.0F, "SongInformation");
     informationPanel_ = &panel;
@@ -83,7 +83,7 @@ void MusicSelectView::CreateSongInformationPanel()
 
 void MusicSelectView::CreateSongBrowser()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     auto &panel = AddBorderedPanel(*board_, layout::BrowserPanel, PanelWhite, BorderBlue, 3.0F,
                                    24.0F, "SongBrowser");
     browserPanel_ = &panel;
@@ -144,7 +144,7 @@ void MusicSelectView::CreateSongBrowser()
 
 void MusicSelectView::CreateFooter()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     auto &option = AddBorderedPanel(*board_, layout::OptionButton, PureWhite, BorderBlue, 3.0F,
                                     12.0F, "OptionSelect");
     optionButton_ = &option;
@@ -235,7 +235,7 @@ mrg::visual2d::Visual2DNode &MusicSelectView::AddLabel(
 
 void MusicSelectView::ApplyTexts()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::MusicSelect(texts_);
     const auto setLabel = [this](mrg::visual2d::Visual2DNode *node,
                                  const std::wstring_view value) {
         if (node == nullptr)

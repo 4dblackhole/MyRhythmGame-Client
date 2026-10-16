@@ -43,11 +43,12 @@ bool TaikoEditorMode::HandleToolKey(IEditorContext &state, std::uint16_t key)
     return true;
 }
 
-void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, IEditorContext &state, finger_drum::texts::Language language)
+void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, IEditorContext &state,
+                                const finger_drum::texts::TextCatalog &catalog)
 {
-    const auto &text = finger_drum::texts::TaikoEditor(language);
+    const auto &text = finger_drum::texts::TaikoEditor(catalog);
     canvas.Box({24, 76, 70, 918}, Paper, 18);
-    canvas.Text({38, 86, 55, 25}, std::wstring(finger_drum::texts::Editor(language).tools), 16);
+    canvas.Text({38, 86, 55, 25}, std::wstring(finger_drum::texts::Editor(catalog).tools), 16);
     canvas.Button({35, 122, 48, 48}, L"", [&state] { state.SelectTool(0); }, tool_ == 0);
     canvas.Text({27, 171, 67, 25}, std::wstring(text.toolGroups[0]), 13);
     for (std::size_t i = 0; i < groupTools_.size(); ++i)
@@ -69,7 +70,7 @@ void TaikoEditorMode::DrawTools(IEditorModeCanvas &canvas, IEditorContext &state
 }
 
 void TaikoEditorMode::DrawToolMenu(IEditorModeCanvas &canvas, IEditorContext &state,
-                                   finger_drum::texts::Language language)
+                                   const finger_drum::texts::TextCatalog &catalog)
 {
     if (popup_ < 0)
         return;
@@ -78,6 +79,6 @@ void TaikoEditorMode::DrawToolMenu(IEditorModeCanvas &canvas, IEditorContext &st
         if (static_cast<int>(tool.group) == popup_)
             canvas.Button(
                 {105, 202 + static_cast<float>(row++) * 40, 220, 38},
-                std::wstring(editor_tools::Name(tool.id, finger_drum::texts::TaikoEditor(language).toolVariants)),
+                std::wstring(editor_tools::Name(tool.id, finger_drum::texts::TaikoEditor(catalog).toolVariants)),
                 [&state, id = tool.id] { state.SelectTool(id); });
 }

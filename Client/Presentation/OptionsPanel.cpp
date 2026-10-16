@@ -114,9 +114,9 @@ namespace finger_drum::presentation
             &CreateFieldLabel(*content_, contentHeight_ - 310.0F, PanelWidth, "Options.Middleware.Label");
         outputLabel_ = &CreateFieldLabel(*content_, contentHeight_ - 438.0F, PanelWidth, "Options.Output.Label");
         driverLabel_ = &CreateFieldLabel(*content_, contentHeight_ - 566.0F, PanelWidth, "Options.Driver.Label");
-        middlewareCombo_ =
-            &mrg::visual2d::CreateComboBox(*content_, {24.0F, contentHeight_ - 368.0F, PanelWidth - 48.0F, 46.0F},
-                                           {L"FMOD"}, "Options.Middleware.Combo");
+        middlewareCombo_ = &mrg::visual2d::CreateComboBox(
+            *content_, {24.0F, contentHeight_ - 368.0F, PanelWidth - 48.0F, 46.0F},
+            {std::wstring(texts_.Get("Options.middlewareFmod"))}, "Options.Middleware.Combo");
         outputCombo_ = &mrg::visual2d::CreateComboBox(
             *content_, {24.0F, contentHeight_ - 496.0F, PanelWidth - 48.0F, 46.0F}, {}, "Options.Output.Combo");
         driverCombo_ = &mrg::visual2d::CreateComboBox(
@@ -361,7 +361,7 @@ namespace finger_drum::presentation
         {
             return;
         }
-        const texts::OptionTextSet &text = texts::Options(texts_.CurrentLanguage());
+        const texts::OptionTextSet &text = texts::Options(texts_);
         auto &title = RequireComponent<mrg::visual2d::TextVisualComponent>(*title_);
         title.SetText(std::wstring(text.title));
         texts_.ApplyFont(title);
@@ -400,7 +400,7 @@ namespace finger_drum::presentation
 
     void OptionsPanel::RefreshAudioControls()
     {
-        const auto &text = texts::Options(texts_.CurrentLanguage());
+        const auto &text = texts::Options(texts_);
         const std::array labels{std::pair{middlewareLabel_, text.middleware},
                                  std::pair{outputLabel_, text.output},
                                  std::pair{driverLabel_, text.driver}};
@@ -496,7 +496,7 @@ namespace finger_drum::presentation
 
     void OptionsPanel::RefreshStatus()
     {
-        const auto &text = texts::Options(texts_.CurrentLanguage());
+        const auto &text = texts::Options(texts_);
         std::wstring value;
         const auto &saved = options_.Values();
         if (status_ == Status::SaveFailed) value = text.saveError;

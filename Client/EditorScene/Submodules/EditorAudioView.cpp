@@ -246,14 +246,17 @@ void EditorView::DrawAudioSpectrum(const v::Rect rect, const double minimumHz, c
         audioOverlays_[rect.y == MusicSpectrum.y ? 0 : 1]->AddRectangle({0, rect.height - (y - rect.y), rect.width, 1},
                                                                         {1, 1, 1, .10F}, 0);
         Text({125, std::clamp(y - 10, rect.y, rect.y + rect.height - 20), 78, 20},
-             frequency >= 1000 ? Decimal(frequency / 1000, 0) + L"k Hz" : Decimal(frequency, 0) + L" Hz", 14);
+             frequency >= 1000 ? Decimal(frequency / 1000, 0) + std::wstring(texts_.Get("Common.kilohertzSuffix"))
+                               : Decimal(frequency, 0) + std::wstring(texts_.Get("Common.hertzSuffix")),
+             14);
     }
     for (std::size_t color = 0; color < SpectrumColors.size(); ++color)
         Box({1795, rect.y + rect.height * static_cast<float>(SpectrumColors.size() - 1 - color) / SpectrumColors.size(),
              18, rect.height / SpectrumColors.size() + .1F},
             SpectrumColors[color]);
     for (int tick = 0; tick <= 3; ++tick)
-        Text({1820, rect.y + (rect.height - 20) * tick / 3, 70, 20}, std::to_wstring(-30 * tick) + L" dB", 14);
+        Text({1820, rect.y + (rect.height - 20) * tick / 3, 70, 20},
+             std::to_wstring(-30 * tick) + std::wstring(texts_.Get("Common.decibelsSuffix")), 14);
 }
 
 void EditorView::DrawAudioWaveform(const std::vector<SpectrumFrame> &columns)
@@ -285,7 +288,7 @@ void EditorView::DrawAudioTimeRuler(const double begin)
     {
         const float x = Waveform.x + static_cast<float>((seconds - begin) / state_.audioWindow) * Waveform.width;
         Text({std::clamp(x - 30, Waveform.x, Waveform.x + Waveform.width - 70), 126, 70, 22},
-             Decimal(seconds, step < 1 ? 2 : 0) + L" s", 14);
+             Decimal(seconds, step < 1 ? 2 : 0) + std::wstring(texts_.Get("Common.secondsSuffix")), 14);
         Box({x, Waveform.y, 1, Waveform.height}, {1, 1, 1, .08F});
         for (std::size_t track = 0; track < audioOverlays_.size(); ++track)
             audioOverlays_[track]->AddRectangle({x - Waveform.x, 0, 1, MusicSpectrum.height}, {1, 1, 1, .08F}, 0);
@@ -338,15 +341,19 @@ void EditorView::DrawAudio()
     DrawAudioSpectrum(MusicSpectrum, minimumHz, maximumHz);
     DrawAudioSpectrum(HitSpectrum, minimumHz, maximumHz);
     DrawAudioTimeRuler(begin);
-    Button({1620, 85, 54, 32}, L"+", [this] {
-        state_.audioWindow = std::max(.25, state_.audioWindow / 2);
-        state_.RequestRebuild();
-    });
-    Button({1684, 85, 54, 32}, L"−", [this] {
-        state_.audioWindow = std::min(120.0, state_.audioWindow * 2);
-        state_.RequestRebuild();
-    });
-    Text({1748, 88, 140, 24}, Decimal(state_.audioWindow, 2) + L" s", 16);
+    Button({1620, 85, 54, 32}, std::wstring(texts_.Get("Common.zoomIn")),
+           [this]
+           {
+               state_.audioWindow = std::max(.25, state_.audioWindow / 2);
+               state_.RequestRebuild();
+           });
+    Button({1684, 85, 54, 32}, std::wstring(texts_.Get("Common.zoomOut")),
+           [this]
+           {
+               state_.audioWindow = std::min(120.0, state_.audioWindow * 2);
+               state_.RequestRebuild();
+           });
+    Text({1748, 88, 140, 24}, Decimal(state_.audioWindow, 2) + std::wstring(texts_.Get("Common.secondsSuffix")), 16);
     if (state_.Analysis().Running())
         Text({570, 90, 700, 28}, std::wstring(text.analyzingAudio), 18, Blue);
     DrawTimeline();

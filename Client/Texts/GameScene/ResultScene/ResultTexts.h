@@ -15,5 +15,5 @@ namespace finger_drum::texts
         std::wstring_view replay, retry, back, backShortcut;
         std::wstring_view artist;
     };
-    const ResultTextSet &Result(Language language) noexcept;
+    ResultTextSet Result(const TextCatalog &texts);
 } // namespace finger_drum::texts

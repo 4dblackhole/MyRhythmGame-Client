@@ -32,6 +32,10 @@ FingerDrumGame::FingerDrumGame(const bool smokeTest, std::string initialSceneId,
     if (!optionSettings_.Load(error))
         OutputDebugStringA(error.c_str());
     texts_.SetLanguage(optionSettings_.Values().language);
+    framesPerSecondText_ = texts_.Get("Performance.measuringFps");
+    updatesPerSecondText_ = texts_.Get("Performance.measuringUps");
+    for (const auto &diagnostic : texts_.Diagnostics())
+        OutputDebugStringA((diagnostic + "\n").c_str());
     mrg_client::SkinSetSelection::Instance().Initialize(optionSettings_.Values().skinSet);
 }
 
@@ -182,8 +186,10 @@ void FingerDrumGame::RestoreSavedAudioDriver(mrg::audio::AudioSystem &audio)
 
 void FingerDrumGame::RefreshPerformanceText(const mrg::PerformanceStatistics &performance)
 {
-    framesPerSecondText_ = L"FPS  " + std::to_wstring(performance.framesPerSecond);
-    updatesPerSecondText_ = L"UPS  " + std::to_wstring(performance.updatesPerSecond);
+    framesPerSecondText_ =
+        std::wstring(texts_.Get("Performance.fps")) + L"  " + std::to_wstring(performance.framesPerSecond);
+    updatesPerSecondText_ =
+        std::wstring(texts_.Get("Performance.ups")) + L"  " + std::to_wstring(performance.updatesPerSecond);
 }
 
 void FingerDrumGame::SubmitPerformanceLine(mrg::graphics::TextRenderSystem &textRendering,

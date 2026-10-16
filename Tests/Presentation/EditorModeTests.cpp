@@ -11,6 +11,22 @@
 
 namespace
 {
+    const finger_drum::texts::TextCatalog &TestCatalog(finger_drum::texts::Language language)
+    {
+        struct Catalogs
+        {
+            finger_drum::texts::TextCatalog ko, en;
+            Catalogs()
+            {
+                en.SetLanguage(finger_drum::texts::Language::English);
+            }
+        };
+        static const Catalogs catalogs;
+        return language == finger_drum::texts::Language::Korean ? catalogs.ko : catalogs.en;
+    }
+} // namespace
+namespace
+{
     namespace chart = finger_drum::chart;
     namespace v = mrg::visual2d;
     void Check(bool value, const char *message)
@@ -166,11 +182,12 @@ namespace
         {
             return false;
         }
-        void DrawTools(IEditorModeCanvas &canvas, IEditorContext &state, finger_drum::texts::Language) override
+        void DrawTools(IEditorModeCanvas &canvas, IEditorContext &state,
+                       const finger_drum::texts::TextCatalog &) override
         {
             canvas.Button({30, 130, 60, 40}, L"PROBE TOOL", [&state] { state.SelectTool(70); });
         }
-        void DrawChart(IEditorModeCanvas &canvas, IEditorContext &, finger_drum::texts::Language) override
+        void DrawChart(IEditorModeCanvas &canvas, IEditorContext &, const finger_drum::texts::TextCatalog &) override
         {
             ++chartCalls;
             if (failDrawing)
@@ -180,7 +197,7 @@ namespace
             canvas.Box({650, 200, 40, 500}, {.2F, .4F, .8F, 1});
             canvas.Text({600, 160, 200, 30}, L"PROBE CHART");
         }
-        void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, finger_drum::texts::Language) override
+        void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override
         {
         }
         void EditScore(IEditorContext &state, v::Point point, bool erase) override
@@ -194,15 +211,15 @@ namespace
         {
             state.SetFirstMeasure(state.Score().firstMeasure + direction);
         }
-        void DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &, finger_drum::texts::Language) override
+        void DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &, const finger_drum::texts::TextCatalog &) override
         {
             canvas.Text({600, 200, 300, 30}, L"PROBE FORMAT METADATA");
         }
-        std::vector<EditorSoundChoice> SoundChoices(finger_drum::texts::Language) const override
+        std::vector<EditorSoundChoice> SoundChoices(const finger_drum::texts::TextCatalog &) const override
         {
             return {{42, L"Probe key", L"PROBE SOUND"}};
         }
-        std::wstring_view SoundEffectHelp(finger_drum::texts::Language) const override
+        std::wstring_view SoundEffectHelp(const finger_drum::texts::TextCatalog &) const override
         {
             return L"PROBE SOUND HELP";
         }
@@ -261,22 +278,22 @@ namespace
         EditorWorkspace state(CreateEditorMode("Taiko"),
                               std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
         state.Mode().EditScore(state, {283.75F, 174}, false);
         Check(state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
               "Score click no longer snaps using quarter-note division.");
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
         state.Mode().EditScore(state, {283.75F, 174}, true);
         Check(state.Document().Notes().empty(), "Mode-owned note hit testing did not delete the note.");
         state.SetRealtime(true);
         state.SelectTool(1);
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
         for (const v::Point outside : {v::Point{120, 465}, {1849, 465}, {230, 350}, {230, 580}})
             state.Mode().EditScore(state, outside, false);
         Check(state.Document().Notes().empty(), "Clicks outside the realtime lane must not place notes.");
         state.Mode().EditScore(state, {230, 465}, false);
         Check(state.Document().Notes().size() == 1, "A realtime lane click must still place a snapped note.");
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
         state.Mode().EditScore(state, {120, 465}, true);
         Check(state.Document().Notes().size() == 1, "Outside-lane deletion must not affect nearby notes.");
         state.Mode().EditScore(state, {230, 465}, true);
@@ -287,7 +304,7 @@ namespace
         Check(state.TimeMilliseconds() == 123 && state.Mode().CancelInteraction() &&
                   !state.Mode().HasPendingPlacement(),
               "Realtime long-note placement must preserve time and support cancellation.");
-        state.Mode().DrawTools(canvas, state, finger_drum::texts::Language::English);
+        state.Mode().DrawTools(canvas, state, TestCatalog(finger_drum::texts::Language::English));
         canvas.actions.front()();
         state.PlaceNote({0, {}});
         Check(state.Document().Notes().empty(), "Selection tool must not place a note.");
@@ -346,10 +363,10 @@ namespace
         state.Mode().CancelInteraction();
         state.SetFirstMeasure(chart::MaximumMeasureCount - 1);
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
         state.SetRealtime(true);
         state.Seek(state.Document().Timeline().Compile({chart::MaximumMeasureCount - 1, {}}).count() / 1000.0);
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
     }
 
     void TestDelayViewsAndSnapping()
@@ -363,14 +380,14 @@ namespace
         EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
         state.SelectTool(0);
         RecordingCanvas overview;
-        state.Mode().DrawChart(overview, state, finger_drum::texts::Language::English);
+        state.Mode().DrawChart(overview, state, TestCatalog(finger_drum::texts::Language::English));
         Check(overview.images.size() == 2 && std::ranges::find(overview.labels, L"1  2/4") != overview.labels.end() &&
                   std::ranges::find(overview.labels, L"2  3/4") != overview.labels.end() &&
                   std::ranges::none_of(overview.labels, [](const auto &label) { return label.starts_with(L"BPM"); }),
               "Overview must show effective bar lengths, exclude overwritten taps/BPM, and retain the new endpoint.");
         state.Mode().EditScore(state, {520, 174}, false);
         RecordingCanvas selected;
-        state.Mode().DrawChart(selected, state, finger_drum::texts::Language::English);
+        state.Mode().DrawChart(selected, state, TestCatalog(finger_drum::texts::Language::English));
         Check(std::ranges::find(selected.labels, L"1/4") != selected.labels.end(),
               "A note at the shortened measure start must select its unchanged source fraction.");
         state.Mode().CancelInteraction();
@@ -384,7 +401,7 @@ namespace
             {.position = {0, {}}, .type = chart::EffectCommandType::MeasureLineVisible, .endValue = 1});
         state.Replace(state.Document().Pattern(), effects);
         RecordingCanvas realtime;
-        state.Mode().DrawChart(realtime, state, finger_drum::texts::Language::English);
+        state.Mode().DrawChart(realtime, state, TestCatalog(finger_drum::texts::Language::English));
         Check(std::ranges::any_of(realtime.rectangles, [](const auto &rect)
                                   { return std::abs(rect.x - 230) < .01F && rect.y == 361 && rect.width == 3; }),
               "Realtime must draw the clipped measure start at the judgement line.");
@@ -403,7 +420,7 @@ namespace
             state.SetRealtime(true);
             state.SetRealtimeZoom(zoom);
             RecordingCanvas empty;
-            state.Mode().DrawChart(empty, state, finger_drum::texts::Language::English);
+            state.Mode().DrawChart(empty, state, TestCatalog(finger_drum::texts::Language::English));
             Check(std::ranges::any_of(empty.rectangles, [](const auto &rect) {
                       return rect.x == 164 && rect.y == 351 && rect.width == 1324 && rect.height == 228;
                   }),
@@ -414,7 +431,7 @@ namespace
                   state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
                   "Realtime snapping must use the same zoomed time coordinates as drawing.");
             RecordingCanvas notes;
-            state.Mode().DrawChart(notes, state, finger_drum::texts::Language::English);
+            state.Mode().DrawChart(notes, state, TestCatalog(finger_drum::texts::Language::English));
             Check(!notes.imageRectangles.empty() && std::abs(notes.imageRectangles.front().x + 36 - x) < .1F &&
                   notes.imageRectangles.front().width == 72,
                   "Zoom must scale note spacing without scaling the selected skin head.");
@@ -650,8 +667,8 @@ namespace
         for (const auto language : {finger_drum::texts::Language::Korean, finger_drum::texts::Language::English})
         {
             RecordingCanvas panel;
-            inspector.Draw(panel, state, language);
-            const auto &text = finger_drum::texts::TaikoEditor(language);
+            inspector.Draw(panel, state, TestCatalog(language));
+            const auto &text = finger_drum::texts::TaikoEditor(TestCatalog(language));
             Check(std::ranges::find(panel.labels, std::wstring(text.beatPosition)) != panel.labels.end() &&
                       std::ranges::find(panel.labels, L"2250.000 ms") != panel.labels.end() &&
                       std::ranges::none_of(panel.buttonLabels,
@@ -664,7 +681,7 @@ namespace
         state.timingForm.bpm = "180";
         state.ApplyBpm();
         RecordingCanvas refreshed;
-        inspector.Draw(refreshed, state, finger_drum::texts::Language::English);
+        inspector.Draw(refreshed, state, TestCatalog(finger_drum::texts::Language::English));
         Check(inspector.Form().startMeasure == "2" && inspector.Form().startBeat == "1/8" &&
                   state.Document().FindNote(id)->tail->note.sourceOrder == selected.tail->note.sourceOrder &&
                   state.Document().FindNote(id)->head.timing == finger_drum::rhythm::RhythmTime{2'166'667},
@@ -728,7 +745,7 @@ Dip: 1-3*u*(1-u)
         state.SetRealtime(true);
         state.SelectTool(1);
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
         const auto drawn = std::ranges::any_of(
             canvas.rectangles, [](const auto &rect)
             { return std::abs(rect.x + rect.width / 2 - 1209.2F) < .01F && rect.width == 72 && rect.height == 72; });
@@ -738,7 +755,7 @@ Dip: 1-3*u*(1-u)
         // With no authored slow note left, the endpoint bound becomes 1.
         // The same custom curve's visible grid still needs to be selectable.
         canvas.rectangles.clear();
-        state.Mode().DrawChart(canvas, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
         state.Mode().EditScore(state, {1209.2F, 465}, false);
         Check(state.Document().Notes().size() == 1 &&
                   state.Document().Notes().front().note.position == chart::MusicalPosition{4, {}},
@@ -776,7 +793,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
             }
             state.SelectTool(groups[group].front());
             RecordingCanvas palette;
-            state.Mode().DrawTools(palette, state, texts.CurrentLanguage());
+            state.Mode().DrawTools(palette, state, texts);
             palette.actions[1 + group]();
             const auto measure = static_cast<std::int64_t>(groups[group].size() + 1);
             state.PlaceNote({measure, {}});
@@ -803,19 +820,20 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
               "The inspector must update the paired type/count and preserve unrelated options.");
         state.SelectTool(0);
         RecordingCanvas score;
-        state.Mode().DrawChart(score, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::Korean));
         state.Mode().EditScore(state, {205, 174}, false);
         score.labels.clear();
-        state.Mode().DrawChart(score, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::Korean));
         Check(std::ranges::find(
                   score.labels,
-                  std::wstring(finger_drum::texts::TaikoEditor(finger_drum::texts::Language::Korean).noteInfo)) !=
+                  std::wstring(
+                      finger_drum::texts::TaikoEditor(TestCatalog(finger_drum::texts::Language::Korean)).noteInfo)) !=
                   score.labels.end(),
               "Selecting a note must expose the note inspector.");
         Check(std::ranges::any_of(score.images, [](const auto &path) { return path.filename() == L"DengDeng.png"; }),
               "Score must draw the focus-note skin sprite.");
         state.SetRealtime(true);
-        state.Mode().DrawChart(score, state, finger_drum::texts::Language::Korean);
+        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::Korean));
         Check(std::ranges::any_of(score.labels,
                                   [](const auto &label) { return label.find(L"6 연타") != std::wstring::npos; }),
               "A long-note head must show its required hit count in both views.");
@@ -840,18 +858,18 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
         state.SelectTool(0);
         state.SetFirstMeasure(4);
         RecordingCanvas score;
-        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
         state.Mode().EditScore(state, {800, 174}, false);
         score.labels.clear();
-        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
         Check(std::ranges::find(score.labels, L"6") != score.labels.end() && state.TimeMilliseconds() == 0,
               "A long body spanning the viewport must select its source without moving the cursor.");
         state.SetRealtime(true);
         state.Seek(8000);
-        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
         state.Mode().EditScore(state, {800, 465}, false);
         score.labels.clear();
-        state.Mode().DrawChart(score, state, finger_drum::texts::Language::English);
+        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
         Check(std::ranges::find(score.labels, L"6") != score.labels.end() && state.TimeMilliseconds() == 8000,
               "Realtime body selection must preserve the audio cursor and resolve the head.");
     }
@@ -871,7 +889,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     state.UpdateAnalysis();
     Check(!state.Analysis().Running(), "A mode without audio sources must not start the worker.");
     RecordingCanvas palette;
-    state.Mode().DrawTools(palette, state, texts.CurrentLanguage());
+    state.Mode().DrawTools(palette, state, texts);
     palette.actions.front()();
     state.Mode().EditScore(state, {625, 280}, false);
     Check(state.Document().Notes().front().note.keyType == 70 &&

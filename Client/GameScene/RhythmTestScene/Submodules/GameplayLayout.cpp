@@ -28,12 +28,11 @@ void GameplayPresenter::CreatePresentation()
         screenVisuals_.RegisterImage(InGameSkinAssetPath(L"AccuracyIndicator.png"));
     const auto accuracySize = ScaledImageSize(screenVisuals_, accuracyImage);
     const float accuracyWidth = std::max(accuracySize.width, 270.0F);
-    accuracyIndicator_ =
-        &mrg::visual2d::CreateLabel(root,
-                                    {CanvasReferenceWidth * 0.5F - GearMargin - accuracyWidth,
-                                     CanvasReferenceHeight * 0.5F - 50.0F - accuracySize.height,
-                                     accuracyWidth, accuracySize.height},
-                                    L"--.------%", "Hud.Accuracy");
+    accuracyIndicator_ = &mrg::visual2d::CreateLabel(
+        root,
+        {CanvasReferenceWidth * 0.5F - GearMargin - accuracyWidth,
+         CanvasReferenceHeight * 0.5F - 50.0F - accuracySize.height, accuracyWidth, accuracySize.height},
+        std::wstring(texts_.Get("Gameplay.emptyAccuracy")), "Hud.Accuracy");
     accuracyIndicator_->SetZIndex(5);
     auto &accuracyText = RequireComponent<mrg::visual2d::TextVisualComponent>(*accuracyIndicator_);
     texts_.ApplyFont(accuracyText);

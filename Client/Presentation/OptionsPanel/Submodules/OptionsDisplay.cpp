@@ -17,7 +17,7 @@ namespace finger_drum::presentation
     void OptionsPanel::RefreshDisplayControls()
     {
         auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*resolutionLabel_);
-        label.SetText(std::wstring(texts::Options(texts_.CurrentLanguage()).resolution));
+        label.SetText(std::wstring(texts::Options(texts_).resolution));
         texts_.ApplyFont(label);
         resolutions_.clear();
         const auto current =

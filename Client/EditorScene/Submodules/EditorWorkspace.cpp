@@ -230,8 +230,8 @@ void EditorWorkspace::Save()
     editor_->Save();
     const auto &effectPath = Document().Effects().sourcePath;
     request_.effectPath = effectPath.empty() ? std::nullopt : std::optional{effectPath};
-    const auto path = Document().SourcePath().u8string();
-    SetStatus("Saved: " + std::string(reinterpret_cast<const char *>(path.data()), path.size()));
+    SetStatus({});
+    savedPath_ = Document().SourcePath();
     RequestRebuild();
 }
 void EditorWorkspace::PlaceNote(chart::MusicalPosition position)

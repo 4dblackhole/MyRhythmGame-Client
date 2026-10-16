@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+UI 언어파일(2026-10-16): [TextManagement의 경로·문법·소유권](TextManagement.md#언어파일-교체).
+모든 고정 UI 문구를 UTF-8 INI에서 읽고 선택 언어 → 외부 en → 내장 영어 순서로 대체합니다.
+원본은 Client/Texts/Languages, 실제 편집본은 자산 루트의 Languages이며 재실행 때 한 번 읽습니다.
+빌드는 기존 편집본을 덮어쓰지 않고 영어 기본본을 생성 헤더로 내장합니다.
+화면/에디터 모드는 같은 TextCatalog를 참조하고 읽은 문자열은 수명 내내 불변입니다.
+
 게임 표시 이름(2026-10-16): `Client/Texts/GameIdentity.h`의 `GameName` 한 곳에서 변경합니다.
 게임 창·시작/자산 오류창과 에디터 확인창이 참조하며 언어 표에는 에디터 접미사만 둡니다.
 기존 FingerDrum 클래스/Scene ID·캐시와 MyRhythmGame.exe는 내부 식별자로 유지합니다.

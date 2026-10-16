@@ -24,9 +24,10 @@ namespace finger_drum::texts
         std::wstring_view outputFallback;
         std::wstring_view driverUnavailable;
         std::wstring_view loadWarning;
+        std::wstring_view middlewareFmod, outputWasapi, outputAsio;
     };
 
-    [[nodiscard]] std::wstring_view InputBindingName(Language language, std::string_view mode,
+    [[nodiscard]] std::wstring_view InputBindingName(const TextCatalog &texts, std::string_view mode,
                                                      std::string_view id) noexcept;
-    [[nodiscard]] const OptionTextSet &Options(Language language) noexcept;
+    [[nodiscard]] OptionTextSet Options(const TextCatalog &texts);
 } // namespace finger_drum::texts

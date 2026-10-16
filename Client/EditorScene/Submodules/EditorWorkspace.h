@@ -73,8 +73,13 @@ class EditorWorkspace final : public IEditorContext
     {
         return status_;
     }
+    const std::filesystem::path &SavedPath() const noexcept
+    {
+        return savedPath_;
+    }
     void SetStatus(std::string value)
     {
+        savedPath_.clear();
         status_ = std::move(value);
         RequestRebuild();
     }
@@ -103,6 +108,7 @@ class EditorWorkspace final : public IEditorContext
     EditorTab tab_{EditorTab::Pattern};
     bool rebuild_{true};
     std::string status_;
+    std::filesystem::path savedPath_;
     finger_drum::GameplayLaunchRequest request_;
     std::unique_ptr<finger_drum::chart::IEditorDocument> editor_;
     std::unique_ptr<IEditorMode> mode_;

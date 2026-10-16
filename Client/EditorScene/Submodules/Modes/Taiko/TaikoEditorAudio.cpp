@@ -39,13 +39,13 @@ std::vector<AudioMarker> TaikoEditorMode::AudioMarkers(const chart::IEditorDocum
     return markers;
 }
 
-std::vector<EditorSoundChoice> TaikoEditorMode::SoundChoices(finger_drum::texts::Language language) const
+std::vector<EditorSoundChoice> TaikoEditorMode::SoundChoices(const finger_drum::texts::TextCatalog &catalog) const
 {
-    const auto &text = finger_drum::texts::TaikoEditor(language);
+    const auto &text = finger_drum::texts::TaikoEditor(catalog);
     return {{1, std::wstring(text.don), std::wstring(text.donSound)},
             {2, std::wstring(text.kat), std::wstring(text.katSound)}};
 }
-std::wstring_view TaikoEditorMode::SoundEffectHelp(finger_drum::texts::Language language) const
+std::wstring_view TaikoEditorMode::SoundEffectHelp(const finger_drum::texts::TextCatalog &catalog) const
 {
-    return finger_drum::texts::TaikoEditor(language).effectsHelp;
+    return finger_drum::texts::TaikoEditor(catalog).effectsHelp;
 }

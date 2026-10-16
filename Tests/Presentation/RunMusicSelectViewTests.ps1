@@ -2,7 +2,7 @@ param([ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug')
 $ErrorActionPreference = 'Stop'
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/MD', '/DNDEBUG') }
 $units = @('Pch', 'MusicSelectView', 'SongSelectLayout', 'SongSelectPanels', 'SongSelectCards', 'SongSelectInput',
-    'MusicSelectTexts', 'MarqueeTextComponent', 'OptionsPanel', 'OptionsDisplay', 'OptionsKeys', 'OptionsOffset', 'OptionSettings', 'OptionTexts', 'TextCatalog', 'SkinSetSelection')
+    'MusicSelectTexts', 'MarqueeTextComponent', 'OptionsPanel', 'OptionsDisplay', 'OptionsKeys', 'OptionsOffset', 'OptionSettings', 'OptionTexts', 'TextCatalog', 'LanguageFile', 'SkinSetSelection')
 $objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
 $libraries = @('Modes', 'Chart', 'Rhythm', 'ClientLogic', 'Assets') | ForEach-Object { "bin/x64/$Configuration/FingerDrum.$_.lib" }
 $testObjects = "build/obj/MusicSelectViewTests/$Configuration"

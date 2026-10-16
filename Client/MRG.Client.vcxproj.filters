@@ -15,6 +15,8 @@
     <Filter Include="GameScene\RhythmTestScene\Submodules" />
     <Filter Include="Presentation" />
     <Filter Include="Texts" />
+    <Filter Include="Texts\Submodules" />
+    <Filter Include="Texts\Languages" />
     <Filter Include="Texts\EditorScene" />
     <Filter Include="Texts\GameScene" />
     <Filter Include="Texts\GameScene\FingerDrumLogoScene" />
@@ -47,6 +49,10 @@
     <ClCompile Include="App\FingerDrumGame.cpp"><Filter>App</Filter></ClCompile>
     <ClInclude Include="App\FingerDrumGame.h"><Filter>App</Filter></ClInclude>
     <ClInclude Include="Texts\GameIdentity.h"><Filter>Texts</Filter></ClInclude>
+    <ClCompile Include="Texts\Submodules\LanguageFile.cpp"><Filter>Texts\Submodules</Filter></ClCompile>
+    <ClInclude Include="Texts\Submodules\LanguageFile.h"><Filter>Texts\Submodules</Filter></ClInclude>
+    <None Include="Texts\Languages\en.ini"><Filter>Texts\Languages</Filter></None>
+    <None Include="Texts\Languages\ko.ini"><Filter>Texts\Languages</Filter></None>
     <ClCompile Include="App\Main.cpp"><Filter>App</Filter></ClCompile>
     <ClCompile Include="Audio\GameplayAudioRouter.cpp"><Filter>Audio</Filter></ClCompile>
     <ClInclude Include="Audio\GameplayAudioRouter.h"><Filter>Audio</Filter></ClInclude>

@@ -20,5 +20,5 @@ namespace finger_drum::texts
             resetDraft, tickCount;
         std::wstring_view measure, beatPosition;
     };
-    const TaikoEditorTextSet &TaikoEditor(Language language) noexcept;
+    TaikoEditorTextSet TaikoEditor(const TextCatalog &texts);
 } // namespace finger_drum::texts

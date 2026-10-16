@@ -115,9 +115,7 @@ namespace gameplay
         return mrg_client::asset_paths::skin::TaikoHitSound(file);
     }
 
-    [[nodiscard]] inline std::wstring Utf8ToWide(
-        const std::string_view value,
-        const std::wstring_view invalidText = L"Audio initialization failed.")
+    [[nodiscard]] inline std::wstring Utf8ToWide(const std::string_view value, const std::wstring_view invalidText)
     {
         if (value.empty())
         {

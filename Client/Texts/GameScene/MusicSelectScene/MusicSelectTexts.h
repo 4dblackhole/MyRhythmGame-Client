@@ -36,5 +36,5 @@ namespace finger_drum::texts
         std::wstring_view loadingSongs;
     };
 
-    [[nodiscard]] const MusicSelectTextSet &MusicSelect(Language language) noexcept;
+    [[nodiscard]] MusicSelectTextSet MusicSelect(const TextCatalog &texts);
 } // namespace finger_drum::texts

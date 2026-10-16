@@ -71,6 +71,40 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-16 전체 고정 UI의 UTF-8 언어파일·영어 기본값
+
+- 로고/옵션/곡 선택/플레이/일시정지/리절트/공통·Taiko 에디터의 문구와 표 밖의
+  판정명·단위·성능 표시를 총 261개 INI 키로 관리합니다. 원본은 `Client/Texts/Languages`,
+  실제 편집본은 자산 루트의 `Languages/{ko,en}.ini`이며 재실행 시 반영합니다.
+  선택 언어 → 외부 영어 → EXE 내장 영어 순서로 찾으며 한국어 코드 상수 fallback은 없습니다.
+  GenerateEnglishTexts가 같은 en.ini 원본을 생성 헤더로 포함하고 빌드는 기존 편집본을 덮어쓰지 않습니다.
+- LanguageFile은 UTF-8 INI/이스케이프/구문·서식 검증, TextCatalog는 한 번 읽은 불변 데이터·언어·글꼴을
+  소유합니다. 화면별 TextSet은 키와 UI 필드의 대응만 소유합니다.
+  에디터 모드도 언어 enum 대신 같은 카탈로그의 참조를 받으며 콜백과 string_view가 이를 관찰합니다.
+  롱노트 캡션은 그리기 단위로 문구 표를 재사용합니다. 저장 성공 경로는 Workspace가 데이터로 보관하고
+  View가 현재 언어의 서식으로 조합합니다. 제품명/Scene ID·설정/곡/스킨·점수/판정 규칙은 바꾸지 않습니다.
+- Client Debug/Release x64 전체 solution Build 성공, 일반 컴파일 경고/오류 0.
+  두 구성 전체 로직·기본곡 카탈로그 각각 63개/실패 0, 네 Client smoke 경로씩 총 8개 성공했습니다.
+  LanguageFile, OptionsPanel, MusicSelectView, GameplayJudgement, GameplayPause, ResultPresentation,
+  EditorPresentation 표시 회귀를 두 구성에서 모두 통과했습니다.
+- LanguageFileTests는 BOM/Unicode/CRLF/이스케이프/공백/빈 값, 잘못된 UTF-8와 중복/잘못된 항목의 격리,
+  외부 파일이 전혀 없는 영어 기본값, 부분 번역/영어 파일 우선순위, 잘못된 타입·인수/오버플로와
+  유효한 서식 인수 재배치, 언어 전환 후 string_view 수명, 파일 변경을 다음 생성 시에만 읽는 것을 검사합니다.
+  실행 스크립트는 소스의 UI 키에 영어 기본 정의가 있는지도 검사합니다. 모든 fixture는 ignored build 폴더에 둡니다.
+- MSVC Code Analysis(`/analyze`)를 MRG.Client의 실제 Debug/Release x64 include/define/PCH/C++20
+  설정으로 실행했습니다. 두 구성의 분석 Rebuild와 마지막 변경 범위의 분석 Build를 사용했습니다.
+  신규 진단/파싱 오류 0. 기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지합니다.
+  새 언어파일 검사는 `/W4 /analyze`, 기존 화면 회귀도 각 스크립트의 `/analyze`로 검사했습니다.
+- 변경 코드와 직접 호출부의 영어 대체 우선순위, 파싱/서식 실패 경계, UTF-16/NUL과 경로 인코딩,
+  카탈로그의 복사 금지·문자열/프로필/콜백 수명, Scene 스레드의 언어 변경, 프레임 내 파일 I/O 부재와
+  함수 책임을 검토했습니다. CheckArchitecture(11프로젝트), Client/엔진 git diff --check 성공.
+  사용자 LaneKeyBeam.cpp 및 Debug/Release Option.ini의 SHA256을 대조해 보존했습니다.
+  엔진·사용자 곡/스킨/PNG는 변경하지 않았습니다. 로그/캡처는 ignored `build/languages-2026-10-16`입니다.
+- **화면 확인:** 실제 D3D12 1920×1080 offscreen 캡처에서 외부 파일 없는 영어 메뉴,
+  부분 한국어 INI로 교체한 시작/옵션 버튼과 옵션 제목, 빠진 항목의 영어 표시를 눈으로 확인했습니다.
+  같은 EXE로 서로 다른 파일을 읽었습니다. 실제 실행 창에서 물리 키/마우스를 조작하거나
+  청음하는 수동 검증은 미실시입니다. 입력·저장·전환 검사는 자동 회귀입니다.
+
 ## 2026-10-16 게임 표시 이름 중앙화·변경
 
 - 기존 창 제목, 시작/내장 자산 오류창 제목과 에디터 확인창의 한국어/영어 표에

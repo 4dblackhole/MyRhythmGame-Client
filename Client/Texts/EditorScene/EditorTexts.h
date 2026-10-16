@@ -74,5 +74,5 @@ namespace finger_drum::texts
         std::wstring_view cancel;
     };
 
-    [[nodiscard]] const EditorTextSet &Editor(Language language) noexcept;
+    [[nodiscard]] EditorTextSet Editor(const TextCatalog &texts);
 } // namespace finger_drum::texts

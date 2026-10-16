@@ -46,7 +46,7 @@ void GameplayPresenter::PresentErrorMessage(const std::string_view message)
     errorLabel_->SetVisible(!message.empty());
     if (message.empty())
         return;
-    const auto &text = finger_drum::texts::Gameplay(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Gameplay(texts_);
     RequireComponent<mrg::visual2d::TextVisualComponent>(*errorLabel_)
         .SetText(std::wstring(text.errorPrefix) + Utf8ToWide(message, text.audioInitializationFailed));
 }
@@ -160,10 +160,13 @@ void GameplayPresenter::PresentCompletionEffect(const finger_drum::rhythm::Rhyth
 void GameplayPresenter::UpdateAccuracyPresentation()
 {
     const std::optional<double> accuracy = session_->AccuracyRate();
+    const double percent = accuracy.value_or(0) * 100.0;
     RequireComponent<mrg::visual2d::TextVisualComponent>(*accuracyIndicator_)
-        .SetText(accuracy.has_value() ? std::format(L"{:.6f}%", *accuracy * 100.0) : L"--.------%");
+        .SetText(accuracy.has_value()
+                     ? std::vformat(texts_.Get("Gameplay.accuracyFormat"), std::make_wformat_args(percent))
+                     : std::wstring(texts_.Get("Gameplay.emptyAccuracy")));
 #if defined(_DEBUG)
-    const auto &text = finger_drum::texts::Gameplay(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Gameplay(texts_);
     std::wstring debug(text.focusNone);
     if (session_->Gear().LaneCount() > 0)
     {

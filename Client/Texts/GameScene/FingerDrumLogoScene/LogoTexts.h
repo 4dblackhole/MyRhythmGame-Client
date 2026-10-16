@@ -12,5 +12,5 @@ namespace finger_drum::texts
         std::array<std::wstring_view, 4> menu;
     };
 
-    [[nodiscard]] const LogoTextSet &Logo(Language language) noexcept;
+    [[nodiscard]] LogoTextSet Logo(const TextCatalog &texts);
 } // namespace finger_drum::texts

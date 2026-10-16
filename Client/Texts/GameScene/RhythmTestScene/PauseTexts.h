@@ -9,5 +9,5 @@ namespace finger_drum::texts
         std::array<std::wstring_view, 4> actions;
         std::wstring_view resumeFormat, rewindFormat, retry, retire, preparing;
     };
-    const PauseTextSet &Pause(Language language) noexcept;
+    PauseTextSet Pause(const TextCatalog &texts);
 } // namespace finger_drum::texts

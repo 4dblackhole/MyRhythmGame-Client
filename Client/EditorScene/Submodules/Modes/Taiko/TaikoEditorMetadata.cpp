@@ -7,24 +7,27 @@ using namespace editor_ui;
 #include <sstream>
 
 void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &state,
-                                   finger_drum::texts::Language language)
+                                   const finger_drum::texts::TextCatalog &catalog)
 {
-    const auto &text = finger_drum::texts::Editor(language);
+    const auto &text = finger_drum::texts::Editor(catalog);
     canvas.Text({136, 105, 1000, 40}, std::wstring(text.metadataTitle), 28);
     canvas.Box({132, 173, 1728, 800}, White, 12);
-    auto metadata = [&state, &canvas,
-                     language](float y, const wchar_t *title, std::string value,
-                               std::function<void(chart::PatternDocument &, const std::string &)> apply) {
+    auto metadata =
+        [&state, &canvas, &catalog](float y, const wchar_t *title, std::string value,
+                                    std::function<void(chart::PatternDocument &, const std::string &)> apply)
+    {
         canvas.Text({156, y, 360, 40}, title, 22);
-        canvas.Button({520, y, 1295, 44}, Wide(value), [&state, language, title, value, apply] {
-            if (auto edited = EditText(title, value, finger_drum::texts::Editor(language)))
-            {
-                auto p = state.Document().Pattern();
-                apply(p, *edited);
-                state.Replace(p, state.Document().Effects());
-                state.RequestRebuild();
-            }
-        });
+        canvas.Button({520, y, 1295, 44}, Wide(value),
+                      [&state, &catalog, title, value, apply]
+                      {
+                          if (auto edited = EditText(title, value, finger_drum::texts::Editor(catalog)))
+                          {
+                              auto p = state.Document().Pattern();
+                              apply(p, *edited);
+                              state.Replace(p, state.Document().Effects());
+                              state.RequestRebuild();
+                          }
+                      });
     };
     const auto &p = state.Document().Pattern();
     metadata(225, text.ymmRelativePath.data(), Utf8(p.musicMetadataFile.wstring()),
@@ -63,17 +66,20 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
     for (const auto &[id, path] : state.Document().Effects().hitSounds)
         sounds += id + ": " + Utf8(path.wstring()) + "\n";
     canvas.Text({156, 705, 360, 40}, text.hitSoundTable.data(), 22);
-    canvas.Button({520, 705, 1295, 44}, Wide(sounds), [&state, language, sounds] {
-        const auto &labels = finger_drum::texts::Editor(language);
-        if (auto edited = EditText(labels.hitSoundTable.data(), sounds, labels))
-        {
-            const auto parsed = chart::ChartParser{}.ParseEffect("[HitSounds]\n" + *edited);
-            if (!parsed.Succeeded()) throw std::invalid_argument("Invalid YME hit sound table.");
-            auto effects = state.Document().Effects();
-            effects.hitSounds = parsed.document.hitSounds;
-            state.Replace(state.Document().Pattern(), std::move(effects));
-            state.RequestRebuild();
-        }
-    });
+    canvas.Button({520, 705, 1295, 44}, Wide(sounds),
+                  [&state, &catalog, sounds]
+                  {
+                      const auto &labels = finger_drum::texts::Editor(catalog);
+                      if (auto edited = EditText(labels.hitSoundTable.data(), sounds, labels))
+                      {
+                          const auto parsed = chart::ChartParser{}.ParseEffect("[HitSounds]\n" + *edited);
+                          if (!parsed.Succeeded())
+                              throw std::invalid_argument("Invalid YME hit sound table.");
+                          auto effects = state.Document().Effects();
+                          effects.hitSounds = parsed.document.hitSounds;
+                          state.Replace(state.Document().Pattern(), std::move(effects));
+                          state.RequestRebuild();
+                      }
+                  });
     canvas.Text({156, 805, 1640, 95}, std::wstring(text.metadataHelp), 21);
 }

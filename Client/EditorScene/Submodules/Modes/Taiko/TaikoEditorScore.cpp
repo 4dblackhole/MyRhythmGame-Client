@@ -55,7 +55,8 @@ void TaikoEditorMode::ScrollScore(IEditorContext &state, int direction)
                                                    chart::MaximumMeasureCount - 1));
 }
 
-void TaikoEditorMode::DrawChart(IEditorModeCanvas &canvas, IEditorContext &state, finger_drum::texts::Language language)
+void TaikoEditorMode::DrawChart(IEditorModeCanvas &canvas, IEditorContext &state,
+                                const finger_drum::texts::TextCatalog &catalog)
 {
     canvas.Box({112, 116, 1784, 678}, Paper);
     noteHits_.clear();
@@ -63,15 +64,16 @@ void TaikoEditorMode::DrawChart(IEditorModeCanvas &canvas, IEditorContext &state
     realtimeGrid_.clear();
     overviewGrid_.clear();
     if (state.Score().realtime)
-        DrawRealtime(canvas, state, language);
+        DrawRealtime(canvas, state, catalog);
     else
-        DrawOverview(canvas, state, language);
-    inspector_.Draw(canvas, state, language);
+        DrawOverview(canvas, state, catalog);
+    inspector_.Draw(canvas, state, catalog);
 }
 
 void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &state,
-                                   finger_drum::texts::Language language)
+                                   const finger_drum::texts::TextCatalog &catalog)
 {
+    const auto labels = finger_drum::texts::TaikoEditor(catalog);
     const auto &timeline = state.Document().Timeline();
     const int subdivisionsPerWholeNote = state.Score().division * 4;
     const auto xAt = [&](chart::MusicalPosition p)
@@ -147,7 +149,7 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
                     {headAt + 16,
                      150 + static_cast<float>((headMeasure - state.Score().firstMeasure) / MeasuresPerRow) * RowHeight,
                      std::max(0.0F, ScoreRight - headAt - 18), 22},
-                    LongNoteCaption(state.Document(), head->note, n, language), 13);
+                    LongNoteCaption(state.Document(), head->note, n, labels), 13);
             head.reset();
         }
     }
@@ -173,12 +175,14 @@ void TaikoEditorMode::DrawOverview(IEditorModeCanvas &canvas, IEditorContext &st
                          200 + static_cast<float>((t.position.measure - state.Score().firstMeasure) / MeasuresPerRow) *
                                    RowHeight,
                          140, 24},
-                        L"BPM " + std::to_wstring(static_cast<int>(t.value)), 15, Blue);
+                        std::wstring(catalog.Get("Editor.bpm")) + L" " + std::to_wstring(static_cast<int>(t.value)), 15,
+                        Blue);
 }
 
 void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &state,
-                                   finger_drum::texts::Language language)
+                                   const finger_drum::texts::TextCatalog &catalog)
 {
+    const auto labels = finger_drum::texts::TaikoEditor(catalog);
     const auto &timeline = state.Document().Timeline();
     const int subdivisionsPerWholeNote = state.Score().division * 4;
     // At Base BPM, a sixteenth note spans 85% of the normal head diameter.
@@ -276,7 +280,7 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
                     bodyHits_.push_back({body, realtimeHead->sourceOrder});
             }
             if (realtimeHead && *headX >= RealtimeLane.x && *headX <= RealtimeLane.x + RealtimeLane.width - 180)
-                canvas.Text({*headX, 522, 300, 38}, LongNoteCaption(state.Document(), *realtimeHead, n.note, language),
+                canvas.Text({*headX, 522, 300, 38}, LongNoteCaption(state.Document(), *realtimeHead, n.note, labels),
                             17, White);
             headX.reset();
         }
@@ -301,7 +305,9 @@ void TaikoEditorMode::DrawRealtime(IEditorModeCanvas &canvas, IEditorContext &st
             continue;
         const float x = xAtTime(timeline.Compile(t.position), 1.0);
         if (x >= 164 && x <= 1360)
-            canvas.Text({x, 320, 140, 28}, L"BPM " + std::to_wstring(static_cast<int>(t.value)), 18, Blue);
+            canvas.Text({x, 320, 140, 28},
+                        std::wstring(catalog.Get("Editor.bpm")) + L" " + std::to_wstring(static_cast<int>(t.value)), 18,
+                        Blue);
     }
 }
 
@@ -386,10 +392,9 @@ int TaikoEditorMode::VisualTool(const chart::PatternNote &note)
 
 std::wstring TaikoEditorMode::LongNoteCaption(const chart::IEditorDocument &document, const chart::PatternNote &head,
                                               const chart::PatternNote &tail,
-                                              finger_drum::texts::Language language) const
+                                              const finger_drum::texts::TaikoEditorTextSet &text) const
 {
     using namespace finger_drum::mode;
-    const auto &text = finger_drum::texts::TaikoEditor(language);
     const int id = VisualTool(head);
     const std::wstring name(editor_tools::Name(id, text.toolVariants));
     std::vector<chart::Diagnostic> diagnostics;

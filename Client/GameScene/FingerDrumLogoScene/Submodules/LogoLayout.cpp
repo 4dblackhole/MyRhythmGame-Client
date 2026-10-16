@@ -29,7 +29,7 @@ void LogoView::CreateLogoStrip()
 
 void LogoView::CreateMenu()
 {
-    const auto &text = finger_drum::texts::Logo(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Logo(texts_);
     auto &menu = canvas_->CreateNode(mrg::visual2d::Anchor::Center, "FingerDrum.Menu");
     menu.SetPivot({0.5F, 0.5F});
     menu.SetSize(MenuSize);
@@ -92,7 +92,7 @@ void LogoView::RefreshSkinImages()
 
 void LogoView::ApplyTexts()
 {
-    const auto &text = finger_drum::texts::Logo(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Logo(texts_);
     for (std::size_t index = 0; index < menuButtons_.size(); ++index)
     {
         auto &component =

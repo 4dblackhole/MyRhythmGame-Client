@@ -79,7 +79,7 @@ void GameplayJudgementView::CreateTimingBands()
 
 void GameplayJudgementView::CreateTimingCaptions(finger_drum::texts::TextCatalog &texts)
 {
-    const auto &text = finger_drum::texts::Gameplay(texts.CurrentLanguage());
+    const auto &text = finger_drum::texts::Gameplay(texts);
     const std::array<std::wstring_view, 3> captions{text.early, L"0", text.late};
     for (std::size_t index = 0; index < labels_.size(); ++index)
     {

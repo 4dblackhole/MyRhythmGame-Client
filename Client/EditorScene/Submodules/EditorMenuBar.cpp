@@ -44,7 +44,7 @@ void EditorMenuBar::Initialize(v::Visual2DCanvas &canvas, finger_drum::texts::Te
     save_ = &v::CreatePanel(*popup_, {1, 1, 238, 32}, "Editor.Menu.Save");
     Tint(*save_, Paper);
     saveCaption_ = &v::CreateLabel(*save_, {12, 4, 145, 24}, L"", "Editor.Menu.SaveCaption");
-    shortcut_ = &v::CreateLabel(*save_, {157, 4, 69, 24}, L"Ctrl+S", "Editor.Menu.Shortcut");
+    shortcut_ = &v::CreateLabel(*save_, {157, 4, 69, 24}, L"", "Editor.Menu.Shortcut");
     ConfigureText(*saveCaption_, texts);
     ConfigureText(*shortcut_, texts);
     Require<v::TextVisualComponent>(*shortcut_).SetHorizontalAlignment(v::TextAlignment::Trailing);
@@ -65,7 +65,8 @@ void EditorMenuBar::Refresh(const bool dirty)
 {
     if (canvas_ == nullptr || (labelsInitialized_ && dirty_ == dirty && textRevision_ == texts_->Revision()))
         return;
-    const auto &text = finger_drum::texts::Editor(texts_->CurrentLanguage());
+    const auto &text = finger_drum::texts::Editor(*texts_);
+    Require<v::TextVisualComponent>(*shortcut_).SetText(std::wstring(texts_->Get("Editor.shortcutSave")));
     Require<v::TextVisualComponent>(*file_).SetText(std::wstring(text.fileMenu));
     Require<v::TextVisualComponent>(*saveCaption_).SetText(std::wstring(text.menuSave) + (dirty ? L" *" : L""));
     ConfigureText(*file_, *texts_);

@@ -62,7 +62,7 @@ void GameplayPauseMenu::Build()
     auto &visual = *panel.GetComponent<v::SpriteVisualComponent>();
     visual.SetTint(colors::pause::Surface);
     visual.SetCornerRadius(20);
-    const auto &text = finger_drum::texts::Pause(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Pause(texts_);
     Label(panel, {24, 444, width - 48, 40}, std::wstring(text.title), 28, White);
     Label(panel, {24, 414, width - 48, 24}, std::wstring(text.practice), 15, Muted);
     for (std::size_t i = 0; i < rows_.size(); ++i)
@@ -83,7 +83,7 @@ void GameplayPauseMenu::RefreshRows()
 {
     if (!handle_)
         return;
-    const auto &text = finger_drum::texts::Pause(texts_.CurrentLanguage());
+    const auto &text = finger_drum::texts::Pause(texts_);
     const double seconds = static_cast<double>(choice_.leadIn.count()) / 1'000'000;
     const std::array<std::wstring, 4> descriptions{
         canResume_ ? std::vformat(text.resumeFormat, std::make_wformat_args(seconds)) : std::wstring(text.preparing),

@@ -78,9 +78,9 @@ namespace finger_drum::presentation
             case AudioOutputBackend::Automatic:
                 return std::wstring(text.automatic);
             case AudioOutputBackend::Wasapi:
-                return L"WASAPI";
+                return std::wstring(text.outputWasapi);
             case AudioOutputBackend::Asio:
-                return L"ASIO";
+                return std::wstring(text.outputAsio);
             default:
                 return std::wstring(text.noSound);
             }
