@@ -71,6 +71,38 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 모드 공통 플레이 상태머신·음악 재개 동기화
+
+- IPlaySessionController의 Loading/Gameplay/Pause/Ending 계약과 공통 Controller/Feedback를
+  Client/GameFlow에 두었습니다. 상태 전환·입력·타이머 구현은 Taiko/Scene 헤더를 참조하지 않습니다.
+  기존 Taiko 기본 사운드는 오디오 등록 파일의 지역 함수, 디버그 채보 생성은 세션 factory가 맡습니다.
+  Scene은 인터페이스로 조립하고 표시·메뉴·deferred Result 전환만 연결합니다.
+- Resume/Rewind는 명령 접수 후 Pause에서 시간을 고정하고 paused 음악 Voice의 비동기 seek를 기다립니다.
+  준비 완료 후 새 snapshot의 QPC/DSP에 동일한 20ms 준비 시간을 예약합니다. 준비 중 입력은 판정하지
+  않고 예약 시작 이후 입력은 전환 프레임에서도 보존합니다. 기존 히트사운드 Voice는 정지하며 복구하지 않습니다.
+  Retry는 자산을 재사용하며 새 시도를 초기화하고, Ending은 모드별 결과를 한 번 확정·이동합니다.
+- Debug/Release x64 전체 solution Build 성공. 영향 프로젝트 MRG.Client는 두 구성 모두 실제
+  include/define/PCH/C++20/x64 설정의 MSVC 14.44 Code Analysis Rebuild와 최종 변경분 분석 Build 성공.
+  신규 경고·분석 진단·파싱 오류 0. 기존 EditorAnalysisController.cpp:51 C26115는 두 구성에 남았습니다.
+  Debug 전체 solution 분석에서 범위 밖 EditorAudioAnalysis.cpp:134의 기존 C6262도 관찰했습니다.
+  이 작업에서 이동·수정한 디버그 입력의 상수 조건은 if constexpr로 명시해 기존 Release C6236을 제거했습니다.
+- 두 구성 로직/기본곡 카탈로그 각각 63개, 실패 0. smoke-test/lobby/gameplay/editor 총 8개 exit 0.
+  GameplayPause, ResultPresentation, GameplayJudgement, AllNotesGameplay 회귀가 두 구성 모두 통과했습니다.
+  마지막 include/참조 방향 정리 후 Client 분석 Build, Pause/Result 회귀와 네 smoke도 두 구성 재확인했습니다.
+- Pause 회귀는 40ms 탐색 지연, 탐색 전 unpause 거부, 대기 중 시각 고정, 중복 Resume 거부,
+  QPC/DSP 예약 여유 일치, 실제 재생 중인 히트사운드 정리와 음악만 재생, EOF 이후 무음 진행,
+  음악 준비 실패/재시도, Retry 자원 재사용, BPM/마디 길이 변경을 포함한 Rewind/판정 복원을 검사합니다.
+  테스트 전용 비-Taiko IPlayGameMode도 같은 컨트롤러 인터페이스로 네 상태와 별도 IPlayResult 이동을 검사합니다.
+  실제 FMOD NoSound/MP3에서 양수·0·끝부분의 반복 seek와 종료를 확인했습니다.
+  메뉴 Resume/Retry/Retire의 Canvas 클릭, 키 포커스, 준비 제한, 언어/resize와 소유권도 자동 검사했습니다.
+- 변경 코드와 직접 호출부의 상태 진입/중복 명령, 단일 타이머와 Raw Input 경계, 오디오 준비/예약 실패,
+  Voice/Clip/결과 소유권, 정수 us/샘플 변환, 모드/Scene 참조 방향과 함수 책임을 검토했습니다.
+  CheckArchitecture(11프로젝트), Client/엔진 git diff --check 통과. 엔진 소스/포인터 변경은 없습니다.
+  사용자 LaneKeyBeam.cpp, Debug/Release Option.ini, Client/Assets의 외부 en/ko.ini 해시 일치로 보존을 확인했습니다.
+- **수동 확인:** 물리 키·마우스 조작, 실제 청음, 화면 육안 확인은 미실시입니다.
+  위 결과는 자동 입력 의도/Canvas·실제 D3D12 실행과 FMOD NoSound 검증이며 수동 확인과 구분합니다.
+  로그는 ignored build/pause-state-2026-10-17에 있습니다. 최신 실행 파일은 bin/x64/Release/MyRhythmGame.exe입니다.
+
 ## 2026-10-16 새 난이도·offset 도구·JudgeLevel·Release 기본 배포본
 
 - 에디터 곡 카드의 +, 메타데이터 입력/검증, 새 난이도 폴더의 빈 YMP/YME 생성과 기존 Editor 전환을 연결했습니다.

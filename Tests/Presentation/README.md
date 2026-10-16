@@ -68,12 +68,16 @@ After a solution build, run in an x64 developer PowerShell with `FMOD_ROOT` set:
 ```
 
 The test links production pause/menu/controller/audio objects and uses MSVC `/analyze`.
-It verifies keyboard focus, bounded adjustments, pointer Retire, language changes,
+It verifies keyboard focus, bounded adjustments, pointer Resume/Retry/Retire, language changes,
 portrait/wide resizing, preparation gating and owned Canvas cleanup. Hidden D3D12
 execution checks clock freezing, Resume preserving grades, four-measure Rewind with
 meter/BPM changes, score restoration, Retry eligibility, Retire MISS counts and control logs.
 A clip backend probe verifies source seek positions and DSP scheduling before chart zero;
-a separate real FMOD NoSound MP3 near-end seek checks that playback finishes at the actual source end.
+a 40ms async-seek probe rejects early unpause and verifies frozen time, one-shot commands,
+QPC/DSP lead alignment, no hit-sound replay, failure handling and Retry resource reuse.
+A test-only second mode uses the same IPlaySessionController lifecycle and polymorphic result;
+Ending transfers its result exactly once. A separate real FMOD NoSound MP3 test repeats
+source-zero/positive/near-end seeks and checks the actual source end.
 PlayPauseTests also covers rewind inside Buzz, repeated cancellation, preserved input traces,
 and forced zero-score MISS for all seven long-note types. These are automated intents and
 rendering/audio checks, not physical ESC/arrow-key testing, audible listening or manual screen review.

@@ -49,11 +49,17 @@ namespace finger_drum::audio
         void ApplyAutomation(
             std::span<const mode::AutomationValue> values);
         void PrepareAutomation(std::span<const chart::CompiledEffectCommand> commands);
-        [[nodiscard]] bool SetVoicesPaused(
-            bool paused,
-            std::string& errorMessage);
         void StopAllVoices() noexcept;
-        bool StartMusicAt(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer);
+        enum class MusicPreparation
+        {
+            Loading,
+            Ready,
+            Failed
+        };
+        // Stop session voices before choosing another position. Preparation
+        // creates one paused music voice and polls the asynchronous source seek.
+        MusicPreparation PrepareMusicAt(rhythm::RhythmTime position);
+        bool StartPreparedMusic(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer);
         void ResetAutomation();
         void Update();
 
@@ -87,6 +93,7 @@ namespace finger_drum::audio
             std::less<>> effects_;
         // Only IDs for this play session. Voice ownership belongs to the Client.
         std::vector<mrg::audio::AudioPlaybackId> voices_;
+        mrg::audio::AudioPlaybackId musicVoice_{mrg::audio::InvalidAudioPlaybackId};
         // Aliased SoundIds share this entry by their common AudioClip address.
         // Sample playback therefore has at most one active native channel per
         // loaded sound resource.

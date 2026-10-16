@@ -1,6 +1,6 @@
 # 플레이 오디오
 
-파일 등록/기본 cue: `RhythmTestScene/Submodules/GameplayAudio.cpp`.
+파일 등록/기본 cue: `GameFlow/Submodules/GameplayAudio.cpp`.
 규칙별 정책: `FingerDrum.Modes/Taiko/Submodules/TaikoSoundPolicy.cpp`, 공통 ID: `TaikoSoundIds.h`.
 실제 재생: `Client/Audio/GameplayAudioRouter.*`. 엔진 API 변경 때만 엔진 Audio 문서를 읽습니다.
 
@@ -23,12 +23,17 @@ Controller는 2ms 주기로 Ready/Failed를 확인하며, 준비가 끝난 시�
 풍선 완료 cue는 선택한 스킨의 `HitSounds/TaikoMode/pop.wav`를 사용하며 파일이
 없으면 내장 기본 스킨의 같은 파일로 대체합니다.
 
-일반 플레이의 음악은 `StartMusicAt`으로 차트 0ms의 소스 시작을 미리 예약하며,
+일반 플레이의 음악은 `PrepareMusicAt`으로 일시정지 Voice를 준비한 뒤
+Ready/Playing을 확인하고 `StartPreparedMusic`으로 차트 0ms의 소스 시작을 예약하며,
 `RhythmTimer::ToDspClock`과 FMOD `setDelay`로 mixer sample clock에 연결합니다.
 Pattern Offset은 노트 시각에 더하고 음악 시작 시각은 옮기지 않습니다.
 플레이 타이머는 항상 최소 −2000ms에서 시작하며 첫 박자와 노트 이동 거리에 따라
 더 이른 시각에서 시작할 수 있습니다. [Pause](Pause.md)의 Resume/Rewind와 일반 Space 재개는
-세션 음성을 정지하고 새 QPC/DSP 기준점으로 음악을 재예약합니다. 양수 시각은 같은 us의
+세션 음성을 정지하고 새 QPC/DSP 기준점으로 배경음악만 재예약합니다.
+히트사운드·틱·입력 피드백의 이전 Voice는 재생하지 않습니다. 현재 배경음악은 Music.Track 하나입니다.
+비동기 탐색 중에는 게임 시각을 고정하며, 완료 후 새 clock snapshot으로 두 시계에 동일한
+20ms 준비 여유를 예약합니다. 예약 시점 전 입력은 판정하지 않고 그 이후 입력부터 처리합니다.
+음악 준비/예약 실패는 Pause에서 오류를 표시하며 자동으로 게임 시간만 진행시키지 않습니다. 양수 시각은 같은 us의
 음원 소스 위치로 탐색하고 음수 시각은 소스 0을 새 차트 0ms의 DSP 시각까지 기다리게 합니다.
 정확한 MP3 탐색표는 비동기 로딩 중에 준비합니다. 음악 길이 이후의 재개는 음악 없이 진행합니다.
 이동/Retry 시 히트사운드 bus 볼륨과 DSP bypass를 기본 상태로 돌린 뒤 이동 위치의 자동화를

@@ -23,7 +23,7 @@ MyRhythmGame.exe --rhythm-debug
 - `D`, `K`: Kat, `F`, `J`: Don
 - `Escape`: [일시정지 메뉴](Pause.md), Retire로 결과 화면 이동
 
-Debug 빌드의 `Client/GameScene/RhythmTestScene/Submodules/GameplaySupport.h`에 있는 `ReferenceTimeDebug`를 켜면 위 조작을
+Debug 빌드의 `Client/GameFlow/GameplaySessionController.h`에 있는 `ReferenceTimeDebug`를 켜면 위 조작을
 사용합니다. 화면 좌측 상단 DEBUG 텍스트는 노트 객체가 반환하는 ID·상태·시작·
 종료·진행도와 정확도 상세를 표시합니다. 뒤로 이동하면 이미
 소비한 판정 상태와 점수를 초기화한 뒤 해당 시각까지 다시 갱신합니다.

@@ -23,12 +23,34 @@ Rewind는 현재 BPM으로 시간을 빼지 않고 컴파일된 원본 마디 �
 기존 Space 정지/재개와 R 초기화는 유지하며 메뉴를 열지 않는 Space 정지는 아래 메뉴 사용 플래그를
 설정하지 않습니다. 디버그 시간 조작은 [Debugging](Debugging.md)을 참고합니다.
 
+## 모든 모드의 실행 상태
+
+`Client/GameFlow/IPlaySessionController.h`는 Loading / Gameplay / Pause / Ending 네 상태와
+조회·일시정지·재개·종료·결과 이동 계약입니다. Scene은 이 인터페이스를 소유합니다.
+공통 `GameplaySessionController`와 `GameFlow/Submodules/GameplayState`가 전환을 실행하며,
+Taiko의 노트 규칙이나 결과 형식에 상태 전환을 구현하지 않습니다. `IPlayGameMode`는
+채보→PlaySession 생성, `IPlayResult`는 모드별 결과를 맡고 실행 상태 계약과 분리합니다.
+새 모드는 같은 컨트롤러에 자신의 세션을 공급하고 화면·기본 사운드 연결만 확장합니다.
+
+| 상태 | 반복 작업 / 전환 |
+| --- | --- |
+| Loading | Scene의 PNG 준비 후 오디오 Clip과 음악 seek 완료를 확인. 준비 후 Gameplay. Retry도 이 경로를 사용하되 로드한 자산은 재사용 |
+| Gameplay | QPC 타이머·timestamp 입력·노트·YME 갱신. ESC→Pause, 전체 처리 후 3초→Ending |
+| Pause | 게임 시각 고정, 메뉴 명령 접수, 필요 범위의 판정/점수 복원. 음악 탐색·시작 예약까지 완료한 뒤 Gameplay |
+| Ending | 입력/판정·오디오 중단, 모드 결과를 한 번 확정. Result에 소유권을 이동한 뒤 Scene Shutdown에서 자원 정리 |
+
+Resume/Rewind 버튼은 명령을 한 번 접수하면 메뉴를 닫습니다. 음악 준비 중에도 상태는
+Pause이고 시각·노트 판정은 진행하지 않습니다. 중복 Resume은 이동량을 다시 빼지 않습니다.
+준비 실패는 멈춘 시각을 유지하고 오류와 메뉴를 표시합니다. 준비 중 ESC도 메뉴로 돌아갑니다.
+메뉴가 표시되면 해당 시도의 practice/HP 제한과 Pause 마커가 적용됩니다.
+최종 결과는 Ending 진입 시 한 번만 생성하며 `TakeResult`는 이후 한 번만 소유권을 전달합니다.
+
 ## 책임과 복원 방식
 
 - RhythmTestScene은 메뉴·Controller·Presenter를 조립하고 결과 전환을 요청합니다.
 - GameplayPauseMenu는 별도 앞쪽 Canvas의 표시·포커스·값 조절을 소유하고 선택 값을 반환합니다.
   한국어/영어 문구는 Texts/GameScene/RhythmTestScene/PauseTexts가 소유합니다.
-- GameplaySessionController의 GameplayPause 구현은 타이머 이동·오디오 재예약·세션 명령을 담당합니다.
+- 공통 GameFlow/GameplaySessionController의 GameplayPause 구현은 타이머 이동·오디오 재예약·세션 명령을 담당합니다.
 - PlaySession의 PlaySessionSeeking 구현은 판정 상태 복원과 강제 종료를 담당합니다.
   입력·상태 변화가 있는 Update·held 상태 변화만 처리 이력에 남기며 매 프레임 로그를 쌓지 않습니다.
   Rewind 시 대상 이전 처리만 원래 실행 순서대로 규칙에 다시 전달합니다. 이전 입력 로그와 음성 재생을

@@ -167,38 +167,68 @@ namespace finger_drum::audio
     {
         Route(cues, nullptr);
     }
-    bool GameplayAudioRouter::StartMusicAt(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer)
+    GameplayAudioRouter::MusicPreparation GameplayAudioRouter::PrepareMusicAt(rhythm::RhythmTime position)
     {
         const auto found = clips_.find("Music.Track");
         if (found == clips_.end())
         {
             lastError_ = "No music clip is registered.";
-            return false;
+            return MusicPreparation::Failed;
         }
         std::string error;
+        const auto state = found->second.clip->LoadState(error);
+        if (state == mrg::audio::AudioClipLoadState::Loading)
+            return MusicPreparation::Loading;
+        if (state == mrg::audio::AudioClipLoadState::Failed)
+        {
+            lastError_ = std::move(error);
+            return MusicPreparation::Failed;
+        }
+        if (musicVoice_ != mrg::audio::InvalidAudioPlaybackId)
+            return MusicPreparation::Ready;
         std::uint64_t duration{};
         if (!found->second.clip->GetDurationMicroseconds(duration, error))
         {
             lastError_ = std::move(error);
-            return false;
+            return MusicPreparation::Failed;
         }
         const auto sourcePosition = static_cast<std::uint64_t>(std::max(position.count(), rhythm::RhythmTime::rep{}));
         if (sourcePosition >= duration)
-            return true; // The chart may extend beyond the music file.
+            return MusicPreparation::Ready; // The chart may extend beyond the music file.
         mrg::audio::AudioPlaybackSettings settings;
         settings.startPositionMicroseconds = sourcePosition;
-        // Before zero the song stays at its start until the re-anchored DSP
-        // clock reaches chart 0. A positive seek starts at that source sample.
-        settings.startDspClock = timer.ToDspClock(std::max(position, rhythm::RhythmTime{}));
+        settings.startPaused = true;
         const auto bus = buses_.find("Music");
-        const auto voice =
-            playback_.Play(found->second.clip, settings, bus == buses_.end() ? nullptr : bus->second, error);
-        if (voice == mrg::audio::InvalidAudioPlaybackId)
+        musicVoice_ = playback_.Play(found->second.clip, settings, bus == buses_.end() ? nullptr : bus->second, error);
+        if (musicVoice_ == mrg::audio::InvalidAudioPlaybackId)
+        {
+            lastError_ = std::move(error);
+            return MusicPreparation::Failed;
+        }
+        voices_.push_back(musicVoice_);
+        // A nonblocking source seek can become Loading after Play. Never
+        // unpause it until a subsequent poll observes Ready/Playing.
+        return MusicPreparation::Loading;
+    }
+
+    bool GameplayAudioRouter::StartPreparedMusic(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer)
+    {
+        if (musicVoice_ == mrg::audio::InvalidAudioPlaybackId)
+            return true; // No source audio remains beyond the song's end.
+        auto *voice = playback_.FindVoice(musicVoice_);
+        std::string error;
+        if (!voice)
+        {
+            lastError_ = "The prepared music voice is no longer available.";
+            return false;
+        }
+        if (!voice->SetDelay(timer.ToDspClock(std::max(position, rhythm::RhythmTime{})), 0, error) ||
+            !voice->SetPaused(false, error))
         {
             lastError_ = std::move(error);
             return false;
         }
-        voices_.push_back(voice);
+        lastError_.clear();
         return true;
     }
     void GameplayAudioRouter::ResetAutomation()
@@ -346,25 +376,9 @@ namespace finger_drum::audio
             }
         }
         voices_.clear();
+        musicVoice_ = mrg::audio::InvalidAudioPlaybackId;
         sampleVoices_.clear();
         appliedValues_.clear();
-    }
-
-    bool GameplayAudioRouter::SetVoicesPaused(
-        const bool paused,
-        std::string& errorMessage)
-    {
-        for (const mrg::audio::AudioPlaybackId id : voices_)
-        {
-            mrg::audio::AudioVoice* const voice = playback_.FindVoice(id);
-            if (voice != nullptr && !voice->SetPaused(paused, errorMessage))
-            {
-                lastError_ = errorMessage;
-                return false;
-            }
-        }
-        errorMessage.clear();
-        return true;
     }
 
     void GameplayAudioRouter::Update()

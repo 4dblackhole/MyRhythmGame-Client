@@ -1,7 +1,7 @@
 #pragma once
 #include "MRG_Core.h"
 #include "App/AssetPaths.h"
-#include "Taiko/TaikoMode.h"
+#include "Mode/Submodules/PlaySessionTypes.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -11,9 +11,6 @@
 
 namespace gameplay
 {
-    using finger_drum::chart::MusicalPosition;
-    using finger_drum::chart::PatternNote;
-    using finger_drum::chart::Rational;
     using finger_drum::rhythm::NoteState;
 
     constexpr mrg::visual2d::Color DonRed{0.95F, 0.25F, 0.29F, 1.0F};
@@ -49,13 +46,6 @@ namespace gameplay
         {1.0F, 0.06F, 0.12F, 1.0F},
         {0.02F, 0.52F, 1.0F, 1.0F},
     }};
-#if defined(_DEBUG)
-    // Match the former RPG project's single compile-time switch. Set this to
-    // false when a Debug build should use only the real QPC/DSP timeline.
-    constexpr bool ReferenceTimeDebug = true;
-#else
-    constexpr bool ReferenceTimeDebug = false;
-#endif
     constexpr float CanvasReferenceWidth = 1280.0F;
     constexpr float CanvasReferenceHeight = 720.0F;
     constexpr float InGameAssetScale = 2.0F / 3.0F;
@@ -109,12 +99,6 @@ namespace gameplay
         return mrg_client::asset_paths::skin::InGame(file);
     }
 
-    [[nodiscard]] inline std::filesystem::path TaikoHitSoundAssetPath(
-        const std::filesystem::path &file)
-    {
-        return mrg_client::asset_paths::skin::TaikoHitSound(file);
-    }
-
     [[nodiscard]] inline std::wstring Utf8ToWide(const std::string_view value, const std::wstring_view invalidText)
     {
         if (value.empty())
@@ -131,22 +115,6 @@ namespace gameplay
         MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value.data(),
                             static_cast<int>(value.size()), result.data(), length);
         return result;
-    }
-
-    inline void AddPatternNote(finger_drum::chart::PatternDocument &pattern,
-                               const std::int64_t measure, const std::int64_t numerator,
-                               const std::int64_t denominator,
-                               const finger_drum::mode::TaikoNoteType type,
-                               const finger_drum::mode::TaikoPatternAction action,
-                               std::vector<std::string> extraData = {})
-    {
-        PatternNote note;
-        note.position = MusicalPosition{measure, Rational{numerator, denominator}};
-        note.keyType = static_cast<int>(type);
-        note.actionType = static_cast<int>(action);
-        note.extraData = std::move(extraData);
-        note.sourceOrder = pattern.notes.size();
-        pattern.notes.push_back(std::move(note));
     }
 
     [[nodiscard]] inline bool IsBigVisual(

@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+플레이 상태머신(2026-10-17): [공통 상태·재개 계약](Gameplay/Pause.md#모든-모드의-실행-상태).
+IPlaySessionController와 공통 Controller/Feedback는 Client/GameFlow, 실행 구현은 그 Submodules로 이동했습니다.
+Scene은 인터페이스로 조립하며 Loading/Gameplay/Pause/Ending을 모든 모드에서 공유합니다.
+음악은 paused Voice 탐색 완료 후 QPC/DSP에 같은 20ms 여유를 예약합니다. 재개 대기는 Pause이며
+히트사운드를 되살리지 않습니다. Retry는 자산을 재사용하고 Ending은 모드별 결과를 한 번만 이동합니다.
+
 새 난이도·offset 도구·JudgeLevel(2026-10-16): [EditorSongSelect](EditorSongSelect.md), [ChartEditor](ChartEditor.md).
 에디터 곡 카드 + → 메타데이터 입력 → 새 YMP/YME 검증/생성 → 기존 진입 snapshot을 사용합니다.
 NewDifficultyDialog는 입력/오류, EditorPatternCreation은 새 폴더·파일 생성/정리를 소유합니다.

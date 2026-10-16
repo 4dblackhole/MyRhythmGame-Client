@@ -192,7 +192,8 @@ Reset은 처리 개수를 0으로 되돌립니다.
 `GameplayProgressView`에 위임합니다.
 `GameplayLayout`, `GameplayNoteVisuals`,
 `GameplayKeys`, `GameplayFeedbackVisuals`에 표시별 구현을 둡니다. `GameplaySessionController`는
-시간·입력·오디오를 소유하고 `GameplayFeedback`으로 표시할 이벤트만 전달합니다.
+`Client/GameFlow`에서 시간·입력·오디오와 모드 공통 상태머신을 소유하고
+`GameplayFeedback`으로 표시할 이벤트만 전달합니다.
 UI 수정 시 해당 표시 파일과 `GameplaySupport.h`의 관련 상수만 읽으면 됩니다.
 
 ## 표시 객체의 생성과 재사용

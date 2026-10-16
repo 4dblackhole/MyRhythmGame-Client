@@ -1,43 +1,44 @@
-#include "GameplaySessionController.h"
-#include "GameplaySupport.h"
-using namespace gameplay;
+#include "GameFlow/GameplaySessionController.h"
+#include <algorithm>
+#include <cmath>
 
-void GameplaySessionController::StartTimeline(const mrg::audio::AudioClockSnapshot &clock)
-{
-    time_ = initialTime_;
-    timer_.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, initialTime_);
-    timer_.AnchorDspClock(initialTime_, clock.dspClock, clock.sampleRate);
-    if (debugMode_ && ReferenceTimeDebug)
-    {
-        timer_.Pause(clock.performanceCounterTicks);
-    }
-}
-
-void GameplaySessionController::ResetTimeline(const mrg::audio::AudioClockSnapshot &clock)
+void GameplaySessionController::ResetTimeline()
 {
     feedback_.push_back({true});
     session_->Reset();
     audioRouter_.StopAllVoices();
     audioRouter_.ResetAutomation();
-    retired_ = false;
-    completedElapsedSeconds_ = 0.0;
-    StartTimeline(clock);
-    if (!debugMode_)
-    {
-        ScheduleMusic();
-    }
+    timer_.Stop();
+    time_ = initialTime_;
+    state_ = PlayState::Loading;
+    result_.reset();
+    playbackStart_.reset();
+    playbackRequested_ = true;
+    pauseMenuOpen_ = false;
+    completedElapsedSeconds_ = 0;
+    nextAudioPreparationPoll_ = 0;
 }
 
 void GameplaySessionController::ProcessControlKeys(const mrg::UpdateContext &context,
                                                    const mrg::audio::AudioClockSnapshot &clock)
 {
     const auto &input = context.input;
-    if (input.WasKeyPressed(static_cast<std::uint16_t>('R')))
+    const auto pressed = [&](std::uint16_t key)
     {
-        ResetTimeline(clock);
+        return std::ranges::any_of(
+            input.Events(),
+            [&](const auto &event)
+            {
+                return event.type == mrg::platform::InputEventType::KeyPressed && event.code == key &&
+                       (state_ != PlayState::Gameplay || event.performanceCounterTicks >= gameplayStartTicks_);
+            });
+    };
+    if (pressed('R'))
+    {
+        ResetTimeline();
         return;
     }
-    if (input.WasKeyPressed(VK_SPACE))
+    if (pressed(VK_SPACE))
     {
         using State = finger_drum::rhythm::RhythmTimer::State;
         if (timer_.CurrentState() == State::Running)
@@ -46,15 +47,13 @@ void GameplaySessionController::ProcessControlKeys(const mrg::UpdateContext &con
         }
         else if (timer_.CurrentState() == State::Paused)
         {
-            if (debugMode_)
+            if (debugMode_ && state_ == PlayState::Gameplay)
             {
                 timer_.Resume(clock.performanceCounterTicks);
-                timer_.AnchorDspClock(timer_.Now(clock.performanceCounterTicks), clock.dspClock, clock.sampleRate);
-                std::string error;
-                static_cast<void>(audioRouter_.SetVoicesPaused(false, error));
+                timer_.AnchorDspClock(time_, clock.dspClock, clock.sampleRate);
+                return;
             }
-            else
-                static_cast<void>(ContinueAt(context, time_, finger_drum::mode::PlayControlType::Resume));
+            static_cast<void>(ContinueAt(context, time_, finger_drum::mode::PlayControlType::Resume));
         }
     }
 }
@@ -63,32 +62,30 @@ void GameplaySessionController::ProcessDebugTimeline(const mrg::platform::InputS
                                                      const mrg::audio::AudioClockSnapshot &clock,
                                                      const double deltaSeconds)
 {
-    if (!debugMode_ || !ReferenceTimeDebug)
-    {
+    if constexpr (!ReferenceTimeDebug)
         return;
-    }
+    if (!debugMode_)
+        return;
 
     if (input.WasKeyPressed(VK_OEM_MINUS))
     {
-        debugSpeedMillisecondsPerSecond_ =
-            std::max(debugSpeedMillisecondsPerSecond_ - 200.0, 200.0);
+        debugSpeedMillisecondsPerSecond_ = std::max(debugSpeedMillisecondsPerSecond_ - 200.0, 200.0);
     }
     if (input.WasKeyPressed(VK_OEM_PLUS))
     {
-        debugSpeedMillisecondsPerSecond_ =
-            std::min(debugSpeedMillisecondsPerSecond_ + 200.0, 4000.0);
+        debugSpeedMillisecondsPerSecond_ = std::min(debugSpeedMillisecondsPerSecond_ + 200.0, 4000.0);
     }
 
     std::int64_t deltaMicroseconds{};
     if (input.IsKeyDown(static_cast<std::uint16_t>('1')))
     {
-        deltaMicroseconds -= static_cast<std::int64_t>(
-            std::llround(debugSpeedMillisecondsPerSecond_ * deltaSeconds * 1000.0));
+        deltaMicroseconds -=
+            static_cast<std::int64_t>(std::llround(debugSpeedMillisecondsPerSecond_ * deltaSeconds * 1000.0));
     }
     if (input.IsKeyDown(static_cast<std::uint16_t>('2')))
     {
-        deltaMicroseconds += static_cast<std::int64_t>(
-            std::llround(debugSpeedMillisecondsPerSecond_ * deltaSeconds * 1000.0));
+        deltaMicroseconds +=
+            static_cast<std::int64_t>(std::llround(debugSpeedMillisecondsPerSecond_ * deltaSeconds * 1000.0));
     }
     if (input.WasKeyPressed(static_cast<std::uint16_t>('3')))
     {
@@ -108,8 +105,7 @@ void GameplaySessionController::ProcessDebugTimeline(const mrg::platform::InputS
     if (timer_.CurrentState() == TimerState::Running)
     {
         timer_.Pause(clock.performanceCounterTicks);
-        std::string ignoredError;
-        static_cast<void>(audioRouter_.SetVoicesPaused(true, ignoredError));
+        audioRouter_.StopAllVoices();
     }
     const auto after = before + finger_drum::rhythm::RhythmDuration{deltaMicroseconds};
     if (after < before)
@@ -123,10 +119,12 @@ void GameplaySessionController::ProcessDebugTimeline(const mrg::platform::InputS
 }
 
 void GameplaySessionController::ProcessRhythmInput(const mrg::platform::InputState &input,
-                                                  std::optional<std::int64_t> exitTicks)
+                                                   std::optional<std::int64_t> exitTicks)
 {
     for (const mrg::platform::InputEvent &event : input.Events())
     {
+        if (event.performanceCounterTicks < gameplayStartTicks_)
+            continue;
         if ((exitTicks && event.performanceCounterTicks > *exitTicks) ||
             (event.type == mrg::platform::InputEventType::KeyPressed && event.code == VK_ESCAPE))
             break;
@@ -141,8 +139,7 @@ void GameplaySessionController::ProcessRhythmInput(const mrg::platform::InputSta
                               ? finger_drum::rhythm::InputEdge::Pressed
                               : finger_drum::rhythm::InputEdge::Released;
         const auto eventTime = timer_.Now(event.performanceCounterTicks);
-        finger_drum::rhythm::NoteProcessResult result =
-            session_->ProcessInput(event.code, edge, eventTime);
+        finger_drum::rhythm::NoteProcessResult result = session_->ProcessInput(event.code, edge, eventTime);
         ConsumeResult(std::move(result), edge == finger_drum::rhythm::InputEdge::Pressed);
     }
 }

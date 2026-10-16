@@ -5,7 +5,7 @@
 #include "Mode/Results/IPlayResult.h"
 #include <memory>
 
-class GameplaySessionController;
+class IPlaySessionController;
 class GameplayPresenter;
 class GameplayPauseMenu;
 class RhythmTestScene final : public mrg::scene::GameScene
@@ -33,7 +33,7 @@ class RhythmTestScene final : public mrg::scene::GameScene
     void UpdatePauseMenu(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes);
     bool PreparePresentation();
     std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult_;
-    std::unique_ptr<GameplaySessionController> controller_;
+    std::unique_ptr<IPlaySessionController> controller_;
     std::unique_ptr<GameplayPresenter> view_;
     std::unique_ptr<GameplayPauseMenu> pauseMenu_;
     std::optional<mrg::EngineServices> services_;

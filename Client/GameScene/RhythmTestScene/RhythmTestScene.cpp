@@ -1,8 +1,8 @@
 #include "RhythmTestScene.h"
 #include "GameFlow/FingerDrumSceneIds.h"
+#include "GameFlow/GameplaySessionController.h"
 #include "Submodules/GameplayPauseMenu.h"
 #include "Submodules/GameplayPresenter.h"
-#include "Submodules/GameplaySessionController.h"
 #include <stdexcept>
 
 RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStore> request,
@@ -59,11 +59,11 @@ void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::Scen
     }
     controller_->Update(context);
     UpdatePauseMenu(context, scenes);
-    if (!controller_->PauseMenuOpen())
+    if (controller_->CurrentState() == PlayState::Gameplay)
         view_->AdvanceEffects(context.deltaSeconds);
     for (const auto &feedback : controller_->Feedback())
         view_->ApplyFeedback(feedback);
-    if (!controller_->PauseMenuOpen())
+    if (controller_->CurrentState() == PlayState::Gameplay)
         view_->UpdateInputPresentation(context.input, context.deltaSeconds);
     view_->PresentErrorMessage(controller_->ErrorMessage());
     if (controller_->ShouldShowResult())
@@ -76,17 +76,17 @@ void RhythmTestScene::UpdatePauseMenu(const mrg::UpdateContext &context, mrg::sc
         pauseMenu_->Hide();
         return;
     }
-    pauseMenu_->Show(services_->windowWidth, services_->windowHeight, controller_->TimelineReady(),
+    pauseMenu_->Show(services_->windowWidth, services_->windowHeight, controller_->CanContinue(),
                      controller_->Session().Timeline().MeasureSpans().size());
     const auto choice = pauseMenu_->Update(context.input);
     switch (choice.action)
     {
     case GameplayPauseAction::Resume:
-        if (controller_->ResumeFromPause(context, choice.leadIn))
+        if (controller_->ResumeFromPause(context, choice.leadIn) && !controller_->PauseMenuOpen())
             pauseMenu_->Hide();
         break;
     case GameplayPauseAction::Rewind:
-        if (controller_->RewindFromPause(context, choice.measures))
+        if (controller_->RewindFromPause(context, choice.measures) && !controller_->PauseMenuOpen())
             pauseMenu_->Hide();
         break;
     case GameplayPauseAction::Retry:
