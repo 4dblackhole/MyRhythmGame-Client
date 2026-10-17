@@ -64,7 +64,7 @@ MRG.Core 등 정적 라이브러리는 이미 EXE에 링크되므로 .lib/.pdb/�
 ```text
 demo/
   MyRhythmGame.exe
-    OsuTaikoConverter.exe       에디터의 Convert .osu에 필요
+  OsuTaikoConverter.exe       에디터의 Convert .osu에 필요
   fmod.dll
   Option.ini                 처음 실행 시 기본값으로 자동 생성 가능
   README.txt
