@@ -21,9 +21,13 @@ void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
     pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
     pointer.wheelDelta = input.MouseWheelDelta();
     pointer.timestampTicks = LatestPointerTimestamp(input);
-    inputRouter_.Process(*canvas_, pointer);
+    if (additionMenu_ && additionMenu_->IsVisible() &&
+        (!canvasPointer_ || !additionMenu_->BoundsInCanvas().Contains(*canvasPointer_)))
+        inputRouter_.Reset(*canvas_);
+    else
+        inputRouter_.Process(*canvas_, pointer);
 
-    if (!options_.IsVisible() && canvasPointer_.has_value() && songViewport_ != nullptr &&
+    if (!options_.IsVisible() && !(additionMenu_ && additionMenu_->IsVisible()) && canvasPointer_.has_value() && songViewport_ != nullptr &&
         songViewport_->BoundsInCanvas().Contains(*canvasPointer_) &&
         std::abs(input.MouseWheelDelta()) > 0.0F)
     {
@@ -84,10 +88,11 @@ bool MusicSelectView::ProcessActions()
             if (IsEditorSongSelect() && songCards_[position].createDifficultyId != 0 &&
                 action.source == songCards_[position].createDifficultyId)
             {
+                const auto anchor = songCards_[position].button->BoundsInCanvas();
                 searchFocused_ = false;
                 SelectVisibleSong(songCards_[position].visiblePosition);
                 RefreshSearchPresentation();
-                command_ = SongSelectCommand::CreateDifficulty;
+                OpenAdditionMenu(anchor);
                 return true;
             }
             if (songCards_[position].button != nullptr &&

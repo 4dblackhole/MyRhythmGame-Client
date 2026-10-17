@@ -14,7 +14,7 @@
 | BPM·마디·유리수 위치·음수 delay 무효 구간 | [타이밍 문법](Formats/Timing.md) | `FingerDrum.Chart/Timing`, `Utility` |
 | 편집 트리·노트 선택/속성·모드 확장·메뉴/저장·오디오 탭·offset/메트로놈·재생/시간축 줌 | [ChartEditor](ChartEditor.md) | ChartEditor의 원본 트리/조회 snapshot; EditorPlayback / EditorMenuBar / EditorWorkspace / Modes/Taiko; `FingerDrum.Editor` |
 | 곡 목록·포커스·난이도 클릭 진입·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
-| 에디터용 곡 선택·새 난이도 생성 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성 |
+| 에디터용 곡 선택·+ 메뉴·새 난이도·osu 가져오기 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성; EditorOsuImport / 변환기 ConversionFiles |
 | 플레이 화면·노트/마디선 스크롤·키빔·판정 인디케이터/문구·상단 진행바 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
 | 공통 플레이 상태머신·ESC·Penpot 일시정지 UI·Resume/Rewind/Retry/Retire·향후 HP/리플레이 계약 | [플레이 일시정지](Gameplay/Pause.md) | GameFlow의 IPlaySessionController / GameplayState; GameplayPauseMenu / GameplayPauseLayout / PlaySessionSeeking / PlayControlEvent |
 | Penpot 결과 화면·상단 곡 정보·리트라이·판정 통계·오차 그래프·us 입력 로그 | [플레이 결과](Gameplay/Results.md) | `FingerDrum.Modes/Mode/Results`, `Taiko/Results`, `Client/GameScene/ResultScene`; 내장 Result PNG |

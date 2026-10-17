@@ -32,6 +32,7 @@ void MusicSelectView::Initialize(const mrg::EngineServices &services)
     CreateSongInformationPanel();
     CreateSongBrowser();
     CreateFooter();
+    CreateAdditionMenu();
     options_.Initialize(*canvas_, services.audio, services.windowControl);
     ApplyTexts();
     UpdateResponsiveLayout();
@@ -53,8 +54,13 @@ SongSelectCommand MusicSelectView::Update(const mrg::platform::InputState &input
     const bool controlDown =
         input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
     if (!options_.OwnsKeyboard() && controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('O')))
+    {
+        CloseAdditionMenu();
         options_.Toggle();
+    }
     ProcessPointer(input);
+    if (ProcessAdditionMenu(input))
+        return command_;
     if (options_.ProcessInput(input, canvasPointer_, inputRouter_.HoveredNode(), inputRouter_))
     {
         static_cast<void>(canvas_->TakeActions());
@@ -71,6 +77,7 @@ void MusicSelectView::OnResize(const std::uint32_t width, const std::uint32_t he
     height_ = height;
     if (canvas_ != nullptr)
     {
+        CloseAdditionMenu();
         UpdateResponsiveLayout();
         RebuildSongCards();
         EnsureFocusedCardVisible();
@@ -85,6 +92,7 @@ void MusicSelectView::Shutdown() noexcept
         inputRouter_.Reset(*canvas_);
     }
     options_.Shutdown();
+    additionMenu_ = newDifficultyItem_ = convertOsuItem_ = nullptr;
     canvasPointer_.reset();
     difficultyButtonIds_.clear();
     songCards_.clear();

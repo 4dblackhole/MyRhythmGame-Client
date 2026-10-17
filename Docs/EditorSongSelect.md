@@ -27,7 +27,9 @@
 
 ## 새 난이도 생성
 
-에디터 곡 카드의 맨 오른쪽 `+`는 새 난이도 메타데이터 입력 창을 엽니다.
+에디터 곡 카드의 맨 오른쪽 `+`는 `New Difficulty`와 `Convert .osu` 두 항목의 팝업을 엽니다.
+New Difficulty는 기존 새 난이도 메타데이터 입력 창을 엽니다. 팝업 밖 클릭이나 Escape는
+팝업만 닫으며 뒤 화면을 실행하지 않습니다.
 난이도명, 제작자, 태그, Accuracy Difficulty(JudgeLevel 1.00~100.00, 0.01 단위, 기본 50.00), 기본 BPM과 offset을 입력한 뒤 `생성 후 편집`을 선택합니다.
 Taiko·120 BPM·offset 0ms·4/4로 시작하며 노트·타이밍 명령·YME 효과는 비어 있습니다.
 곡 자체의 YMM과 음원은 공유하고 수정하지 않습니다. 취소하면 파일을 만들지 않습니다.
@@ -42,3 +44,35 @@ YMP의 YMM 참조는 Songs 기준, YME 참조는 같은 난이도 폴더 기준�
 `EditorPatternCreation`이 형식 검증·경로·새 파일 쓰기/실패 정리를 소유합니다.
 Scene은 생성된 경로를 기존 GameplayLaunchRequest에 넣어 deferred Editor 전환을 수행합니다.
 재진입한 곡 선택은 카탈로그에서 새 난이도를 다시 읽습니다.
+
+## osu!taiko 가져오기
+
+`Convert .osu`는 `.osu` 파일 선택 대화창을 엽니다. 선택 취소는 파일을 만들지 않습니다.
+누른 카드와 다른 곡도 가져올 수 있으며 원본의 `Artist`와 `Title`(로마자), `Version`을
+사용합니다. 현재 변환기는 native Taiko(`Mode: 1`)만 지원합니다.
+
+새 파일의 배치는 아래와 같습니다. 음원은 재인코딩하지 않고 원본 확장자로 복사합니다.
+파일명에 쓸 수 없는 문자는 `_`로 바꾸고 끝의 공백/마침표를 제거하며 예약 이름은 `_`를 붙입니다.
+
+```text
+Songs/
+  Music/<Artist - Title>/
+    <Artist - Title>.mp3
+    <Artist - Title>.ymm
+  Patterns/<Artist - Title>/<Version>/
+    <Artist - Title> [<Version>].ymp
+    <Artist - Title> [<Version>].yme
+```
+
+Songs의 기존 YMM이 참조하는 음원을 크기와 실제 바이트로 비교합니다. 내용이 같으면
+기존 음원/YMM을 재사용하고 그 경로와 메타데이터는 변경하지 않습니다. 파일명/태그가
+같아도 내용이 다르면 재사용하지 않습니다. 같은 곡 이름의 기존 YMM이 다른 음원을
+참조하거나 난이도 폴더가 이미 있으면 오류를 표시하며 덮어쓰지 않습니다.
+새 파일은 임시 폴더에서 파싱/세션 검증 후 음악과 완성된 YMP/YME 쌍을 공개합니다.
+
+변환 후 완료/변환 경고를 표시하고 곡 목록을 갱신합니다. 편집기는 목록에서 난이도를
+선택하여 엽니다. 원본 `.osu`와 음원은 수정하지 않습니다.
+`EditorOsuImport`가 파일 대화창과 백그라운드 자식 프로세스/결과 수명을 소유합니다.
+Scene은 완료 결과에 따라 카탈로그만 갱신하며 프레임에서 변환/음원 비교를 기다리지 않습니다.
+worker는 복사한 경로만 사용하고 프로그램 종료 시 진행 중인 작업이 끝날 때까지 기다릴 수 있습니다.
+변환기 저장 규칙과 CLI는 [OsuTaikoConverter](OsuTaikoConverter.md)를 참고합니다.

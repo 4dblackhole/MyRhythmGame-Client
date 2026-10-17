@@ -5,6 +5,7 @@
 #include "Texts/TextCatalog.h"
 #include "App/OptionSettings.h"
 #include "Submodules/SongCatalogLoader.h"
+#include "Submodules/EditorOsuImport.h"
 #include <memory>
 
 class SongSelectionState;
@@ -34,6 +35,8 @@ class MusicSelectScene final : public mrg::scene::GameScene
   private:
     bool StartSelectedPattern(mrg::scene::SceneManager &scenes);
     void CreateDifficulty(mrg::scene::SceneManager &scenes);
+    void ConvertOsu();
+    void PollOsuImport();
     std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest_;
     SongSelectPurpose purpose_;
     mrg_client::OptionSettings &options_;
@@ -44,4 +47,5 @@ class MusicSelectScene final : public mrg::scene::GameScene
     bool active_{};
     bool firstEntry_{true};
     SongCatalogLoader catalogLoader_;
+    EditorOsuImport osuImport_;
 };

@@ -29,6 +29,8 @@ namespace finger_drum::texts
                 texts.Get("MusicSelect.patternErrorPrefix"),
                 texts.Get("MusicSelect.unknownChartError"),
                 texts.Get("MusicSelect.loadingSongs"),
-                texts.Get("MusicSelect.addDifficulty")};
+                texts.Get("MusicSelect.addDifficulty"), texts.Get("MusicSelect.newDifficulty"),
+                texts.Get("MusicSelect.convertOsu"), texts.Get("MusicSelect.importTitle"),
+                texts.Get("MusicSelect.importComplete"), texts.Get("MusicSelect.osuFileFilter")};
     }
 } // namespace finger_drum::texts

@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | 곡 선택 배치 | `Client/GameScene/MusicSelectScene/Submodules/SongSelectLayout.*`, `SongSelectPanels.cpp` | MusicSelectView.h; lobby smoke |
 | 새 난이도 메타데이터/파일 생성 | MusicSelectScene/Submodules의 NewDifficultyDialog / EditorPatternCreation; SongSelectCards / SongSelectInput | EditorSongSelect; RunNewDifficultyTests / MusicSelectViewTests; Editor 진입 snapshot |
+| 곡 카드 + 팝업·osu 가져오기·중복 음원/폴더 | 같은 Submodules의 SongSelectCreateMenu / EditorOsuImport; 변환기 Core/ConversionFiles / App/Main | EditorSongSelect / OsuTaikoConverter; MusicSelectViewTests / ConverterTests / CliTests |
 | 곡 카드/난이도 모양 | 같은 폴더 `SongSelectCards.cpp` | MusicSelectView.h; lobby/editor selector |
 | 곡/난이도 이동·검색·정렬 | 같은 폴더 `SongSelectionState.*`, 입력 연결은 SongSelectInput.cpp | SceneStateTests.cpp |
 | 곡 미리듣기 | 같은 폴더 `SongPreviewController.*` | AudioPlayback 공개 계약, lobby smoke |

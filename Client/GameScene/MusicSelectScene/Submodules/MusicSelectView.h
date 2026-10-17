@@ -11,7 +11,8 @@ enum class SongSelectCommand
     None,
     Back,
     Launch,
-    CreateDifficulty
+    CreateDifficulty,
+    ConvertOsu
 };
 class MusicSelectView final
 {
@@ -25,6 +26,7 @@ class MusicSelectView final
     }
     void SetVisible(bool visible)
     {
+        if (!visible) CloseAdditionMenu();
         static_cast<void>(canvasHandle_.SetVisible(visible));
     }
     void Initialize(const mrg::EngineServices &services);
@@ -53,6 +55,10 @@ class MusicSelectView final
     void CreateSongInformationPanel();
     void CreateSongBrowser();
     void CreateFooter();
+    void CreateAdditionMenu();
+    void OpenAdditionMenu(mrg::visual2d::Rect anchor);
+    void CloseAdditionMenu();
+    bool ProcessAdditionMenu(const mrg::platform::InputState &input);
     void ApplyTexts();
     void UpdateResponsiveLayout();
     void UpdateRecordPanelLayout();
@@ -113,6 +119,7 @@ class MusicSelectView final
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
     bool searchFocused_{};
+    mrg::visual2d::Visual2DNode *additionMenu_{}, *newDifficultyItem_{}, *convertOsuItem_{};
     mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas *canvas_{};
     mrg::visual2d::Visual2DInputRouter inputRouter_;

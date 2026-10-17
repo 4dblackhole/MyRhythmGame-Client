@@ -71,6 +71,37 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 에디터 + 메뉴·osu 라이브러리 가져오기
+
+- SongSelectCreateMenu는 New Difficulty/Convert .osu 팝업과 입력 소비를 맡습니다.
+  New Difficulty는 기존 생성/진입 명령을 유지합니다. EditorOsuImport는 파일 선택,
+  인자를 인용한 비표시 자식 프로세스, 제한된 표준 스트림 핸들 상속과 결과 수명을
+  소유합니다. Scene은 경로를 전달하고 완료 시 카탈로그를 갱신합니다.
+- 변환기의 library layout은 로마자 Artist - Title/Version의 파일 배치, 등록 음원의
+  크기/바이트 비교와 YMM 재사용, 충돌 거부, 임시 파일 검증/폴더 공개를 맡습니다.
+  기존 패키지 CLI와 파싱/플레이 규칙은 유지합니다. 원본 음악/채보는 변경하지 않습니다.
+  변경 코드와 직접 호출부의 문자열/노드/future/HANDLE 소유권, 오류/취소, 파일 경계,
+  인용/변환, 단일 가져오기와 worker의 Scene/엔진 비참조, 함수 책임을 검토했습니다.
+- Debug/Release x64 전체 solution Build 성공. MRG.Client와 변환기 Core/EXE/Tests에
+  실제 프로젝트 x64/C++20/include/define/PCH 설정으로 MSVC Code Analysis를 실행했습니다.
+  초기 C6387은 프로세스 속성 목록의 크기/포인터 검증으로 해결했고 억제는 사용하지 않았습니다.
+  최종 Debug Client 전체 분석과 Release 전체 분석/최종 메뉴 TU 분석에 진단이 없습니다.
+  메뉴 TU는 실제 Release CL.command.1.tlog 인수로 /analyze:only를 사용했습니다.
+  변환기 최종 분석도 두 구성에서 경고·분석 진단·파싱 오류가 없습니다.
+- 두 구성 MusicSelectViewTests(/analyze)는 +의 무실행/팝업 표시, 두 명령 분리,
+  실제 bundled EXE의 한글/공백 경로·성공·충돌 오류와 카탈로그 보존을 검사했습니다.
+  기존 NewDifficultyTests(/analyze)와 변환기 회귀/CLI도 통과했습니다. 음원 재사용,
+  동일 크기의 다른 바이트 거부, 다른 제목의 동일 음원, 로마자/표시명 구분,
+  파일명/예약 이름, 기존 사용자 파일 보존과 실패 시 새 음악 미공개를 검사했습니다.
+- 최종 EXE로 실제 Omoiyoshino를 두 구성의 ignored TestData 새 폴더에 변환했습니다.
+  각 결과에서 YMM/YMP/YME 상대 참조와 실제 Taiko 세션 861개 노트 로드를 확인했고,
+  새 MP3의 SHA-256은 원본과 일치했습니다. 기존 CLI의 Pandora 1,233개 노트도 통과했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0이며 최종 네 smoke 경로는 총 8개 exit 0입니다.
+- CheckArchitecture(11프로젝트), 양 저장소 git diff --check와 사용자 LaneKeyBeam.cpp,
+  Debug/Release Option.ini 및 외부 en/ko.ini의 SHA-256 보존을 확인했습니다.
+  엔진 소스/포인터 변경은 없습니다. 로그/실행기는 ignored build/osu-editor-import-2026-10-17에 있습니다.
+  위 결과는 자동 검사이며 실제 파일 선택창·화면의 물리 마우스/키보드 조작과 청음은 미실시입니다.
+
 ## 2026-10-17 에디터 Kiai 이름·지점형 효과 표시
 
 - EditorEffectsView는 Kiai를 내부 enum 번호 9 대신 언어표의 이름으로 표시합니다.

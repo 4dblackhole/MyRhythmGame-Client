@@ -262,6 +262,8 @@ void MusicSelectView::ApplyTexts()
     setLabel(optionLabel_, text.optionSelect);
     setLabel(backLabel_, text.back);
     setLabel(goLabel_, text.go);
+    setLabel(newDifficultyItem_, text.newDifficulty);
+    setLabel(convertOsuItem_, text.convertOsu);
 
     if (recordSelector_ != nullptr)
     {

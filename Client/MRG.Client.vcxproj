@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(FmodLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;$(BaseIntermediateOutputPath)FingerDrum.Assets\$(Platform)\$(Configuration)\FingerDrum.Assets.res;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfplat.lib;mfreadwrite.lib;mfuuid.lib;ole32.lib;comdlg32.lib;$(BaseIntermediateOutputPath)FingerDrum.Assets\$(Platform)\$(Configuration)\FingerDrum.Assets.res;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -177,6 +177,9 @@
     <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongPreviewController.cpp" />
     <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongPreviewController.h" />
     <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectCards.cpp" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectCreateMenu.cpp" />
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\EditorOsuImport.cpp" />
+    <ClInclude Include="GameScene\MusicSelectScene\Submodules\EditorOsuImport.h" />
     <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectInput.cpp" />
     <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionState.h" />
     <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionText.h" />

@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+에디터 osu 가져오기(2026-10-17): [곡 카드 + 메뉴·가져오기](EditorSongSelect.md#osutaiko-가져오기).
++는 New Difficulty/Convert .osu 팝업을 열며 전자는 기존 새 난이도 입력/진입을 유지합니다.
+EditorOsuImport가 파일 선택과 비동기 변환 EXE/결과 수명을 소유하고 Scene은 카탈로그를 갱신합니다.
+변환기의 --layout library는 로마자 Artist - Title의 Music/Patterns 배치를 만들고 등록된
+음원이 바이트까지 같으면 기존 YMM/음원을 재사용합니다. 충돌은 덮어쓰지 않습니다.
+
 FMOD 수정(2026-10-17): [수정 책임과 검증](Reviews/FmodErrorFixes-2026-10-17.md).
 플레이/에디터 Pause는 음악 채널을 유지하고 재개 시 위치를 재정렬합니다. 엔진 PreparationState가
 내부/목표 탐색을 직렬화하며, Client는 Ready 이후 새 clock을 예약합니다. 종료 샘플 채널 교체,
@@ -22,7 +28,7 @@ Scene은 인터페이스로 조립하며 Loading/Gameplay/Pause/Ending을 모든
 히트사운드를 되살리지 않습니다. Retry는 자산을 재사용하고 Ending은 모드별 결과를 한 번만 이동합니다.
 
 새 난이도·offset 도구·JudgeLevel(2026-10-16): [EditorSongSelect](EditorSongSelect.md), [ChartEditor](ChartEditor.md).
-에디터 곡 카드 + → 메타데이터 입력 → 새 YMP/YME 검증/생성 → 기존 진입 snapshot을 사용합니다.
+에디터 곡 카드 + → New Difficulty → 메타데이터 입력 → 새 YMP/YME 검증/생성 → 기존 진입 snapshot을 사용합니다.
 NewDifficultyDialog는 입력/오류, EditorPatternCreation은 새 폴더·파일 생성/정리를 소유합니다.
 JudgeLevel은 1.00~100.00/0.01 단위의 공통 고정소수점 값이며 YMP·AccuracyRange·HUD·결과까지 전달합니다.
 기본 Taiko/120 BPM/offset0/4/4/50.00이며 메타데이터 탭에서도 JudgeLevel을 수정합니다.

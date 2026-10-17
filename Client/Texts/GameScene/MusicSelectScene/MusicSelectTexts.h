@@ -35,6 +35,7 @@ namespace finger_drum::texts
         std::wstring_view unknownChartError;
         std::wstring_view loadingSongs;
         std::wstring_view addDifficulty;
+        std::wstring_view newDifficulty, convertOsu, importTitle, importComplete, osuFileFilter;
     };
 
     [[nodiscard]] MusicSelectTextSet MusicSelect(const TextCatalog &texts);

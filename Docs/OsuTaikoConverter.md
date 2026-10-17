@@ -15,6 +15,9 @@ Client 폴더에서 최초 한 번 다음 명령으로 준비합니다.
 git clone https://github.com/4dblackhole/OsuTaikoConverter.git ../OsuTaikoConverter
 ```
 
+이미 준비한 작업 폴더는 Client와 변환기 양쪽 `main`을 갱신한 뒤 빌드합니다.
+에디터 가져오기는 변환기 EXE의 `--layout library` 지원이 필요합니다.
+
 ## 빌드와 책임
 
 Client 솔루션은 변환기의 Core 정적 라이브러리, 콘솔 EXE, 테스트 프로젝트를
@@ -23,8 +26,9 @@ Client 솔루션은 변환기의 Core 정적 라이브러리, 콘솔 EXE, 테스
 
 변환기는 Client의 엔진 비종속 Chart/Modes/Rhythm 라이브러리만 재사용합니다.
 도메인 라이브러리가 변환기나 Client 실행 프로젝트를 역참조하지 않습니다.
-기존 YMM/YMP/YME 문법, 플레이 규칙, UI 및 엔진은 변경하지 않았습니다.
-가져오기 UI나 프로세스 실행 기능을 Scene에 추가한 것은 아닙니다.
+기존 YMM/YMP/YME 문법과 플레이 규칙은 그대로 사용합니다. 에디터 곡 카드 +의
+Convert .osu는 Client의 EditorOsuImport가 EXE를 백그라운드에서 실행합니다.
+선택/완료 UI는 [EditorSongSelect](EditorSongSelect.md)가 설명합니다.
 
 - `Core/Submodules/OsuDocument`: 원본 문법, 수치·모드 검증.
 - `Core/Submodules/TimingMap`: BPM 기준점, 최근접 틱, omit 마디 길이.
@@ -43,7 +47,7 @@ Client 솔루션은 변환기의 Core 정적 라이브러리, 콘솔 EXE, 테스
   --extra-divisors "40,48"
 ```
 
-필수 인자는 `--input`, `--songs-root`, `--output-dir`입니다. 상대 경로는 프로세스의
+기본 출력의 필수 인자는 `--input`, `--songs-root`, `--output-dir`입니다. 상대 경로는 프로세스의
 작업 폴더 기준입니다. 출력은 Songs 루트 아래 **존재하지 않는 새 폴더**여야 합니다.
 원본 `.osu`와 음원은 변경하지 않으며, 음원은 출력 폴더로 복사합니다.
 `music.ymm`, `pattern.ymp`, `effects.yme`, `audio.<원본 확장자>`를 생성합니다.
@@ -70,6 +74,21 @@ stdout은 JSON 객체 한 개입니다(`version: 1`, `success`, 생성 경로, �
 Client에서 사용할 때 EXE 경로를 직접 지정하고 Windows 인자 인용 규칙에 따라
 경로를 전달합니다. 렌더 스레드에서 종료를 기다리지 말고 stdout/stderr를 함께
 소비하며, exit 0과 JSON success를 확인한 뒤 Songs catalog를 다시 읽습니다.
+
+### 게임 라이브러리에 가져오기
+
+```powershell
+.\OsuTaikoConverter.exe --input "D:\Maps\song.osu" --songs-root "D:\Game\Asset\Songs" --layout library
+```
+
+`--layout library`에서는 `--output-dir`를 사용하지 않습니다. 로마자 Artist/Title과
+난이도 Version으로 Music/Patterns의 기존 게임 배치를 사용합니다. 구체적인 트리와
+파일명 정리는 [에디터 가져오기](EditorSongSelect.md#osutaiko-가져오기)를 참고합니다.
+등록된 YMM의 음원과 바이트가 같으면 음원/YMM을 재사용합니다. 같은 곡 이름인데
+음원이 다르거나 기존 난이도 폴더가 있으면 종료 코드 5이며 기존 파일은 보존합니다.
+YMP는 최종 YMM을 Songs 기준으로, YME는 같은 난이도 폴더 기준으로 참조합니다.
+이 모드도 JSON 계약은 같으며 변환 경고를 stderr에도 출력합니다.
+기존 `--output-dir` 패키지 출력은 기존 배치/계약을 유지합니다.
 
 ## 확정된 변환 규칙
 

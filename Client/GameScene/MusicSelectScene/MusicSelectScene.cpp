@@ -34,7 +34,7 @@ void MusicSelectScene::Initialize(const mrg::EngineServices &services)
 void MusicSelectScene::BeginScene()
 {
     // Initialize started the first load. Re-entry still observes user edits.
-    if (!firstEntry_)
+    if (!firstEntry_ && !osuImport_.Busy())
     {
         catalogLoader_.Refresh(mrg_client::asset_paths::UserSongs());
         selection_->catalogLoading_ = true;
@@ -53,6 +53,7 @@ void MusicSelectScene::EndScene() noexcept
 }
 void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
 {
+    PollOsuImport();
     if (auto catalog = catalogLoader_.Poll())
     {
         preview_->StopPreviewAudio();
@@ -76,6 +77,44 @@ void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::Sce
         StartSelectedPattern(scenes);
     else if (command == SongSelectCommand::CreateDifficulty)
         CreateDifficulty(scenes);
+    else if (command == SongSelectCommand::ConvertOsu)
+        ConvertOsu();
+}
+void MusicSelectScene::ConvertOsu()
+{
+    if (purpose_ != SongSelectPurpose::Editor || selection_->catalogLoading_ || osuImport_.Busy()) return;
+    preview_->StopPreviewAudio();
+    try
+    {
+        if (auto input = SelectOsuFile(texts_))
+        {
+            osuImport_.Start(*input, mrg_client::asset_paths::UserSongs());
+            selection_->catalogLoading_ = true;
+            selection_->ClearLaunchError();
+            view_->RebuildVisibleSongs();
+        }
+    }
+    catch (const std::exception &error)
+    {
+        selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::Pattern, error.what());
+        view_->RefreshSelectionPresentation();
+    }
+}
+void MusicSelectScene::PollOsuImport()
+{
+    const auto result = osuImport_.Poll();
+    if (!result) return;
+    if (result->success)
+    {
+        catalogLoader_.Refresh(mrg_client::asset_paths::UserSongs());
+        ShowOsuImportCompletion(*result, texts_);
+    }
+    else
+    {
+        selection_->catalogLoading_ = false;
+        selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::Pattern, result->message);
+        view_->RebuildVisibleSongs();
+    }
 }
 void MusicSelectScene::CreateDifficulty(mrg::scene::SceneManager &scenes)
 {
