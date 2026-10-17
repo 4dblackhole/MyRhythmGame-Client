@@ -6,6 +6,9 @@ std::wstring EditorView::EffectLabel(const EditorEffectSelection &selection) con
 {
     if (const auto *type = std::get_if<chart::EffectCommandType>(&selection))
     {
+        // Kiai is named in the list even though its ON/OFF editor is not supported yet.
+        if (*type == chart::EffectCommandType::Kiai)
+            return std::wstring(Texts().effectTypes[4]);
         const auto definition = std::ranges::find(EditorEffectDefinitions, *type, &EditorEffectDefinition::type);
         return definition == EditorEffectDefinitions.end() ? std::to_wstring(static_cast<int>(*type))
                                                            : std::wstring(Texts().effectTypes[definition->labelIndex]);
@@ -73,7 +76,9 @@ void EditorView::DrawEffectRows()
             const auto &command = effects.commands[row];
             description = std::to_wstring(command.position.measure + 1) + L" / " +
                           Wide(Fraction(command.position.fraction)) + L"    " + EffectLabel(command.type) + L"    " +
-                          std::to_wstring(command.beginValue) + L" → " + std::to_wstring(command.endValue);
+                          std::to_wstring(command.beginValue);
+            if (command.endPosition)
+                description += L" → " + std::to_wstring(command.endValue);
         }
         else
         {

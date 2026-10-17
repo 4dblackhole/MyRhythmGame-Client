@@ -48,7 +48,7 @@ namespace finger_drum::texts
 
         std::wstring_view effectsTitle;
         std::wstring_view effectsColumns;
-        std::array<std::wstring_view, 4> effectTypes;
+        std::array<std::wstring_view, 5> effectTypes;
         std::wstring_view startBeat;
         std::wstring_view endMeasureOptional;
         std::wstring_view endBeatOptional;

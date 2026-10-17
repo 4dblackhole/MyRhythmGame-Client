@@ -118,7 +118,9 @@ PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩
 
 이펙트 UI는 기존 볼륨/마디선/Whole/Separate/동·캇 편집을 유지합니다. 볼륨 기본 대상은
 HitSound이며 Music/UI 대상은 검증 오류입니다. 보간 버튼은 Linear/Exponential/Harmonic을
-선택합니다. 파일에 등록한 식/베지어는 표시·저장하고 해당 효과의 값을 편집할 수 있지만,
+선택합니다. 목록의 지점형 효과는 변경값 하나만 표시하고, Area 효과만 시작값 → 끝값으로
+표시합니다. Kiai는 내부 숫자 대신 언어파일의 이름으로 표시합니다.
+파일에 등록한 식/베지어는 표시·저장하고 해당 효과의 값을 편집할 수 있지만,
 식 등록과 Syncopation/Kiai ON/OFF의 전용 편집 UI는 아직 없습니다. 이 명령들은 파일에서
 편집하며 다른 수정/저장에서도 보존합니다. 문법은 [YME](Formats/Yme.md)가 기준입니다.
 

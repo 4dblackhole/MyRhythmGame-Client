@@ -71,6 +71,27 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 에디터 Kiai 이름·지점형 효과 표시
+
+- EditorEffectsView는 Kiai를 내부 enum 번호 9 대신 언어표의 이름으로 표시합니다.
+  EditorTexts와 en/ko 원본 INI에 이름을 추가했으며 내장 영어 fallback을 사용합니다.
+  효과 목록은 endPosition이 있는 Area만 시작값 → 끝값으로 표시하고 지점형은 변경값
+  하나만 표시합니다. 효과 파싱·적용·편집 가능 유형·저장 정책은 유지합니다.
+- 변경 코드와 직접 호출부의 enum 매핑, 언어표 인덱스 범위, 문자열 수명, 지점/구간
+  구분을 검토했습니다. Debug/Release x64 전체 solution Build와 MRG.Client의
+  MSVC Code Analysis Build를 실제 프로젝트 x64/C++20/include/define/PCH 설정으로
+  실행했습니다(RunCodeAnalysis=true, BuildProjectReferences=false). 두 구성 모두
+  컴파일 경고·분석 진단·파싱 오류가 없습니다.
+- 기존 EditorPresentation 회귀를 두 구성에서 /analyze로 빌드·실행했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0이며 네 smoke 경로는 총 8개 exit 0입니다.
+  CheckArchitecture(11프로젝트)와 git diff --check를 통과했습니다. 엔진 변경은 없습니다.
+- 사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 en/ko.ini의 SHA-256이
+  작업 전과 같습니다. 변환기 문서는 작업 중 별도로 커밋된 bcf93bc의 변경을 유지했습니다.
+  검증 실행기의 보존 검사는 이 문서의 동시 변경을 감지해 종료했으며, 위 코드/실행 검사는
+  모두 완료됐고 나머지 보존 대상의 해시도 별도로 확인했습니다.
+  로그는 ignored build/editor-effect-labels-2026-10-17에 있습니다.
+  위 검사는 자동 검사이며 실제 화면/물리 입력의 수동 확인은 수행하지 않았습니다.
+
 ## 2026-10-17 FMOD 수정·음악 채널 Pause 유지
 
 - [수정 책임과 상세 검증](Reviews/FmodErrorFixes-2026-10-17.md).
