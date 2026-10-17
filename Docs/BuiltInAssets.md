@@ -56,13 +56,15 @@ msbuild MyRhythmGame-Client.sln /m /p:Configuration=Release /p:Platform=x64
 
 게임 실행에 필요한 직접 배포 파일은 bin/x64/Release의 MyRhythmGame.exe와 fmod.dll입니다.
 MRG.Core 등 정적 라이브러리는 이미 EXE에 링크되므로 .lib/.pdb/테스트 EXE/fmodL.dll은 제외합니다.
-OsuTaikoConverter.exe는 별도 선택 도구이며 게임 실행에는 필요하지 않습니다.
+에디터의 Convert .osu 기능을 제공하려면 같은 빌드의 OsuTaikoConverter.exe도 게임 EXE 옆에
+동봉합니다. 기본 플레이 실행에는 필요하지 않지만 가져오기 버튼은 이 파일을 실행합니다.
 
 곡 없는 기본본의 배치는 다음과 같습니다. 사용자 파일 폴더는 비워 둬도 됩니다.
 
 ```text
 demo/
   MyRhythmGame.exe
+    OsuTaikoConverter.exe       에디터의 Convert .osu에 필요
   fmod.dll
   Option.ini                 처음 실행 시 기본값으로 자동 생성 가능
   README.txt
@@ -75,6 +77,11 @@ demo/
   Prerequisites/VC_redist.x64.exe
   Licenses/                  배포 폰트 고지
 ```
+
+기존 배포본을 갱신할 때 이번처럼 변환기도 바뀌었다면 두 EXE를 함께 교체합니다.
+FMOD SDK/런타임 버전이 같으면 기존 fmod.dll을 유지할 수 있으며, 버전이 바뀌면
+새 Release 빌드의 DLL도 함께 갱신합니다. Option.ini, 사용자 Songs/Skins와 편집한 언어파일은
+보존합니다. 새 번역을 배포할 때는 원본 언어파일의 추가 키를 사용자 수정본과 병합합니다.
 
 언어파일은 Client/Texts/Languages의 원본 두 개를 복사합니다. 개발 PC의 Option.ini는 장치명/키 등
 개인 설정일 수 있으므로 그대로 배포하지 말고 새 기본 설정을 사용합니다. 기본 스킨/글꼴의 외부
