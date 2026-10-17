@@ -103,7 +103,7 @@ class GameplayPresenter final
     void HideTransientNoteVisuals();
     void RemoveUnusedNoteVisuals();
     void RebuildVisibilityIndices();
-    void PresentFocusCounter(NoteVisualLayers &layers,
+    void PresentHitCounter(NoteVisualLayers &layers,
                              const finger_drum::rhythm::NoteProgress &progress,
                              const float visualHeight);
     void PresentFocusNoteProcessing(NoteVisualLayers &layers,
@@ -148,6 +148,7 @@ class GameplayPresenter final
     mrg::visual2d::Visual2DNode *inputPresentationRoot_{};
     mrg::visual2d::Visual2DNode *inputPanel_{};
     mrg::visual2d::Visual2DNode *laneRoot_{};
+    mrg::visual2d::Visual2DNode *noteRoot_{};
     std::vector<mrg::visual2d::Visual2DNode *> laneTiles_;
     mrg::visual2d::ImageHandle laneImage_{};
     mrg::visual2d::ImageHandle strongKeyLightImage_{};

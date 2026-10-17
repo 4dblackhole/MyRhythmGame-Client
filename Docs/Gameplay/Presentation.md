@@ -23,7 +23,7 @@ Result로는 값 데이터만 이동합니다. 통계/그래프와 소유권은 
 플레이 화면의 기준 시안과 런타임 PNG 자산 원본은 Penpot의
 [Gameplay · Sky](https://design.penpot.app/#/workspace?team-id=3be9e5e1-190f-8090-8008-7464803e8b40&file-id=3be9e5e1-190f-8090-8008-7468d9cc1bc8&page-id=618d0170-ff55-8025-8008-80646ceaa9d9)에 있습니다.
 기존 곡 선택 화면의 Sky 색상과 타이포그래피를 유지하면서 짙은 밤하늘색 Lane,
-ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 Balloon/DengDeng 남은
+ScrollGear 프레임, 마디선, 입력 키, 키빔, 롱노트 tick과 롤/큰 롤/Balloon/DengDeng 남은
 횟수 표시를 한 화면 계층으로 구성합니다.
 
 입력 패널의 네 키는 Penpot 원본 좌표를 2/3로 축소해 배치합니다. 판정원 중심은
@@ -55,12 +55,13 @@ Transform 한 곳에서 지정합니다. Lane 아래의 노트·판정원·키�
 │  │  ├─ Lane.JudgementCircle         판정원
 │  │  │  └─ Lane.Judgement.{등급}      MAX/PERFECT/GREAT/GOOD/BAD/MISS/POOR/OK 링·문구
 │  │  ├─ Lane.MeasureLine *           마디선
-│  │  └─ Lane.Note.{id} *             노트별 표시 루트
-│  │     ├─ AmbientHead              헤드
-│  │     ├─ UntintedOverlay           헤드 무채색 덧그림 (일반 이미지)
-│  │     ├─ AmbientBody / BodyOverlay 롱노트 몸통 (해당 종류)
-│  │     ├─ AmbientTail / TailOverlay 롱노트 테일 (해당 종류)
-│  │     └─ LongNote.Tick *           현재 보이는 미처리 틱 (해당 종류)
+│  │  └─ Lane.Notes                   노트 사이의 앞뒤 순서를 격리하는 레이어
+│  │     └─ Lane.Note.{id} *          노트별 표시 루트
+│  │        ├─ AmbientHead           헤드
+│  │        ├─ UntintedOverlay        헤드 무채색 덧그림 (일반 이미지)
+│  │        ├─ AmbientBody / BodyOverlay 롱노트 몸통 (해당 종류)
+│  │        ├─ AmbientTail / TailOverlay 롱노트 테일 (해당 종류)
+│  │        └─ LongNote.Tick *        현재 보이는 미처리 틱 (해당 종류)
 │  └─ InputPresentation
 │     └─ Input.Panel                  키 오버레이 바탕
 │        ├─ Input.Key.Glow ×4         강/약 키 점등
@@ -79,7 +80,7 @@ Transform 한 곳에서 지정합니다. Lane 아래의 노트·판정원·키�
 │     └─ Judgement.MarkerFill
 ├─ Hud.NoteProcessing.{id} *          중앙 풍선/뎅뎅 처리 이미지
 ├─ Hud.NoteSuccess.{id} *             중앙 풍선 완료 이미지
-├─ Hud.NoteCounter.{id} *             중앙 남은 타격 수 바탕
+├─ Hud.NoteCounter.{id} *             롤·큰 롤·풍선·뎅뎅의 남은 타격 수 바탕
 │  └─ RemainingHits                   남은 타격 수 텍스트
 └─ Debug.NoteState                    Debug 구성의 상태 텍스트
 
@@ -285,6 +286,17 @@ UI 수정 시 해당 표시 파일과 `GameplaySupport.h`의 관련 상수만 �
 되돌아 탐색하면 같은 모델 ID와 등록된 이미지로 표시를 다시 생성합니다.
 이미지 경로를 노트 출현 때 다시 조회하거나 파일을 다시 읽지 않습니다.
 표시가 관찰하는 PlaySession은 Presenter보다 오래 살아야 하며 Shutdown에서 관찰을 해제합니다.
+
+`Lane.Notes` 안에서는 시각이 빠른 노트가 앞에 그려집니다. 같은 시각이면 ID가 작은
+노트를 앞에 두며, 헤드·몸통·테일·틱을 노트 루트와 함께 정렬합니다. 화면에 보이는
+목록만 정렬하므로 Separate 속도 차이·되감기·표시 재생성에도 생성 순서에 의존하지 않습니다.
+노트 레이어는 판정원 위에 두고 키빔 → 판정원 → 노트 순서로 그립니다.
+판정원의 자식인 판정 링·문구도 같은 부모 순서를 상속합니다.
+
+일반 롤·큰 롤(단무지)도 `DrumRollInputRule::Progress`의 실제 타격 수/요구 타격 수로
+기존 HitCounterCloud를 표시합니다. 첫 유효 타격 후 나타나며 요구 횟수를 넘겨도
+남은 수는 0으로 유지하고, 종료/실패/초기화 시 숨깁니다. 풍선·뎅뎅과 같은 카운터를
+재사용하지만 롤의 헤드·몸통 이동과 판정·점수·종료 시각은 바꾸지 않습니다.
 
 이미지 파일명은 기본본의 예시이며 실제 경로는 스킨 `[InGame]`과 씬 폴더 설정에서 해석합니다.
 에디터도 같은 노트 이미지 키를 사용합니다. 자세한 계약은 [skin.ini](../BuiltInAssets.md#skinini와-씬별-이미지)에 있습니다.

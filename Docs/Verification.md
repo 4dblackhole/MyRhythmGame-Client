@@ -71,6 +71,36 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 인게임 노트·판정원 순서와 롤 남은 횟수
+
+- GameplayLayout은 Lane.Notes 부모를 만들고 키빔(2) → 판정원(3) → 노트(4) 순서를
+  지정합니다. 판정원의 자식인 판정 링·문구도 노트 뒤에 놓입니다. GameplayNoteVisuals는
+  이미 조회한 가시 노트 목록을 시각/ID 순서로 정렬하여 빠른 노트가 앞에 오도록 합니다.
+  헤드·몸통·테일·틱은 노트 루트의 순서를 함께 상속합니다. 생성 순서, Separate 속도,
+  되감기에 의존하지 않으며 전체 채보에 대한 프레임별 순회나 새 모델 캐시는 추가하지 않았습니다.
+- DrumRollInputRule은 기존 NoteProgress 계약으로 실제 타격 수와 요구 수를 제공합니다.
+  GameplayPresenter/GameplayFeedbackVisuals는 일반 롤·큰 롤도 기존 HitCounterCloud와
+  같은 카운터 함수를 사용합니다. 첫 유효 타격 이후 감소하고 초과 타격은 0으로 표시하며,
+  종료/실패/초기화 시 숨깁니다. 롤 이동·입력 허용·판정·점수 규칙은 유지합니다.
+  Canvas가 표시 노드를 소유하며 Presenter는 관찰 포인터를 Shutdown에서 해제합니다.
+- 변경 코드와 직접 호출부의 Progress 전달/Reset, Canvas 노드 수명/제거, 동시 입력과
+  표시의 단일 스레드 사용, 동일 시각의 순서, Z 정수 변환 상한, 카운터 차감 범위와
+  표시 함수 책임을 검토했습니다. 별도 카운트 상태나 엔진 변경은 없습니다.
+- 최종 소스로 Debug/Release x64 전체 solution Build를 통과했습니다. MRG.Client와
+  FingerDrum.Rhythm 전체에 실제 x64/C++20/include/define/PCH 설정의 MSVC Code Analysis를
+  두 구성으로 실행했습니다. 추가된 판정원 순서는 실제 CL.command.1.tlog 인수와
+  /analyze:only로 GameplayLayout을 두 구성에서 다시 분석했습니다. 컴파일 경고,
+  분석 진단, 파싱 오류는 없습니다. 테스트 링크의 /LTCG 재시작 안내는 진단 경고가 아닙니다.
+- GameplayJudgementTests도 두 구성에서 /analyze로 빌드·실행했습니다. Separate 변경과
+  역방향 탐색 후 노트 순서, 키빔/판정원/노트 계층, 기존 노트/마디선 좌표·resize,
+  롤·큰 롤·풍선·뎅뎅의 카운터 감소/초과 타격/완료/Reset을 검사했습니다.
+  로직/기본곡 카탈로그는 구성별 63개/실패 0이며 최종 네 smoke 경로는 총 8개 exit 0입니다.
+  CheckArchitecture(11프로젝트)와 git diff --check를 통과했습니다.
+- 사용자 LaneKeyBeam.cpp, Debug/Release Option.ini, 개발 외부 en/ko.ini의 SHA-256이
+  작업 전과 같고 사용자 곡·스킨은 변경하지 않았습니다. 로그/실행기는 ignored
+  build/note-order-counter-2026-10-17에 있습니다. 위 검증은 자동 검사이며 실제 화면을
+  보며 마우스/키보드로 플레이하는 수동 확인은 수행하지 않았습니다.
+
 ## 2026-10-17 에디터 + 메뉴·osu 라이브러리 가져오기
 
 - SongSelectCreateMenu는 New Difficulty/Convert .osu 팝업과 입력 소비를 맡습니다.

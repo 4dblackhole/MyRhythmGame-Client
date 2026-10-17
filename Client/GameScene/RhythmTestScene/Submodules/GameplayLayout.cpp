@@ -93,6 +93,10 @@ void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &gearRoot)
     const auto beamImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"LaneLight"));
     keyBeam_.Initialize(*laneRoot_, beamImage, ScaledImageSize(screenVisuals_, beamImage));
 
+    // Note order is local to this layer, above the key beam and judgement circle.
+    noteRoot_ = &laneRoot_->CreateChild("Lane.Notes");
+    noteRoot_->SetZIndex(4);
+
     const auto judgementImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"JudgementCircle"));
     const auto judgementSize = ScaledImageSize(screenVisuals_, judgementImage);
     auto &judgementLine = mrg::visual2d::CreateSprite(
@@ -100,7 +104,7 @@ void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &gearRoot)
         {(laneWidth_ - judgementSize.width) * 0.5F, judgementLocalY_ - judgementSize.height * 0.5F,
          judgementSize.width, judgementSize.height},
         judgementImage, "Lane.JudgementCircle");
-    judgementLine.SetZIndex(4);
+    judgementLine.SetZIndex(3);
     finger_drum::rhythm::JudgeLevel level;
     const auto &lanes = session_->Gear().Lanes();
     if (!lanes.empty() && !lanes.front()->Notes().empty())

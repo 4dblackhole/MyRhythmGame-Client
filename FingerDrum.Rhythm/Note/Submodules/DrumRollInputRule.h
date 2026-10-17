@@ -26,6 +26,7 @@ namespace finger_drum::rhythm
         void MarkMissed(const NoteRuleContext &context, RhythmTime time,
                         NoteProcessResult &output) override;
         [[nodiscard]] RhythmTime ExpireTime(const NoteRuleContext &context) const noexcept override;
+        [[nodiscard]] std::optional<NoteProgress> Progress() const noexcept override;
 
       private:
         std::vector<NoteAction> acceptedActions_;

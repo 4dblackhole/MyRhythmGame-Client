@@ -213,6 +213,9 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
     const bool balloon = visualKind == finger_drum::mode::NoteVisualKind::Balloon;
     const bool dengDeng = visualKind == finger_drum::mode::NoteVisualKind::DengDeng;
     const bool customHead = balloon || dengDeng;
+    const bool roll = (visualKind == finger_drum::mode::NoteVisualKind::Roll ||
+                       visualKind == finger_drum::mode::NoteVisualKind::BigRoll) &&
+                      note->Progress().has_value();
     const bool longNote = presentation != nullptr && presentation->hasEndTime &&
                           IsLongVisual(visualKind) && !customHead;
     const bool bigLongParts = visualKind == finger_drum::mode::NoteVisualKind::BigRoll;
@@ -229,11 +232,10 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
     NoteVisualLayers layers;
     layers.focusType = balloon ? FocusNoteType::Balloon
                                : (dengDeng ? FocusNoteType::DengDeng : FocusNoteType::None);
-    layers.root = &laneRoot_->CreateChild(std::format("Lane.Note.{}", note->Id()));
+    layers.root = &noteRoot_->CreateChild(std::format("Lane.Note.{}", note->Id()));
     layers.root->SetPivot({0.5F, 0.5F});
     layers.root->SetSize({diameter, diameter});
     layers.root->SetPosition({laneWidth_ * 0.5F, judgementLocalY_});
-    layers.root->SetZIndex(3);
     layers.root->SetVisible(false);
     layers.diameter = diameter;
     layers.timing = note->Timing();
@@ -326,6 +328,9 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
             layers.success->SetZIndex(9);
             layers.success->SetVisible(false);
         }
+    }
+    if (customHead || roll)
+    {
         layers.counter = &mrg::visual2d::CreateSprite(
             canvas_->Root(), {0.0F, 0.0F, counterSize.width, counterSize.height},
             counterImage, std::format("Hud.NoteCounter.{}", note->Id()));
@@ -389,7 +394,15 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
                               if (time <= model->ExpireTime() + MissedTravelDuration)
                                   visibleNoteModels_.push_back(model);
                           });
-    std::ranges::sort(visibleNoteModels_, {}, [](const auto *note) { return note->Timing(); });
+    std::ranges::sort(visibleNoteModels_, [](const auto *left, const auto *right)
+                      {
+                          if (left->Timing() != right->Timing())
+                              return left->Timing() < right->Timing();
+                          return left->Id() < right->Id();
+                      });
+    if (visibleNoteModels_.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+        throw std::length_error("Too many visible notes to order.");
+    int noteZIndex = static_cast<int>(visibleNoteModels_.size());
     ++presentationGeneration_;
     HideTransientNoteVisuals();
     bool showMeasureLines = true;
@@ -413,6 +426,9 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
             found = noteVisuals_.find(note.noteId);
         }
         NoteVisualLayers &layers = found->second;
+        // Reassign after visibility changes or backward seeks: creation order is
+        // not chronological when Separate scroll speeds differ.
+        layers.root->SetZIndex(--noteZIndex);
         presentedNoteIds_.push_back(note.noteId);
         layers.presentedGeneration = presentationGeneration_;
         const finger_drum::mode::NotePresentationInfo *presentation =
@@ -421,8 +437,9 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         auto targetTime = layers.timing;
         const bool missed = note.state == NoteState::Missed;
         const bool completed = note.state == NoteState::Completed;
-        const bool processing = focusNote && !missed && !completed && time >= note.timing &&
-                                note.progress.has_value() && note.progress->accepted > 0;
+        const bool countingHits = layers.counter != nullptr && !missed && !completed && time >= note.timing &&
+                                  note.progress.has_value() && note.progress->accepted > 0;
+        const bool processing = focusNote && countingHits;
         if (focusNote && time >= note.timing && !missed)
         {
             targetTime = time;
@@ -438,9 +455,12 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         const bool showLaneHead = focusNote ? !completed && (!processing || missed) : !completed && !missed;
         layers.root->SetVisible(showLaneHead);
 
-        if (processing && !focusClaimed)
+        if (countingHits && !focusClaimed)
         {
-            PresentFocusNoteProcessing(layers, *note.progress, time);
+            if (focusNote)
+                PresentFocusNoteProcessing(layers, *note.progress, time);
+            else
+                PresentHitCounter(layers, *note.progress, layers.diameter);
             focusClaimed = true;
         }
 

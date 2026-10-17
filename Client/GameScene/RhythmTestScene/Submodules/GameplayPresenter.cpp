@@ -107,6 +107,7 @@ void GameplayPresenter::Shutdown() noexcept
     inputPresentationRoot_ = nullptr;
     inputPanel_ = nullptr;
     laneRoot_ = nullptr;
+    noteRoot_ = nullptr;
     noteTravelDistance_ = 1.0F;
     pixelsPerWholeNote_ = 1.0F;
     laneTiles_.clear();

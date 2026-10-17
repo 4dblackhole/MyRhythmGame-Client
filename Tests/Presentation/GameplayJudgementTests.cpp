@@ -378,6 +378,21 @@ namespace
         presenter.UpdatePresentation({});
         Check(NodeCount(root) < 400 && Find(root, "Lane.Note.5000"),
               "One slow future note must remain visible without creating thousands of ordinary offscreen notes.");
+        const auto checkOrder = [&]
+        {
+            auto &first = Node(root, "Lane.Note.1");
+            auto &second = Node(root, "Lane.Note.2");
+            auto &notes = Node(root, "Lane.Notes");
+            Check(first.Parent() == &notes && second.Parent() == &notes && first.ZIndex() > second.ZIndex(),
+                  "Earlier notes and their entire long-note subtrees must render in front of later notes.");
+            Check(notes.ZIndex() > Node(root, "Lane.KeyBeam").ZIndex() &&
+                      notes.ZIndex() > Node(root, "Lane.JudgementCircle").ZIndex() &&
+                      Node(root, "Lane.JudgementCircle").ZIndex() > Node(root, "Lane.KeyBeam").ZIndex(),
+                  "Notes must render above the judgement circle, which remains above the key beam.");
+        };
+        checkOrder();
+        Check(Node(root, "Lane.Note.1").ZIndex() > Node(root, "Lane.Note.5000").ZIndex(),
+              "A very slow future note must remain behind earlier notes despite its unusual visibility.");
         loaded.session->SetNoteScrollMultiplier(5000, 1);
         presenter.UpdatePresentation({});
         Check(!Find(root, "Lane.Note.5000"), "Changing Separate must refresh the visibility projection.");
@@ -386,6 +401,7 @@ namespace
         presenter.UpdatePresentation({});
         Check(Find(root, "Lane.Note.1") && !Find(root, "Lane.Note.5000"),
               "Backward seek must restore only visible notes.");
+        checkOrder();
         visuals.OnResize(2560, 1080);
         presenter.OnResize(2560, 1080);
         presenter.UpdatePresentation({});
@@ -441,7 +457,7 @@ namespace
         presenter.Shutdown();
     }
 
-    void TestCountOnlyHeadsHaveNoFeedback()
+    void TestCountOnlyHeadsAndCounters()
     {
         for (const int type : {11, 13, 15, 16})
         {
@@ -462,6 +478,10 @@ namespace
             GameplayPresenter presenter(visuals, texts);
             presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
             auto &root = visuals.FindCanvas(1)->Root();
+            presenter.UpdatePresentation({});
+            auto &counter = Node(root, "Hud.NoteCounter.1");
+            const auto &remaining = *Node(counter, "RemainingHits").GetComponent<v::TextVisualComponent>();
+            Check(!counter.IsVisible(), "A hit counter must stay hidden before the first accepted hit.");
             for (int index = 0; index < 3; ++index)
             {
                 const char key = type == 16 && index == 1 ? 'D' : 'F';
@@ -474,11 +494,31 @@ namespace
                 const auto beam = Node(root, "Lane.KeyBeam").GetComponent<v::SpriteVisualComponent>()->Style().normal;
                 Check(Near(beam.red, 1) && Near(beam.green, 1) && Near(beam.blue, 1),
                       "Count-only hits must use the ungraded white key beam.");
+                presenter.UpdatePresentation(r::RhythmTime{900'000 + index * 100'000});
+                const bool active = index < 2 || type == 11 || type == 13;
+                Check(counter.IsVisible() == active, "Every active counted note must show its remaining hits.");
+                if (active)
+                    Check(remaining.Text() == std::to_wstring(2 - index), "Each accepted hit must decrement the counter.");
+            }
+            if (type == 11 || type == 13)
+            {
+                Check(!Find(root, "Hud.NoteProcessing.1"), "Roll counters must not replace the moving roll head.");
+                presenter.ApplyFeedback({.keyPressed = true,
+                                         .result = loaded.session->ProcessInput(
+                                             'F', r::InputEdge::Pressed, r::RhythmTime{1'200'000})});
+                presenter.UpdatePresentation(r::RhythmTime{1'200'000});
+                Check(counter.IsVisible() && remaining.Text() == L"0", "Extra roll hits must not underflow the counter.");
             }
             presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{1'500'000})});
             CheckOverlay(root, "OK");
+            presenter.UpdatePresentation(r::RhythmTime{1'500'000});
+            Check(!counter.IsVisible(), "The hit counter must disappear at completion.");
             loaded.session->Reset();
             presenter.ApplyFeedback({.reset = true});
+            presenter.UpdatePresentation(r::RhythmTime{500'000});
+            Check(!Node(root, "Hud.NoteCounter.1").IsVisible() &&
+                      loaded.session->Gear().Lanes().front()->Notes().front()->Progress() == r::NoteProgress{0, 3},
+                  "Reset must clear roll/balloon/DengDeng progress and hide its counter.");
             presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{1'500'000})});
             CheckOverlay(root, "MISS");
             presenter.Shutdown();
@@ -691,7 +731,7 @@ int main()
         TestGameplayProgress();
         TestSlowNotesDoNotExpandAllVisuals();
         TestMeasureLinesShareNoteMotion();
-        TestCountOnlyHeadsHaveNoFeedback();
+        TestCountOnlyHeadsAndCounters();
         TestDengDengWrongOrderFeedback();
         TestPresenterEventPriority();
         TestRollCompletionAndProcessedTicks();

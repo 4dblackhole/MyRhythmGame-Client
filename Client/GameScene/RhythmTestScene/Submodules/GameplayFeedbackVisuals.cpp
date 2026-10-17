@@ -51,7 +51,7 @@ void GameplayPresenter::PresentErrorMessage(const std::string_view message)
         .SetText(std::wstring(text.errorPrefix) + Utf8ToWide(message, text.audioInitializationFailed));
 }
 
-void GameplayPresenter::PresentFocusCounter(NoteVisualLayers &layers,
+void GameplayPresenter::PresentHitCounter(NoteVisualLayers &layers,
                                             const finger_drum::rhythm::NoteProgress &progress,
                                             const float visualHeight)
 {
@@ -96,7 +96,7 @@ void GameplayPresenter::PresentFocusNoteProcessing(
     RequireComponent<mrg::visual2d::SpriteVisualComponent>(*layers.processing)
         .SetTint({1.0F, 1.0F, 1.0F, 1.0F});
     layers.processing->SetVisible(true);
-    PresentFocusCounter(layers, progress, size.height);
+    PresentHitCounter(layers, progress, size.height);
 }
 
 void GameplayPresenter::PresentCompletionEffect(const finger_drum::rhythm::RhythmTime time)

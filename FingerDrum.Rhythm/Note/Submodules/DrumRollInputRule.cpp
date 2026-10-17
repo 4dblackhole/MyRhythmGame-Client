@@ -87,4 +87,9 @@ namespace finger_drum::rhythm
     {
         return endTime_;
     }
+
+    std::optional<NoteProgress> DrumRollInputRule::Progress() const noexcept
+    {
+        return NoteProgress{tickCount_, requiredHitCount_};
+    }
 } // namespace finger_drum::rhythm
