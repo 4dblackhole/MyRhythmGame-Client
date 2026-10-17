@@ -138,6 +138,12 @@ and audio tab. The test checks visible waveform/music FFT/hit FFT rectangles;
 no installed Vorbis codec or FFmpeg is required. Domain audio tests additionally
 check duration, frequency/level, opposite stereo phase, Unicode/renamed paths,
 bounded cancellation and truncated-stream errors.
+Audio range tests drag through actual Canvas receivers (including a narrow resized
+viewport), check ordered source times/localized ms labels and all three overlays,
+and verify FFT tile reuse and unchanged chart revision. Rate tests cover the slider's
+0.25/2.00 endpoints, deterministic DSP/cue timing, negative pre-roll, live changes,
+pending versus already audible hits, pause/resume and invalid values. Actual FMOD
+NoSound playback also changes rates across repeated MP3 pause/seek/resume cycles.
 It also covers realtime lane boundaries, spaced/case-insensitive Buzz options,
 Purple and timed/explicit sound agreement with play, invalid seek preservation,
 effect/timing commands, failed edit rollback and drawing failure recovery.

@@ -79,6 +79,69 @@ namespace
                         if (auto *geometry = tile->GetComponent<EditorVisual>()) geometry->AppendDrawPackets(result);
         return result;
     }
+
+    void TestAudioRangeSelection(v::Visual2DCanvas &canvas, EditorView &view, EditorWorkspace &state,
+                                 RecordingRenderer &renderer, const finger_drum::texts::TextCatalog &texts)
+    {
+        auto *track = FindNode(canvas.Root(), "Audio.Selection.0");
+        if (!track)
+            throw std::runtime_error("Waveform selection input missing.");
+        Check(track->IsVisible(), "Waveform selection input must be visible in the audio tab.");
+        const auto bounds = track->BoundsInCanvas();
+        const auto revision = state.Document().Revision();
+        const double firstMs = state.TimeMilliseconds();
+        const double lastMs = firstMs + state.audioWindow * 500;
+        const auto oldGeometry = SpectrumGeometry(canvas.Root());
+        v::Visual2DInputRouter router;
+        v::PointerInput pointer;
+        pointer.position = {bounds.x + bounds.width * .75F, bounds.y + bounds.height * .5F};
+        pointer.leftButtonDown = pointer.leftButtonPressed = true;
+        router.Process(canvas, pointer);
+        pointer.leftButtonPressed = false;
+        pointer.position.x = bounds.x + bounds.width * .25F;
+        router.Process(canvas, pointer);
+        pointer.leftButtonDown = false;
+        pointer.leftButtonReleased = true;
+        router.Process(canvas, pointer);
+        const auto selected = state.SelectedAudioRange();
+        if (!selected)
+            throw std::runtime_error("Dragging did not create an audio range.");
+        Check(std::abs(selected->begin.count() / 1000.0 - firstMs) <= .005 &&
+                  std::abs(selected->end.count() / 1000.0 - lastMs) <= .005,
+              "Reverse dragging must produce ordered source times through the transformed track bounds.");
+        view.Build();
+        renderer.packets.clear();
+        // Expand the same draw packets as the recording renderer without a physical window.
+        v::ForEachDrawPrimitive(canvas.BuildDrawList(), [&](const auto &packet) { renderer.packets.push_back(packet); });
+        const double begin = selected->begin.count() / 1000.0, end = selected->end.count() / 1000.0;
+        const auto label = texts.Format("Editor.audioSelectionFormat", begin, end, end - begin);
+        Check(std::ranges::any_of(renderer.packets, [&](const auto &packet) {
+                  return packet.text && packet.text->value == label;
+              }), "Selection start/end/duration must be displayed with localized millisecond formatting.");
+        Check(std::ranges::count_if(renderer.packets, [](const auto &packet) {
+                  return packet.type == v::DrawPacketType::Rectangle && std::abs(packet.color.alpha - .24F) < .001F;
+              }) == 3, "The same selected interval must shade all three audio tracks.");
+        const auto newGeometry = SpectrumGeometry(canvas.Root());
+        Check(std::ranges::all_of(newGeometry, [&](const auto &packet) {
+                  return std::ranges::any_of(oldGeometry, [&](const auto &old) { return old.rectangles == packet.rectangles; });
+              }), "Dragging a selection must reuse FFT tiles instead of rebuilding analysis geometry.");
+
+        // Captured drags keep updating outside the hit rectangle and clamp to the viewport.
+        pointer.leftButtonReleased = false;
+        pointer.leftButtonDown = pointer.leftButtonPressed = true;
+        pointer.position.x = bounds.x + bounds.width * .75F;
+        router.Process(canvas, pointer);
+        pointer.leftButtonPressed = false;
+        pointer.position.x = bounds.x - 200;
+        router.Process(canvas, pointer);
+        pointer.leftButtonDown = false;
+        pointer.leftButtonReleased = true;
+        router.Process(canvas, pointer);
+        Check(std::abs(state.SelectedAudioRange()->begin.count() / 1000.0 -
+                       (state.TimeMilliseconds() - state.audioWindow * 250)) <= .005 &&
+                  state.Document().Revision() == revision,
+              "Selection must clamp outside drags and leave chart content and revision unchanged.");
+    }
 } // namespace
 
 int main()
@@ -294,6 +357,7 @@ int main()
               "Changing audio zoom must invalidate the cached tile resolution.");
         state.audioWindow = oldWindow;
         view.Build();
+        TestAudioRangeSelection(*canvas, view, state, renderer, texts);
         auto *menuBar = FindNode(canvas->Root(), "Editor.MenuBar");
         if (menuBar == nullptr)
             throw std::runtime_error("Editor top menu is missing.");
@@ -318,6 +382,12 @@ int main()
         state.SelectTab(EditorTab::Metadata);
         view.Build();
         Check(!slider->IsVisible(), "Metadata tab must hide the slider");
+        auto *hiddenSelection = FindNode(canvas->Root(), "Audio.Selection.0");
+        auto *hiddenRate = FindNode(canvas->Root(), "Editor playback rate");
+        if (!hiddenSelection || !hiddenRate)
+            throw std::runtime_error("Audio controls missing after tab switch.");
+        Check(!hiddenSelection->IsVisible() && !hiddenRate->IsVisible(),
+              "Metadata must hide audio selection hit areas and rate controls.");
         state.SelectTab(EditorTab::Audio);
         texts.SetLanguage(finger_drum::texts::Language::English);
         view.Build();
@@ -326,12 +396,35 @@ int main()
               "Audio and menu labels not localized");
         Check(hasText(L"METRONOME: OFF") && hasText(L"−1 ms") && hasText(L"+1 ms"),
               "Audio tab must expose offset adjustment and metronome controls.");
+        auto *rateSlider = FindNode(canvas->Root(), "Editor playback rate");
+        if (!rateSlider)
+            throw std::runtime_error("Audio playback rate slider missing.");
+        Check(rateSlider->IsVisible(), "Audio playback rate slider must be visible.");
+        const auto rateBounds = rateSlider->BoundsInCanvas();
+        for (const float value : {0.0F, 1.0F})
+        {
+            pointer.position = {rateBounds.x + 8 + (rateBounds.width - 16) * value,
+                                rateBounds.y + rateBounds.height * .5F};
+            pointer.leftButtonDown = pointer.leftButtonPressed = true;
+            pointer.leftButtonReleased = false;
+            pointerRouter.Process(*canvas, pointer);
+            Check(!view.Update({0, 0, 1, input, audio, {}}), "Rate control unexpectedly left the editor.");
+            const auto expected = value == 0 ? .25 : 2.0;
+            Check(state.PlaybackRate() == expected, "The rate slider must reach quarter and double speed.");
+            visuals.Render({});
+            Check(hasText(texts.Format("Editor.playbackRateFormat", expected)), "Current rate label missing.");
+            pointer.leftButtonDown = pointer.leftButtonPressed = false;
+            pointer.leftButtonReleased = true;
+            pointerRouter.Process(*canvas, pointer);
+        }
+        state.SetPlaybackRate(1);
         visuals.OnResize(900, 720);
         view.Resize(900, 720);
         view.Build();
         Check(state.TimelineRangeMilliseconds() == std::pair{begin, end}, "Resize changed time range");
         Check(menuBar->BoundsInCanvas().width == canvas->LogicalSize().width,
               "Editor view must resize the composed menu.");
+        TestAudioRangeSelection(*canvas, view, state, renderer, texts);
         state.SelectTab(EditorTab::Pattern);
         state.SetRealtime(true);
         view.Build();

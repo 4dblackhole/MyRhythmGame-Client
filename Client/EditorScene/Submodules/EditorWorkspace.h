@@ -4,10 +4,16 @@
 #include "EditorMetronome.h"
 #include "EditorPlayback.h"
 #include "Modes/IEditorMode.h"
+#include <algorithm>
+#include <optional>
 
 class EditorWorkspace final : public IEditorContext
 {
   public:
+    struct AudioSelection
+    {
+        finger_drum::rhythm::RhythmTime begin{}, end{};
+    };
     explicit EditorWorkspace(finger_drum::GameplayLaunchRequest selected, std::unique_ptr<IEditorMode> mode = {})
         : request_(std::move(selected)), mode_(std::move(mode))
     {
@@ -23,6 +29,14 @@ class EditorWorkspace final : public IEditorContext
     void ShutdownPlayback() noexcept { playback_.Shutdown(); }
     void UpdatePlayback();
     void TogglePlayback();
+    void SetPlaybackRate(double rate);
+    double PlaybackRate() const noexcept { return playback_.Rate(); }
+    void SelectAudioRange(finger_drum::rhythm::RhythmTime anchor, finger_drum::rhythm::RhythmTime end)
+    {
+        audioSelection_ = AudioSelection{std::min(anchor, end), std::max(anchor, end)};
+        RequestRebuild();
+    }
+    const std::optional<AudioSelection> &SelectedAudioRange() const noexcept { return audioSelection_; }
     void ToggleMetronome()
     {
         metronome_.SetEnabled(!metronome_.Enabled());
@@ -126,6 +140,7 @@ class EditorWorkspace final : public IEditorContext
     std::unique_ptr<IEditorMode> mode_;
     EditorAnalysisController analysis_;
     EditorPlayback playback_;
+    std::optional<AudioSelection> audioSelection_;
     EditorMetronome metronome_;
     EditorScoreState score_;
     double timeMs_{};

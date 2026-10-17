@@ -28,10 +28,12 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
 
     bool changed = false;
     bool timeChanged = false;
+    bool rateChanged = false;
     for (const auto &action : canvas.Get()->TakeActions())
     {
         changed |= action.source == divisionSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
         timeChanged |= action.source == timelineSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
+        rateChanged |= action.source == playbackRateSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
     }
     // A direct-input value above 16 can share the slider's end position.
     if (pointer.leftButtonPressed && sliderInput_.CapturedNode() == divisionSliderNode_->Id())
@@ -53,6 +55,13 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
         const auto [begin, end] = state_.TimelineRangeMilliseconds();
         const float value = timelineSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
         state_.Seek(std::round(std::lerp(begin, end, static_cast<double>(value))));
+    }
+    if (rateChanged)
+    {
+        const float value = playbackRateSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
+        const double rate = std::round(std::lerp(EditorPlayback::MinimumRate, EditorPlayback::MaximumRate,
+                                               static_cast<double>(value)) * 20) / 20;
+        state_.SetPlaybackRate(rate);
     }
 }
 
@@ -174,7 +183,8 @@ void EditorView::UpdatePointer(const mrg::UpdateContext &context)
     }
     if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Left) &&
         sliderInput_.CapturedNode() != divisionSliderNode_->Id() &&
-        sliderInput_.CapturedNode() != timelineSliderNode_->Id())
+        sliderInput_.CapturedNode() != timelineSliderNode_->Id() &&
+        sliderInput_.CapturedNode() != playbackRateSliderNode_->Id())
     {
         auto found = std::find_if(controls.rbegin(), controls.rend(),
                                   [point](const Control &c) { return c.rect.Contains(point); });

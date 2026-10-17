@@ -71,6 +71,42 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 오디오 영역 시간 측정·재생 배속
+
+- EditorAudioSelection은 세 트랙의 공통 사각형/부모 변환을 사용해 드래그를 받으며,
+  EditorWorkspace는 정렬한 절대 us 영역을 소유합니다. 시작·끝·길이는 ms 소수점 세 자리로
+  표시합니다. 선택은 채보 revision/dirty/저장 데이터를 변경하지 않습니다. EditorView의
+  SyncInputControls는 탭별 입력 노드 표시와 값 동기화만 맡으며 Scene에는 책임을 추가하지 않았습니다.
+- EditorPlayback은 0.25~2.00배(슬라이더 0.05 단위)를 기존 Voice pitch에 적용합니다.
+  사용자 요청에 따라 음높이 보정/time-stretch를 추가하지 않았으므로 음높이도 함께 변합니다.
+  원본 음원/BPM/FFT 시간축은 그대로입니다. DSP 경과 시간과 원본 시각의 변환을 이 transport에
+  한정했고 공용 RhythmTimer/엔진 API는 변경하지 않았습니다. 화면 갱신 간격도 배속에 비례시켜
+  저속 재생에서 갱신이 15Hz로 떨어지지 않도록 했습니다.
+- 재생 중 배속 변경은 음악 seek/reload 없이 현재 위치에 기준을 고정합니다. 음수 pre-roll
+  예약을 먼저 갱신한 뒤 아직 울리지 않은 타격만 다시 예약합니다. native Stop 도중 믹서가
+  예약 시각을 지나친 경우에도 같은 타격을 다시 넣지 않습니다. 이미 울리는 샘플은 주파수만
+  바꾸며 Pause/Seek 뒤에도 선택 배속을 유지합니다. 시간 변환/예약 범위의 정수 경계, 실패 시
+  정지·상태 메시지, borrowed Voice 수명, Canvas/콜백 해제와 단일 UI 스레드 사용을 검토했습니다.
+- Debug/Release x64 전체 solution Build 성공. MRG.Client 전체를 실제 프로젝트의
+  x64/C++20/include/define/PCH 설정으로 MSVC Code Analysis Build했습니다. 각 구성의
+  실제 CL tlog에서 /analyze 명령 85개를 확인했습니다. 소유 코드의 경고 억제는 없습니다.
+  테스트의 C6011 두 건은 lookup 결과의 명시적 null/throw 분기로 해결했습니다.
+  이전 Release Editor 라이브러리 PDB의 LNK4020은 해당 라이브러리 Rebuild로 해결했습니다.
+  최종 양 구성 빌드·정적 분석·표시 테스트에 컴파일 경고·분석 진단·파싱 오류가 없습니다.
+  테스트 Release 링크의 /LTCG 재시작 안내는 정보 메시지입니다.
+- EditorPresentation의 C++ 5개를 /analyze로 빌드·실행했습니다. 실제 Canvas 드래그의 역방향/
+  영역 밖 이동·900×720 부모 변환·세 트랙 오버레이·지역화된 ms 문구·FFT 타일 재사용·
+  채보 revision 보존, 배속 슬라이더 양 끝을 검사했습니다. DSP probe는 음수 pre-roll,
+  0.25/0.5/1/1.5/2배의 시간/예약·재생 중 변경·재생 전 lead·예약/재생 중 타격 구분·
+  native Stop 중 시각 경계·잘못된 배속·native 주파수 실패를 검사합니다. 실제 FMOD NoSound의
+  MP3 반복 pause/seek/resume에서도 배속과 재생 중 변경을 확인했습니다.
+- 로직/기본곡 카탈로그 구성별 63개/실패 0, 네 smoke 경로 구성별 4개/총 8개 exit 0입니다.
+  CheckArchitecture(11프로젝트)와 git diff --check를 통과했습니다. 사용자 LaneKeyBeam.cpp,
+  Debug/Release Option.ini 및 외부 en/ko.ini의 작업 전 SHA-256이 같습니다. 사용자 곡·스킨,
+  엔진 gitlink는 변경하지 않았습니다. 새 UI 문구는 en/ko 원본에 추가했으며 기존 외부 언어파일에
+  항목이 없으면 내장 영어를 사용합니다. 로그/실행기는 ignored build/editor-audio-tools-2026-10-17에
+  있습니다. 위 결과는 자동 검사이며 실제 화면/물리 마우스 조작·청음의 수동 확인은 미실시입니다.
+
 ## 2026-10-17 에디터 Ogg Vorbis 파형·FFT
 
 - 동일한 48kHz 스테레오 톤을 WAV/MP3/OGG/FLAC/M4A(AAC)/WMA로 만들어 분석했습니다.

@@ -1,7 +1,9 @@
 #include "EditorPlaybackTests.h"
 #include "EditorScene/Submodules/EditorPlayback.h"
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <limits>
 #include <stdexcept>
 #include <thread>
 
@@ -113,10 +115,13 @@ namespace
         std::filesystem::path path;
         a::AudioPlaybackSettings settings;
         std::vector<std::uint64_t> deadlines;
+        std::size_t restarts{};
     };
     std::vector<std::shared_ptr<Probe>> probes;
     std::size_t loads{};
     bool failDuration{};
+    bool failPitch{};
+    std::uint64_t clockOnStop{};
     a::AudioClipLoadState loadState{a::AudioClipLoadState::Ready};
     class Voice final : public a::IAudioVoiceBackend
     {
@@ -130,6 +135,7 @@ namespace
         }
         bool Restart(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *, std::string &) override
         {
+            ++probe->restarts;
             probe->settings = settings;
             probe->deadlines.push_back(settings.startDspClock);
             return true;
@@ -137,6 +143,8 @@ namespace
         bool Stop(std::string &) override
         {
             probe->playing = false;
+            if (clockOnStop)
+                dspClock = clockOnStop;
             return true;
         }
         bool SetPaused(bool value, std::string &) override
@@ -148,8 +156,14 @@ namespace
         {
             return true;
         }
-        bool SetPitch(float, std::string &) override
+        bool SetPitch(float pitch, std::string &error) override
         {
+            if (failPitch)
+            {
+                error = "rate probe failure";
+                return false;
+            }
+            probe->settings.pitch = pitch;
             return true;
         }
         bool SetDelay(std::uint64_t start, std::uint64_t, std::string &) override
@@ -201,10 +215,118 @@ namespace
         ++loads;
         return std::make_unique<Clip>(path);
     }
+    void TestPlaybackRates()
+    {
+        dspClock = 0;
+        probes.clear();
+        loads = 0;
+        a::AudioSystem audio;
+        std::string error;
+        Check(audio.Initialize({}, CreateClockBackend, CreateClip, error), "Rate probe audio initialization failed.");
+        EditorPlayback playback;
+        playback.Initialize(audio);
+        const std::map<std::string, std::filesystem::path> files{{"Music", "music"}, {"Don", "don"}};
+        const std::vector<AudioMarker> cues{{0, "Don"}, {.01, "Don"}, {1, "Don"}};
+        const auto update = [&] { playback.Update(files, 1, cues, 1, Time{3'000'000}); };
+        playback.Seek(Time{-100'000});
+        playback.SetRate(.5);
+        playback.Toggle();
+        update();
+        const auto music = probes.front();
+        Check(music->settings.startDspClock == 10560 && music->settings.pitch == .5F,
+              "Half speed must double negative pre-roll and change the native sample rate together.");
+        dspClock = 10080; // Five source milliseconds before the song starts.
+        update();
+        Check(playback.Position() == Time{-5'000} && probes.back()->settings.startDspClock == 10560,
+              "A half-speed cue must share the delayed music deadline.");
+        const auto queued = probes.back();
+        playback.SetRate(2);
+        Check(playback.Position() == Time{-5'000} && music->settings.startDspClock == 10200 &&
+                  music->settings.pitch == 2 && music->restarts == 0 && !queued->playing,
+              "Live rate changes must keep source position, retime pre-roll and cancel only the pending cue.");
+        update();
+        Check(probes.back()->settings.startDspClock == 10200 && probes.back()->settings.pitch == 2 && loads == 2,
+              "The cancelled cue must be rescheduled under the new rate without reloading files.");
+        dspClock = 10200;
+        update();
+        Check(probes.back()->settings.startDspClock == 10440,
+              "A ten-source-millisecond cue gap must become five real milliseconds at double speed.");
+        dspClock = 10440;
+        update();
+        const auto audible = probes.back();
+        const auto playedCount = audible->deadlines.size();
+        playback.SetRate(.25);
+        update();
+        Check(audible->playing && audible->settings.pitch == .25F && audible->deadlines.size() == playedCount &&
+                  music->restarts == 0 && playback.Position() == Time{10'000},
+              "Changing rate during an audible sample must preserve its tail and never repeat its attack.");
+        dspClock += 48000;
+        update();
+        Check(playback.Position() == Time{260'000}, "One real second must advance 250 source ms at quarter speed.");
+        playback.Pause();
+        playback.SetRate(1.5);
+        playback.Toggle();
+        update();
+        update();
+        Check(music->settings.startPositionMicroseconds == 260'000 && music->settings.pitch == 1.5F && loads == 2,
+              "Pause/resume must preserve the selected rate and absolute source seek position.");
+        const auto futureStart = music->settings.startDspClock;
+        playback.SetRate(2);
+        Check(playback.Position() == Time{260'000} && music->settings.startDspClock == futureStart,
+              "A rate change before the initial DSP lead expires must not advance the source cursor.");
+        for (const double invalid : {0.0, 2.01, std::numeric_limits<double>::infinity(),
+                                     std::numeric_limits<double>::quiet_NaN()})
+        {
+            bool rejected = false;
+            try { playback.SetRate(invalid); }
+            catch (const std::invalid_argument &) { rejected = true; }
+            Check(rejected && playback.Rate() == 2 && playback.Active(),
+                  "Invalid rates must not modify the active transport.");
+        }
+        failPitch = true;
+        bool reported = false;
+        try { playback.SetRate(1); }
+        catch (const std::runtime_error &failure) { reported = std::string_view(failure.what()) == "rate probe failure"; }
+        failPitch = false;
+        Check(reported && !playback.Active() && playback.Rate() == 2,
+              "A native frequency failure must stop playback and report the error without publishing a new rate.");
+        playback.Shutdown();
+        audio.Update();
+    }
+
+    void TestRateChangeAcrossCueDeadline()
+    {
+        dspClock = 0;
+        probes.clear();
+        a::AudioSystem audio;
+        std::string error;
+        Check(audio.Initialize({}, CreateClockBackend, CreateClip, error), "Deadline probe initialization failed.");
+        EditorPlayback playback;
+        playback.Initialize(audio);
+        const std::map<std::string, std::filesystem::path> files{{"Music", "music"}, {"Don", "don"}};
+        const std::vector<AudioMarker> cues{{0, "Don"}, {.01, "Don"}};
+        const auto update = [&] { playback.Update(files, 1, cues, 1, Time{3'000'000}); };
+        playback.Seek(Time{-100'000});
+        playback.Toggle();
+        update();
+        dspClock = 5280; // Anchor 960 + 90 ms; the zero-time hit is queued for 5760.
+        update();
+        Check(probes.back()->settings.startDspClock == 5760, "Deadline probe did not queue the expected hit.");
+        clockOnStop = 5761; // Simulate a mixer update during native Stop.
+        playback.SetRate(2);
+        clockOnStop = 0;
+        update();
+        Check(probes.back()->settings.startDspClock == 5760,
+              "A cue crossed during a native control call must not replay; queue the next ten-ms cue instead.");
+        playback.Shutdown();
+        audio.Update();
+    }
 } // namespace
 
 void TestEditorPlayback()
 {
+    TestPlaybackRates();
+    TestRateChangeAcrossCueDeadline();
     dspClock = 0;
     probes.clear();
     loads = 0;
@@ -360,6 +482,8 @@ void TestEditorPlaybackWithFmod(const std::filesystem::path &musicPath)
     };
     for (int attempt = 0; attempt < 12; ++attempt)
     {
+        constexpr std::array rates{.25, .5, 1.0, 1.5, 2.0};
+        playback.SetRate(rates[static_cast<std::size_t>(attempt) % rates.size()]);
         // Cover ordinary Space pause/resume and seeks made while paused.
         if (attempt % 3 == 1)
             playback.Seek(Time{1'000'000});
@@ -369,6 +493,11 @@ void TestEditorPlaybackWithFmod(const std::filesystem::path &musicPath)
         playback.Toggle();
         waitFor([&] { update(); return playback.Position() >= start + Time{100'000}; });
         Check(playback.Active(), "Repeated actual MP3 playback must remain active after preparing the seek.");
+        const auto beforeRateChange = playback.Position();
+        playback.SetRate(playback.Rate() == 2 ? .5 : 2);
+        Check(playback.Active() && playback.Position() >= beforeRateChange &&
+                  playback.Position() - beforeRateChange < Time{100'000},
+              "Actual FMOD live rate changes must preserve position without a new source seek.");
         playback.Toggle();
         const auto paused = playback.Position();
         update();

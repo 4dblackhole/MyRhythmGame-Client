@@ -49,7 +49,8 @@ void EditorWorkspace::UpdatePlayback()
     const auto time = playback_.Position();
     timeMs_ = time.count() / 1000.0;
     if (!playback_.Active() ||
-        std::abs(static_cast<long double>(time.count()) - lastPlaybackPresentation_.count()) >= 16'667)
+        std::abs(static_cast<long double>(time.count()) - lastPlaybackPresentation_.count()) >=
+            16'667.0 * playback_.Rate())
     {
         lastPlaybackPresentation_ = time;
         RequestRebuild();
@@ -77,6 +78,12 @@ void EditorWorkspace::TogglePlayback()
     timeMs_ = playback_.Position().count() / 1000.0;
     nextZToZero_ = false;
     nextXToMusicEnd_ = false;
+    RequestRebuild();
+}
+void EditorWorkspace::SetPlaybackRate(double rate)
+{
+    playback_.SetRate(rate);
+    timeMs_ = playback_.Position().count() / 1000.0;
     RequestRebuild();
 }
 void EditorWorkspace::SeekFirstNote()

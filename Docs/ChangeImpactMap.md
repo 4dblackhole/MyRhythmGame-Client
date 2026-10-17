@@ -37,9 +37,9 @@
 | 에디터 노트 선택/속성 | `Modes/Taiko/TaikoEditorNoteInspector.*`, TaikoEditorPlacement.h | IEditorContext/Workspace UpdateNote, IEditorDocument FindNote/UpdateNote, ChartEditor 인덱스/ID; ChartEditorTests/EditorModeTests |
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
 | BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace/ReplaceTiming/ReplaceEffects, 저장 왕복 |
-| 오디오 탭·타임라인/worker | EditorAudioView / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
+| 오디오 탭·시간 영역 선택·타임라인/worker | EditorAudioView / EditorAudioSelection / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
 | 에디터 offset/메트로놈·박자/예상 타격 눈금 | EditorAudioControls / EditorMetronome / EditorWorkspace | MusicalTimeline / EditorPlayback의 DSP 예약; EditorMetronomeTests / EditorAudioViewTests |
-| 에디터 재생·시간축 줌 | EditorPlayback / EditorWorkspace / EditorScoreView | EditorInput / EditorScene / TaikoEditorScore; EditorPlaybackTests / EditorModeTests; 엔진 AudioClip/Voice |
+| 에디터 재생·배속·시간축 줌 | EditorPlayback / EditorWorkspace / EditorAudioControls / EditorScoreView | EditorInput / EditorScene / TaikoEditorScore; EditorPlaybackTests / EditorModeTests; 엔진 AudioClip/Voice |
 | JudgeLevel 고정소수점/범위 | `FingerDrum.Rhythm/Judgement/JudgeLevel.h`, AccuracyRange; PatternDocument / PatternParser / ChartEditor | TaikoSessionBuilder / IPlayResult / GameplayLayout; RhythmCoreTests / ChartParserTests / NewDifficultyTests |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |

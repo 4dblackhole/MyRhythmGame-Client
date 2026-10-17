@@ -4,7 +4,9 @@
 #include "EditorVisual.h"
 #include "EditorWorkspace.h"
 #include "Texts/EditorScene/EditorTexts.h"
+#include <array>
 #include <functional>
+#include <optional>
 #include <vector>
 #include <tuple>
 
@@ -39,6 +41,9 @@ class EditorView final : public IEditorModeCanvas
         node = nullptr;
         divisionSliderNode_ = nullptr;
         timelineSliderNode_ = nullptr;
+        playbackRateSliderNode_ = nullptr;
+        audioSelectionNodes_.fill(nullptr);
+        audioSelectionAnchor_.reset();
         visual = nullptr;
     }
     void Build();
@@ -47,6 +52,7 @@ class EditorView final : public IEditorModeCanvas
 
   private:
     void BuildContent();
+    void SyncInputControls();
     void DrawNavigation();
     void DrawFooter();
     void DrawTimeInput(v::Rect);
@@ -72,6 +78,10 @@ class EditorView final : public IEditorModeCanvas
     void DrawAudioTimeRuler(double begin);
     void DrawAudioAlignment(double begin);
     void DrawAudioControls();
+    void InitializeAudioSelection();
+    void UpdateAudioSelection(v::Visual2DNode &, const v::PointerEvent &);
+    void DrawAudioSelection(double begin);
+    void DrawPlaybackRateControl();
     void DrawAudioSpectrum(v::Rect rect, double minimumHz, double maximumHz);
     void DrawTimeline();
     void SyncTimelineSlider();
@@ -89,12 +99,20 @@ class EditorView final : public IEditorModeCanvas
     mrg::visual2d::Visual2DNode *node{};
     mrg::visual2d::Visual2DNode *divisionSliderNode_{};
     mrg::visual2d::Visual2DNode *timelineSliderNode_{};
+    mrg::visual2d::Visual2DNode *playbackRateSliderNode_{};
+    std::array<v::Visual2DNode *, 3> audioSelectionNodes_{};
+    std::optional<finger_drum::rhythm::RhythmTime> audioSelectionAnchor_;
+    double audioSelectionViewBegin_{}, audioSelectionViewWindow_{};
     mrg::visual2d::Visual2DInputRouter sliderInput_;
     EditorMenuBar menuBar_;
     EditorVisual *visual{};
     bool buildFailed_{};
     static constexpr v::Rect DivisionSliderRect{1240, 6 + EditorMenuBar::Height, 480, 26};
     static constexpr v::Rect TimelineSliderRect{205, 915, 1645, 44};
+    static constexpr v::Rect PlaybackRateSliderRect{1260, 88, 340, 26};
+    static constexpr v::Rect Waveform{205, 153, 1565, 166};
+    static constexpr v::Rect MusicSpectrum{205, 375, 1565, 212};
+    static constexpr v::Rect HitSpectrum{205, 640, 1565, 212};
     std::vector<Control> controls;
     using AudioColumnsKey = std::tuple<double, double, double, std::uint64_t>;
     std::optional<AudioColumnsKey> audioColumnsKey_;

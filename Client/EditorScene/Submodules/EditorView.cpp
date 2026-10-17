@@ -29,6 +29,13 @@ void EditorView::Initialize(const mrg::EngineServices &services)
                           TimelineSliderRect.width, TimelineSliderRect.height},
                          0, "Editor timeline");
     timelineSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
+    playbackRateSliderNode_ = &v::CreateSlider(
+        *node, {PlaybackRateSliderRect.x - 960, 540 - PlaybackRateSliderRect.y - PlaybackRateSliderRect.height,
+                PlaybackRateSliderRect.width, PlaybackRateSliderRect.height},
+        static_cast<float>((state_.PlaybackRate() - EditorPlayback::MinimumRate) /
+                           (EditorPlayback::MaximumRate - EditorPlayback::MinimumRate)), "Editor playback rate");
+    playbackRateSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
+    InitializeAudioSelection();
     menuBar_.Initialize(*canvas.Get(), texts_);
     ReloadSize();
     Build();
@@ -53,7 +60,26 @@ void EditorView::BuildContent()
         DrawEffects();
     else
         DrawAudio();
+    SyncInputControls();
+    DrawFooter();
+    visual->Finish();
+    textRevision_ = texts_.Revision();
+    state_.FinishBuild();
+}
+
+void EditorView::SyncInputControls()
+{
     const bool showDivisionSlider = state_.Tab() == EditorTab::Pattern;
+    const bool showAudioControls = state_.Tab() == EditorTab::Audio;
+    if (playbackRateSliderNode_->IsVisible() != showAudioControls)
+    {
+        sliderInput_.Reset(*canvas.Get());
+        audioSelectionAnchor_.reset();
+        playbackRateSliderNode_->SetVisible(showAudioControls);
+        sliderInput_.InvalidateHitTest();
+    }
+    for (auto *track : audioSelectionNodes_)
+        track->SetVisible(showAudioControls);
     if (divisionSliderNode_->IsVisible() != showDivisionSlider)
     {
         if (!showDivisionSlider)
@@ -71,10 +97,9 @@ void EditorView::BuildContent()
     }
     SyncDivisionSlider();
     SyncTimelineSlider();
-    DrawFooter();
-    visual->Finish();
-    textRevision_ = texts_.Revision();
-    state_.FinishBuild();
+    playbackRateSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue(
+        static_cast<float>((state_.PlaybackRate() - EditorPlayback::MinimumRate) /
+                           (EditorPlayback::MaximumRate - EditorPlayback::MinimumRate)));
 }
 
 void EditorView::Box(v::Rect r, v::Color color, float radius)
@@ -186,6 +211,10 @@ void EditorView::Build()
         sliderInput_.Reset(*canvas.Get());
         divisionSliderNode_->SetVisible(false);
         timelineSliderNode_->SetVisible(false);
+        playbackRateSliderNode_->SetVisible(false);
+        for (auto *track : audioSelectionNodes_)
+            track->SetVisible(false);
+        audioSelectionAnchor_.reset();
         sliderInput_.InvalidateHitTest();
         Box({0, 0, 1920, 1080}, Background);
         DrawNavigation();

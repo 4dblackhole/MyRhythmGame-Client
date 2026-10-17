@@ -10,9 +10,6 @@ namespace
     using finger_drum::editor::SpectrumFrame;
     constexpr std::size_t Columns = 640;
     constexpr std::size_t TileColumns = 128;
-    constexpr v::Rect Waveform{205, 153, 1565, 166};
-    constexpr v::Rect MusicSpectrum{205, 375, 1565, 212};
-    constexpr v::Rect HitSpectrum{205, 640, 1565, 212};
     constexpr std::array<v::Color, 16> SpectrumColors{{{0, 0, 0, 1},
                                                        {.08F, 0, .16F, 1},
                                                        {.18F, .01F, .32F, 1},
@@ -334,14 +331,16 @@ void EditorView::DrawAudio()
 
     // Draw distinct tracks before their shared ruler/cursor and controls.
     Box({112, 76, 1784, 797}, Paper, 8);
-    Text({132, 90, 980, 28}, std::wstring(text.waveform), 22);
+    Text({132, 90, 400, 28}, std::wstring(text.waveform), 22);
     Text({132, 340, 1500, 28}, std::wstring(text.musicSpectrum), 22);
     Text({132, 606, 1500, 28}, std::wstring(text.hitSoundSpectrum), 22);
     DrawAudioWaveform(musicColumns_);
     DrawAudioSpectrum(MusicSpectrum, minimumHz, maximumHz);
     DrawAudioSpectrum(HitSpectrum, minimumHz, maximumHz);
     DrawAudioAlignment(begin);
+    DrawAudioSelection(begin);
     DrawAudioTimeRuler(begin);
+    DrawPlaybackRateControl();
     Button({1620, 85, 54, 32}, std::wstring(texts_.Get("Common.zoomIn")),
            [this]
            {
@@ -356,7 +355,7 @@ void EditorView::DrawAudio()
            });
     Text({1748, 88, 140, 24}, Decimal(state_.audioWindow, 2) + std::wstring(texts_.Get("Common.secondsSuffix")), 16);
     if (state_.Analysis().Running())
-        Text({570, 90, 700, 28}, std::wstring(text.analyzingAudio), 18, Blue);
+        Text({570, 90, 490, 28}, std::wstring(text.analyzingAudio), 18, Blue);
     DrawTimeline();
     DrawAudioControls();
 }

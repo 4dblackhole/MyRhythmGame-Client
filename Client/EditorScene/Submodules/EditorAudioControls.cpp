@@ -4,6 +4,11 @@
 
 using namespace editor_ui;
 
+void EditorView::DrawPlaybackRateControl()
+{
+    Text({1080, 88, 175, 26}, texts_.Format("Editor.playbackRateFormat", state_.PlaybackRate()), 17);
+}
+
 void EditorView::DrawAudioControls()
 {
     const auto offset = state_.Document().Pattern().patternOffsetMilliseconds;

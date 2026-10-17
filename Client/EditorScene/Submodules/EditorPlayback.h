@@ -9,6 +9,12 @@
 class EditorPlayback final
 {
   public:
+    static constexpr double MinimumRate = .25, MaximumRate = 2.0;
+    void SetRate(double rate);
+    double Rate() const noexcept
+    {
+        return rate_;
+    }
     ~EditorPlayback()
     {
         Shutdown();
@@ -55,6 +61,9 @@ class EditorPlayback final
     void PrimeMusic();
     bool BeginPreparedPlayback();
     void UpdatePosition();
+    [[nodiscard]] finger_drum::rhythm::RhythmTime PositionAtDsp(std::uint64_t dspClock) const noexcept;
+    [[nodiscard]] std::uint64_t DspClockAt(finger_drum::rhythm::RhythmTime time) const noexcept;
+    void AdjustTrackRates(double rate, std::uint64_t dspClock, std::string &error);
     void ScheduleHitSounds();
     void StopVoices() noexcept;
     void PauseVoices();
@@ -70,6 +79,8 @@ class EditorPlayback final
     std::optional<finger_drum::rhythm::RhythmTime> musicDuration_;
     finger_drum::rhythm::RhythmTimer clock_;
     finger_drum::rhythm::RhythmTime position_{}, startPosition_{}, end_{};
+    std::uint64_t dspAnchorClock_{};
+    double rate_{1};
     bool wanted_{}, running_{}, primed_{}, musicPositioned_{};
     std::string error_;
 };

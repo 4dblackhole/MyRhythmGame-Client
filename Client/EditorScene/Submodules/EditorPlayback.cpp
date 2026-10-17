@@ -1,6 +1,7 @@
 #include "EditorPlayback.h"
 #include "EditorTime.h"
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <stdexcept>
 
@@ -13,6 +14,14 @@ namespace
     {
         if (!success)
             throw std::runtime_error(error.empty() ? "Editor audio playback failed." : error);
+    }
+    Time BoundedTime(long double microseconds) noexcept
+    {
+        if (microseconds >= static_cast<long double>(Time::max().count()))
+            return Time::max();
+        if (microseconds <= static_cast<long double>(Time::min().count()))
+            return Time::min();
+        return Time{static_cast<Time::rep>(microseconds)};
     }
 } // namespace
 
@@ -32,7 +41,85 @@ void EditorPlayback::Toggle()
 void EditorPlayback::UpdatePosition()
 {
     if (running_ && audio_)
-        position_ = std::max(startPosition_, clock_.FromDspClock(audio_->DspClock()));
+        position_ = PositionAtDsp(audio_->DspClock());
+}
+
+Time EditorPlayback::PositionAtDsp(const std::uint64_t dspClock) const noexcept
+{
+    const auto elapsed = std::max(Time{}, clock_.FromDspClock(dspClock));
+    return BoundedTime(static_cast<long double>(startPosition_.count()) + elapsed.count() * rate_);
+}
+
+std::uint64_t EditorPlayback::DspClockAt(const Time time) const noexcept
+{
+    // The shared rhythm clock represents real elapsed time here. Only this
+    // editor transport converts between that duration and source/chart time.
+    const auto elapsed = BoundedTime((static_cast<long double>(time.count()) - startPosition_.count()) / rate_);
+    return clock_.ToDspClock(elapsed);
+}
+
+void EditorPlayback::AdjustTrackRates(const double rate, const std::uint64_t dspClock, std::string &error)
+{
+    for (auto &[path, track] : tracks_)
+    {
+        auto *voice = voices_.FindVoice(track.voice);
+        if (!voice || !voice->IsPlaying())
+            continue;
+        if (track.scheduledDspClock && *track.scheduledDspClock > dspClock)
+        {
+            const auto scheduled = *track.scheduledDspClock;
+            // The queued hit has not sounded. Cancel and queue that same cue
+            // again under the new clock mapping; never repeat an audible hit.
+            Require(voices_.Stop(track.voice, error), error);
+            track.voice = 0;
+            track.scheduledDspClock.reset();
+            // The mixer can advance during native control calls. Do not replay
+            // a deadline already crossed by the time Stop completes.
+            if (track.cursor && scheduled > audio_->DspClock())
+                --track.cursor;
+        }
+        else
+            Require(voice->SetPitch(static_cast<float>(rate), error), error);
+    }
+}
+
+void EditorPlayback::SetRate(const double rate)
+{
+    if (!std::isfinite(rate) || rate < MinimumRate || rate > MaximumRate)
+        throw std::invalid_argument("Editor playback rate must be within 0.25..2.00.");
+    if (rate == rate_)
+        return;
+    if (!running_ || !audio_)
+    {
+        rate_ = rate;
+        return;
+    }
+    try
+    {
+        const auto snapshot = audio_->CaptureClockSnapshot();
+        const auto position = PositionAtDsp(snapshot.dspClock);
+        std::string error;
+        auto *musicVoice = voices_.FindVoice(musicVoice_);
+        if (musicVoice && musicVoice->IsPlaying())
+            Require(musicVoice->SetPitch(static_cast<float>(rate), error), error);
+
+        // Preserve source time without seeking the music channel. An initial
+        // scheduled start stays in the future until its existing lead expires.
+        position_ = startPosition_ = position;
+        rate_ = rate;
+        dspAnchorClock_ = std::max(dspAnchorClock_, snapshot.dspClock);
+        clock_.AnchorDspClock(Time{}, dspAnchorClock_, snapshot.sampleRate);
+        if (musicVoice && musicVoice->IsPlaying() && position_ < Time{})
+            Require(musicVoice->SetDelay(DspClockAt(Time{}), 0, error), error);
+        // Retiming music precedes native Stop calls, which can let the mixer
+        // cross a formerly queued hit's deadline while they execute.
+        AdjustTrackRates(rate, snapshot.dspClock, error);
+    }
+    catch (...)
+    {
+        Pause();
+        throw;
+    }
 }
 
 void EditorPlayback::StopVoices() noexcept
@@ -190,6 +277,7 @@ void EditorPlayback::PrimeMusic()
             if (voice)
                 Require(voices_.Stop(musicVoice_, error), error);
             a::AudioPlaybackSettings settings;
+            settings.pitch = static_cast<float>(rate_);
             settings.startPaused = true;
             settings.startPositionMicroseconds = static_cast<std::uint64_t>(std::max(position_, Time{}).count());
             musicVoice_ = voices_.Play(music_, settings, nullptr, error);
@@ -214,6 +302,7 @@ bool EditorPlayback::BeginPreparedPlayback()
         if (!musicPositioned_)
         {
             a::AudioPlaybackSettings settings;
+            settings.pitch = static_cast<float>(rate_);
             settings.startPaused = true;
             settings.startPositionMicroseconds = static_cast<std::uint64_t>(std::max(position_, Time{}).count());
             Require(voices_.Restart(musicVoice_, settings, nullptr, error), error);
@@ -232,17 +321,19 @@ bool EditorPlayback::BeginPreparedPlayback()
     if (snapshot.sampleRate <= 0)
         throw std::runtime_error("The audio mixer has no sample clock.");
     const auto leadSamples = static_cast<std::uint64_t>(snapshot.sampleRate / 50);
-    clock_.Start(snapshot.performanceCounterTicks, snapshot.performanceCounterFrequency, position_);
-    clock_.AnchorDspClock(position_, snapshot.dspClock + leadSamples, snapshot.sampleRate);
+    startPosition_ = position_;
+    dspAnchorClock_ = snapshot.dspClock + leadSamples;
+    clock_.Start(snapshot.performanceCounterTicks, snapshot.performanceCounterFrequency);
+    clock_.AnchorDspClock(Time{}, dspAnchorClock_, snapshot.sampleRate);
     if (hasMusic)
     {
         auto *voice = voices_.FindVoice(musicVoice_);
         if (!voice)
             throw std::runtime_error("The prepared music voice has stopped.");
-        Require(voice->SetDelay(clock_.ToDspClock(std::max(position_, Time{})), 0, error), error);
+        Require(voice->SetPitch(static_cast<float>(rate_), error), error);
+        Require(voice->SetDelay(DspClockAt(std::max(position_, Time{})), 0, error), error);
         Require(voice->SetPaused(false, error), error);
     }
-    startPosition_ = position_;
     for (auto &[path, track] : tracks_)
         track.cursor = static_cast<std::size_t>(std::lower_bound(track.times.begin(), track.times.end(), position_) -
                                                 track.times.begin());
@@ -252,6 +343,9 @@ bool EditorPlayback::BeginPreparedPlayback()
 
 void EditorPlayback::ScheduleHitSounds()
 {
+    const auto sourceLead = BoundedTime(Lead.count() * rate_);
+    const auto windowBegin = BoundedTime(static_cast<long double>(position_.count()) - sourceLead.count());
+    const auto windowEnd = BoundedTime(static_cast<long double>(position_.count()) + sourceLead.count());
     for (auto &[path, track] : tracks_)
     {
         if (track.scheduledDspClock && *track.scheduledDspClock > audio_->DspClock())
@@ -261,13 +355,14 @@ void EditorPlayback::ScheduleHitSounds()
         // A suspended UI/modal interval cannot be replayed retroactively.
         // Binary-search past expired cues instead of producing a catch-up burst.
         const auto first = track.times.begin() + static_cast<std::ptrdiff_t>(track.cursor);
-        track.cursor = static_cast<std::size_t>(std::lower_bound(first, track.times.end(), position_ - Lead) -
+        track.cursor = static_cast<std::size_t>(std::lower_bound(first, track.times.end(), windowBegin) -
                                                 track.times.begin());
-        if (track.cursor == track.times.size() || track.times[track.cursor] > position_ + Lead)
+        if (track.cursor == track.times.size() || track.times[track.cursor] > windowEnd)
             continue;
         const auto time = track.times[track.cursor++];
         a::AudioPlaybackSettings settings;
-        settings.startDspClock = clock_.ToDspClock(time);
+        settings.pitch = static_cast<float>(rate_);
+        settings.startDspClock = DspClockAt(time);
         std::string error;
         if (voices_.FindVoice(track.voice))
             Require(voices_.Restart(track.voice, settings, nullptr, error), error);
