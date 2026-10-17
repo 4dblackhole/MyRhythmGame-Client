@@ -71,6 +71,21 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 FMOD 오류 조사
+
+- [조사 보고서](Reviews/FmodErrorAudit-2026-10-17.md)에 재현된 네 경로, 현재 회피하는 경계,
+  장치/경합 미검증 위험과 수정 방향을 기록했습니다. 런타임 코드 변경은 없습니다.
+- 기존 Debug/Release EditorAudioViewTests와 GameplayPauseTests를 재실행해 통과했습니다.
+  기존 실제 MP3 EditorPlayback의 정지·재개 12회도 Debug에서 통과했습니다.
+- 제품 오브젝트를 연결한 별도 FMOD 2.02.22 NoSound 진단에서 두 구성 모두
+  에디터 샘플 종료 후 재사용 오류30, SampleAsync 파일 실패18 이후 준비 완료/재생 오류46,
+  음원 끝 1us 전 오류32(실제 EditorPlayback 포함), 일반 async 스트림 재사용 오류46을 확인했습니다.
+  오류46 직후 즉시 Shutdown은 Debug에서 10초 제한을 초과했으며 Release는 정상 종료했습니다.
+  Update로 정리 시간을 준 대조군은 두 구성 모두 종료됐습니다. native 대기 원인은 미확정입니다.
+- 이는 자동 진단이며 실제 화면 조작·스피커 청취·ASIO/WASAPI 전환/장치 분리를 확인하지 않았습니다.
+  문서 변경에 git diff --check를 적용했습니다. 솔루션 재빌드/전체 smoke/정적 분석은 이번 조사에서
+  새로 실행하지 않았습니다. 사용자 LaneKeyBeam.cpp·Option.ini·외부 언어파일 SHA-256을 보존했습니다.
+
 ## 2026-10-17 난이도 클릭·에디터 선택 도구·스트림 재재생
 
 - SongSelectInput은 펼쳐진 난이도 상자 클릭에서 선택 갱신 후 기존 Launch 명령을 한 번

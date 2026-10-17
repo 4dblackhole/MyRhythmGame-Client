@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+FMOD 조사(2026-10-17): [미수정 오류와 재현 조건](Reviews/FmodErrorAudit-2026-10-17.md).
+에디터 샘플 자연 종료 후 재사용(30), 실패한 SampleAsync의 Ready 처리(18→46),
+음원 끝 직전 PCM 반올림(32), 일반 엔진 Play의 async 재사용(46)을 실제 FMOD로 확인했습니다.
+조사 문서만 추가했으며 제품 코드 수정은 후속 작업입니다. 현재 음악 재개의 2단계 탐색과
+기존 Debug/Release 에디터·일시정지 회귀는 통과했습니다. 장치 분리/청취/직접 조작은 미검증입니다.
+
 플레이 상태머신(2026-10-17): [공통 상태·재개 계약](Gameplay/Pause.md#모든-모드의-실행-상태).
 IPlaySessionController와 공통 Controller/Feedback는 Client/GameFlow, 실행 구현은 그 Submodules로 이동했습니다.
 Scene은 인터페이스로 조립하며 Loading/Gameplay/Pause/Ending을 모든 모드에서 공유합니다.
