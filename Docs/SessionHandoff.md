@@ -9,6 +9,12 @@
 
 ## 작업 위치와 경계
 
+에디터 OGG 분석(2026-10-17): [오디오 분석 경로](ChartEditor.md).
+게임 재생은 FMOD를 유지하며 분석에만 정적 stb_vorbis를 추가했습니다. Ogg Vorbis는
+Windows 코덱 없이 파형/FFT를 생성합니다. 다른 형식은 기존 Media Foundation을 사용합니다.
+디코더/PCM 전달은 FingerDrum.Editor/Audio/Submodules, FFT는 EditorAudioAnalysis가 소유합니다.
+출처·한계·외부 경고 정책은 ThirdParty/stb/README.md, 검증은 Verification을 참고합니다.
+
 에디터 osu 가져오기(2026-10-17): [곡 카드 + 메뉴·가져오기](EditorSongSelect.md#osutaiko-가져오기).
 +는 New Difficulty/Convert .osu 팝업을 열며 전자는 기존 새 난이도 입력/진입을 유지합니다.
 EditorOsuImport가 파일 선택과 비동기 변환 EXE/결과 수명을 소유하고 Scene은 카탈로그를 갱신합니다.

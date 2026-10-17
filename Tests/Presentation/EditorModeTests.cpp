@@ -6,8 +6,12 @@
 #include "EditorScene/Submodules/Modes/Taiko/TaikoEditorNoteInspector.h"
 #include "Taiko/TaikoMode.h"
 #include "Texts/EditorScene/Taiko/TaikoEditorTexts.h"
+#include <chrono>
+#include <filesystem>
 #include <limits>
+#include <map>
 #include <stdexcept>
+#include <thread>
 
 namespace
 {
@@ -150,6 +154,7 @@ namespace
         mutable int markerCalls{};
         bool failDrawing{};
         int chartCalls{};
+        std::map<std::string, std::filesystem::path> audioFiles;
         std::string_view Id() const noexcept override
         {
             return "TestOnly";
@@ -226,7 +231,7 @@ namespace
         std::map<std::string, std::filesystem::path> AudioFiles(
             const chart::IEditorDocument &, const finger_drum::GameplayLaunchRequest &) const override
         {
-            return {};
+            return audioFiles;
         }
         std::vector<AudioMarker> AudioMarkers(const chart::IEditorDocument &) const override
         {
@@ -234,6 +239,55 @@ namespace
             return {{.5, "ProbeCue"}};
         }
     };
+
+    void TestVorbisAudioView(v::ScreenVisual2DManager &visuals, const mrg::EngineServices &services,
+                             finger_drum::texts::TextCatalog &texts,
+                             const std::function<const std::vector<v::DrawPacket> &()> &packets)
+    {
+        const auto fixture = std::filesystem::path(__FILE__).parent_path().parent_path() /
+                             "Rhythm/Fixtures/Audio/OppositePhase.ogg";
+        auto mode = std::make_unique<ProbeMode>();
+        mode->audioFiles = {{"Music", fixture}, {"ProbeCue", fixture}};
+        EditorWorkspace state(std::move(mode), std::make_unique<ProbeDocument>());
+        state.UpdateAnalysis();
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+        while (state.Analysis().Running() && std::chrono::steady_clock::now() < deadline)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            state.UpdateAnalysis();
+        }
+        Check(!state.Analysis().Running() && state.Analysis().Data().errors.empty() &&
+                  !state.Analysis().Data().sounds.at("Music").frames.empty(),
+              "The editor worker must publish real Ogg Vorbis analysis without codec errors.");
+        state.audioWindow = 2;
+        state.Seek(0);
+        state.SelectTab(EditorTab::Audio);
+        EditorView view(visuals, state, texts);
+        view.Initialize(services);
+        visuals.Render({});
+
+        // Inspect the actual waveform and both spectrum tracks after rectangle
+        // batches are expanded by the recording renderer, not synthetic FFT data.
+        const auto visibleColumns = [&](float top, float bottom, bool waveform) {
+            return std::ranges::count_if(packets(), [&](const auto &packet) {
+                DirectX::XMFLOAT3 corner;
+                DirectX::XMStoreFloat3(
+                    &corner, DirectX::XMVector3TransformCoord(
+                                 DirectX::XMVectorSet(packet.bounds.x, packet.bounds.y + packet.bounds.height, 0, 1),
+                                 DirectX::XMLoadFloat4x4(&packet.nodeTransform)));
+                const float y = 540 - corner.y;
+                const bool colored = waveform ? packet.color.green > .5F && packet.color.red < .3F
+                                              : packet.color.red > .3F && packet.color.green < .95F;
+                return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
+                       corner.x >= 205 - 960 && corner.x < 1770 - 960 && colored;
+            });
+        };
+        Check(visibleColumns(153, 319, true) > 10 && visibleColumns(375, 587, false) > 10 &&
+                  visibleColumns(640, 852, false) > 10,
+              "Ogg Vorbis must draw a waveform, music FFT and hit-sound FFT in the audio tab.");
+        view.Shutdown();
+        Check(visuals.CanvasCount() == 0, "The Vorbis view must release its canvases.");
+    }
 
     void TestTaikoEditing()
     {
@@ -842,6 +896,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
                      finger_drum::texts::TextCatalog &texts,
                      const std::function<const std::vector<v::DrawPacket> &()> &packets)
 {
+    TestVorbisAudioView(visuals, services, texts, packets);
     {
         TestTaikoToolGroups(texts);
         EditorWorkspace state(CreateEditorMode("Taiko"),

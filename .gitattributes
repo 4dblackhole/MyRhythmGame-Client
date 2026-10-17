@@ -1,0 +1,4 @@
+# Keep the pinned decoder and its license byte-identical to upstream.
+FingerDrum.Editor/ThirdParty/stb/stb_vorbis.c -text
+FingerDrum.Editor/ThirdParty/stb/LICENSE -text
+FingerDrum.Assets/Assets/Licenses/stb-vorbis.txt -text

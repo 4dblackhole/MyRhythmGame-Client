@@ -9,6 +9,8 @@ build/
 
 # Third-party SDKs and runtime binaries are supplied locally.
 ThirdParty/
+# This pinned source-only decoder is redistributed with its license.
+!FingerDrum.Editor/ThirdParty/
 *.dll
 *.lib
 

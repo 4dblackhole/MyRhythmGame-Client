@@ -63,8 +63,10 @@
   </ItemGroup>
   <ItemGroup>
     <BuiltInAsset Include="Assets\Fonts\*.*" />
+    <BuiltInAsset Include="Assets\Licenses\*.*" />
     <BuiltInAsset Include="Assets\Skins\Default Skin\**\*.*" />
     <None Include="Assets\Fonts\*.*" />
+    <None Include="Assets\Licenses\*.*" />
     <None Include="Assets\Skins\Default Skin\*.*" />
     <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\*.*" />
     <None Include="Assets\Skins\Default Skin\InGame\*.*" />

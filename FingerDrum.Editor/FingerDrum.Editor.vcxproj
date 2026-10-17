@@ -13,7 +13,25 @@
   <ItemDefinitionGroup><ClCompile><AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories><PreprocessorDefinitions>NOMINMAX;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions><WarningLevel>Level4</WarningLevel><SDLCheck>true</SDLCheck><ConformanceMode>true</ConformanceMode><LanguageStandard>stdcpp20</LanguageStandard><AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions></ClCompile></ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Audio\EditorAudioAnalysis.cpp" />
+    <ClCompile Include="Audio\Submodules\AudioDecode.cpp" />
+    <ClCompile Include="Audio\Submodules\VorbisDecode.cpp">
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <AdditionalOptions>/external:I&quot;$(ProjectDir)ThirdParty\stb&quot; %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\StbVorbis.cpp">
+      <EnablePREfast>false</EnablePREfast>
+      <!-- These analysis switches otherwise re-enable /analyze after /analyze-. -->
+      <PREfastProjectDirectory />
+      <PREfastRulesetDirectories />
+      <PREfastRulesetFile />
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <AdditionalOptions>/external:I&quot;$(ProjectDir)ThirdParty\stb&quot; %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClInclude Include="Audio\EditorAudioAnalysis.h" />
+    <ClInclude Include="Audio\Submodules\AudioDecode.h" />
+    <None Include="ThirdParty\stb\stb_vorbis.c" />
+    <None Include="ThirdParty\stb\LICENSE" />
+    <None Include="ThirdParty\stb\README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

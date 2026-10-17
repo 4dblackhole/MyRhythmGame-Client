@@ -232,12 +232,21 @@ timeline·시간 인덱스·시간에 의존하는 속도 캐시만 재생성하
 `EditorScene`은 ScreenVisual2DManager의 Canvas에 draw packet component를 등록합니다.
 박자 디바이더는 같은 Canvas의 엔진 `CreateSlider`와 `Visual2DInputRouter`를 사용합니다.
 화면 비율이 좁아져도 Penpot 작업영역이 잘리지 않게 동일 비율로 축소합니다.
-`EditorAudioAnalysis`는 Media Foundation으로 실제 음악/히트사운드 PCM을 디코딩하고
+`EditorAudioAnalysis`는 실제 음악/히트사운드 PCM을 디코딩하고
 2048-point Hann FFT를 계산합니다. 96개 로그 주파수 구간은 20Hz부터 최대
 20kHz(파일의 Nyquist 이하)까지이며, 색상은 −90~0dBFS 범위입니다.
 스테레오 등 다채널 음원은 채널별 FFT 전력을 평균해 위상 상쇄로 사라지지 않습니다.
 파형은 각 10ms 구간의 모든 채널 최솟값/최댓값을 표시합니다.
 디코딩은 입력 chunk와 FFT 주변 window만 보관하며 음원 전체 PCM을 메모리에 쌓지 않습니다.
+`Audio/Submodules/AudioDecode`는 PCM 전달과 디코더 선택을 맡습니다. OggS 컨테이너는
+정적으로 연결한 stb_vorbis로 분석하며 대문자 확장자·한글 경로도 처리합니다. 별도 코덱
+설치나 배포 DLL이 필요하지 않습니다. `VorbisDecode`는 최대 4096 프레임씩 읽고
+chunk 사이에서 취소를 확인합니다. 파일/디코더와 Media Foundation 버퍼는 예외에도 해제합니다.
+MP3/WAV/FLAC/M4A(AAC)/WMA는 기존 Media Foundation 경로를 유지합니다. 후자의 지원은
+OS/설치 코덱에 의존하며, 테스트 환경에서는 OGG와 이 다섯 형식을 분석했습니다. 확장자만으로
+모든 코덱을 보장하지 않습니다. 추가한 OGG 경로는 **Ogg Vorbis**이며 Opus·연결형
+스트림·오래된 floor-0 Vorbis는 지원하지 않습니다. 손상 파일의 분석 오류는 기존
+worker의 상태 메시지 경로로 전달합니다. [디코더 출처·제약·라이선스](../FingerDrum.Editor/ThirdParty/stb/README.md).
 프로세스 수명의 단일 worker가 복사한 파일 목록/취소 토큰만 소유합니다. Scene 종료는
 취소를 요청하고 결과 참조를 내려놓으며 worker 완료를 기다리지 않습니다. 큰 분석 결과의
 해제도 worker에 넘깁니다. 실제 프로세스 종료에서는 worker를 정리합니다.

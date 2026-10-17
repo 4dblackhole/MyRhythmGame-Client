@@ -133,6 +133,11 @@ and Canvas cleanup. `EditorModeTests.cpp` also checks Taiko tool placement, snap
 deletion/cancellation and expected cues, then injects a test-only alternative mode
 and document adapter to verify different tools/layout/coordinates/metadata/sound
 targets, Save dispatch and marker revision caching through the common editor.
+The committed Ogg Vorbis tone fixture also runs through the real analysis worker
+and audio tab. The test checks visible waveform/music FFT/hit FFT rectangles;
+no installed Vorbis codec or FFmpeg is required. Domain audio tests additionally
+check duration, frequency/level, opposite stereo phase, Unicode/renamed paths,
+bounded cancellation and truncated-stream errors.
 It also covers realtime lane boundaries, spaced/case-insensitive Buzz options,
 Purple and timed/explicit sound agreement with play, invalid seek preservation,
 effect/timing commands, failed edit rollback and drawing failure recovery.

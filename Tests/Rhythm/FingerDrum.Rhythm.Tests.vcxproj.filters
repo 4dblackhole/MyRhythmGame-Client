@@ -2,6 +2,10 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Submodules" />
+    <Filter Include="Fixtures" />
+    <Filter Include="Fixtures\Audio" />
+    <None Include="Fixtures\Audio\OppositePhase.ogg"><Filter>Fixtures\Audio</Filter></None>
+    <None Include="Fixtures\Audio\README.md"><Filter>Fixtures\Audio</Filter></None>
     <ClCompile Include="RhythmTests.cpp"></ClCompile>
     <ClCompile Include="Submodules\AccuracyTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\BuzzReplayTests.cpp"><Filter>Submodules</Filter></ClCompile>

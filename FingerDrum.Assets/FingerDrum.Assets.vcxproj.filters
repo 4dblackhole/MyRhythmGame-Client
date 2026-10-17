@@ -15,6 +15,7 @@
       <UniqueIdentifier>{B6666666-6666-4666-8666-666666666664}</UniqueIdentifier>
     </Filter>
     <Filter Include="Assets\Fonts" />
+    <Filter Include="Assets\Licenses" />
     <Filter Include="Assets\Skins" />
     <Filter Include="Assets\Skins\Default Skin" />
     <Filter Include="Assets\Skins\Default Skin\HitSounds" />
@@ -38,6 +39,7 @@
     <ClCompile Include="Source\FingerDrumAssets.cpp"><Filter>Source</Filter></ClCompile>
     <None Include="Scripts\GenerateAssetPack.ps1"><Filter>Scripts</Filter></None>
     <None Include="Assets\Fonts\*.*"><Filter>Assets\Fonts</Filter></None>
+    <None Include="Assets\Licenses\*.*"><Filter>Assets\Licenses</Filter></None>
     <None Include="Assets\Skins\Default Skin\*.*"><Filter>Assets\Skins\Default Skin</Filter></None>
     <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\*.*"><Filter>Assets\Skins\Default Skin\HitSounds\TaikoMode</Filter></None>
     <None Include="Assets\Skins\Default Skin\InGame\*.*"><Filter>Assets\Skins\Default Skin\InGame</Filter></None>

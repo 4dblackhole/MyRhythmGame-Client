@@ -21,6 +21,8 @@
   <ItemGroup><ProjectReference Include="..\..\Client\FingerDrum.ClientLogic.vcxproj"><Project>{A8888888-8888-4888-8888-888888888888}</Project></ProjectReference></ItemGroup>
   <ItemGroup>
     <ClCompile Include="RhythmTests.cpp" />
+    <None Include="Fixtures\Audio\OppositePhase.ogg" />
+    <None Include="Fixtures\Audio\README.md" />
     <ClCompile Include="Submodules\AccuracyTests.cpp" />
     <ClCompile Include="Submodules\BuzzReplayTests.cpp" />
     <ClCompile Include="Submodules\ChartEditorTests.cpp" />

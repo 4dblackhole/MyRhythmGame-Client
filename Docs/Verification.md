@@ -71,6 +71,39 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 에디터 Ogg Vorbis 파형·FFT
+
+- 동일한 48kHz 스테레오 톤을 WAV/MP3/OGG/FLAC/M4A(AAC)/WMA로 만들어 분석했습니다.
+  수정 전 OGG만 Media Foundation 0xC00D36C4로 실패했고 나머지 다섯 형식은 성공했습니다.
+  수정 후 여섯 형식과 44.1kHz 모노 OGG 모두 실제 파형/FFT를 생성했습니다. FFmpeg는
+  ignored 재현 파일 생성에만 사용하며 빌드·실행·테스트 의존성이 아닙니다.
+- AudioDecode는 형식 선택/PCM 전달·검증, VorbisDecode는 파일/디코더 수명과 4096 프레임
+  단위 읽기를 맡습니다. FFT는 EditorAudioAnalysis에 유지했고, 16KiB FFT scratch를
+  음원당 한 번 힙에 할당해 재사용하여 C6262를 해결했습니다. 게임 FMOD/엔진·시계·재생
+  경로에는 변경이 없습니다. Decoder/FILE/Media Foundation lock의 예외 해제, 채널·크기
+  변환/프레임 상한, worker 취소와 소유권, 직접 호출부의 오류 전달·단일 책임을 검토했습니다.
+- stb_vorbis v1.22는 출처 revision과 SHA-256을 고정한 무수정 원본입니다. 라이선스 원본과
+  기본 자산 pack의 Licenses/stb-vorbis.txt가 바이트까지 같습니다. 정적 링크로 추가 배포
+  DLL은 없습니다. Ogg Vorbis 지원이며 Opus/연결형/오래된 floor-0 Vorbis는 제외합니다.
+  자세한 [출처·제약·외부 코드 정책](../FingerDrum.Editor/ThirdParty/stb/README.md)을 참고합니다.
+- Debug/Release x64 전체 solution Build 성공. FingerDrum.Editor의 소유 C++ 3개와
+  Rhythm.Tests 전체 17개 TU에 실제 프로젝트 x64/C++20/include/define으로 MSVC Code
+  Analysis Rebuild를 실행했습니다. 원본 외부 구현 TU 하나는 분석에서 제외하고 외부
+  include 경고만 W0로 처리했습니다. 해당 TU의 C4701은 초기화 후 probe 증가라는 상위
+  코드 불변식을 wrapper에 설명한 한정 pragma로 처리했습니다. 소유 코드는 /W4로
+  유지하며 실제 CL tlog에서 /analyze 3개·외부 /analyze- 1개를 두 구성 모두 확인했습니다.
+  최종 빌드/분석/표시 테스트에는 컴파일 경고·분석 진단·파싱 오류가 없습니다.
+- 로직/기본곡 카탈로그 구성별 63개/실패 0. 커밋한 1초 OGG fixture로 정확한 길이·1kHz
+  레벨·역위상 스테레오/무음·한글/대문자/이름을 바꾼 확장자·사전/진행 중 취소·잘린
+  헤더 오류를 검사했습니다. EditorPresentation의 C++ 5개도 /analyze 빌드·실행하여
+  실제 worker → 오디오 탭의 녹색 파형·음악 FFT·히트 FFT draw packet과 기존 편집 회귀를
+  두 구성에서 검사했습니다. 네 smoke 경로는 구성별 4개, 총 8개 exit 0입니다.
+- CheckArchitecture(11프로젝트), git diff --check를 통과했고 사용자 LaneKeyBeam.cpp,
+  Debug/Release Option.ini, 외부 en/ko.ini의 작업 전 SHA-256을 보존했습니다. 사용자
+  곡·스킨/엔진 gitlink는 변경하지 않았습니다. 로그/재현기는 ignored
+  build/editor-ogg-2026-10-17에 있습니다. 위 결과는 자동 검사이며 실제 문제곡의 화면을
+  보거나 물리 키보드/마우스 조작·청음으로 확인하는 수동 검증은 수행하지 않았습니다.
+
 ## 2026-10-17 리절트 정확도 랭크 PNG
 
 - 사용자 확인에 따라 100% Y, 99% PERFECT, 98% SSS, 96% SS, 93% S, 90% A,
