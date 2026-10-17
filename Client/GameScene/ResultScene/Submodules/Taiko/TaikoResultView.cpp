@@ -1,12 +1,45 @@
 #include "TaikoResultView.h"
 #include "App/AssetPaths.h"
+#include "Judgement/AccuracyScore.h"
 #include "Presentation/SkinVisualComponent.h"
 #include "TaikoResultLayout.h"
 #include "Texts/GameScene/ResultScene/ResultTexts.h"
 #include <algorithm>
+#include <array>
+#include <cstdint>
 #include <stdexcept>
+#include <string_view>
 namespace v = mrg::visual2d;
 using namespace taiko_result_ui::layout;
+
+namespace
+{
+    std::wstring_view RankImageKey(const finger_drum::rhythm::AccuracyScore accuracy) noexcept
+    {
+        struct RankThreshold
+        {
+            std::uint32_t minimumPercent;
+            std::wstring_view imageKey;
+        };
+        static constexpr std::array<RankThreshold, 10> ranks{{
+            {100, L"Rank.Y"},
+            {99, L"Rank.PERFECT"},
+            {98, L"Rank.SSS"},
+            {96, L"Rank.SS"},
+            {93, L"Rank.S"},
+            {90, L"Rank.A"},
+            {85, L"Rank.B"},
+            {80, L"Rank.C"},
+            {75, L"Rank.D"},
+            {70, L"Rank.E"},
+        }};
+        // Compare the recorded six-decimal units, never rounded display text.
+        for (const auto &rank : ranks)
+            if (accuracy.Units() >= rank.minimumPercent * 1'000'000U)
+                return rank.imageKey;
+        return L"Rank.F";
+    }
+} // namespace
 
 TaikoResultView::TaikoResultView(const finger_drum::mode::TaikoPlayResult &result, v::ScreenVisual2DManager &visuals,
                                  finger_drum::texts::TextCatalog &texts, ResultViewContext context)
@@ -25,6 +58,7 @@ void TaikoResultView::LoadAssets()
     clouds_ = load(L"Background.Clouds");
     modeIcon_ = load(L"Mode.Taiko");
     rankFrame_ = load(L"Rank.Frame");
+    rankImage_ = load(RankImageKey(result_.summary.accuracy));
     font_ = {v::TextFontSource::File, mrg_client::asset_paths::fonts::NotoSansKR().wstring()};
 }
 void TaikoResultView::Initialize(const mrg::EngineServices &services)

@@ -6,9 +6,14 @@
 #include "GameScene/RhythmTestScene/RhythmTestScene.h"
 #include "Taiko/TaikoMode.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
+#include <filesystem>
 #include <format>
+#include <fstream>
+#include <map>
 #include <stdexcept>
 
 namespace
@@ -24,13 +29,34 @@ namespace
     class NullRenderer final : public mrg::graphics::Visual2DRenderSystem
     {
       public:
-        v::ImageHandle LoadImage(const std::filesystem::path &) override
+        v::ImageHandle LoadImage(const std::filesystem::path &path) override
         {
-            return {++imageId_};
+            std::ifstream file(path, std::ios::binary);
+            std::array<unsigned char, 24> header{};
+            file.read(reinterpret_cast<char *>(header.data()), static_cast<std::streamsize>(header.size()));
+            Check(file.gcount() == static_cast<std::streamsize>(header.size()) && header[0] == 137 &&
+                      header[1] == 'P' && header[2] == 'N' && header[3] == 'G',
+                  "Result assets must resolve to real embedded/fallback PNGs.");
+            const auto dimension = [&header](const std::size_t offset)
+            {
+                return (static_cast<std::uint32_t>(header[offset]) << 24) |
+                       (static_cast<std::uint32_t>(header[offset + 1]) << 16) |
+                       (static_cast<std::uint32_t>(header[offset + 2]) << 8) |
+                       static_cast<std::uint32_t>(header[offset + 3]);
+            };
+            const auto id = ++imageId_;
+            images_.emplace(id,
+                            LoadedImage{{static_cast<float>(dimension(16)), static_cast<float>(dimension(20))}, path});
+            return {id};
         }
-        v::Size GetImageSize(v::ImageHandle) const noexcept override
+        v::Size GetImageSize(v::ImageHandle image) const noexcept override
         {
-            return {};
+            const auto found = images_.find(image.value);
+            return found == images_.end() ? v::Size{} : found->second.size;
+        }
+        const std::filesystem::path &ImagePath(v::ImageHandle image) const
+        {
+            return images_.at(image.value).path;
         }
         void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, v::Point,
                           std::uint32_t) override
@@ -50,6 +76,12 @@ namespace
         }
 
       private:
+        struct LoadedImage
+        {
+            v::Size size;
+            std::filesystem::path path;
+        };
+        std::map<std::uint64_t, LoadedImage> images_;
         std::uint64_t imageId_{};
     };
     bool HasText(const v::Visual2DCanvas &canvas, std::wstring_view text)
@@ -76,6 +108,63 @@ namespace
             if (const auto *found = FindText(*child, value))
                 return found;
         return nullptr;
+    }
+    void TestAccuracyRanks()
+    {
+        struct RankCase
+        {
+            std::uint32_t units;
+            std::wstring_view rank;
+        };
+        constexpr std::array<RankCase, 21> cases{{
+            {100'000'000, L"Y"},  {99'999'999, L"PERFECT"}, {99'000'000, L"PERFECT"},
+            {98'999'999, L"SSS"}, {98'000'000, L"SSS"},     {97'999'999, L"SS"},
+            {96'000'000, L"SS"},  {95'999'999, L"S"},       {93'000'000, L"S"},
+            {92'999'999, L"A"},   {90'000'000, L"A"},       {89'999'999, L"B"},
+            {85'000'000, L"B"},   {84'999'999, L"C"},       {80'000'000, L"C"},
+            {79'999'999, L"D"},   {75'000'000, L"D"},       {74'999'999, L"E"},
+            {70'000'000, L"E"},   {69'999'999, L"F"},       {0, L"F"},
+        }};
+        for (const auto &test : cases)
+        {
+            mode::TaikoPlayResult result;
+            result.summary.totalNotes = result.summary.processedNotes = 1;
+            result.summary.accuracy = r::AccuracyScore::FromUnits(test.units);
+            NullRenderer renderer;
+            v::ScreenVisual2DManager visuals;
+            visuals.Initialize(renderer, {1280, 720});
+            finger_drum::texts::TextCatalog texts;
+            mrg::graphics::MeshRenderSystem meshes;
+            mrg::graphics::TextRenderSystem textRendering;
+            mrg::audio::AudioSystem audio;
+            auto view = CreateResultView(result, visuals, texts);
+            view->Initialize({meshes, textRendering, renderer, audio, 1280, 720});
+            auto *canvas = visuals.FindCanvas(1);
+            if (!canvas)
+                throw std::runtime_error("Rank view must own a result Canvas.");
+            const auto checkRank = [&]
+            {
+                const auto *rank = FindNode(canvas->Root(), "Result.Rank");
+                if (!rank)
+                    throw std::runtime_error("Rank must render an image instead of a placeholder.");
+                const auto *sprite = rank->GetComponent<v::SpriteVisualComponent>();
+                if (!sprite)
+                    throw std::runtime_error("Rank must own an image component.");
+                Check(renderer.ImagePath(sprite->Style().normalImage).stem().wstring() == test.rank,
+                      "Rank PNG must match the exact six-decimal accuracy boundary.");
+                const auto bounds = rank->Bounds();
+                const auto native = renderer.GetImageSize(sprite->Style().normalImage);
+                Check(bounds.width > 0 && bounds.height > 0 && bounds.x >= 824 && bounds.y >= 598 &&
+                          bounds.x + bounds.width <= 1096.01F && bounds.y + bounds.height <= 764.01F &&
+                          std::abs(bounds.width / bounds.height - native.width / native.height) < .001F,
+                      "Every rank must retain its aspect ratio inside the existing rank frame.");
+            };
+            checkRank();
+            view->OnResize(960, 1080);
+            checkRank();
+            view->Shutdown();
+            Check(visuals.CanvasCount() == 0, "Rank view must release its Canvas on shutdown.");
+        }
     }
     std::unique_ptr<mode::IPlayResult> FixtureResult()
     {
@@ -114,7 +203,8 @@ namespace
               "A minimum pixel width must never merge the 1ms bins or change their counts.");
         for (std::size_t i = firstBar; i < narrow.rectangles.size(); ++i)
             Check(narrow.rectangles[i].bounds.width >= 3 && narrow.rectangles[i].bounds.x >= histogram.x &&
-                      narrow.rectangles[i].bounds.x + narrow.rectangles[i].bounds.width <= histogram.x + histogram.width,
+                      narrow.rectangles[i].bounds.x + narrow.rectangles[i].bounds.width <=
+                          histogram.x + histogram.width,
                   "Small viewports must keep bars visible and inside the plot.");
         result.timingErrors = {{.error = r::RhythmDuration{-125'000}}, {.error = r::RhythmDuration{126'000}}};
         graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
@@ -448,13 +538,15 @@ int main()
     {
         std::string error;
         Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
+        TestAccuracyRanks();
         TestMillisecondHistogram();
         TestHistogramJudgementColors();
         TestGraphsAndView();
         bool verified{};
         Check(mrg::Run(std::make_unique<TransitionGame>(verified)) == 0 && verified,
               "Actual D3D12/FMOD Result transition must complete.");
-        std::puts("Result graphs, six-decimal display, ownership and actual deferred transition passed.");
+        std::puts("Result ranks (21 boundary cases), graphs, six-decimal display, ownership and actual deferred "
+                  "transition passed.");
         return 0;
     }
     catch (const std::exception &error)

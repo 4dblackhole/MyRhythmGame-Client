@@ -252,6 +252,9 @@ After a solution build, run in an x64 Visual Studio developer PowerShell with `F
 ```
 
 This links the production Result Scene/view/factory/graphs and gameplay objects.
+It reads real embedded rank PNG metadata and checks all 11 ranks at 21 exact/below-threshold
+six-decimal accuracy values, including 100% Y, 99.999999% PERFECT and the E/F boundary.
+Rank images retain their aspect ratio inside the existing frame across resize and Canvas teardown.
 It checks six-decimal accuracy text, Korean/English strings, signed scatter axes,
 1ms histogram rounding/spacing, per-grade stacked colors matching scatter points,
 peak totals, sparse outliers, minimum pixel widths without bin merging, empty samples,

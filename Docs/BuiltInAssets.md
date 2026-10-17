@@ -175,7 +175,7 @@ UTF-8 BOM과 CRLF/LF를 허용합니다. `;`/`#`로 시작하는 전체 줄만 �
 | `Logo` | `LogoCenter/LogoLeft/LogoRight`, `SelectionCursor`; 선택 `Background`, `StartButton/EditorButton/OptionsButton/ExitButton` |
 | `InGame` | 노트·오버레이·롱노트·틱·특수 노트, 레인·판정원·키/불빛, `Judgements.MAX`~`OK`, `Progress.Background/Track/Fill/Marker`, `PauseBackdrop`; 선택 `PausePanel`, `PauseResume/Rewind/Retry/Retire` |
 | `MusicSelect` | 배경·카테고리·기록/곡정보/브라우저 패널, 검색/정렬 필드, 스크롤바, `OptionSelect/Back/Go`, `SongCard/SongCardFocused`, `Difficulty/DifficultySelected` |
-| `Result` | `Background.Sky/Background.Clouds`, `Mode.Taiko`, `Rank.Frame`; 선택 `BackButton/RetryButton/ReplayButton` |
+| `Result` | `Background.Sky/Background.Clouds`, `Mode.Taiko`, `Rank.Frame`, `Rank.Y/PERFECT/SSS/SS/S/A/B/C/D/E/F`; 선택 `BackButton/RetryButton/ReplayButton` |
 
 표의 `/`는 여러 키를 줄여 쓴 것입니다. 정확한 키는 내장 INI를 참조합니다.
 버튼/패널 PNG는 기존 영역에 맞춰 표시하고 배치·입력 영역·런타임 텍스트는 유지합니다.
@@ -223,6 +223,7 @@ PNG가 필수는 아닙니다.
 | `Result/Background/Clouds.png` | 1920×168 | 하단 투명 구름 |
 | `Result/Mode/Taiko.png` | 48×48 | 짙은 상단 배너용 모드 드럼 아이콘(흰색 채, 2026-10-15 Penpot 갱신본) |
 | `Result/Rank/Frame.png` | 509×336 | 링·날개 장식(배치 폭 508.5) |
+| `Result/Rank/{Y,PERFECT,SSS,SS,S,A,B,C,D,E,F}.png` | 각 1774×887 | 정확도별 랭크, 투명 배경·원본 비율 유지 |
 
 외부 스킨은 `skin.ini`의 상대 경로로 각각 교체합니다. 글꼴은 내장 `Assets/Fonts/NotoSansKR.ttf`이며,
 원본 Google Fonts의 가변 굵기 파일과 `NotoSansKR-OFL.txt`(SIL OFL 1.1)를 함께 배포합니다.

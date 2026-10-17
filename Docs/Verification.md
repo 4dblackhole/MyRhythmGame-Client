@@ -71,6 +71,38 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 리절트 정확도 랭크 PNG
+
+- 사용자 확인에 따라 100% Y, 99% PERFECT, 98% SSS, 96% SS, 93% S, 90% A,
+  85% B, 80% C, 75% D, 70% E, 70% 미만 F로 표시합니다. TaikoResultView의
+  RankImageKey는 기존 AccuracyScore의 정수 단위를 비교하고 LoadAssets는 해당
+  이미지 하나를 등록합니다. TaikoResultPanels는 기존 RANK 자리에서 원본 비율로
+  맞춰 표시합니다. Scene/수집기/점수 산식/결과 저장 계약은 변경하지 않았습니다.
+- built-in image_gen으로 Y를 먼저 생성하고, 개별 편집으로 나머지 10개를 제작한 뒤
+  Default Skin/Result/Rank에 복사했습니다. 11개 모두 1774×887 투명 PNG이며 문구와
+  스타일을 이미지 출력에서 직접 확인했습니다. System.Drawing 디코딩으로 각 크기와
+  투명 모서리 알파 0도 확인했습니다. [제작 프롬프트와 랭크 표](Gameplay/Results.md#정확도-랭크).
+  skin.ini의 Rank.Y~Rank.F와 기존 Result/Rank wildcard/필터로 내장·교체합니다.
+  기존 SkinManifest의 누락 파일별 기본본 대체를 재사용하며 새 엔진 기능은 없습니다.
+- 변경 코드와 직접 호출부의 정수 비교/곱셈 범위, 이미지 크기와 비율, literal view 수명,
+  결과의 비소유 참조·Canvas 소유권/해제, 실패 시 예외와 단일 스레드 UI 사용,
+  중복 상태·프레임별 이미지 로딩이 없는 점과 함수 책임을 검토했습니다.
+- Debug/Release x64 전체 solution Build 및 MRG.Client 전체 MSVC Code Analysis를
+  실제 x64/C++20/include/define/PCH 설정으로 실행했습니다(RunCodeAnalysis=true,
+  BuildProjectReferences=false). 두 구성 모두 컴파일 경고·분석 진단·파싱 오류가 없습니다.
+- ResultPresentationTests도 두 구성에서 /analyze로 빌드·실행했습니다. 테스트 렌더러는
+  실제 내장/기본 PNG 메타데이터와 파일명을 읽어 11개 랭크의 21개 경계값을 검사합니다.
+  100.000000% Y, 99.999999% PERFECT, 70.000000% E, 69.999999% F를 포함하고,
+  원본 비율/기존 프레임 내 배치/resize/Canvas 해제를 확인했습니다. 기존 그래프·버튼과
+  실제 D3D12/FMOD의 Gameplay → Result → Retry → Lobby 수명/전환 검사도 통과했습니다.
+- 로직/기본곡 카탈로그는 각 구성 63개/실패 0이며 네 smoke 경로는 총 8개 exit 0입니다.
+  CheckArchitecture(11프로젝트)와 git diff --check를 통과했습니다. 사용자 LaneKeyBeam.cpp,
+  Debug/Release Option.ini, 개발 외부 en/ko.ini의 SHA-256이 작업 전과 같으며 곡·사용자
+  스킨은 변경하지 않았습니다. 엔진 소스/포인터 변경은 없습니다.
+- 위 실행 결과는 자동 검사이며 실제 게임 화면의 픽셀 배치·물리 키보드/마우스 조작을 통한
+  수동 확인은 미실시입니다. 생성된 이미지 자체의 육안 검토와 구분합니다. 로그/실행기는
+  ignored build/result-ranks-2026-10-17에 있습니다.
+
 ## 2026-10-17 인게임 노트·판정원 순서와 롤 남은 횟수
 
 - GameplayLayout은 Lane.Notes 부모를 만들고 키빔(2) → 판정원(3) → 노트(4) 순서를

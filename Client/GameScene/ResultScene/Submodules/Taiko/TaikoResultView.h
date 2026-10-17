@@ -48,7 +48,7 @@ class TaikoResultView final : public IResultView
     finger_drum::texts::TextCatalog &texts_;
     ResultViewContext context_;
     mrg::visual2d::TextFont font_;
-    mrg::visual2d::ImageHandle sky_, clouds_, modeIcon_, rankFrame_;
+    mrg::visual2d::ImageHandle sky_, clouds_, modeIcon_, rankFrame_, rankImage_;
     mrg::visual2d::ScreenCanvasHandle canvasHandle_;
     mrg::visual2d::Visual2DCanvas *canvas_{};
     mrg::visual2d::Visual2DInputRouter router_;

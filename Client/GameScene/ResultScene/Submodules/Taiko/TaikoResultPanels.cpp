@@ -1,8 +1,10 @@
 #include "TaikoResultLayout.h"
 #include "TaikoResultView.h"
 #include "Texts/GameScene/ResultScene/ResultTexts.h"
+#include <algorithm>
 #include <array>
 #include <climits>
+#include <stdexcept>
 namespace v = mrg::visual2d;
 using namespace taiko_result_ui::layout;
 namespace
@@ -124,7 +126,16 @@ void TaikoResultView::BuildMetadata(v::Visual2DNode &root)
     const auto &text = finger_drum::texts::Result(texts_);
     static_cast<void>(v::CreateSprite(root, Bounds({705.75F, 234, 508.5F, 336}), rankFrame_, "Result.RankFrame"));
     Label(root, {860, 290, 200, 24}, std::wstring(text.rank), 13, 700, v::TextAlignment::Center, Muted);
-    Label(root, {824, 316, 272, 166}, L"—", 104, 800, v::TextAlignment::Center, Accent);
+    constexpr v::Rect rankBounds{824, 316, 272, 166};
+    const auto nativeSize = visuals_.GetImageSize(rankImage_);
+    if (nativeSize.width <= 0 || nativeSize.height <= 0)
+        throw std::logic_error("Result rank image must have a non-zero size.");
+    const float scale = std::min(rankBounds.width / nativeSize.width, rankBounds.height / nativeSize.height);
+    const float width = nativeSize.width * scale, height = nativeSize.height * scale;
+    static_cast<void>(v::CreateSprite(root,
+                                      Bounds({rankBounds.x + (rankBounds.width - width) * 0.5F,
+                                              rankBounds.y + (rankBounds.height - height) * 0.5F, width, height}),
+                                      rankImage_, "Result.Rank"));
     Label(root, {756, 616, 408, 22}, std::wstring(text.creator), 13, 500, v::TextAlignment::Center, Muted);
     Label(root, {744, 644, 432, 40}, context_.patternCreator.empty() ? L"—" : context_.patternCreator, 19, 600,
           v::TextAlignment::Center);

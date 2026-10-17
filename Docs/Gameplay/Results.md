@@ -76,7 +76,8 @@ Taiko는 일반(Don/Kat), 큰(BigDon/BigKat/Purple), 롤 계열의 정확도를 
 
 곡명·아티스트·첫 제작자명은 곡 선택의 GameplayLaunchRequest 값 snapshot에 보관합니다.
 결과 화면에서 카탈로그/채보 파일을 다시 읽지 않습니다. 패턴명과 통계는 IPlayResult에서 읽습니다.
-SCORE·RANK는 아직 계산 규칙이 없으므로 `—`, HP는 데이터 없음/추가 예정으로 표시합니다.
+SCORE는 아직 계산 규칙이 없으므로 `—`, HP는 데이터 없음/추가 예정으로 표시합니다.
+RANK는 아래 정확도 기준의 스킨 이미지를 표시합니다.
 시안의 빈 자리를 채우기 위한 임의 점수·기록·HP 데이터는 생성하지 않습니다.
 
 - ResultScene은 결과의 소유권·화면 수명·전환만 담당합니다. View는 Back/Retry 액션을 반환합니다.
@@ -121,3 +122,70 @@ held 상태도 ESC 뒤의 edge를 되돌려 구하므로 뒤늦은 키 해제로
 
 리절트 PNG와 버튼 이미지는 스킨 `[Result]`의 요소 키와 폴더 상대 경로를 사용합니다.
 파일별 기본본 대체와 버튼 상태 이미지 규칙은 [skin.ini](../BuiltInAssets.md#skinini와-씬별-이미지)를 따릅니다.
+
+## 정확도 랭크
+
+최종 전체 정확도의 고정소수점 정수 값을 비교하며 표시 문자열의 반올림은 사용하지 않습니다.
+각 하한을 포함하고 다음 랭크 하한은 포함하지 않습니다. 100.000000%만 Y이며,
+99.999999%는 PERFECT입니다. 클리어/일시정지 자격과는 별개인 정확도 표시입니다.
+
+| 정확도 | 랭크 / `[Result]` 이미지 키 | 기본 PNG |
+| --- | --- | --- |
+| 100% | Y / `Rank.Y` | `Rank/Y.png` |
+| 99% 이상 | PERFECT / `Rank.PERFECT` | `Rank/PERFECT.png` |
+| 98% 이상 | SSS / `Rank.SSS` | `Rank/SSS.png` |
+| 96% 이상 | SS / `Rank.SS` | `Rank/SS.png` |
+| 93% 이상 | S / `Rank.S` | `Rank/S.png` |
+| 90% 이상 | A / `Rank.A` | `Rank/A.png` |
+| 85% 이상 | B / `Rank.B` | `Rank/B.png` |
+| 80% 이상 | C / `Rank.C` | `Rank/C.png` |
+| 75% 이상 | D / `Rank.D` | `Rank/D.png` |
+| 70% 이상 | E / `Rank.E` | `Rank/E.png` |
+| 70% 미만 | F / `Rank.F` | `Rank/F.png` |
+
+TaikoResultView의 RankImageKey가 한 표에서 키를 선택하고 LoadAssets에서 해당 이미지 하나를
+등록합니다. BuildMetadata는 기존 중앙 랭크 프레임 내부에 원본 비율로 맞춰 표시합니다.
+Scene, 결과 수집기, 정확도 산식과 저장 데이터는 바꾸지 않습니다. 부분 스킨에서 빠진
+랭크 이미지는 기존 SkinManifest 규칙에 따라 해당 내장 기본본으로 대체합니다.
+
+### 랭크 PNG 제작
+
+11개 모두 built-in image_gen으로 제작한 1774×887 투명 PNG입니다. 원본은
+`FingerDrum.Assets/Assets/Skins/Default Skin/Result/Rank`에 보관하고 기존 내장 자산
+wildcard와 같은 Result/Rank 프로젝트 필터를 사용합니다. Y를 먼저 생성한 뒤 각 문구를
+Y의 스타일을 유지하는 개별 편집으로 제작했습니다. 이미지의 문구/투명 배경은 직접 확인했고,
+PNG 크기·알파와 실제 결과 화면의 자동 검증은 Verification에 별도로 기록합니다.
+
+생성 프롬프트(Y):
+
+```text
+Use case: logo-brand. Asset type: transparent PNG rhythm-game result rank emblem.
+Create exactly one rank emblem with the exact capital text "Y", and nothing else.
+Crisp bold condensed slightly italic geometric display lettering. Flat polished 2D
+game UI artwork, sky-blue face (#80C9EB), deep blue (#285374) outline and a thin
+white inner highlight, matching a clean pale sky-blue rhythm game UI with white
+circular rank frame. Strong readable silhouette when rendered at about 160 pixels
+tall. No surrounding badge, circle, wings, stars, background, scene, icon, percentage
+or extra words. Text must be precisely Y. Center the lettering on a landscape 2:1
+transparent canvas, generous transparent padding, full lettering entirely inside
+the canvas. Genuine alpha transparency. Do not include a checkerboard pattern or
+black rectangle. This is the first of a matching rank family whose texts are
+Y, PERFECT, SSS, SS, S, A, B, C, D, F; produce ONLY Y in this image.
+```
+
+편집 프롬프트 집합: 아래 `{rank}`에 `PERFECT`, `SSS`, `SS`, `S`, `A`, `B`, `C`,
+`D`, `E`, `F`를 각각 넣어 별도 호출했습니다. 참조 이미지는 첫 Y PNG이며 투명 배경을 유지했습니다.
+
+```text
+Use case: text-localization. Asset type: transparent PNG rhythm-game result rank
+emblem, one matching variant of the reference Y.
+Edit the reference rank emblem: replace the letter Y with exactly the capital
+text "{rank}". Preserve the same sky-blue glossy face, deep blue outline, thin white
+bevel highlight, bold condensed slightly italic geometric lettering, clean readable
+game UI style, transparent landscape 2:1 canvas and genuine alpha transparency.
+Center the new lettering and scale it as needed so the whole exact text fits with
+generous transparent padding; preserve letter proportions and legibility. The exact
+text is "{rank}" and no other text. No Y should remain. Do not add a badge, frame,
+circle, wings, stars, icons, percentage, shadow rectangle, scene, background or
+watermark. Output only this one emblem as a standalone transparent PNG.
+```
