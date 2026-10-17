@@ -1,5 +1,8 @@
 # FMOD 오류 가능성 조사 — 2026-10-17
 
+후속 구현은 [FMOD 수정 기록](FmodErrorFixes-2026-10-17.md)을 참고합니다.
+아래 내용은 수정 전 조사 기준이며 재현 결과를 보존합니다.
+
 조사 기준은 Client `c3efdec2bf067defa729b2b7f4dcb3a41fa264a4`, 엔진
 `e2751ac33c28cf1be4adc7131b5554861058a33f`입니다.
 설치 SDK와 Debug/Release DLL은 FMOD 2.02.22입니다.

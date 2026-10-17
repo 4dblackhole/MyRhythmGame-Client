@@ -50,15 +50,39 @@ void EditorPlayback::StopVoices() noexcept
 void EditorPlayback::Pause() noexcept
 {
     UpdatePosition();
-    StopVoices();
+    try
+    {
+        PauseVoices();
+    }
+    catch (const std::exception &error)
+    {
+        StopVoices();
+        error_ = error.what();
+    }
     wanted_ = false;
+}
+
+void EditorPlayback::PauseVoices()
+{
+    std::string error;
+    if (auto *voice = voices_.FindVoice(musicVoice_); voice && voice->IsPlaying())
+        if (!voice->SetPaused(true, error) && voice->IsPlaying())
+            Require(false, error);
+    for (auto &[path, track] : tracks_)
+    {
+        if (voices_.FindVoice(track.voice))
+            Require(voices_.Stop(track.voice, error), error);
+        track.voice = 0;
+        track.scheduledDspClock.reset();
+    }
+    running_ = primed_ = musicPositioned_ = false;
 }
 
 void EditorPlayback::Seek(const Time time)
 {
     if (time <= Time::min() + Lead || time >= Time::max() - Lead)
         throw std::invalid_argument("Editor playback position leaves no scheduling margin.");
-    StopVoices();
+    PauseVoices();
     position_ = time;
     // Re-anchor and re-prime from the new position on the next Update.
     // Preserve the playing/paused intent even during an async stream seek.
@@ -120,7 +144,7 @@ void EditorPlayback::UpdateCues(const std::vector<AudioMarker> &markers, const s
 {
     for (auto &[path, track] : tracks_)
     {
-        if (track.voice)
+        if (voices_.FindVoice(track.voice))
         {
             std::string error;
             Require(voices_.Stop(track.voice, error), error);
@@ -151,7 +175,7 @@ void EditorPlayback::PrimeMusic()
     const auto state = music_->LoadState(error);
     if (state == a::AudioClipLoadState::Failed)
         throw std::runtime_error(error);
-    if (state != a::AudioClipLoadState::Ready)
+    if (state != a::AudioClipLoadState::Ready && state != a::AudioClipLoadState::Playing)
         return;
     std::uint64_t duration = 0;
     Require(music_->GetDurationMicroseconds(duration, error), error);
@@ -160,12 +184,18 @@ void EditorPlayback::PrimeMusic()
     musicDuration_ = Time{static_cast<Time::rep>(duration)};
     if (position_ < *musicDuration_)
     {
-        a::AudioPlaybackSettings settings;
-        settings.startPaused = true;
-        // Replaying a nonblocking stream can itself start an async seek to zero.
-        // Wait for that operation before requesting the editor's source position.
-        musicVoice_ = voices_.Play(music_, settings, nullptr, error);
-        Require(musicVoice_ != 0, error);
+        auto *voice = voices_.FindVoice(musicVoice_);
+        if (!voice || !voice->IsPlaying())
+        {
+            if (voice)
+                Require(voices_.Stop(musicVoice_, error), error);
+            a::AudioPlaybackSettings settings;
+            settings.startPaused = true;
+            settings.startPositionMicroseconds = static_cast<std::uint64_t>(std::max(position_, Time{}).count());
+            musicVoice_ = voices_.Play(music_, settings, nullptr, error);
+            Require(musicVoice_ != 0, error);
+            musicPositioned_ = true;
+        }
     }
     primed_ = true;
 }
@@ -178,18 +208,25 @@ bool EditorPlayback::BeginPreparedPlayback()
         throw std::runtime_error(error);
     if (state != a::AudioClipLoadState::Ready && state != a::AudioClipLoadState::Playing)
         return false;
-    if (musicVoice_ && !musicPositioned_)
+    const bool hasMusic = musicVoice_ && position_ < musicDuration_.value_or(Time{});
+    if (hasMusic)
     {
-        if (position_ > Time{})
+        if (!musicPositioned_)
         {
             a::AudioPlaybackSettings settings;
             settings.startPaused = true;
-            settings.startPositionMicroseconds = static_cast<std::uint64_t>(position_.count());
+            settings.startPositionMicroseconds = static_cast<std::uint64_t>(std::max(position_, Time{}).count());
             Require(voices_.Restart(musicVoice_, settings, nullptr, error), error);
             musicPositioned_ = true;
-            return false; // Poll the requested seek before anchoring either clock.
+            return false; // Anchor on a later poll, after the requested seek.
         }
-        musicPositioned_ = true;
+        auto *voice = voices_.FindVoice(musicVoice_);
+        if (!voice)
+            throw std::runtime_error("The prepared music voice has stopped.");
+        const auto prepared = voice->PreparationState(error);
+        Require(prepared != a::AudioPreparationState::Failed, error);
+        if (prepared == a::AudioPreparationState::Loading)
+            return false;
     }
     const auto snapshot = audio_->CaptureClockSnapshot();
     if (snapshot.sampleRate <= 0)
@@ -197,7 +234,7 @@ bool EditorPlayback::BeginPreparedPlayback()
     const auto leadSamples = static_cast<std::uint64_t>(snapshot.sampleRate / 50);
     clock_.Start(snapshot.performanceCounterTicks, snapshot.performanceCounterFrequency, position_);
     clock_.AnchorDspClock(position_, snapshot.dspClock + leadSamples, snapshot.sampleRate);
-    if (musicVoice_)
+    if (hasMusic)
     {
         auto *voice = voices_.FindVoice(musicVoice_);
         if (!voice)

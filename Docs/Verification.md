@@ -71,6 +71,34 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-17 FMOD 수정·음악 채널 Pause 유지
+
+- [수정 책임과 상세 검증](Reviews/FmodErrorFixes-2026-10-17.md).
+  엔진은 비동기 source 준비를 PreparationState로 직렬화하고, 종료된 샘플의 native 채널만 교체합니다.
+  Client의 플레이/에디터 Pause는 음악 Voice를 유지하며 위치 재정렬 완료 후 새 QPC/DSP 기준으로
+  시작합니다. 히트사운드 로딩 실패는 시작/재개를 막고 Retry에서 재로드합니다.
+- Debug/Release x64 Client 솔루션 Rebuild, 최종 엔진 연결 후 솔루션 Build를 통과했습니다.
+  두 구성의 Client 전체 MSVC Code Analysis에서 컴파일/분석 진단 0건입니다.
+  EditorAudioViewTests와 GameplayPauseTests도 두 구성의 /analyze 빌드와 실행을 통과했습니다.
+  최종 엔진의 종료 순서 변경 후, 에디터 테스트는 이미 분석한 동일 테스트 오브젝트를 재링크해
+  재실행했고 일시정지 테스트는 새 취소/종료 회귀를 포함해 다시 /analyze 빌드·실행했습니다.
+- 각 구성에서 로직/카탈로그 63개, 실패 0개이며 --smoke-test/--smoke-lobby/--smoke-gameplay/
+  --smoke-editor 모두 종료 코드 0입니다. CheckArchitecture는 11개 프로젝트를 통과했습니다.
+  git diff --check와 사용자 파일 SHA-256 보존을 확인했습니다.
+- 엔진은 Debug/Release 전체 Rebuild와 MRG.Collision.Tests(SDK)를 통과했습니다.
+  회귀는 Restart 중 자연 종료/교체, 활성 채널 오류 보존을 검사합니다. 실제 FMOD NoSound 진단은
+  MP3 재사용, 같은 Voice의 0/1/5초 탐색, 종료 샘플 교체, 유효한 끝 1us 전/범위 밖 거부를 검사했습니다.
+- 에디터의 100ms PCM 샘플과 약 260ms UI 갱신 지연 재현을 두 구성에서 다시 실행해 오류30 없이
+  재생이 유지됐습니다. 끝 1us 전 Restart/EditorPlayback도 정상 진행했습니다.
+  없는 SampleAsync 파일은 오류18과 Failed 상태를 전달하며 준비 완료가 되지 않습니다.
+  공통 Controller의 실패 차단·Resume 거부·복구 후 Retry는 실패를 주입한 회귀로 검사했습니다.
+- 실제 MP3 12회 재재생, 준비 중 시각 고정, 음수 pre-roll, 판정/점수 복원, 정상 Retry 자산 재사용,
+  Pause 음악 Voice 유지와 히트사운드 미재개를 검사했습니다. native seek 중 취소/즉시 Shutdown도
+  두 구성에서 각 3회 종료했습니다. retired Sound를 FMOD보다 먼저 해제하도록 바꿨으며 최종
+  Shutdown에서는 남은 파일 작업을 기다릴 수 있습니다. 런타임 retire는 비차단을 유지합니다.
+- 모두 자동 검사입니다. 실제 키보드/마우스 수동 확인·스피커 청취·ASIO/WASAPI 전환·장치 분리 검사는
+  수행하지 않았습니다. 로그/일회성 진단은 ignored build/fmod-fixes-2026-10-17에 있습니다.
+
 ## 2026-10-17 FMOD 오류 조사
 
 - [조사 보고서](Reviews/FmodErrorAudit-2026-10-17.md)에 재현된 네 경로, 현재 회피하는 경계,

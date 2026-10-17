@@ -14,8 +14,10 @@ Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system
 소유하는 AudioSystem 하나가 관리합니다.
 
 YME 표의 실제 참조 항목만 세션의 HitSoundFiles에 모읍니다. 비동기 Clip을 등록한 뒤
-Controller는 2ms 주기로 Ready/Failed를 확인하며, 준비가 끝난 시점에 QPC/DSP를 고정하고
+Controller는 2ms 주기로 Loading/Ready/Failed를 확인하며, 준비가 끝난 시점에 QPC/DSP를 고정하고
 음악을 예약합니다. 종료 Clip은 엔진 RetireClip으로 안전한 해제를 기다립니다.
+히트사운드/음악 로딩 실패는 시작·재개를 막고 오류와 ESC 메뉴를 표시합니다.
+실패 후 Retry는 파일을 다시 로드하고 새 시도를 시작하며, 정상 Retry는 기존 자산을 재사용합니다.
 라우터는 성공한 자동화 값이 같으면 native setter를 반복하지 않고, Voice 종료 확인은
 공통 PlaybackManager에 맡깁니다. SceneGameClient의 native 유지관리 주기는 2ms이며
 입력 판정이나 DSP 예약 시각은 이 주기로 양자화하지 않습니다.
@@ -24,16 +26,17 @@ Controller는 2ms 주기로 Ready/Failed를 확인하며, 준비가 끝난 시�
 없으면 내장 기본 스킨의 같은 파일로 대체합니다.
 
 일반 플레이의 음악은 `PrepareMusicAt`으로 일시정지 Voice를 준비한 뒤
-Ready/Playing을 확인하고 `StartPreparedMusic`으로 차트 0ms의 소스 시작을 예약하며,
+Voice의 PreparationState가 Ready인지 확인하고 `StartPreparedMusic`으로 차트 0ms의 소스 시작을 예약하며,
 `RhythmTimer::ToDspClock`과 FMOD `setDelay`로 mixer sample clock에 연결합니다.
 Pattern Offset은 노트 시각에 더하고 음악 시작 시각은 옮기지 않습니다.
 플레이 타이머는 항상 최소 −2000ms에서 시작하며 첫 박자와 노트 이동 거리에 따라
 더 이른 시각에서 시작할 수 있습니다. [Pause](Pause.md)의 Resume/Rewind와 일반 Space 재개는
-세션 음성을 정지하고 새 QPC/DSP 기준점으로 배경음악만 재예약합니다.
+살아 있는 배경음악 Voice를 Pause로 유지하고 히트사운드·틱 음성만 정지합니다.
+Resume/Rewind/정상 Retry는 같은 음악 Voice의 위치를 재정렬하고 새 QPC/DSP 기준으로 재예약합니다.
 히트사운드·틱·입력 피드백의 이전 Voice는 재생하지 않습니다. 현재 배경음악은 Music.Track 하나입니다.
-재사용 스트림은 Play 자체가 내부적으로 0 위치를 비동기 탐색할 수 있으므로,
-소스 0의 paused Voice 생성 → Ready/Playing 확인 → Restart로 목표 위치 탐색 →
-Ready/Playing 재확인 순서를 사용합니다. 두 탐색을 겹쳐 요청하지 않고 같은 Voice를 유지합니다.
+기존 음악 채널이 종료된 경우에만 새 paused Voice를 생성합니다. 내부 초기 탐색과 요청 위치의
+탐색 순서는 엔진 Voice가 관리하고 Client는 PreparationState의 Loading/Ready/Failed를 확인합니다.
+여러 탐색 요청은 native 탐색을 겹치지 않게 처리하며 최신 목표 위치로 준비합니다.
 비동기 탐색 중에는 게임 시각을 고정하며, 완료 후 새 clock snapshot으로 두 시계에 동일한
 20ms 준비 여유를 예약합니다. 예약 시점 전 입력은 판정하지 않고 그 이후 입력부터 처리합니다.
 음악 준비/예약 실패는 Pause에서 오류를 표시하며 자동으로 게임 시간만 진행시키지 않습니다. 양수 시각은 같은 us의

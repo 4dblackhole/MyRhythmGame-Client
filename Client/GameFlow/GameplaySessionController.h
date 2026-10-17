@@ -71,7 +71,7 @@ class GameplaySessionController final : public IPlaySessionController
     std::unique_ptr<finger_drum::mode::PlaySession> CreateDemoSession();
     std::unique_ptr<finger_drum::mode::PlaySession> CreateLongNoteDebugSession();
     void PrepareDebugLaunchRequest();
-    void InitializeAudio(const mrg::EngineServices &services);
+    void InitializeAudio(mrg::audio::AudioSystem &audio);
     void UpdateLoading(const mrg::UpdateContext &context);
     void UpdateGameplay(const mrg::UpdateContext &context);
     void UpdatePause(const mrg::UpdateContext &context);
@@ -108,6 +108,7 @@ class GameplaySessionController final : public IPlaySessionController
     double debugSpeedMillisecondsPerSecond_{1000.0};
     bool musicRegistered_{};
     bool audioInitialized_{}, resourcesReady_{}, playbackRequested_{};
+    bool resourceLoadFailed_{};
     double nextAudioPreparationPoll_{};
     bool debugMode_{};
     bool pauseMenuOpen_{};

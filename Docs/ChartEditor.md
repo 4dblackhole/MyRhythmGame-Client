@@ -263,14 +263,16 @@ YMP의 `Music metadata`는 Songs 루트 기준으로 해석한 뒤 YMM이 가리
 명시적 노트 사운드가 시각별 동·캇 변경보다 우선하며 변경은 컴파일된 cue 시각을 사용합니다.
 
 음악은 `StreamAsyncAccurate`로 한 번 열고 원본 PCM 프레임으로 현재 시간부터 탐색합니다.
-재재생 시에는 먼저 소스 0의 paused Voice를 만들고 내부 초기 탐색의 Ready/Playing을
-확인한 뒤 같은 Voice의 Restart로 원하는 소스 위치를 요청합니다. 목표 탐색도 완료된 후
+Space 일시정지·seek는 살아 있는 음악 Voice를 paused 상태로 유지하고 히트사운드만 중단합니다.
+재개는 같은 음악 Voice에 원하는 위치를 요청하며, 종료된 채널만 새로 만듭니다.
+엔진 PreparationState가 내부 초기 탐색과 목표 탐색의 완료를 알린 후
 20ms 앞의 DSP 시각에 음악·히트사운드 clock을 고정합니다. 준비 중 편집 시각은 고정하며
 같은 Clip을 다시 로드하거나 UI 스레드에서 기다리지 않습니다.
 음수 편집 시각에서는 음악이 타임라인 0ms에 시작합니다. 표시 갱신은 최대 약 60Hz이며
 오디오 예약은 매 update에 진행합니다. source/document revision이 바뀔 때만 파일/cue 캐시를 갱신하고
 같은 파일의 히트사운드 ID는 Clip/Voice를 공유합니다. 아직 시작하지 않은 예약을 덮어쓰지 않으며,
-UI가 멈춰 지나간 cue를 몰아서 재생하지 않습니다. 정지/Scene 종료 시 자기 Voice만 중단하고
+UI가 멈춰 지나간 cue를 몰아서 재생하지 않습니다. 종료된 샘플의 Restart는 엔진 관리자가
+같은 ID 아래 새 채널로 교체합니다. Scene 종료 시 자기 Voice를 모두 중단하고
 해제할 Clip을 AudioSystem에 retire하여 native I/O가 끝날 때 해제합니다.
 재생음은 위의 이상적 head/tick cue를 사용하며 자유 롤 연타·풍선 파열 시각은 생성하지 않습니다.
 YME의 볼륨/DSP 효과를 미리 듣는 기능과 배속 제어는 제공하지 않습니다.

@@ -226,6 +226,7 @@ void TestEditorPlayback()
     Check(probes.size() == 2 && probes[0]->settings.startDspClock == 960 && !probes[0]->paused &&
               probes[1]->deadlines == std::vector<std::uint64_t>{960},
           "Music and first hit must share the DSP anchor.");
+    const auto musicProbe = probes[0];
     for (int i = 0; i < 1000; ++i)
         update();
     Check(probes.size() == 2 && probes[1]->deadlines.size() == 1 && loads == 2,
@@ -242,28 +243,30 @@ void TestEditorPlayback()
     playback.Pause();
     dspClock += 48000;
     update();
-    Check(!playback.Active() && playback.Position() == Time{500'000} && !probes[0]->playing,
-          "Pause must freeze the cursor and stop only editor voices.");
+    Check(!playback.Active() && playback.Position() == Time{500'000} && musicProbe->playing && musicProbe->paused &&
+              !probes[1]->playing,
+          "Pause must retain paused music while stopping transient samples.");
     playback.Toggle();
     update();
-    Check(probes.back()->path == "music" && probes.back()->settings.startPositionMicroseconds == 500'000 && loads == 2,
-          "Resume must seek the music without loading sources again.");
-    Check(probes.back()->paused && probes.back()->settings.startDspClock == 0,
+    Check(probes.size() == 2 && musicProbe->settings.startPositionMicroseconds == 500'000 && loads == 2,
+          "Resume must seek the same music voice without loading sources again.");
+    Check(musicProbe->paused && musicProbe->settings.startDspClock == 0,
           "A requested source seek must remain paused without anchoring a stale DSP deadline.");
     loadState = a::AudioClipLoadState::Loading;
     dspClock += 48000;
     update();
-    Check(playback.Active() && playback.Position() == Time{500'000} && probes.back()->paused,
+    Check(playback.Active() && playback.Position() == Time{500'000} && musicProbe->paused,
           "Waiting for an async source seek must freeze the timeline and leave the prepared voice paused.");
     loadState = a::AudioClipLoadState::Playing;
     update();
-    Check(!probes.back()->paused && probes.back()->settings.startDspClock == dspClock + 960,
+    Check(!musicProbe->paused && musicProbe->settings.startDspClock == dspClock + 960,
           "A completed seek must anchor playback to the current DSP clock.");
     loadState = a::AudioClipLoadState::Ready;
     playback.Seek(Time{-100'000});
     update();
-    Check(playback.Active() && probes.back()->settings.startPositionMicroseconds == 0 &&
-              probes.back()->settings.startDspClock == dspClock + 5760,
+    update();
+    Check(playback.Active() && musicProbe->settings.startPositionMicroseconds == 0 &&
+              musicProbe->settings.startDspClock == dspClock + 5760,
           "Negative pre-roll must schedule the song at timeline zero.");
     playback.Seek(Time{900'000});
     update();
@@ -271,7 +274,7 @@ void TestEditorPlayback()
     const auto anchor = dspClock + 960;
     dspClock = anchor + 48000; // A suspended UI skips a past one-second cue.
     update();
-    Check(probes.back()->path == "music", "Returning after a stall must not burst expired hit sounds.");
+    Check(probes.size() == 2, "Returning after a stall must not burst expired hit sounds.");
     dspClock += 96000;
     update();
     Check(!playback.Active() && playback.Position() == Time{3'000'000},
@@ -328,10 +331,19 @@ void TestEditorPlaybackWithFmod(const std::filesystem::path &musicPath)
     auto voice = clip->Play(settings, nullptr, error);
     if (!voice)
         throw std::runtime_error(error);
-    waitFor([&] { return clip->LoadState(error) != a::AudioClipLoadState::Loading; });
+    waitFor([&] { return voice->PreparationState(error) == a::AudioPreparationState::Ready; });
     Check(voice->SetDelay(audio.DspClock() + 4800, 0, error) && voice->SetPaused(false, error), error.c_str());
     waitFor([&] { return !voice->IsPlaying(); }); // Near-end seek must end rather than play the entire song.
     voice.reset();
+    waitFor([&] { return clip->LoadState(error) == a::AudioClipLoadState::Ready; });
+    settings.startPositionMicroseconds = duration - 1;
+    voice = clip->Play(settings, nullptr, error);
+    Check(voice != nullptr, "A position one microsecond before the source end must be accepted.");
+    waitFor([&] { return voice->PreparationState(error) == a::AudioPreparationState::Ready; });
+    Check(voice->SetPaused(false, error), error.c_str());
+    waitFor([&] { return !voice->IsPlaying(); });
+    voice.reset();
+    waitFor([&] { return clip->LoadState(error) == a::AudioClipLoadState::Ready; });
     settings.startPositionMicroseconds = duration + 1'000'000;
     Check(!clip->Play(settings, nullptr, error) && !error.empty(), "FMOD must reject a position beyond the source.");
     audio.RetireClip(std::move(clip));

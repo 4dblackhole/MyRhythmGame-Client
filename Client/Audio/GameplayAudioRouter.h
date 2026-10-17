@@ -38,7 +38,7 @@ namespace finger_drum::audio
         [[nodiscard]] bool RegisterSoundAliases(std::span<const rhythm::SoundId> soundIds,
                                                 const std::filesystem::path &path, std::string &errorMessage,
                                                 mrg::audio::AudioLoadMode loadMode = mrg::audio::AudioLoadMode::Sample);
-        bool Ready();
+        mrg::audio::AudioPreparationState PrepareResources();
 
         // Input-driven cues start immediately. Timeline scheduling remains a
         // separate path for music and other deliberately future playback.
@@ -50,15 +50,9 @@ namespace finger_drum::audio
             std::span<const mode::AutomationValue> values);
         void PrepareAutomation(std::span<const chart::CompiledEffectCommand> commands);
         void StopAllVoices() noexcept;
-        enum class MusicPreparation
-        {
-            Loading,
-            Ready,
-            Failed
-        };
-        // Stop session voices before choosing another position. Preparation
-        // creates one paused music voice and polls the asynchronous source seek.
-        MusicPreparation PrepareMusicAt(rhythm::RhythmTime position);
+        // Preserve a live music voice; transient samples must never resume.
+        void PauseMusicAndStopSamples();
+        mrg::audio::AudioPreparationState PrepareMusicAt(rhythm::RhythmTime position);
         bool StartPreparedMusic(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer);
         void ResetAutomation();
         void Update();
@@ -95,6 +89,7 @@ namespace finger_drum::audio
         std::vector<mrg::audio::AudioPlaybackId> voices_;
         mrg::audio::AudioPlaybackId musicVoice_{mrg::audio::InvalidAudioPlaybackId};
         bool musicPositioned_{};
+        bool musicPastEnd_{};
         // Aliased SoundIds share this entry by their common AudioClip address.
         // Sample playback therefore has at most one active native channel per
         // loaded sound resource.

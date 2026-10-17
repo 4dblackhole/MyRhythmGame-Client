@@ -7,7 +7,8 @@
 플레이 진입에서는 Session을 먼저 받은 뒤 PNG를 비동기 준비하고 Canvas/오디오를 구성합니다.
 공통 IPlaySessionController의 Loading→Gameplay→Pause→Ending 상태로 실행합니다.
 Clip/음악 탐색 준비가 끝나면 Controller가 같은 미래 QPC/DSP 시점에 타이머와 음악을 시작합니다.
-Pause 복귀는 배경음악만 동기화하고 Ending은 모드별 결과 소유권을 한 번 넘깁니다.
+Pause는 살아 있는 음악 Voice를 유지하고 복귀 시 위치를 재정렬합니다. transient 샘플은 정지하며
+Ending은 모든 세션 음성을 정리하고 모드별 결과 소유권을 한 번 넘깁니다.
 세부 전환과 Retry 자원 재사용은 [플레이 상태](Gameplay/Pause.md#모든-모드의-실행-상태)를 참고합니다.
 대기 중 Scene이 보관하는 EngineServices 사본은 Run 소유 서비스의 비소유 참조이며,
 OnResize에서 창 크기를 갱신하고 Shutdown에서 해제합니다. worker는 경로/데이터만 소유합니다.

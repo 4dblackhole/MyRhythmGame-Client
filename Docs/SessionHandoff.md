@@ -9,16 +9,16 @@
 
 ## 작업 위치와 경계
 
-FMOD 조사(2026-10-17): [미수정 오류와 재현 조건](Reviews/FmodErrorAudit-2026-10-17.md).
-에디터 샘플 자연 종료 후 재사용(30), 실패한 SampleAsync의 Ready 처리(18→46),
-음원 끝 직전 PCM 반올림(32), 일반 엔진 Play의 async 재사용(46)을 실제 FMOD로 확인했습니다.
-조사 문서만 추가했으며 제품 코드 수정은 후속 작업입니다. 현재 음악 재개의 2단계 탐색과
-기존 Debug/Release 에디터·일시정지 회귀는 통과했습니다. 장치 분리/청취/직접 조작은 미검증입니다.
+FMOD 수정(2026-10-17): [수정 책임과 검증](Reviews/FmodErrorFixes-2026-10-17.md).
+플레이/에디터 Pause는 음악 채널을 유지하고 재개 시 위치를 재정렬합니다. 엔진 PreparationState가
+내부/목표 탐색을 직렬화하며, Client는 Ready 이후 새 clock을 예약합니다. 종료 샘플 채널 교체,
+로딩 실패 차단/Retry 재로드, PCM 끝 경계, 종료 중 retired Sound 해제 순서도 수정했습니다.
+실제 장치 청취/분리는 미검증입니다. 선행 재현 조건은 [조사](Reviews/FmodErrorAudit-2026-10-17.md)에 있습니다.
 
 플레이 상태머신(2026-10-17): [공통 상태·재개 계약](Gameplay/Pause.md#모든-모드의-실행-상태).
 IPlaySessionController와 공통 Controller/Feedback는 Client/GameFlow, 실행 구현은 그 Submodules로 이동했습니다.
 Scene은 인터페이스로 조립하며 Loading/Gameplay/Pause/Ending을 모든 모드에서 공유합니다.
-음악은 paused Voice 탐색 완료 후 QPC/DSP에 같은 20ms 여유를 예약합니다. 재개 대기는 Pause이며
+음악은 유지한 paused Voice 탐색 완료 후 QPC/DSP에 같은 20ms 여유를 예약합니다. 재개 대기는 Pause이며
 히트사운드를 되살리지 않습니다. Retry는 자산을 재사용하고 Ending은 모드별 결과를 한 번만 이동합니다.
 
 새 난이도·offset 도구·JudgeLevel(2026-10-16): [EditorSongSelect](EditorSongSelect.md), [ChartEditor](ChartEditor.md).

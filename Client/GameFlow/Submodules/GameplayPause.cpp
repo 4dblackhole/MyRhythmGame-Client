@@ -20,7 +20,7 @@ void GameplaySessionController::PauseAt(std::int64_t ticks, bool menuShown)
     playbackRequested_ = false;
     playbackStart_.reset();
     // Transient samples are discarded, never resumed as background music.
-    audioRouter_.StopAllVoices();
+    audioRouter_.PauseMusicAndStopSamples();
     pauseMenuOpen_ = menuShown;
     session_->RecordControl({mode::PlayControlType::Pause, time_, time_, 0, menuShown});
 }
@@ -37,7 +37,7 @@ bool GameplaySessionController::ContinueAt(const mrg::UpdateContext &context, rh
                                            mode::PlayControlType action)
 {
     const auto from = time_;
-    audioRouter_.StopAllVoices();
+    audioRouter_.PauseMusicAndStopSamples();
     audioRouter_.ResetAutomation();
     const auto clock = context.audio.CaptureClockSnapshot();
     timer_.Seek(target, clock.performanceCounterTicks);
@@ -71,10 +71,17 @@ bool GameplaySessionController::RewindFromPause(const mrg::UpdateContext &contex
     session_->RewindJudgements(target);
     return ContinueAt(context, target, mode::PlayControlType::Rewind);
 }
-void GameplaySessionController::RetryFromPause(const mrg::UpdateContext &)
+void GameplaySessionController::RetryFromPause(const mrg::UpdateContext &context)
 {
     if (state_ == PlayState::Pause)
+    {
+        if (resourceLoadFailed_)
+        {
+            InitializeAudio(context.audio);
+            resourceLoadFailed_ = resourcesReady_ = false;
+        }
         ResetTimeline();
+    }
 }
 void GameplaySessionController::RetireFromPause()
 {

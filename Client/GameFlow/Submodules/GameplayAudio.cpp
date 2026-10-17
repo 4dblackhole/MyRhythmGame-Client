@@ -8,10 +8,11 @@ namespace
     void RegisterTaikoSounds(finger_drum::audio::GameplayAudioRouter &router, std::string &errorMessage);
 }
 
-void GameplaySessionController::InitializeAudio(const mrg::EngineServices &services)
+void GameplaySessionController::InitializeAudio(mrg::audio::AudioSystem &audio)
 {
+    initializationError_.clear();
     std::string initializationError;
-    if (!audioRouter_.Initialize(services.audio, initializationError))
+    if (!audioRouter_.Initialize(audio, initializationError))
     {
         initializationError_ = initializationError;
         return;

@@ -5,10 +5,19 @@ bool GameplaySessionController::PrepareResources(const mrg::UpdateContext &conte
 {
     if (resourcesReady_)
         return true;
+    if (resourceLoadFailed_)
+        return false;
     if (!audioInitialized_ || context.totalSeconds < nextAudioPreparationPoll_)
         return false;
     nextAudioPreparationPoll_ = context.totalSeconds + 0.002;
-    resourcesReady_ = audioRouter_.Ready();
+    const auto prepared = audioRouter_.PrepareResources();
+    if (prepared == mrg::audio::AudioPreparationState::Failed || !initializationError_.empty())
+    {
+        resourceLoadFailed_ = true;
+        FailPlaybackPreparation();
+        return false;
+    }
+    resourcesReady_ = prepared == mrg::audio::AudioPreparationState::Ready;
     return resourcesReady_;
 }
 
@@ -49,7 +58,7 @@ void GameplaySessionController::UpdatePause(const mrg::UpdateContext &context)
 
 void GameplaySessionController::PrepareGameplay(const mrg::UpdateContext &context)
 {
-    using Preparation = finger_drum::audio::GameplayAudioRouter::MusicPreparation;
+    using Preparation = mrg::audio::AudioPreparationState;
     if (!playbackRequested_)
         return;
     if (playbackStart_)

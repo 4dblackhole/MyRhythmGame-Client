@@ -57,6 +57,7 @@ class EditorPlayback final
     void UpdatePosition();
     void ScheduleHitSounds();
     void StopVoices() noexcept;
+    void PauseVoices();
     void ClearSources() noexcept;
 
     mrg::audio::AudioSystem *audio_{};

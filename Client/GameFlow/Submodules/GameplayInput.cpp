@@ -6,7 +6,7 @@ void GameplaySessionController::ResetTimeline()
 {
     feedback_.push_back({true});
     session_->Reset();
-    audioRouter_.StopAllVoices();
+    audioRouter_.PauseMusicAndStopSamples();
     audioRouter_.ResetAutomation();
     timer_.Stop();
     time_ = initialTime_;

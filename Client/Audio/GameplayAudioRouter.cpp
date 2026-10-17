@@ -147,17 +147,20 @@ namespace finger_drum::audio
         return true;
     }
 
-    bool GameplayAudioRouter::Ready()
+    mrg::audio::AudioPreparationState GameplayAudioRouter::PrepareResources()
     {
-        bool ready = true;
+        auto ready = mrg::audio::AudioPreparationState::Ready;
         for (const auto &[id, sound] : clips_)
         {
             std::string error;
             const auto state = sound.clip->LoadState(error);
             if (state == mrg::audio::AudioClipLoadState::Loading)
-                ready = false;
-            else if (state == mrg::audio::AudioClipLoadState::Failed && lastError_.empty())
+                ready = mrg::audio::AudioPreparationState::Loading;
+            else if (state == mrg::audio::AudioClipLoadState::Failed)
+            {
                 lastError_ = id + ": " + error;
+                return mrg::audio::AudioPreparationState::Failed;
+            }
         }
         return ready;
     }
@@ -167,71 +170,85 @@ namespace finger_drum::audio
     {
         Route(cues, nullptr);
     }
-    GameplayAudioRouter::MusicPreparation GameplayAudioRouter::PrepareMusicAt(rhythm::RhythmTime position)
+    mrg::audio::AudioPreparationState GameplayAudioRouter::PrepareMusicAt(rhythm::RhythmTime position)
     {
+        using Preparation = mrg::audio::AudioPreparationState;
         const auto found = clips_.find("Music.Track");
         if (found == clips_.end())
         {
             lastError_ = "No music clip is registered.";
-            return MusicPreparation::Failed;
+            return Preparation::Failed;
         }
         std::string error;
         const auto state = found->second.clip->LoadState(error);
         if (state == mrg::audio::AudioClipLoadState::Loading)
-            return MusicPreparation::Loading;
+            return Preparation::Loading;
         if (state == mrg::audio::AudioClipLoadState::Failed)
         {
             lastError_ = std::move(error);
-            return MusicPreparation::Failed;
-        }
-        if (musicVoice_ != mrg::audio::InvalidAudioPlaybackId)
-        {
-            if (!musicPositioned_ && position > rhythm::RhythmTime{})
-            {
-                mrg::audio::AudioPlaybackSettings settings;
-                settings.startPaused = true;
-                settings.startPositionMicroseconds = static_cast<std::uint64_t>(position.count());
-                const auto bus = buses_.find("Music");
-                if (!playback_.Restart(musicVoice_, settings, bus == buses_.end() ? nullptr : bus->second, error))
-                {
-                    lastError_ = std::move(error);
-                    return MusicPreparation::Failed;
-                }
-                musicPositioned_ = true;
-                return MusicPreparation::Loading; // Wait for this source seek as well.
-            }
-            return MusicPreparation::Ready;
+            return Preparation::Failed;
         }
         std::uint64_t duration{};
         if (!found->second.clip->GetDurationMicroseconds(duration, error))
         {
             lastError_ = std::move(error);
-            return MusicPreparation::Failed;
+            return Preparation::Failed;
         }
         const auto sourcePosition = static_cast<std::uint64_t>(std::max(position.count(), rhythm::RhythmTime::rep{}));
-        if (sourcePosition >= duration)
-            return MusicPreparation::Ready; // The chart may extend beyond the music file.
+        musicPastEnd_ = sourcePosition >= duration;
+        if (musicPastEnd_)
+            return Preparation::Ready;
+        auto* voice = playback_.FindVoice(musicVoice_);
+        if (voice && !voice->IsPlaying())
+        {
+            static_cast<void>(playback_.Stop(musicVoice_, error));
+            std::erase(voices_, musicVoice_);
+            musicVoice_ = mrg::audio::InvalidAudioPlaybackId;
+        }
+        if (musicVoice_ != mrg::audio::InvalidAudioPlaybackId)
+        {
+            if (!musicPositioned_)
+            {
+                mrg::audio::AudioPlaybackSettings settings;
+                settings.startPaused = true;
+                settings.startPositionMicroseconds = sourcePosition;
+                const auto bus = buses_.find("Music");
+                if (!playback_.Restart(musicVoice_, settings, bus == buses_.end() ? nullptr : bus->second, error))
+                {
+                    lastError_ = std::move(error);
+                    return Preparation::Failed;
+                }
+                musicPositioned_ = true;
+            }
+            voice = playback_.FindVoice(musicVoice_);
+            if (!voice)
+            {
+                lastError_ = "The prepared music voice is no longer available.";
+                return Preparation::Failed;
+            }
+            const auto prepared = voice->PreparationState(error);
+            if (prepared == Preparation::Failed)
+                lastError_ = std::move(error);
+            return prepared;
+        }
         mrg::audio::AudioPlaybackSettings settings;
         settings.startPaused = true;
-        // A reused nonblocking stream may seek to zero inside Play. Request the
-        // target only on a later Ready/Playing poll, using the same paused voice.
+        settings.startPositionMicroseconds = sourcePosition;
         const auto bus = buses_.find("Music");
         musicVoice_ = playback_.Play(found->second.clip, settings, bus == buses_.end() ? nullptr : bus->second, error);
         if (musicVoice_ == mrg::audio::InvalidAudioPlaybackId)
         {
             lastError_ = std::move(error);
-            return MusicPreparation::Failed;
+            return Preparation::Failed;
         }
         voices_.push_back(musicVoice_);
-        musicPositioned_ = false;
-        // A nonblocking source seek can become Loading after Play. Never
-        // unpause it until a subsequent poll observes Ready/Playing.
-        return MusicPreparation::Loading;
+        musicPositioned_ = true;
+        return Preparation::Loading;
     }
 
     bool GameplayAudioRouter::StartPreparedMusic(rhythm::RhythmTime position, const rhythm::RhythmTimer &timer)
     {
-        if (musicVoice_ == mrg::audio::InvalidAudioPlaybackId)
+        if (musicPastEnd_ || musicVoice_ == mrg::audio::InvalidAudioPlaybackId)
             return true; // No source audio remains beyond the song's end.
         auto *voice = playback_.FindVoice(musicVoice_);
         std::string error;
@@ -375,6 +392,35 @@ namespace finger_drum::audio
         }
     }
 
+    void GameplayAudioRouter::PauseMusicAndStopSamples()
+    {
+        for (const auto id : voices_)
+        {
+            std::string error;
+            auto* voice = playback_.FindVoice(id);
+            if (!voice)
+                continue;
+            if (id == musicVoice_ && voice->IsPlaying())
+            {
+                if (!voice->SetPaused(true, error))
+                {
+                    if (voice->IsPlaying())
+                        lastError_ = std::move(error);
+                    static_cast<void>(playback_.Stop(id, error));
+                    musicVoice_ = mrg::audio::InvalidAudioPlaybackId;
+                }
+            }
+            else
+                static_cast<void>(playback_.Stop(id, error));
+        }
+        std::erase_if(voices_, [this](auto id) { return id != musicVoice_ || !playback_.FindVoice(id); });
+        if (!playback_.FindVoice(musicVoice_))
+            musicVoice_ = mrg::audio::InvalidAudioPlaybackId;
+        musicPositioned_ = false;
+        sampleVoices_.clear();
+        appliedValues_.clear();
+    }
+
     void GameplayAudioRouter::StopAllVoices() noexcept
     {
         // Stop only this session; menu/UI playback may share the manager.
@@ -396,6 +442,7 @@ namespace finger_drum::audio
         voices_.clear();
         musicVoice_ = mrg::audio::InvalidAudioPlaybackId;
         musicPositioned_ = false;
+        musicPastEnd_ = false;
         sampleVoices_.clear();
         appliedValues_.clear();
     }

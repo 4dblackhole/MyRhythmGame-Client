@@ -40,10 +40,11 @@ void GameplaySessionController::Start(const mrg::EngineServices &services,
     session_->SetResultInitialTime(initialTime);
     if (state_ == PlayState::Ending)
         return;
-    InitializeAudio(services);
+    InitializeAudio(services.audio);
     time_ = initialTime_;
     audioInitialized_ = true;
     resourcesReady_ = false;
+    resourceLoadFailed_ = false;
     playbackRequested_ = state_ == PlayState::Loading;
     nextAudioPreparationPoll_ = 0;
 }

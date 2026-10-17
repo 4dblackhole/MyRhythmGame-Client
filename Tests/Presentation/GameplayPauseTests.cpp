@@ -180,6 +180,7 @@ namespace
     std::int64_t musicScheduleTicks{};
     std::size_t sampleStarts{}, clipLoads{}, musicResumes{};
     bool failNextMusicStart{};
+    bool failSampleLoads{};
     struct ClipState
     {
         bool music{};
@@ -215,10 +216,22 @@ namespace
         {
             return playing_;
         }
-        bool Restart(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *, std::string &) override
+        a::AudioPreparationState PreparationState(std::string &error) override
+        {
+            error.clear();
+            return std::chrono::steady_clock::now() < state_->readyAt
+                       ? a::AudioPreparationState::Loading : a::AudioPreparationState::Ready;
+        }
+        bool Restart(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *, std::string &error) override
         {
             if (state_->music)
             {
+                if (failNextMusicStart)
+                {
+                    failNextMusicStart = false;
+                    error = "Injected music preparation failure.";
+                    return false;
+                }
                 Check(std::chrono::steady_clock::now() >= state_->readyAt && settings.startPaused &&
                           settings.startDspClock == 0,
                       "The target seek must wait for Play's internal seek and retain its paused voice.");
@@ -274,8 +287,14 @@ namespace
             state_->music = music;
             ++clipLoads;
         }
-        a::AudioClipLoadState LoadState(std::string &) const override
+        a::AudioClipLoadState LoadState(std::string &error) const override
         {
+            if (!state_->music && failSampleLoads)
+            {
+                error = "Injected hit sound load failure.";
+                return a::AudioClipLoadState::Failed;
+            }
+            error.clear();
             return std::chrono::steady_clock::now() < state_->readyAt ? a::AudioClipLoadState::Loading
                                                                       : a::AudioClipLoadState::Ready;
         }
@@ -295,8 +314,8 @@ namespace
                     error = "Injected music preparation failure.";
                     return nullptr;
                 }
-                Check(settings.startPaused && settings.startDspClock == 0 && settings.startPositionMicroseconds == 0,
-                      "Create the paused voice at zero before requesting a target source seek.");
+                Check(settings.startPaused && settings.startDspClock == 0,
+                      "Music must stay inaudible until source preparation completes.");
                 musicStarts.push_back(settings);
                 state_->readyAt = std::chrono::steady_clock::now() + std::chrono::milliseconds{40};
             }
@@ -462,6 +481,7 @@ namespace
                       "Pause must freeze the clock and latch practice.");
                 if (++pausedUpdates_ < 20)
                     return true;
+                const auto musicVoicesBeforeResume = musicStarts.size();
                 Check(controller_->ResumeFromPause(ctx, r::RhythmDuration{500'000}), "Resume must succeed.");
                 Check(controller_->Time() == paused_ - r::RhythmDuration{500'000} &&
                           session_->FinalizedNoteCount() == 1,
@@ -472,7 +492,8 @@ namespace
                       "A duplicate Resume must not subtract the lead-in again.");
                 const auto samplesBefore = sampleStarts;
                 WaitForGameplay(*controller_, ctx);
-                Check(sampleStarts == samplesBefore, "Resume must not replay hit sounds.");
+                Check(sampleStarts == samplesBefore && musicStarts.size() == musicVoicesBeforeResume,
+                      "Resume must retain the music voice and must not replay hit sounds.");
                 CheckClockAlignment(ctx, paused_ - r::RhythmDuration{500'000});
                 Check(musicStarts.back().startPositionMicroseconds ==
                           static_cast<std::uint64_t>((paused_ - r::RhythmDuration{500'000}).count()),
@@ -549,6 +570,7 @@ namespace
                 // Render the actual modal once, then finish on the next update.
                 if (rendered_)
                 {
+                    CheckResourceLoadFailure(ctx);
                     verified_ = true;
                     return false;
                 }
@@ -593,7 +615,7 @@ namespace
             const auto samplesBefore = sampleStarts;
             router.StopAllVoices();
             Check(playback_.PlaybackCount() == voicesBefore, "Pause must discard the old hit sound.");
-            using Preparation = finger_drum::audio::GameplayAudioRouter::MusicPreparation;
+            using Preparation = a::AudioPreparationState;
             auto ready = router.PrepareMusicAt(r::RhythmTime{500'000});
             const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{2};
             while (ready == Preparation::Loading && std::chrono::steady_clock::now() < deadline)
@@ -616,6 +638,29 @@ namespace
                       musicStarts.size() == startsBeforeEnd && playback_.PlaybackCount() == voicesBefore,
                   "A chart beyond the music's end must resume without creating an out-of-range voice.");
         }
+        void CheckResourceLoadFailure(const mrg::UpdateContext &ctx)
+        {
+            auto loaded = mode::TaikoMode{}.CreateSession(Pattern());
+            Check(loaded.Succeeded(), "Failed-resource fixture must load its chart.");
+            GameplaySessionController failed({"probe.ymp", {}, "probe-music.mp3", "Taiko"}, playback_, false,
+                                             std::move(loaded.session));
+            failed.InitializeSession();
+            failSampleLoads = true;
+            failed.Start(*services_, r::RhythmTime{});
+            failed.Update(ctx);
+            Check(failed.CurrentState() == PlayState::Pause && failed.PauseMenuOpen() && !failed.CanContinue() &&
+                      failed.ErrorMessage().find("hit sound load failure") != std::string_view::npos,
+                  "A failed sample must block gameplay and expose the pause menu with an error.");
+            Check(!failed.ResumeFromPause(ctx, r::RhythmDuration{500'000}),
+                  "Failed resources must not be bypassed with Resume.");
+            failSampleLoads = false;
+            failed.RetryFromPause(ctx);
+            WaitForGameplay(failed, ctx);
+            Check(failed.ErrorMessage().empty() && failed.Session().CanUseHp(),
+                  "Retry must reload failed resources and begin a clean attempt after recovery.");
+            failed.Shutdown();
+        }
+
         void CheckClockAlignment(const mrg::UpdateContext &ctx, r::RhythmTime target)
         {
             const auto before = ctx.audio.CaptureClockSnapshot();
@@ -708,19 +753,19 @@ namespace
             std::filesystem::path("FingerDrum.Assets/Assets/Songs/Music/Angeldream/angel dream hand shaking.mp3");
         Check(router.RegisterSound("Music.Track", path, a::AudioLoadMode::StreamAsyncAccurate, error), error.c_str());
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
-        while (!router.Ready() && std::chrono::steady_clock::now() < deadline)
+        while (router.PrepareResources() == a::AudioPreparationState::Loading && std::chrono::steady_clock::now() < deadline)
         {
             audio.Update();
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
-        Check(router.Ready() && router.LastError().empty(), "Actual FMOD music must load.");
+        Check(router.PrepareResources() == a::AudioPreparationState::Ready && router.LastError().empty(), "Actual FMOD music must load.");
         auto clip = audio.LoadSound(path, a::AudioLoadMode::Stream, error);
         if (!clip)
             throw std::runtime_error(error);
         std::uint64_t duration{};
         Check(clip->GetDurationMicroseconds(duration, error), error.c_str());
         const r::RhythmTime nearEnd{static_cast<r::RhythmTime::rep>(duration - 100'000)};
-        using Preparation = finger_drum::audio::GameplayAudioRouter::MusicPreparation;
+        using Preparation = a::AudioPreparationState;
         for (const auto position : {r::RhythmTime{1'000'000}, r::RhythmTime{500'000}, r::RhythmTime{5'000'000},
                                     r::RhythmTime{1'000'000}, r::RhythmTime{500'000}, r::RhythmTime{5'000'000},
                                     r::RhythmTime{}, nearEnd})
@@ -755,6 +800,23 @@ namespace
         playback.StopAll();
         clip.reset();
         audio.Update();
+        // Cancel an in-flight source seek and immediately close the service.
+        // Retired native sounds must finish release before FMOD is closed.
+        std::shared_ptr<a::AudioClip> pending = audio.LoadSound(path, a::AudioLoadMode::StreamAsyncAccurate, error);
+        Check(pending != nullptr, error.c_str());
+        const auto cancelDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+        while (pending->LoadState(error) == a::AudioClipLoadState::Loading &&
+               std::chrono::steady_clock::now() < cancelDeadline)
+        {
+            audio.Update();
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
+        a::AudioPlaybackSettings pendingSettings;
+        pendingSettings.startPaused = true;
+        pendingSettings.startPositionMicroseconds = 20'000'000;
+        Check(playback.Play(pending, pendingSettings, nullptr, error) != 0, error.c_str());
+        playback.StopAll();
+        audio.RetireClip(std::move(pending));
         audio.Shutdown();
     }
 } // namespace
