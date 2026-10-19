@@ -1783,3 +1783,30 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   LaneKeyBeam.cpp, Option.ini와 원본 음원은 변경하지 않았습니다. 원시 로그와 분석 설정은
   ignored `build/pcm-audio-20261020/`에 있습니다. 재생은 현재 곡의 전체 float PCM을
   메모리에 준비하므로 기존 압축 스트리밍보다 메모리를 더 사용합니다.
+
+## 2026-10-20 osu!taiko 변환기 +25ms 보정
+
+- 변환기 `0b33b286f0c1f5f98cb85dec3b604dfeca28c490`은 원본 격자/마디 계산을 마친 뒤
+  Pattern Offset과 절대 검증 시각에 25ms를 한 번 더합니다. 노트·끝점·BPM·효과가 함께
+  이동하며 박자 위치·길이·스냅 통계와 CLI/파일 형식은 유지합니다. 기존 출력은 수정하지 않습니다.
+- Core의 보정 helper와 직접 호출·검증 경로를 검토했습니다. 음수/소수 오프셋, BPM 경계,
+  omit 마디, 롱노트 끝점, SV/볼륨/Kiai, 직렬화 및 두 출력 배치를 회귀 검사합니다.
+- Debug/Release x64 변환기 solution Rebuild와 Core/EXE/Tests의 MSVC 14.44/v143/C++20
+  Code Analysis를 통과했습니다. 실제 프로젝트 include/define으로 구성별 10개 TU의
+  `/analyze` 명령을 확인했고 컴파일·분석 경고/오류와 파싱 오류는 없습니다.
+- Client Debug x64 solution Build와 Release x64 직렬 전체 Rebuild는 경고/오류 0입니다.
+  초기 Release 증분 빌드의 FingerDrum.Rhythm.pdb 관련 LNK4020은 소스 변경이나 경고 억제 없이
+  전체 Rebuild 후 사라졌습니다. 중간 OBJ/LIB/PDB 불일치가 의심되지만 발생 원인은 확정하지 않았습니다.
+- 두 구성의 변환기 단위/CLI 회귀, Client 로직·카탈로그 각 63개(실패 0),
+  smoke-test/lobby/gameplay/editor 각 4개(exit 0)를 통과했습니다.
+  최종 Release Rebuild 후 로직·smoke·CLI 회귀도 다시 통과했습니다.
+- 두 구성에서 실제 Omoiyoshino는 727→752ms(861개), Watch Me는 2295→2320ms(1,059개),
+  NEMONEMO는 222→247ms(1,631개)로 변환했습니다. 실제 카탈로그의 3곡/3패턴/3,551개 노트가
+  통과했고 원본 채보 hash와 복사 음원 bytes는 같습니다. 기존 출력이 있는 Watch Me/NEMONEMO는
+  YMP 오프셋/출력 경로 외 행과 YME bytes, 스냅 통계가 이전 결과와 같음을 확인했습니다.
+- Client에 복사된 변환기 EXE와 형제 저장소 EXE의 SHA256이 두 구성 모두 일치합니다.
+  CheckArchitecture의 11개 프로젝트와 두 저장소 git diff --check도 통과했습니다.
+  엔진은 `9077d5c4f0c585f6626b9dbebf37f644e75dc93b`로 유지하며 사용자 LaneKeyBeam.cpp는 보존했습니다.
+- 위 결과는 자동 검증입니다. 새 변환 결과의 실제 에디터 화면/청취/물리 입력은 수동 검증하지
+  않았습니다. 로그·분석 설정은 ignored `build/converter-offset-20261020/`, 실제 맵 출력은
+  변환기 ignored `TestData/OffsetCorrection-20261020/`에 있습니다.

@@ -9,6 +9,10 @@
 
 ## 작업 위치와 경계
 
+변환기 오프셋(2026-10-20): [변환기 계약](OsuTaikoConverter.md). 새 변환은 원본 격자/마디
+계산 후 Pattern Offset과 출력 절대 검증 시각에 +25ms를 한 번 적용합니다. 원본 채보/음원과
+기존 변환 파일은 바꾸지 않으며, 패키지/라이브러리 배치가 같은 정책을 사용합니다.
+
 공통 PCM(2026-10-20): [플레이 오디오](Gameplay/Audio.md), [에디터 분석](ChartEditor.md).
 재생/분석이 엔진 DecodeAudioPcm의 같은 시간축을 사용합니다. MP3는 dr_mp3로 Info/LAME
 패딩을 제거하고 Vorbis/Windows 코덱은 기존 경로를 공유합니다. FingerDrum.Editor는

@@ -11,7 +11,7 @@
 | 공통 PCM·MP3 패딩·재생/파형 시간축 | [오디오](Gameplay/Audio.md), [에디터 분석](ChartEditor.md) | 엔진 Audio/Decode; EditorAnalysisController의 reader 주입 |
 | Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `FingerDrum.Modes/Taiko` |
 | YMM/YMP/YME 문법·히트사운드 볼륨·보간·Whole/Separate·영역 상태 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model`, `Automation` |
-| osu!taiko 외부 EXE 변환·격자 보정·omit 마디 | [OsuTaikoConverter](OsuTaikoConverter.md) | 형제 저장소 `../OsuTaikoConverter`, Client 프로젝트 참조 |
+| osu!taiko 외부 EXE 변환·+25ms 오프셋·격자 보정·omit 마디 | [OsuTaikoConverter](OsuTaikoConverter.md) | 형제 저장소 `../OsuTaikoConverter`, Client 프로젝트 참조 |
 | BPM·마디·유리수 위치·음수 delay 무효 구간 | [타이밍 문법](Formats/Timing.md) | `FingerDrum.Chart/Timing`, `Utility` |
 | 편집 트리·드래그/다중 선택·공백 포함/제외 붙여넣기·32단계 Undo/Redo·노트 속성·모드 확장·오디오 탭/OGG 분석·재생/배속/휠 탐색 | [ChartEditor](ChartEditor.md) | ChartEditor/ChartEditorHistory의 원본 트리·편집 이력; EditorSelection / EditorClipboard / EditorWorkspace / Modes/Taiko; `FingerDrum.Editor` |
 | 곡 목록·포커스·난이도 클릭 진입·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
