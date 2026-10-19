@@ -2,8 +2,137 @@
 
 namespace finger_drum::tests
 {
+    namespace
+    {
+        void CheckSavedMetadataHistory()
+        {
+            TemporaryDirectory saved("finger-drum-metadata-history-save");
+            chart::PatternDocument pattern;
+            pattern.sourcePath = saved.Path() / "metadata.ymp";
+            pattern.name = "Before";
+            chart::ChartEditor document(pattern);
+            pattern.name = "After";
+            document.Replace(pattern, document.Effects());
+            document.Save();
+            const auto savedText = chart::ChartEditor::WritePattern(document.Pattern());
+            document.Undo();
+            Require(document.Dirty() && document.Pattern().name == "Before" &&
+                        document.Pattern().effectFile == "metadata.yme",
+                    "Metadata undo must preserve the YME reference established by the first save.");
+            document.Redo();
+            Require(!document.Dirty() && chart::ChartEditor::WritePattern(document.Pattern()) == savedText,
+                    "Redo to a saved state must restore exactly the saved metadata, including automatic YME paths.");
+        }
+
+        void CheckEditorHistory()
+        {
+            CheckSavedMetadataHistory();
+            chart::ChartEditor bounded(chart::PatternDocument{});
+            for (int i = 0; i < 40; ++i)
+                bounded.AddNote({0, {i, 64}}, 1);
+            for (int i = 0; i < 32; ++i)
+                bounded.Undo();
+            Require(!bounded.CanUndo() && bounded.CanRedo() && bounded.Notes().size() == 8,
+                    "History must retain exactly the latest 32 actions.");
+            for (int i = 0; i < 32; ++i)
+                bounded.Redo();
+            Require(!bounded.CanRedo() && bounded.Notes().size() == 40, "Redo must restore all retained actions.");
+
+            chart::ChartEditor notes(chart::PatternDocument{});
+            notes.AddNote({0, {1, 4}}, 1);
+            const auto id = notes.Notes().front().note.sourceOrder;
+            notes.Undo();
+            Require(!notes.Dirty() && notes.Notes().empty(), "Undo to the initial state restores clean status.");
+            notes.Redo();
+            auto changed = notes.Pattern();
+            changed.notes.front().keyType = 2;
+            notes.Replace(changed, {});
+            notes.Undo();
+            Require(notes.Notes().front().note.keyType == 1 && notes.FindNote(id).has_value(),
+                    "Overwrite undo must restore the original Don and stable ID, not erase its slot.");
+            notes.Redo();
+            Require(notes.Notes().front().note.keyType == 2, "Overwrite redo must restore Kat.");
+            notes.Undo();
+            notes.AddNote({0, {1, 2}}, 2);
+            Require(!notes.CanRedo(), "A new edit after Undo must clear the abandoned redo branch.");
+
+            auto timing = notes.Timing();
+            timing.push_back({{}, chart::TimingDirectiveType::Bpm, 240});
+            notes.ReplaceTiming(timing);
+            chart::EffectDocument effects;
+            chart::EffectCommand speed;
+            speed.type = chart::EffectCommandType::NoteSpeed;
+            speed.beginValue = speed.endValue = 2;
+            effects.commands.push_back(speed);
+            notes.ReplaceEffects(effects);
+            const auto compiled = notes.Notes().front().timing;
+            notes.Undo();
+            Require(notes.Notes().front().scrollMultiplier == 1 && notes.Notes().front().timing == compiled,
+                    "Effects undo must restore compiled scroll values without changing timing.");
+            notes.Undo();
+            Require(notes.Notes().front().timing.count() == 500'000, "Timing undo must restore note times.");
+            const auto revision = notes.Revision();
+            bool failed = false;
+            try
+            {
+                notes.ReplaceTiming({{{}, chart::TimingDirectiveType::Bpm, -1}});
+            }
+            catch (const std::invalid_argument &)
+            {
+                failed = true;
+            }
+            Require(failed && notes.Revision() == revision && notes.CanRedo(),
+                    "A rejected edit must preserve document and redo history.");
+            notes.Redo();
+            notes.Redo();
+            Require(notes.Notes().front().scrollMultiplier == 2 && notes.Notes().front().timing == compiled,
+                    "Timing/effects redo must recompile the original values.");
+
+            chart::ChartEditor longNotes(chart::PatternDocument{});
+            longNotes.AddNote({0, {}}, 11, chart::MusicalPosition{1, {}});
+            const auto head = longNotes.Notes().front().note.sourceOrder;
+            longNotes.DeleteNote(head);
+            longNotes.Undo();
+            const auto restored = longNotes.FindNote(head);
+            Require(restored && restored->tail.has_value() &&
+                        longNotes.NotesInTimeRange(rhythm::RhythmTime{500'000}, rhythm::RhythmTime{600'000}).size() ==
+                            2,
+                    "Long-note undo must restore both endpoints and interval indices.");
+            longNotes.Undo();
+            Require(longNotes.Notes().empty(), "Undoing long-note insertion removes its entire pair.");
+            longNotes.Redo();
+            longNotes.Redo();
+            Require(longNotes.Notes().empty(), "Long-note deletion redo must remove the restored pair.");
+
+            TemporaryDirectory saved("finger-drum-history-save");
+            chart::PatternDocument pattern;
+            pattern.sourcePath = saved.Path() / "history.ymp";
+            chart::ChartEditor document(pattern);
+            document.AddNote({0, {}}, 1);
+            document.Save();
+            document.AddNote({0, {1, 4}}, 2);
+            document.Undo();
+            Require(!document.Dirty(), "Undo must recognize the most recently saved state.");
+            document.Redo();
+            Require(document.Dirty(), "Redo beyond the save point must mark the chart dirty.");
+        }
+    } // namespace
     void TestChartEditorIndices()
     {
+        CheckEditorHistory();
+        {
+            chart::ChartParser parser;
+            const auto parsed = parser.ParsePattern("[Metadata]\nBG: abcd/bg1.png\noffset: 25.5, -40.25\n");
+            const auto roundtrip = parser.ParsePattern(chart::ChartEditor::WritePattern(parsed.document));
+            Require(parsed.Succeeded() && roundtrip.Succeeded() &&
+                        roundtrip.document.backgroundFile == "abcd/bg1.png" &&
+                        roundtrip.document.backgroundOffsetX == 25.5 && roundtrip.document.backgroundOffsetY == -40.25,
+                    "BG and engine-space offsets must round-trip independently of the YMP folder.");
+            for (const auto text :
+                 {"BG: ../outside.png", "BG: C:/outside.png", "offset: nan, 0", "offset: 1", "offset: 0, 1e300"})
+                Require(!parser.ParsePattern(std::string("[Metadata]\n") + text).Succeeded(),
+                        "Invalid BG paths/offsets must be rejected.");
+        }
         using namespace finger_drum;
         {
             chart::PatternDocument pattern;
@@ -91,12 +220,12 @@ namespace finger_drum::tests
         {
             chart::PatternDocument source;
             source.baseBpm = 120;
-            source.notes = {{{0, {}}, 11, 1, {}, {}, {}, 90},
-                            {{10, {}}, 11, 2, {}, {}, {}, 2}};
+            source.notes = {{{0, {}}, 11, 1, {}, {}, {}, 90}, {{10, {}}, 11, 2, {}, {}, {}, 2}};
             chart::ChartEditor indexed(source);
-            Require(indexed.NotesInMeasures(4, 5).size() == 2 &&
-                        indexed.NotesInTimeRange(rhythm::RhythmTime{8'000'000}, rhythm::RhythmTime{9'000'000}).size() == 2,
-                    "Viewport queries must retain long notes whose endpoints both lie outside, regardless of ID order.");
+            Require(
+                indexed.NotesInMeasures(4, 5).size() == 2 &&
+                    indexed.NotesInTimeRange(rhythm::RhythmTime{8'000'000}, rhythm::RhythmTime{9'000'000}).size() == 2,
+                "Viewport queries must retain long notes whose endpoints both lie outside, regardless of ID order.");
             indexed.AddNote({5, {1, 4}}, 1);
             const auto addedId = indexed.NotesInMeasures(5, 6)[1].note.sourceOrder;
             indexed.DeleteNote(addedId);
@@ -114,8 +243,14 @@ namespace finger_drum::tests
                     "BPM/delay edits must update time indices without invalidating unchanged audio sources.");
             const auto revisionBeforeFailure = indexed.Revision();
             bool rejectedEnd = false;
-            try { indexed.AddNote({1, {}}, 11, chart::MusicalPosition{-1, {}}); }
-            catch (const std::invalid_argument &) { rejectedEnd = true; }
+            try
+            {
+                indexed.AddNote({1, {}}, 11, chart::MusicalPosition{-1, {}});
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejectedEnd = true;
+            }
             Require(rejectedEnd && indexed.Revision() == revisionBeforeFailure,
                     "Failed insertion must leave trees and revision unchanged.");
             indexed.DeleteNote(2);
@@ -178,6 +313,33 @@ namespace finger_drum::tests
             Require(timeline.PositionToWholeNotes(timeline.PositionAtWholeNotes(beat)) == beat,
                     "Prefix sum inverse must remain exact, including extrapolated measures.");
 
+        {
+            chart::PatternDocument variable;
+            variable.timing = {{{1, {}}, chart::TimingDirectiveType::MeasureLength, 0, {3, 4}},
+                               {{1, {1, 4}}, chart::TimingDirectiveType::Bpm, 240},
+                               {{2, {1, 4}}, chart::TimingDirectiveType::DelayMilliseconds, 250}};
+            const chart::MusicalTimeline indexed(variable);
+            const chart::MusicalPosition first{0, {3, 4}}, last{2, {1, 4}};
+            const auto distance = indexed.WholeNotesBetween(first, last);
+            Require(distance == chart::Rational{5, 4} && indexed.AddWholeNotes(first, distance) == last &&
+                        indexed.AddWholeNotes(last, -distance) == first,
+                    "Musical addition/subtraction must cross changing measures exactly without BPM/delay distortion.");
+            Require(indexed.Compile(indexed.AddWholeNotes({1, {1, 4}}, {1, 4})).count() -
+                            indexed.Compile({1, {1, 4}}).count() ==
+                        250'000,
+                    "Only the final microsecond conversion applies the indexed BPM.");
+            bool beforeStart = false;
+            try
+            {
+                static_cast<void>(indexed.AddWholeNotes({}, {-1, 4}));
+            }
+            catch (const std::invalid_argument &)
+            {
+                beforeStart = true;
+            }
+            Require(beforeStart, "Musical subtraction before the first measure must be rejected.");
+        }
+
         auto pattern = editor.Pattern();
 
         pattern.timing.push_back({{0, {1, 4}}, chart::TimingDirectiveType::Bpm, 240});
@@ -217,7 +379,8 @@ namespace finger_drum::tests
         Require(invalidRejected && editor.Revision() == beforeRevision && editor.Dirty() == beforeDirty &&
                     chart::ChartEditor::WritePattern(editor.Pattern()) == beforePattern &&
                     chart::ChartEditor::WriteEffects(editor.Effects()) == beforeEffects &&
-                    editor.Notes().front().timing == beforeTime && std::abs(editor.Notes().front().scrollMultiplier - (5.0 / 3.0)) < 1e-9,
+                    editor.Notes().front().timing == beforeTime &&
+                    std::abs(editor.Notes().front().scrollMultiplier - (5.0 / 3.0)) < 1e-9,
                 "Failed candidate validation must preserve document, revision, dirty state and compiled caches.");
         auto serialized = chart::ChartEditor::WriteEffects(effects);
         const auto parsedEffects = chart::ChartParser{}.ParseEffect(serialized);
@@ -244,7 +407,6 @@ namespace finger_drum::tests
         editor.Save();
         auto backup = pattern.sourcePath;
         backup += L".editor.bak";
-        Require(!std::filesystem::exists(backup),
-                "Successful save must clean its own backup.");
+        Require(!std::filesystem::exists(backup), "Successful save must clean its own backup.");
     }
 } // namespace finger_drum::tests

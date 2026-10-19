@@ -8,10 +8,11 @@ $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/
 $compiledExe = Join-Path $testRoot 'AssetPathTests.exe'
 Push-Location $repoRoot
 try {
-    & cl /nologo /analyze /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Assets/Public `
+    & cl /nologo /W4 /analyze /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Assets/Public `
         /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/AssetPathTests.cpp `
         "build/obj/MRG.Client/x64/$Configuration/OptionSettings.obj" `
         "build/obj/MRG.Client/x64/$Configuration/Pch.obj" "bin/x64/$Configuration/FingerDrum.Assets.lib" `
+        "bin/x64/$Configuration/FingerDrum.Modes.lib" "bin/x64/$Configuration/FingerDrum.Chart.lib" "bin/x64/$Configuration/FingerDrum.Rhythm.lib" `
         "Dependencies/MRG-Engine/bin/x64/$Configuration/MRG.Core.lib" `
         "/Fo$objects/" "/Fe$compiledExe" /link /OPT:NOICF /OPT:NOREF `
         "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" user32.lib gdi32.lib ole32.lib shell32.lib

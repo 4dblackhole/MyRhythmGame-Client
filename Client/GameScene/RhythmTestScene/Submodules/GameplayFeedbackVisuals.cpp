@@ -37,11 +37,19 @@ void GameplayPresenter::PresentJudgementFeedback(const GameplayFeedback &feedbac
     }
 }
 
-void GameplayPresenter::PresentErrorMessage(const std::string_view message)
+void GameplayPresenter::PresentErrorMessage(std::string_view message)
 {
     if (errorLabel_ == nullptr)
     {
         return;
+    }
+    std::string combined;
+    if (!backgroundWarning_.empty())
+    {
+        combined = backgroundWarning_;
+        if (!message.empty())
+            combined += " | " + std::string(message);
+        message = combined;
     }
     errorLabel_->SetVisible(!message.empty());
     if (message.empty())

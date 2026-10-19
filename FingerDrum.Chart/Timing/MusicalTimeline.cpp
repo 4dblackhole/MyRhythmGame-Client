@@ -443,6 +443,19 @@ namespace finger_drum::chart
         return {low, beat - PositionToWholeNotes({low, {}})};
     }
 
+    MusicalPosition MusicalTimeline::AddWholeNotes(MusicalPosition position, const Rational &delta) const
+    {
+        const auto result = PositionAtWholeNotes(PositionToWholeNotes(position) + delta);
+        if (result.measure >= MaximumMeasureCount)
+            throw std::out_of_range("Musical displacement is beyond 100,000 measures.");
+        return result;
+    }
+
+    Rational MusicalTimeline::WholeNotesBetween(MusicalPosition begin, MusicalPosition end) const
+    {
+        return PositionToWholeNotes(end) - PositionToWholeNotes(begin);
+    }
+
     long double MusicalTimeline::WholeNotesAtTime(const rhythm::RhythmTime time) const noexcept
     {
         const long double microseconds = static_cast<long double>(time.count());

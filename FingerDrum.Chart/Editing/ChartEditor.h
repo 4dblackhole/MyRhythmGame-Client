@@ -5,6 +5,7 @@
 #include "Utility/IntervalIndex.h"
 
 #include <algorithm>
+#include <list>
 #include <map>
 #include <optional>
 #include <set>
@@ -64,17 +65,52 @@ namespace finger_drum::chart
         void DeleteNote(std::size_t sourceOrder) override;
         void SetMeasureLength(std::int64_t measure, Rational length) override;
         void Save() override;
+        bool CanUndo() const noexcept override
+        {
+            return !undo_.empty();
+        }
+        bool CanRedo() const noexcept override
+        {
+            return !redo_.empty();
+        }
+        void Undo() override;
+        void Redo() override;
         [[nodiscard]] static std::string WritePattern(const PatternDocument &pattern);
         [[nodiscard]] static std::string WriteEffects(const EffectDocument &effects);
 
       private:
+        struct HistoryState
+        {
+            std::vector<PatternNote> notes;          // Only changed source events, never a full note snapshot.
+            std::optional<PatternDocument> metadata; // Contains no notes/timing.
+            std::optional<std::vector<TimingDirective>> timing;
+            std::optional<EffectDocument> effects;
+        };
+        struct HistoryEdit
+        {
+            HistoryState before, after;
+            std::uint64_t beforeId{}, afterId{};
+        };
+        using HistoryList = std::list<HistoryEdit>;
+        using SavedHistoryPaths = std::vector<std::pair<std::filesystem::path *, std::filesystem::path>>;
+        HistoryList PrepareHistory(HistoryState before, HistoryState after) const;
+        HistoryList ReplacementHistory(const ChartEditor &) const;
+        SavedHistoryPaths PrepareSavedHistoryPaths(const std::filesystem::path &);
+        void CommitHistory(HistoryList &) noexcept;
+        void TransferHistory(ChartEditor &) noexcept;
+        void RestoreHistory(const HistoryState &, const HistoryState &, std::uint64_t);
+        void RestoreNotes(const HistoryState &, const HistoryState &);
+        void ApplyNotePatch(std::span<const std::size_t>, std::span<const CompiledPatternNote>);
+        void ReplaceData(PatternDocument, EffectDocument);
+        void PublishReplacement(ChartEditor &&);
+        HistoryList undo_, redo_;
+        std::uint64_t historyState_{}, savedHistoryState_{}, nextHistoryState_{1};
         void InitializeEventTrees();
         CompiledPatternNote CompileNote(PatternNote) const;
         void InvalidateNoteSnapshots() noexcept;
         void EraseNote(std::size_t) noexcept;
         std::map<std::size_t, std::size_t> BuildLongPartners(
-            std::optional<std::size_t> excluded = {}, std::optional<std::size_t> excludedPartner = {},
-            std::span<const CompiledPatternNote> replacements = {}) const;
+            std::span<const std::size_t> excluded = {}, std::span<const CompiledPatternNote> replacements = {}) const;
         std::vector<CompiledPatternNote> IncludeLongNotePartners(std::map<std::size_t, const CompiledPatternNote *>) const;
         void EnsureLongIntervalIndices() const;
         using NoteKey = std::pair<MusicalPosition, std::size_t>;

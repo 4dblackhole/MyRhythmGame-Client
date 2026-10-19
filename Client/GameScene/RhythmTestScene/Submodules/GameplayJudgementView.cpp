@@ -27,17 +27,15 @@ namespace
     // grade; an automatic miss does not represent a player's input timestamp.
     bool HasInputTiming(const r::NoteEvent &event) noexcept
     {
-        return (event.type == r::NoteEventType::HitAccepted ||
-                event.type == r::NoteEventType::HoldStarted ||
-                event.type == r::NoteEventType::TickAccepted ||
-                event.type == r::NoteEventType::InputRejected) &&
-            r::IsAtLeastAsAccurateAs(event.judgement.grade, r::JudgementGrade::Bad);
+        return (event.type == r::NoteEventType::HitAccepted || event.type == r::NoteEventType::HoldStarted ||
+                event.type == r::NoteEventType::TickAccepted || event.type == r::NoteEventType::InputRejected) &&
+               r::IsAtLeastAsAccurateAs(event.judgement.grade, r::JudgementGrade::Bad);
     }
-}
+} // namespace
 
-void GameplayJudgementView::Initialize(v::ScreenVisual2DManager &visuals,
-    v::Visual2DCanvas &canvas, v::Visual2DNode &judgementCircle,
-    const r::AccuracyRange &baseRange, finger_drum::texts::TextCatalog &texts)
+void GameplayJudgementView::Initialize(v::ScreenVisual2DManager &visuals, v::Visual2DCanvas &canvas,
+                                       v::Visual2DNode &judgementCircle, const r::AccuracyRange &baseRange,
+                                       finger_drum::texts::TextCatalog &texts)
 {
     if (guide_ != nullptr)
         throw std::logic_error("Judgement view is already initialized.");
@@ -50,8 +48,7 @@ void GameplayJudgementView::Initialize(v::ScreenVisual2DManager &visuals,
     Reset();
 }
 
-void GameplayJudgementView::CreateTimingGuide(v::Visual2DNode &root,
-    finger_drum::texts::TextCatalog &texts)
+void GameplayJudgementView::CreateTimingGuide(v::Visual2DNode &root, finger_drum::texts::TextCatalog &texts)
 {
     guide_ = &root.CreateChild("Hud.JudgementGuide");
     guide_->SetPosition({0.0F, -342.0F});
@@ -72,8 +69,7 @@ void GameplayJudgementView::CreateTimingBands()
         const std::size_t index = reverse - 1;
         bands_[index] = &v::CreatePanel(*guide_, {}, "Judgement.Band." + std::to_string(index));
         bands_[index]->SetZIndex(static_cast<int>(bands_.size() - index));
-        Tint(*bands_[index], finger_drum::presentation::LaneKeyBeam::GradeColor(
-            static_cast<r::JudgementGrade>(index)));
+        Tint(*bands_[index], finger_drum::presentation::LaneKeyBeam::GradeColor(static_cast<r::JudgementGrade>(index)));
     }
 }
 
@@ -83,14 +79,15 @@ void GameplayJudgementView::CreateTimingCaptions(finger_drum::texts::TextCatalog
     const std::array<std::wstring_view, 3> captions{text.early, L"0", text.late};
     for (std::size_t index = 0; index < labels_.size(); ++index)
     {
-        labels_[index] = &v::CreateLabel(*guide_, {}, std::wstring(captions[index]),
-            "Judgement.Caption." + std::to_string(index));
+        labels_[index] =
+            &v::CreateLabel(*guide_, {}, std::wstring(captions[index]), "Judgement.Caption." + std::to_string(index));
         auto &label = *labels_[index]->GetComponent<v::TextVisualComponent>();
         texts.ApplyFont(label);
         label.SetFontSize(12.0F);
         label.SetTextColor(Ink);
-        label.SetHorizontalAlignment(index == 0 ? v::TextAlignment::Leading :
-            index == 1 ? v::TextAlignment::Center : v::TextAlignment::Trailing);
+        label.SetHorizontalAlignment(index == 0   ? v::TextAlignment::Leading
+                                     : index == 1 ? v::TextAlignment::Center
+                                                  : v::TextAlignment::Trailing);
     }
 }
 
@@ -99,16 +96,21 @@ void GameplayJudgementView::CreateTimingMarker()
     auto &zero = v::CreatePanel(*guide_, {-0.5F, -1.0F, 1.0F, BarHeight + 2.0F}, "Judgement.Zero");
     zero.SetZIndex(6);
     Tint(zero, Ink);
-    marker_ = &v::CreatePanel(*guide_, {-2.0F, -3.0F, 4.0F, BarHeight + 6.0F}, "Judgement.Marker");
-    marker_->SetPivot({0.5F, 0.5F});
-    marker_->SetZIndex(7);
-    Tint(*marker_, Ink);
-    auto &fill = v::CreatePanel(*marker_, {1.0F, 1.0F, 2.0F, BarHeight + 4.0F}, "Judgement.MarkerFill");
-    Tint(fill, {1.0F, 1.0F, 1.0F, 1.0F});
+    const auto create = [this](TimingMarker &marker, std::string name)
+    {
+        marker.node = &v::CreatePanel(*guide_, {-2.0F, -3.0F, 4.0F, BarHeight + 6.0F}, std::move(name));
+        marker.node->SetPivot({0.5F, 0.5F});
+        marker.node->SetZIndex(7);
+        marker.fill = &v::CreatePanel(*marker.node, {1.0F, 1.0F, 2.0F, BarHeight + 4.0F}, "Judgement.MarkerFill");
+        TintMarker(marker, 1);
+    };
+    for (std::size_t i = 0; i < markers_.size(); ++i)
+        create(markers_[i], i == 0 ? "Judgement.Marker" : "Judgement.Marker." + std::to_string(i));
+    for (std::size_t i = 0; i < retiringMarkers_.size(); ++i)
+        create(retiringMarkers_[i], "Judgement.RetiringMarker." + std::to_string(i));
 }
 
-void GameplayJudgementView::CreateJudgementImages(v::ScreenVisual2DManager &visuals,
-    v::Visual2DNode &judgementCircle)
+void GameplayJudgementView::CreateJudgementImages(v::ScreenVisual2DManager &visuals, v::Visual2DNode &judgementCircle)
 {
     const float size = judgementCircle.NodeSize().width * 1.4F;
     for (std::size_t index = 0; index < judgementImages_.size(); ++index)
@@ -119,11 +121,10 @@ void GameplayJudgementView::CreateJudgementImages(v::ScreenVisual2DManager &visu
         if (nativeSize.width <= 0.0F || nativeSize.height <= 0.0F)
             throw std::logic_error("Judgement skin image must have a non-zero size.");
         const float height = size * nativeSize.height / nativeSize.width;
-        auto &node = v::CreateSprite(judgementCircle, {0.0F, 0.0F, size, height},
-            image, "Lane.Judgement." + std::string(ImageNames[index]));
+        auto &node = v::CreateSprite(judgementCircle, {0.0F, 0.0F, size, height}, image,
+                                     "Lane.Judgement." + std::string(ImageNames[index]));
         node.SetPivot({0.5F, 0.5F});
-        node.SetPosition({judgementCircle.NodeSize().width * 0.5F,
-            judgementCircle.NodeSize().height * 0.5F});
+        node.SetPosition({judgementCircle.NodeSize().width * 0.5F, judgementCircle.NodeSize().height * 0.5F});
         // Follow the judgement-circle position/scale but keep the wording
         // upright inside Taiko's clockwise-rotated lane.
         node.Transform().SetRotationRollPitchYaw(0.0F, 0.0F, DirectX::XM_PIDIV2);
@@ -137,8 +138,8 @@ void GameplayJudgementView::OnResize(const float logicalWidth)
     if (guide_ == nullptr)
         return;
     const float totalMicroseconds = static_cast<float>(displayHalfWindow_.count()) * 2.0F;
-    pixelsPerMicrosecond_ = std::min(ReferencePixelsPerMicrosecond,
-        std::max(logicalWidth - 40.0F, 1.0F) / totalMicroseconds);
+    pixelsPerMicrosecond_ =
+        std::min(ReferencePixelsPerMicrosecond, std::max(logicalWidth - 40.0F, 1.0F) / totalMicroseconds);
     const float halfWidth = static_cast<float>(displayHalfWindow_.count()) * pixelsPerMicrosecond_;
     margin_->SetBounds({-halfWidth, 0.0F, halfWidth * 2.0F, BarHeight});
     for (std::size_t index = 0; index < bands_.size(); ++index)
@@ -149,13 +150,54 @@ void GameplayJudgementView::OnResize(const float logicalWidth)
     labels_[0]->SetBounds({-halfWidth, 12.0F, 80.0F, 16.0F});
     labels_[1]->SetBounds({-20.0F, 12.0F, 40.0F, 16.0F});
     labels_[2]->SetBounds({halfWidth - 80.0F, 12.0F, 80.0F, 16.0F});
-    UpdateMarkerPosition();
+    UpdateMarkerPositions();
 }
 
-void GameplayJudgementView::UpdateMarkerPosition()
+void GameplayJudgementView::PositionMarker(TimingMarker &marker)
 {
-    const auto error = std::clamp(markerError_, -displayHalfWindow_, displayHalfWindow_);
-    marker_->SetPosition({static_cast<float>(error.count()) * pixelsPerMicrosecond_, BarHeight * 0.5F});
+    const auto error = std::clamp(marker.error, -displayHalfWindow_, displayHalfWindow_);
+    marker.node->SetPosition({static_cast<float>(error.count()) * pixelsPerMicrosecond_, BarHeight * 0.5F});
+}
+
+void GameplayJudgementView::TintMarker(TimingMarker &marker, const float alpha)
+{
+    auto outline = Ink;
+    outline.alpha = alpha;
+    Tint(*marker.node, outline);
+    Tint(*marker.fill, {1, 1, 1, alpha});
+}
+
+void GameplayJudgementView::UpdateMarkerPositions()
+{
+    for (auto &marker : markers_)
+        PositionMarker(marker);
+    for (auto &marker : retiringMarkers_)
+        PositionMarker(marker);
+}
+
+void GameplayJudgementView::AddMarker(const r::RhythmDuration error)
+{
+    auto &marker = markers_[nextMarker_];
+    if (markerCount_ == markers_.size())
+    {
+        auto &retiring = retiringMarkers_[nextRetiring_];
+        retiring.error = marker.error;
+        retiring.fadeElapsed = 0;
+        PositionMarker(retiring);
+        TintMarker(retiring, 1);
+        retiring.node->SetVisible(true);
+        nextRetiring_ = (nextRetiring_ + 1) % retiringMarkers_.size();
+    }
+    else
+        ++markerCount_;
+    marker.error = error;
+    PositionMarker(marker);
+    marker.node->SetVisible(true);
+    nextMarker_ = (nextMarker_ + 1) % markers_.size();
+    // Draw newer retained hits above older hits even after the ring wraps.
+    for (std::size_t i = 0; i < markerCount_; ++i)
+        markers_[(nextMarker_ + markers_.size() - markerCount_ + i) % markers_.size()].node->SetZIndex(
+            8 + static_cast<int>(i));
 }
 
 void GameplayJudgementView::Present(const r::NoteEvent &event)
@@ -175,10 +217,7 @@ void GameplayJudgementView::Present(const r::NoteEvent &event)
     ShowImage(index);
     if (hasTiming)
     {
-        markerError_ = event.judgement.signedError;
-        markerElapsedSeconds_ = 0.0;
-        UpdateMarkerPosition();
-        marker_->SetVisible(true);
+        AddMarker(event.judgement.signedError);
     }
 }
 
@@ -203,24 +242,39 @@ void GameplayJudgementView::Update(const double deltaSeconds)
     if (guide_ == nullptr || !std::isfinite(deltaSeconds))
         return;
     const double delta = std::max(deltaSeconds, 0.0);
-    markerElapsedSeconds_ = std::min(FeedbackSeconds, markerElapsedSeconds_ + delta);
-    marker_->SetVisible(markerElapsedSeconds_ < FeedbackSeconds);
+    for (auto &marker : retiringMarkers_)
+    {
+        if (marker.fadeElapsed >= FeedbackSeconds)
+            continue;
+        marker.fadeElapsed = std::min(FeedbackSeconds, marker.fadeElapsed + delta);
+        TintMarker(marker, static_cast<float>(1 - marker.fadeElapsed / FeedbackSeconds));
+        marker.node->SetVisible(marker.fadeElapsed < FeedbackSeconds);
+    }
     if (activeJudgement_ != nullptr)
     {
         judgementElapsedSeconds_ = std::min(FeedbackSeconds, judgementElapsedSeconds_ + delta);
-        Tint(*activeJudgement_, {1.0F, 1.0F, 1.0F,
-            static_cast<float>(1.0 - judgementElapsedSeconds_ / FeedbackSeconds)});
+        Tint(*activeJudgement_,
+             {1.0F, 1.0F, 1.0F, static_cast<float>(1.0 - judgementElapsedSeconds_ / FeedbackSeconds)});
         activeJudgement_->SetVisible(judgementElapsedSeconds_ < FeedbackSeconds);
     }
 }
 
 void GameplayJudgementView::Reset() noexcept
 {
-    markerElapsedSeconds_ = FeedbackSeconds;
     judgementElapsedSeconds_ = FeedbackSeconds;
-    markerError_ = {};
-    if (marker_ != nullptr)
-        marker_->SetVisible(false);
+    nextMarker_ = markerCount_ = nextRetiring_ = 0;
+    const auto reset = [](auto &markers)
+    {
+        for (auto &marker : markers)
+        {
+            marker.error = {};
+            marker.fadeElapsed = FeedbackSeconds;
+            if (marker.node)
+                marker.node->SetVisible(false);
+        }
+    };
+    reset(markers_);
+    reset(retiringMarkers_);
     for (auto *node : judgementImages_)
         if (node != nullptr)
             node->SetVisible(false);
@@ -236,6 +290,7 @@ void GameplayJudgementView::Shutdown() noexcept
     margin_ = nullptr;
     bands_.fill(nullptr);
     labels_.fill(nullptr);
-    marker_ = nullptr;
+    markers_ = {};
+    retiringMarkers_ = {};
     judgementImages_.fill(nullptr);
 }

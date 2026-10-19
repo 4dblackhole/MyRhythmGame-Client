@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/MD', '/DNDEBUG') }
 $testObjects = "build/obj/OptionsPanelTests/$Configuration"
 New-Item -ItemType Directory -Path $testObjects -Force | Out-Null
-$objects = @('Pch', 'OptionSettings', 'OptionsPanel', 'OptionsDisplay', 'OptionsKeys', 'OptionsOffset', 'OptionTexts', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent') |
+$objects = @('Pch', 'OptionSettings', 'OptionsPanel', 'OptionsDisplay', 'OptionsKeys', 'OptionsOffset', 'OptionsSongs', 'OptionTexts', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent') |
     ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
 & cl /nologo /analyze /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Assets/Public /IFingerDrum.Modes /IFingerDrum.Rhythm /IFingerDrum.Chart `
     /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/OptionsPanelTests.cpp @objects `

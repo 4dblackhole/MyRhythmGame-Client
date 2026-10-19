@@ -42,6 +42,7 @@ void EditorView::CycleEffectType()
 }
 void EditorView::SelectEffectRow(std::size_t row)
 {
+    state_.SelectListRow(row, toggleSelection_, rangeSelection_);
     auto draft = state_.effectForm;
     draft.Load(state_.Document().Effects(), row);
     if (const auto *sound = std::get_if<EditorHitSoundTarget>(&draft.selection))
@@ -90,7 +91,7 @@ void EditorView::DrawEffectRows()
                           Wide(Fraction(change.position.fraction)) + L"    " + label + L"    " +
                           Wide(change.soundIndex);
         }
-        Button({156, y, 1430, 40}, description, [this, row] { SelectEffectRow(row); });
+        Button({156, y, 1430, 40}, description, [this, row] { SelectEffectRow(row); }, state_.IsListRowSelected(row));
         Button({1620, y, 195, 40}, std::wstring(Texts().remove), [this, row] { state_.RemoveEffect(row); });
     }
 }

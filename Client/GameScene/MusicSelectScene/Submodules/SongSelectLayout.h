@@ -218,12 +218,6 @@ namespace song_select
                 bounds.width * DesignToCanvasScale, scaledHeight};
     }
 
-    [[nodiscard]] inline finger_drum::chart::SongCatalogLoadResult LoadRuntimeCatalog()
-    {
-        finger_drum::chart::SongCatalog loader;
-        return loader.Load(mrg_client::asset_paths::UserSongs());
-    }
-
     [[nodiscard]] inline std::wstring BpmText(const double bpm)
     {
         std::wstring result = std::format(L"{:.2f}", bpm);

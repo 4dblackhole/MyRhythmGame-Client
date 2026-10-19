@@ -37,6 +37,7 @@ class MusicSelectScene final : public mrg::scene::GameScene
     void CreateDifficulty(mrg::scene::SceneManager &scenes);
     void ConvertOsu();
     void PollOsuImport();
+    void RefreshCatalog();
     std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest_;
     SongSelectPurpose purpose_;
     mrg_client::OptionSettings &options_;
@@ -47,5 +48,6 @@ class MusicSelectScene final : public mrg::scene::GameScene
     bool active_{};
     bool firstEntry_{true};
     SongCatalogLoader catalogLoader_;
+    std::filesystem::path catalogRoot_;
     EditorOsuImport osuImport_;
 };

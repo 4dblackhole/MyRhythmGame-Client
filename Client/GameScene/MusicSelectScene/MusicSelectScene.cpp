@@ -26,9 +26,8 @@ void MusicSelectScene::Initialize(const mrg::EngineServices &services)
 {
     if (!launchRequest_)
         throw std::invalid_argument("Lobby requires a gameplay launch request.");
-    catalogLoader_.Refresh(mrg_client::asset_paths::UserSongs());
-    selection_->catalogLoading_ = true;
     preview_->Initialize(services.audio);
+    RefreshCatalog();
     view_->Initialize(services);
 }
 void MusicSelectScene::BeginScene()
@@ -36,8 +35,7 @@ void MusicSelectScene::BeginScene()
     // Initialize started the first load. Re-entry still observes user edits.
     if (!firstEntry_ && !osuImport_.Busy())
     {
-        catalogLoader_.Refresh(mrg_client::asset_paths::UserSongs());
-        selection_->catalogLoading_ = true;
+        RefreshCatalog();
     }
     firstEntry_ = false;
     view_->RebuildVisibleSongs();
@@ -53,6 +51,8 @@ void MusicSelectScene::EndScene() noexcept
 }
 void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
 {
+    if (catalogRoot_ != options_.SongsRoot())
+        RefreshCatalog();
     PollOsuImport();
     if (auto catalog = catalogLoader_.Poll())
     {
@@ -88,7 +88,7 @@ void MusicSelectScene::ConvertOsu()
     {
         if (auto input = SelectOsuFile(texts_))
         {
-            osuImport_.Start(*input, mrg_client::asset_paths::UserSongs());
+            osuImport_.Start(*input, catalogRoot_);
             selection_->catalogLoading_ = true;
             selection_->ClearLaunchError();
             view_->RebuildVisibleSongs();
@@ -106,7 +106,7 @@ void MusicSelectScene::PollOsuImport()
     if (!result) return;
     if (result->success)
     {
-        catalogLoader_.Refresh(mrg_client::asset_paths::UserSongs());
+        RefreshCatalog();
         ShowOsuImportCompletion(*result, texts_);
     }
     else
@@ -125,7 +125,7 @@ void MusicSelectScene::CreateDifficulty(mrg::scene::SceneManager &scenes)
     preview_->StopPreviewAudio();
     try
     {
-        if (auto created = CreateDifficultyWithDialog(mrg_client::asset_paths::UserSongs(), song, texts_))
+        if (auto created = CreateDifficultyWithDialog(catalogRoot_, song, texts_))
         {
             song.patterns.push_back(std::move(*created));
             selection_->selectedPatternIndex_ = song.patterns.size() - 1;
@@ -181,6 +181,11 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
         song.audioPath,      pattern.pattern.mode,
         SongTitle(song),     pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())};
     request.globalOffsetMs = options_.Values().globalOffsetMs;
+    request.songsRoot = catalogRoot_;
+    if (!pattern.pattern.backgroundFile.empty())
+        request.backgroundPath = catalogRoot_ / L"BG" / pattern.pattern.backgroundFile;
+    request.backgroundOffsetX = pattern.pattern.backgroundOffsetX;
+    request.backgroundOffsetY = pattern.pattern.backgroundOffsetY;
     request.songArtist = SongArtist(song);
     if (const auto keys = options_.Values().modeKeys.find(request.mode); keys != options_.Values().modeKeys.end())
         request.inputKeys = keys->second;
@@ -230,4 +235,15 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
         throw std::runtime_error("Failed to enter transient gameplay.");
     }
     return true;
+}
+
+void MusicSelectScene::RefreshCatalog()
+{
+    catalogRoot_ = options_.SongsRoot();
+    preview_->StopPreviewAudio();
+    selection_->catalogLoading_ = true;
+    selection_->catalog_ = {};
+    catalogLoader_.Refresh(catalogRoot_);
+    if (active_)
+        view_->RebuildVisibleSongs();
 }

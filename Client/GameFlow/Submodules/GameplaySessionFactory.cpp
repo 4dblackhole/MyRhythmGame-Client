@@ -112,7 +112,8 @@ void GameplaySessionController::PrepareDebugLaunchRequest()
     {
         return;
     }
-    const std::filesystem::path songs = mrg_client::asset_paths::UserSongs();
+    const std::filesystem::path songs =
+        launchRequest_.songsRoot.empty() ? mrg_client::asset_paths::UserSongs() : launchRequest_.songsRoot;
     const std::filesystem::path patternPath =
         songs / L"Patterns\\angeldream\\Long Notes Debug\\angeldream [long notes test].ymp";
     const std::filesystem::path musicPath = songs / L"Music\\Angeldream\\angel dream hand shaking.mp3";

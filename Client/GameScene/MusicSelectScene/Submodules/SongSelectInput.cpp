@@ -6,13 +6,11 @@ using namespace song_select;
 
 void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
 {
-    canvasPointer_ =
-        input.IsMouseInsideWindow()
-            ? mrg::visual2d::MapScreenPointer(
-                  {static_cast<float>(input.MousePositionX()),
-                   static_cast<float>(input.MousePositionY())},
-                  {static_cast<float>(width_), static_cast<float>(height_)}, *canvas_)
-            : std::nullopt;
+    canvasPointer_ = input.IsMouseInsideWindow()
+                         ? mrg::visual2d::MapScreenPointer(
+                               {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
+                               {static_cast<float>(width_), static_cast<float>(height_)}, *canvas_)
+                         : std::nullopt;
     mrg::visual2d::PointerInput pointer{};
     pointer.available = canvasPointer_.has_value();
     pointer.position = canvasPointer_.value_or(mrg::visual2d::Point{});
@@ -27,8 +25,8 @@ void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
     else
         inputRouter_.Process(*canvas_, pointer);
 
-    if (!options_.IsVisible() && !(additionMenu_ && additionMenu_->IsVisible()) && canvasPointer_.has_value() && songViewport_ != nullptr &&
-        songViewport_->BoundsInCanvas().Contains(*canvasPointer_) &&
+    if (!options_.IsVisible() && !(additionMenu_ && additionMenu_->IsVisible()) && canvasPointer_.has_value() &&
+        songViewport_ != nullptr && songViewport_->BoundsInCanvas().Contains(*canvasPointer_) &&
         std::abs(input.MouseWheelDelta()) > 0.0F)
     {
         scrollOffset_ -= input.MouseWheelDelta() * layout::ScrollStep;
@@ -46,15 +44,19 @@ bool MusicSelectView::ProcessActions()
             RebuildSongCards();
             return true;
         }
+        if (action.type == mrg::visual2d::ActionType::Clicked && action.source == optionButtonId_)
+        {
+            options_.Toggle();
+            return true;
+        }
         if (options_.IsVisible())
         {
             continue;
         }
-        if (action.type == mrg::visual2d::ActionType::SelectionChanged &&
-            action.source == sortSelectorId_)
+        if (action.type == mrg::visual2d::ActionType::SelectionChanged && action.source == sortSelectorId_)
         {
-            selection_.sortMode_ = static_cast<SortMode>(std::min<std::size_t>(
-                action.selectedIndex, static_cast<std::size_t>(SortMode::Artist)));
+            selection_.sortMode_ = static_cast<SortMode>(
+                std::min<std::size_t>(action.selectedIndex, static_cast<std::size_t>(SortMode::Artist)));
             RebuildVisibleSongs();
             return false;
         }
@@ -70,11 +72,6 @@ bool MusicSelectView::ProcessActions()
         if (action.source == goButtonId_)
         {
             command_ = SongSelectCommand::Launch;
-            return true;
-        }
-        if (action.source == optionButtonId_)
-        {
-            options_.Toggle();
             return true;
         }
         if (action.source == searchFieldId_)
@@ -95,8 +92,7 @@ bool MusicSelectView::ProcessActions()
                 OpenAdditionMenu(anchor);
                 return true;
             }
-            if (songCards_[position].button != nullptr &&
-                action.source == songCards_[position].button->Id())
+            if (songCards_[position].button != nullptr && action.source == songCards_[position].button->Id())
             {
                 searchFocused_ = false;
                 SelectVisibleSong(songCards_[position].visiblePosition);
@@ -136,8 +132,7 @@ bool MusicSelectView::ProcessKeyboard(const mrg::platform::InputState &input)
         command_ = SongSelectCommand::Back;
         return true;
     }
-    const bool controlDown =
-        input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+    const bool controlDown = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
     if (controlDown && input.WasKeyPressed(static_cast<std::uint16_t>('F')))
     {
         searchFocused_ = true;
@@ -261,8 +256,8 @@ void MusicSelectView::SelectPattern(const std::size_t index)
         if (auto *button = canvas_->FindNode(id))
         {
             const bool selected = patternIndex == selection_.selectedPatternIndex_;
-            ApplyButtonStyle(*button, selected ? AccentBlue : PureWhite,
-                             selected ? AccentHover : PaleBlue, selected ? PureWhite : DeepBlue);
+            ApplyButtonStyle(*button, selected ? AccentBlue : PureWhite, selected ? AccentHover : PaleBlue,
+                             selected ? PureWhite : DeepBlue);
             finger_drum::presentation::BindSkinImage(*button, screenVisuals_, "MusicSelect",
                                                      selected ? "DifficultySelected" : "Difficulty");
         }

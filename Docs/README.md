@@ -12,7 +12,7 @@
 | YMM/YMP/YME 문법·히트사운드 볼륨·보간·Whole/Separate·영역 상태 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model`, `Automation` |
 | osu!taiko 외부 EXE 변환·격자 보정·omit 마디 | [OsuTaikoConverter](OsuTaikoConverter.md) | 형제 저장소 `../OsuTaikoConverter`, Client 프로젝트 참조 |
 | BPM·마디·유리수 위치·음수 delay 무효 구간 | [타이밍 문법](Formats/Timing.md) | `FingerDrum.Chart/Timing`, `Utility` |
-| 편집 트리·노트 선택/속성·모드 확장·메뉴/저장·오디오 탭/영역 측정/OGG 분석·offset/메트로놈·재생/배속/시간축 줌 | [ChartEditor](ChartEditor.md) | ChartEditor의 원본 트리/조회 snapshot; EditorPlayback / EditorAudioSelection / EditorMenuBar / EditorWorkspace / Modes/Taiko; `FingerDrum.Editor` |
+| 편집 트리·드래그/다중 선택·공백 포함/제외 붙여넣기·32단계 Undo/Redo·노트 속성·모드 확장·오디오 탭/OGG 분석·재생/배속/휠 탐색 | [ChartEditor](ChartEditor.md) | ChartEditor/ChartEditorHistory의 원본 트리·편집 이력; EditorSelection / EditorClipboard / EditorWorkspace / Modes/Taiko; `FingerDrum.Editor` |
 | 곡 목록·포커스·난이도 클릭 진입·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
 | 에디터용 곡 선택·+ 메뉴·새 난이도·osu 가져오기 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성; EditorOsuImport / 변환기 ConversionFiles |
 | 플레이 화면·노트/마디선 스크롤·키빔·판정 인디케이터/문구·상단 진행바 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
@@ -20,9 +20,9 @@
 | Penpot 결과 화면·정확도 랭크·상단 곡 정보·리트라이·판정 통계·오차 그래프·us 입력 로그 | [플레이 결과](Gameplay/Results.md) | `FingerDrum.Modes/Mode/Results`, `Taiko/Results`, `Client/GameScene/ResultScene`; 내장 Result PNG |
 | 플레이 디버그 조작·전체 노트/Buzz 재현 | [디버깅](Gameplay/Debugging.md) | `GameFlow/Submodules/GameplayInput.cpp`, `Tests/Rhythm/Submodules/BuzzReplayTests.cpp` |
 | 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
-| 게임 표시 이름·UTF-8 언어 INI/영어 fallback·문구·글꼴·공통 UI 색상·옵션/ESC·해상도·키·글로벌 오프셋·Option.ini | [TextManagement](TextManagement.md) | `Client/Texts/Languages`, TextCatalog/LanguageFile, GameIdentity/화면별 Texts; OptionsPanel/OptionSettings |
+| 게임 표시 이름·UTF-8 언어 INI/영어 fallback·문구·글꼴·공통 UI 색상·옵션/ESC·Songs 경로·해상도·키·글로벌 오프셋·Option.ini | [TextManagement](TextManagement.md) | `Client/Texts/Languages`, TextCatalog/LanguageFile, GameIdentity/화면별 Texts; OptionsPanel/OptionSettings |
 | Canvas·입력·클리핑 API 사용 | [Visual2DGuide](Visual2DGuide.md) | 해당 Scene의 Submodules |
-| 개발/배포 자산 경로·난이도별 YMP/YME·skin.ini/씬별 이미지/fallback | [BuiltInAssets](BuiltInAssets.md) | `Client/App/SkinManifest.*`, `SkinSetSelection.*`, `Presentation/SkinVisualComponent.*`, `FingerDrum.Assets` |
+| 개발/배포 자산 경로·Songs/BG·YMP BG/offset·난이도별 YMP/YME·skin.ini/씬별 이미지/fallback | [BuiltInAssets](BuiltInAssets.md), [YMP](Formats/Ymp.md) | OptionSettings / GameplayLaunchRequest / GameplayPresenter; SkinManifest / SkinSetSelection / SkinVisualComponent; `FingerDrum.Assets` |
 | 시작·Scene 전환·종료·소유권 | [ExecutionFlow](ExecutionFlow.md) | `Client/App`, `Client/GameFlow` |
 | 엔진 API 자체 수정 | 엔진 AGENTS, EngineOverview의 해당 기능 | `Dependencies/MRG-Engine` |
 | Penpot 디자인 찾기 | [DesignReferences](DesignReferences.md) | 해당 화면 문서 |

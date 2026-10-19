@@ -31,6 +31,9 @@ FingerDrumGame::FingerDrumGame(const bool smokeTest, std::string initialSceneId,
     // retains the load warning until the user successfully saves new settings.
     if (!optionSettings_.Load(error))
         OutputDebugStringA(error.c_str());
+    finger_drum::GameplayLaunchRequest initialRequest;
+    initialRequest.songsRoot = optionSettings_.SongsRoot();
+    launchRequest_->Set(std::move(initialRequest));
     texts_.SetLanguage(optionSettings_.Values().language);
     framesPerSecondText_ = texts_.Get("Performance.measuringFps");
     updatesPerSecondText_ = texts_.Get("Performance.measuringUps");
@@ -61,14 +64,16 @@ void FingerDrumGame::RegisterScenes(mrg::scene::SceneManager &scenes)
 {
     if (smokeTest_ && initialSceneId_ == finger_drum::scene_ids::Editor)
     {
-        const auto catalog =
-            finger_drum::chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
+        const auto catalog = finger_drum::chart::SongCatalog{}.Load(optionSettings_.SongsRoot());
         const auto song = std::ranges::find_if(
             catalog.songs, [](const auto &entry) { return !entry.patterns.empty(); });
         if (song == catalog.songs.end())
             throw std::runtime_error("Editor smoke requires an external Songs chart.");
-        launchRequest_->Set({song->patterns.front().patternPath, song->patterns.front().effectPath,
-                             song->audioPath, song->patterns.front().pattern.mode});
+        finger_drum::GameplayLaunchRequest smokeRequest{song->patterns.front().patternPath,
+                                                        song->patterns.front().effectPath, song->audioPath,
+                                                        song->patterns.front().pattern.mode};
+        smokeRequest.songsRoot = optionSettings_.SongsRoot();
+        launchRequest_->Set(std::move(smokeRequest));
     }
     if (!scenes.RegisterScene<FingerDrumLogoScene>(std::string(finger_drum::scene_ids::Logo),
                                                    mrg::scene::SceneRetention::KeepAlive, std::ref(ScreenVisuals()),

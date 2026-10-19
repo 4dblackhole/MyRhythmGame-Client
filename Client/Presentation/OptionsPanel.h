@@ -42,6 +42,9 @@ namespace finger_drum::presentation
         void RefreshKeyControls();
         void CaptureKey(std::uint16_t key);
         void CreateOffsetControls();
+        void CreateSongsControls();
+        void RefreshSongsControls();
+        void ChooseSongsFolder();
         void RefreshOffsetControls();
         void EditOffset(std::uint16_t key);
         void ApplyOffset();
@@ -79,6 +82,7 @@ namespace finger_drum::presentation
         mrg::platform::IWindowControl *window_{};
         mrg::visual2d::Visual2DNode *resolutionLabel_{}, *resolutionCombo_{};
         mrg::visual2d::Visual2DNode *offsetLabel_{}, *offsetField_{}, *offsetHint_{};
+        mrg::visual2d::Visual2DNode *songsLabel_{}, *songsField_{}, *songsDefault_{};
         std::optional<std::size_t> captureRow_;
         std::wstring offsetDraft_;
         bool editingOffset_{}, replaceOffsetDraft_{};

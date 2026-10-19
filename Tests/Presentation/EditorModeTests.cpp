@@ -244,8 +244,8 @@ namespace
                              finger_drum::texts::TextCatalog &texts,
                              const std::function<const std::vector<v::DrawPacket> &()> &packets)
     {
-        const auto fixture = std::filesystem::path(__FILE__).parent_path().parent_path() /
-                             "Rhythm/Fixtures/Audio/OppositePhase.ogg";
+        const auto fixture =
+            std::filesystem::path(__FILE__).parent_path().parent_path() / "Rhythm/Fixtures/Audio/OppositePhase.ogg";
         auto mode = std::make_unique<ProbeMode>();
         mode->audioFiles = {{"Music", fixture}, {"ProbeCue", fixture}};
         EditorWorkspace state(std::move(mode), std::make_unique<ProbeDocument>());
@@ -268,19 +268,24 @@ namespace
 
         // Inspect the actual waveform and both spectrum tracks after rectangle
         // batches are expanded by the recording renderer, not synthetic FFT data.
-        const auto visibleColumns = [&](float top, float bottom, bool waveform) {
-            return std::ranges::count_if(packets(), [&](const auto &packet) {
-                DirectX::XMFLOAT3 corner;
-                DirectX::XMStoreFloat3(
-                    &corner, DirectX::XMVector3TransformCoord(
-                                 DirectX::XMVectorSet(packet.bounds.x, packet.bounds.y + packet.bounds.height, 0, 1),
-                                 DirectX::XMLoadFloat4x4(&packet.nodeTransform)));
-                const float y = 540 - corner.y;
-                const bool colored = waveform ? packet.color.green > .5F && packet.color.red < .3F
-                                              : packet.color.red > .3F && packet.color.green < .95F;
-                return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
-                       corner.x >= 205 - 960 && corner.x < 1770 - 960 && colored;
-            });
+        const auto visibleColumns = [&](float top, float bottom, bool waveform)
+        {
+            return std::ranges::count_if(
+                packets(),
+                [&](const auto &packet)
+                {
+                    DirectX::XMFLOAT3 corner;
+                    DirectX::XMStoreFloat3(
+                        &corner,
+                        DirectX::XMVector3TransformCoord(
+                            DirectX::XMVectorSet(packet.bounds.x, packet.bounds.y + packet.bounds.height, 0, 1),
+                            DirectX::XMLoadFloat4x4(&packet.nodeTransform)));
+                    const float y = 540 - corner.y;
+                    const bool colored = waveform ? packet.color.green > .5F && packet.color.red < .3F
+                                                  : packet.color.red > .3F && packet.color.green < .95F;
+                    return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
+                           corner.x >= 205 - 960 && corner.x < 1770 - 960 && colored;
+                });
         };
         Check(visibleColumns(153, 319, true) > 10 && visibleColumns(375, 587, false) > 10 &&
                   visibleColumns(640, 852, false) > 10,
@@ -475,19 +480,19 @@ namespace
             state.SetRealtimeZoom(zoom);
             RecordingCanvas empty;
             state.Mode().DrawChart(empty, state, TestCatalog(finger_drum::texts::Language::English));
-            Check(std::ranges::any_of(empty.rectangles, [](const auto &rect) {
-                      return rect.x == 164 && rect.y == 351 && rect.width == 1324 && rect.height == 228;
-                  }),
+            Check(std::ranges::any_of(
+                      empty.rectangles, [](const auto &rect)
+                      { return rect.x == 164 && rect.y == 351 && rect.width == 1324 && rect.height == 228; }),
                   "Time zoom must not resize the realtime lane.");
             const float x = 230 + 244.8F * static_cast<float>(zoom);
             state.Mode().EditScore(state, {x, 465}, false);
             Check(state.Document().Notes().size() == 1 &&
-                  state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
+                      state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
                   "Realtime snapping must use the same zoomed time coordinates as drawing.");
             RecordingCanvas notes;
             state.Mode().DrawChart(notes, state, TestCatalog(finger_drum::texts::Language::English));
             Check(!notes.imageRectangles.empty() && std::abs(notes.imageRectangles.front().x + 36 - x) < .1F &&
-                  notes.imageRectangles.front().width == 72,
+                      notes.imageRectangles.front().width == 72,
                   "Zoom must scale note spacing without scaling the selected skin head.");
             const auto revision = state.Document().Revision();
             state.SetRealtimeZoom(1);
@@ -502,11 +507,127 @@ namespace
             state.Seek(100);
             state.SeekFirstNote();
             Check(state.TimeMilliseconds() == 500, "A manual seek must reset the consecutive-Z toggle.");
+            state.Seek(0);
+            state.Mode().ScrollScore(state, 1);
+            Check(state.TimeMilliseconds() == 125,
+                  "Realtime wheel must advance one selected sixteenth-note grid step.");
+            state.Mode().ScrollScore(state, -1);
+            state.Mode().ScrollScore(state, -1);
+            Check(state.TimeMilliseconds() == 0 && state.Document().Revision() == revision,
+                  "Realtime wheel must clamp at the chart start and preserve the score.");
             bool rejected = false;
-            try { state.SetRealtimeZoom(std::numeric_limits<double>::infinity()); }
-            catch (const std::invalid_argument &) { rejected = true; }
+            try
+            {
+                state.SetRealtimeZoom(std::numeric_limits<double>::infinity());
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejected = true;
+            }
             Check(rejected && state.Score().realtimeZoom == 1, "Invalid zoom must preserve the current scale.");
         }
+    }
+
+    void TestSelectionClipboardAndHistory()
+    {
+        chart::PatternDocument source;
+        source.baseBpm = 120;
+        source.notes = {{{0, {}}, 1}, {{0, {1, 4}}, 2}, {{1, {}}, 2}, {{1, {1, 8}}, 1}, {{1, {1, 4}}, 1}};
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(source));
+        state.SelectTool(0);
+        RecordingCanvas canvas;
+        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::English));
+        Check(state.Mode().BeginScoreSelection(state, {205, 174}), "Q must enable beat-range dragging.");
+        Check(state.Mode().UpdateScoreSelection(state, {205 + 315 * .25F, 174}, true),
+              "Dragging must complete on release.");
+        Check(state.SelectedNoteIds().size() == 2 &&
+                  state.NoteSelectionRange()->second.fraction == chart::Rational{1, 4},
+              "Drag selection must preserve its exact beat interval.");
+        state.CopySelection();
+        state.Seek(2000);
+        const auto before = chart::ChartEditor::WritePattern(state.Document().Pattern());
+        state.PasteSelection(false);
+        const auto pasted = chart::ChartEditor::WritePattern(state.Document().Pattern());
+        const auto &notes = state.Document().Notes();
+        Check(notes.size() == 5 &&
+                  std::ranges::any_of(
+                      notes, [](const auto &n)
+                      { return n.note.position == chart::MusicalPosition{1, {1, 8}} && n.note.keyType == 1; }),
+              "Paste without blanks must preserve an unrelated note in the copied gap.");
+        Check(std::ranges::any_of(notes, [](const auto &n)
+                                  { return n.note.position == chart::MusicalPosition{1, {}} && n.note.keyType == 1; }),
+              "Paste must overwrite a destination Kat with the copied Don.");
+        state.Undo();
+        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == before,
+              "One Undo must restore every overwritten note, including the original Kat.");
+        state.Redo();
+        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == pasted,
+              "One Redo restores the whole paste.");
+        state.Undo();
+        state.PasteSelection(true);
+        Check(state.Document().Notes().size() == 4 &&
+                  std::ranges::none_of(state.Document().Notes(), [](const auto &n)
+                                       { return n.note.position == chart::MusicalPosition{1, {1, 8}}; }),
+              "Paste with blanks must remove the destination gap's old note.");
+        state.Undo();
+        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == before,
+              "Undo of paste-with-blanks must restore gap contents and replaced notes together.");
+
+        // A copied selection retains blank margins even when it contains no note.
+        state.SelectNoteRange({2, {}}, {2, {1, 4}});
+        state.CopySelection();
+        state.Seek(2000);
+        state.PasteSelection(true);
+        Check(state.Document().Notes().size() == 2,
+              "An entirely blank copied interval must erase the destination interval.");
+        state.Undo();
+        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == before,
+              "Blank paste must be fully reversible.");
+
+        state.SelectTab(EditorTab::Timing);
+        state.timingForm.measure = "1";
+        state.timingForm.fraction = "0/1";
+        state.timingForm.bpm = "180";
+        state.ApplyBpm();
+        state.timingForm.fraction = "1/4";
+        state.timingForm.bpm = "240";
+        state.ApplyBpm();
+        state.SelectListRow(0, false, false);
+        state.SelectListRow(1, false, true);
+        Check(state.IsListRowSelected(0) && state.IsListRowSelected(1), "Shift-click selects a timing range.");
+        state.CopySelection();
+        state.Seek(state.Document().Timeline().Compile({1, {}}).count() / 1000.0);
+        state.PasteSelection(false);
+        Check(state.Document().Timing().size() == 4, "Timing multi-paste must keep both copied BPM changes.");
+        state.Undo();
+        Check(state.Document().Timing().size() == 2, "Timing multi-paste is one undo action.");
+
+        chart::EffectDocument effects;
+        chart::EffectCommand point;
+        point.type = chart::EffectCommandType::NoteSpeed;
+        point.beginValue = point.endValue = 2;
+        effects.commands.push_back(point);
+        point.type = chart::EffectCommandType::BusVolume;
+        point.target = "HitSound";
+        point.beginValue = point.endValue = .6;
+        point.position = {0, {1, 4}};
+        effects.commands.push_back(point);
+        state.Replace(state.Document().Pattern(), effects);
+        state.SelectTab(EditorTab::Effects);
+        state.SelectListRow(0, false, false);
+        state.SelectListRow(1, true, false);
+        state.CopySelection();
+        state.PasteSelection(false);
+        Check(state.Document().Effects().commands.size() == 4, "Ctrl-clicked effect rows must paste as a group.");
+        state.Undo();
+        Check(state.Document().Effects().commands.size() == 2, "Effect multi-paste must undo as a group.");
+        auto metadata = state.Document().Pattern();
+        metadata.name = "Changed";
+        state.Replace(metadata, state.Document().Effects());
+        state.Undo();
+        Check(state.Document().Pattern().name.empty(), "Metadata edits must participate in the same history.");
+        state.Redo();
+        Check(state.Document().Pattern().name == "Changed", "Metadata redo must restore its value.");
     }
 
     void TestLastNoteSeeking()
@@ -873,8 +994,14 @@ Dip: 1-3*u*(1-u)
             const auto revision = state.Document().Revision();
             inspector.Form().tool = groups[(group + 1) % groups.size()].front();
             bool rejected = false;
-            try { inspector.Apply(state); }
-            catch (const std::invalid_argument &) { rejected = true; }
+            try
+            {
+                inspector.Apply(state);
+            }
+            catch (const std::invalid_argument &)
+            {
+                rejected = true;
+            }
             Check(rejected && state.Document().Revision() == revision,
                   "Cross-category inspector drafts must not modify the chart.");
 
@@ -973,6 +1100,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     TestPreviewMatchesPlay();
     TestRealtimeZoomAndTransport();
     TestLastNoteSeeking();
+    TestSelectionClipboardAndHistory();
     TestDelayViewsAndSnapping();
     TestSeekAndEffectEdits();
     TestInspectorMusicalTiming();

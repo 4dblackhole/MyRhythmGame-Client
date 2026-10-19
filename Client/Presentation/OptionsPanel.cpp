@@ -21,7 +21,7 @@ namespace finger_drum::presentation
         audio_ = &audio;
         window_ = window;
         inputLayouts_ = mode::AvailableInputLayouts();
-        contentHeight_ = 1120.0F;
+        contentHeight_ = 1280.0F;
         for (const auto &layout : inputLayouts_)
         {
             contentHeight_ += 52.0F;
@@ -30,18 +30,16 @@ namespace finger_drum::presentation
         }
         auto &leftAnchor = canvas.AnchorNode(mrg::visual2d::Anchor::MiddleLeft);
         leftAnchor.SetZIndex(100);
-        panel_ = &mrg::visual2d::CreatePanel(
-            leftAnchor,
-            {-PanelWidth, -PanelHeight * 0.5F, PanelWidth, PanelHeight}, "Options.Panel");
+        panel_ = &mrg::visual2d::CreatePanel(leftAnchor, {-PanelWidth, -PanelHeight * 0.5F, PanelWidth, PanelHeight},
+                                             "Options.Panel");
         panel_->SetZIndex(100);
         SetPanelColor(*panel_, PanelColor);
         panel_->AddComponent<mrg::visual2d::RectangleCollider2DComponent>();
         panel_->AddComponent<mrg::visual2d::PointerReceiverComponent>();
         panelId_ = panel_->Id();
 
-        title_ = &mrg::visual2d::CreateLabel(
-            *panel_, {24.0F, PanelHeight - 76.0F, PanelWidth - 48.0F, 44.0F}, L"",
-            "Options.Title");
+        title_ = &mrg::visual2d::CreateLabel(*panel_, {24.0F, PanelHeight - 76.0F, PanelWidth - 48.0F, 44.0F}, L"",
+                                             "Options.Title");
         auto &titleText = RequireComponent<mrg::visual2d::TextVisualComponent>(*title_);
         titleText.SetFontSize(30.0F);
         titleText.SetTextColor(HeadingColor);
@@ -58,6 +56,7 @@ namespace finger_drum::presentation
         CreateAudioControls();
         CreateDisplayControls();
         CreateOffsetControls();
+        CreateSongsControls();
         CreateKeyControls();
         RefreshTexts();
         panel_->SetVisible(false);
@@ -67,8 +66,7 @@ namespace finger_drum::presentation
     {
         languageLabel_ = &mrg::visual2d::CreateLabel(
             *content_, {24.0F, contentHeight_ - 38.0F, PanelWidth - 48.0F, 28.0F}, L"", "Options.Language.Label");
-        auto &languageText =
-            RequireComponent<mrg::visual2d::TextVisualComponent>(*languageLabel_);
+        auto &languageText = RequireComponent<mrg::visual2d::TextVisualComponent>(*languageLabel_);
         languageText.SetFontSize(18.0F);
         languageText.SetTextColor(LabelColor);
 
@@ -140,6 +138,7 @@ namespace finger_drum::presentation
         window_ = nullptr;
         resolutionLabel_ = resolutionCombo_ = nullptr;
         offsetLabel_ = offsetField_ = offsetHint_ = nullptr;
+        songsLabel_ = songsField_ = songsDefault_ = nullptr;
         captureRow_.reset();
         editingOffset_ = false;
         offsetDraft_.clear();
@@ -184,6 +183,10 @@ namespace finger_drum::presentation
             RefreshSkinSets();
             RefreshDisplayControls();
         }
+        else
+            for (auto *node :
+                 {languageCombo_, skinCombo_, middlewareCombo_, outputCombo_, driverCombo_, resolutionCombo_})
+                RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*node).Collapse();
         panel_->SetVisible(true);
         dragging_ = false;
         previousDragPoint_.reset();
@@ -195,11 +198,11 @@ namespace finger_drum::presentation
         {
             return;
         }
-        if (optionRevision_ != options_.Revision()) RefreshTexts();
+        if (optionRevision_ != options_.Revision())
+            RefreshTexts();
         const float direction = targetOpen_ ? 1.0F : -1.0F;
         animationProgress_ = std::clamp(
-            animationProgress_ + direction * static_cast<float>(deltaSeconds / AnimationSeconds),
-            0.0F, 1.0F);
+            animationProgress_ + direction * static_cast<float>(deltaSeconds / AnimationSeconds), 0.0F, 1.0F);
         ApplyAnimationPosition();
         if (!targetOpen_ && animationProgress_ <= 0.0F)
         {
@@ -268,11 +271,9 @@ namespace finger_drum::presentation
             ApplyScrollOffset(inputRouter);
         }
 
-        const bool middlePressed =
-            input.WasMouseButtonPressed(mrg::platform::MouseButton::Middle);
+        const bool middlePressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Middle);
         const bool blankLeftPressed =
-            hoveredNode == panelId_ &&
-            input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
+            hoveredNode == panelId_ && input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
         if (middlePressed || blankLeftPressed)
         {
             dragging_ = true;
@@ -306,16 +307,19 @@ namespace finger_drum::presentation
         if (action.source == languageComboId_)
         {
             const auto languages = texts_.Languages();
-            if (action.selectedIndex >= languages.size()) return false;
+            if (action.selectedIndex >= languages.size())
+                return false;
             auto candidate = options_.Values();
             candidate.language = languages[action.selectedIndex].language;
-            if (SaveOptions(candidate)) texts_.SetLanguage(candidate.language);
+            if (SaveOptions(candidate))
+                texts_.SetLanguage(candidate.language);
             RefreshTexts();
             return true;
         }
         if (action.source == skinComboId_)
         {
-            if (action.selectedIndex >= skinNames_.size()) return false;
+            if (action.selectedIndex >= skinNames_.size())
+                return false;
             auto candidate = options_.Values();
             candidate.skinSet = skinNames_[action.selectedIndex];
             if (SaveOptions(candidate))
@@ -330,7 +334,8 @@ namespace finger_drum::presentation
             RefreshTexts();
             return true;
         }
-        if (action.source == middlewareCombo_->Id()) return true; // FMOD is the sole installed middleware.
+        if (action.source == middlewareCombo_->Id())
+            return true; // FMOD is the sole installed middleware.
         if (action.source == outputComboId_ && action.selectedIndex < Outputs.size())
         {
             SelectOutput(Outputs[action.selectedIndex]);
@@ -349,7 +354,8 @@ namespace finger_drum::presentation
     void OptionsPanel::RefreshSkinSets()
     {
         skinNames_ = mrg_client::SkinSetSelection::Instance().AvailableNames();
-        if (skinCombo_ == nullptr) return;
+        if (skinCombo_ == nullptr)
+            return;
         auto &combo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*skinCombo_);
         combo.SetItems(skinNames_);
         RefreshTexts();
@@ -371,8 +377,7 @@ namespace finger_drum::presentation
         auto &skin = RequireComponent<mrg::visual2d::TextVisualComponent>(*skinLabel_);
         skin.SetText(std::wstring(text.skin));
         texts_.ApplyFont(skin);
-        auto &combo =
-            RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*languageCombo_);
+        auto &combo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*languageCombo_);
         texts_.ApplyFont(combo);
         const auto languages = texts_.Languages();
         for (std::size_t index = 0; index < languages.size(); ++index)
@@ -383,16 +388,15 @@ namespace finger_drum::presentation
                 break;
             }
         }
-        auto &skinCombo =
-            RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*skinCombo_);
+        auto &skinCombo = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*skinCombo_);
         texts_.ApplyFont(skinCombo);
-        const auto selected = std::ranges::find(
-            skinNames_, mrg_client::SkinSetSelection::Instance().CurrentName());
+        const auto selected = std::ranges::find(skinNames_, mrg_client::SkinSetSelection::Instance().CurrentName());
         if (selected != skinNames_.end())
             skinCombo.SetSelectedIndex(static_cast<std::size_t>(selected - skinNames_.begin()));
         RefreshAudioControls();
         RefreshDisplayControls();
         RefreshOffsetControls();
+        RefreshSongsControls();
         RefreshKeyControls();
         RefreshStatus();
         optionRevision_ = options_.Revision();
@@ -401,9 +405,8 @@ namespace finger_drum::presentation
     void OptionsPanel::RefreshAudioControls()
     {
         const auto &text = texts::Options(texts_);
-        const std::array labels{std::pair{middlewareLabel_, text.middleware},
-                                 std::pair{outputLabel_, text.output},
-                                 std::pair{driverLabel_, text.driver}};
+        const std::array labels{std::pair{middlewareLabel_, text.middleware}, std::pair{outputLabel_, text.output},
+                                std::pair{driverLabel_, text.driver}};
         for (const auto &[node, value] : labels)
         {
             auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*node);
@@ -415,7 +418,8 @@ namespace finger_drum::presentation
 
         auto &output = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*outputCombo_);
         std::vector<std::wstring> names;
-        for (auto backend : Outputs) names.push_back(OutputName(backend, text));
+        for (auto backend : Outputs)
+            names.push_back(OutputName(backend, text));
         output.SetItems(std::move(names));
         const auto requested = std::ranges::find(Outputs, audio_->RequestedOutput());
         if (requested != Outputs.end())
@@ -429,13 +433,13 @@ namespace finger_drum::presentation
             names.push_back(std::to_wstring(driver.driverIndex) + L": " + WideText(driver.name));
         }
         auto &driver = RequireComponent<mrg::visual2d::ComboBoxBehaviorComponent>(*driverCombo_);
-        if (names.empty()) names.emplace_back(text.noDrivers);
+        if (names.empty())
+            names.emplace_back(text.noDrivers);
         driver.SetItems(std::move(names));
         driverCombo_->SetEnabled(!driverIndices_.empty());
         const auto selected = std::ranges::find(driverIndices_, audio_->ActiveDriverIndex());
         if (selected != driverIndices_.end())
             driver.SetSelectedIndex(static_cast<std::size_t>(selected - driverIndices_.begin()));
-
     }
 
     bool OptionsPanel::SaveOptions(const mrg_client::OptionValues &candidate)
@@ -448,12 +452,12 @@ namespace finger_drum::presentation
     std::string OptionsPanel::DriverName(const int index) const
     {
         for (const auto &driver : audio_->OutputDrivers())
-            if (driver.driverIndex == index) return driver.name;
+            if (driver.driverIndex == index)
+                return driver.name;
         return {};
     }
 
-    void OptionsPanel::RestoreAudio(const mrg::audio::AudioOutputBackend output, const int driver,
-                                    std::string &error)
+    void OptionsPanel::RestoreAudio(const mrg::audio::AudioOutputBackend output, const int driver, std::string &error)
     {
         std::string restorationError;
         if (!audio_->SetOutputBackend(output, restorationError) ||
@@ -475,7 +479,8 @@ namespace finger_drum::presentation
         }
         candidate.driverIndex = audio_->ActiveDriverIndex();
         candidate.driverName = DriverName(candidate.driverIndex);
-        if (!SaveOptions(candidate)) RestoreAudio(previousOutput, previousDriver, statusDetail_);
+        if (!SaveOptions(candidate))
+            RestoreAudio(previousOutput, previousDriver, statusDetail_);
     }
 
     void OptionsPanel::SelectDriver(const int index)
@@ -499,8 +504,10 @@ namespace finger_drum::presentation
         const auto &text = texts::Options(texts_);
         std::wstring value;
         const auto &saved = options_.Values();
-        if (status_ == Status::SaveFailed) value = text.saveError;
-        else if (status_ == Status::AudioFailed) value = text.audioError;
+        if (status_ == Status::SaveFailed)
+            value = text.saveError;
+        else if (status_ == Status::AudioFailed)
+            value = text.audioError;
         else if (status_ == Status::WindowFailed)
             value = text.windowError;
         else if (status_ == Status::InvalidInput)
@@ -508,12 +515,15 @@ namespace finger_drum::presentation
         else if (audio_->RequestedOutput() != saved.audioOutput)
             value = std::wstring(text.outputFallback) + L" " + OutputName(audio_->ActiveOutput(), text);
         else if ((!saved.driverName.empty() && saved.driverName != DriverName(audio_->ActiveDriverIndex())) ||
-                 (saved.driverName.empty() && saved.driverIndex >= 0 && saved.driverIndex != audio_->ActiveDriverIndex()))
+                 (saved.driverName.empty() && saved.driverIndex >= 0 &&
+                  saved.driverIndex != audio_->ActiveDriverIndex()))
             value = text.driverUnavailable;
-        if (!statusDetail_.empty()) value += L"\n" + WideText(statusDetail_);
+        if (!statusDetail_.empty())
+            value += L"\n" + WideText(statusDetail_);
         if (!options_.LoadWarning().empty())
         {
-            if (!value.empty()) value += L"\n";
+            if (!value.empty())
+                value += L"\n";
             value += std::wstring(text.loadWarning) + L"\n" + WideText(options_.LoadWarning());
         }
         auto &label = RequireComponent<mrg::visual2d::TextVisualComponent>(*statusLabel_);
@@ -529,10 +539,8 @@ namespace finger_drum::presentation
 
     void OptionsPanel::ApplyAnimationPosition()
     {
-        const float eased = animationProgress_ * animationProgress_ *
-                            (3.0F - 2.0F * animationProgress_);
-        panel_->SetBounds(
-            {-PanelWidth * (1.0F - eased), -PanelHeight * 0.5F, PanelWidth, PanelHeight});
+        const float eased = animationProgress_ * animationProgress_ * (3.0F - 2.0F * animationProgress_);
+        panel_->SetBounds({-PanelWidth * (1.0F - eased), -PanelHeight * 0.5F, PanelWidth, PanelHeight});
     }
 
     void OptionsPanel::ApplyScrollOffset(mrg::visual2d::Visual2DInputRouter &inputRouter)

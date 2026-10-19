@@ -5,6 +5,12 @@
 
 ## 마디와 위치
 
+에디터의 박자 덧셈·뺄셈은 `MusicalTimeline::AddWholeNotes(position, delta)`와
+`WholeNotesBetween(begin, end)`를 사용합니다. 온음표 단위 유리수와 마디 길이 prefix sum으로
+서로 다른 마디를 넘어가며, BPM/delay는 최종 `Compile` 시간 변환에만 반영합니다.
+따라서 복사한 음악적 간격이 다른 BPM에 붙여넣어도 유지됩니다. 시작 이전/최대 마디
+밖의 결과와 유리수 오버플로는 편집을 게시하기 전에 오류로 처리합니다.
+
 Option.ini의 글로벌 오프셋은 원본 박자/Pattern Offset을 수정하지 않는 실행용 보정입니다.
 음악 시작은 타이머 0ms를 유지하고 노트·틱·BPM·마디선·YME의 정수 us 좌표에
 같은 보정을 한 번 적용합니다. 설정·입력 방법은 [TextManagement](../TextManagement.md)를 참고합니다.

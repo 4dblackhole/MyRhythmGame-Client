@@ -83,5 +83,17 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
                           state.RequestRebuild();
                       }
                   });
-    canvas.Text({156, 805, 1640, 95}, std::wstring(text.metadataHelp), 21);
+    metadata(785, catalog.Get("Editor.backgroundFile").data(), Utf8(p.backgroundFile.wstring()),
+             [](auto &d, const auto &value) { d.backgroundFile = std::filesystem::path(Wide(value)); });
+    metadata(855, catalog.Get("Editor.backgroundOffset").data(),
+             std::to_string(p.backgroundOffsetX) + ", " + std::to_string(p.backgroundOffsetY),
+             [](auto &d, const auto &value)
+             {
+                 const auto parsed = chart::ChartParser{}.ParsePattern("[Metadata]\noffset: " + value);
+                 if (!parsed.Succeeded())
+                     throw std::invalid_argument("Background offset requires x, y numbers.");
+                 d.backgroundOffsetX = parsed.document.backgroundOffsetX;
+                 d.backgroundOffsetY = parsed.document.backgroundOffsetY;
+             });
+    canvas.Text({156, 925, 1640, 42}, std::wstring(text.metadataHelp), 17);
 }

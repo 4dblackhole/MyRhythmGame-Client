@@ -96,6 +96,10 @@ namespace mrg_client
                 !IsSingleLine(values.driverName) || values.audioMiddleware.empty())
                 throw std::runtime_error("Invalid audio option.");
             const auto skin = EncodeUtf8(values.skinSet);
+            if (!IsSingleLine(EncodeUtf8(values.songsPath.wstring())))
+                throw std::runtime_error("Songs path must fit a single UTF-8 INI line.");
+            if (!values.songsPath.is_absolute() && values.songsPath.has_root_path())
+                throw std::runtime_error("Songs path must be fully absolute or relative to the executable directory.");
             if (skin.empty() || !IsSingleLine(skin) || values.skinSet == L"." ||
                 values.skinSet == L".." || values.skinSet.find_first_of(L"/\\") != std::wstring::npos)
                 throw std::runtime_error("The skin option must name one folder.");
@@ -135,6 +139,8 @@ namespace mrg_client
                 else if (key == "SkinSet") values.skinSet = DecodeUtf8(value);
                 else if (key == "GlobalOffsetMs")
                     values.globalOffsetMs = ReadInteger<std::int32_t>(value);
+                else if (key == "SongsPath")
+                    values.songsPath = std::filesystem::path(DecodeUtf8(value));
             }
             else if (section == "Display")
             {
@@ -182,6 +188,15 @@ namespace mrg_client
     }
 
     OptionSettings::OptionSettings(std::filesystem::path path) : path_(std::move(path)) {}
+
+    std::filesystem::path OptionSettings::SongsRoot() const
+    {
+        if (values_.songsPath.empty())
+            return finger_drum::assets::UserSongsRoot();
+        return (values_.songsPath.is_absolute() ? values_.songsPath
+                                                : finger_drum::assets::ExecutableDirectory() / values_.songsPath)
+            .lexically_normal();
+    }
 
     std::filesystem::path OptionSettings::NextToExecutable()
     {
@@ -253,6 +268,7 @@ namespace mrg_client
             std::ofstream file(temporary, std::ios::binary | std::ios::trunc);
             file << "[General]\r\nLanguage=" << (values.language == finger_drum::texts::Language::English ? "en" : "ko")
                  << "\r\nSkinSet=" << EncodeUtf8(values.skinSet) << "\r\nGlobalOffsetMs=" << values.globalOffsetMs
+                 << "\r\nSongsPath=" << EncodeUtf8(values.songsPath.wstring())
                  << "\r\n\r\n[Display]\r\nWidth=" << values.windowWidth << "\r\nHeight=" << values.windowHeight
                  << "\r\n\r\n[Audio]\r\nMiddleware=" << values.audioMiddleware
                  << "\r\nOutput=" << OutputName(values.audioOutput) << "\r\nDriverIndex=" << values.driverIndex

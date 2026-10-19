@@ -202,6 +202,7 @@ EXE와 같은 폴더에 `Option.ini`가 없으면 처음 실행할 때 생성합
 Language=ko
 SkinSet=Default Skin
 GlobalOffsetMs=0
+SongsPath=
 
 [Display]
 Width=1280
@@ -222,6 +223,10 @@ DriverName=
 
 - `Language`: `ko` 또는 `en`.
 - `GlobalOffsetMs`: signed int32 정수 ms, 기본 0.
+- `SongsPath`: UTF-8 곡 폴더 경로. 빈 값은 기존 개발/배포 자동 경로이며,
+  상대경로는 EXE 폴더 기준입니다. 옵션 패널의 폴더 선택 버튼으로 변경하고 기본 폴더 버튼으로
+  초기화합니다. 저장 성공 뒤 곡 목록을 비동기 갱신하고, 진행 중인 구 폴더 검색 결과는 버립니다.
+  플레이·에디터·리트라이는 진입 당시의 곡 루트를 복사하여 사용합니다.
 - `Display/Width,Height`: 게임 화면 픽셀 크기. 누락 시 1280×720.
 - `Keys.<mode ID>`: binding ID별 십진 Virtual-Key 목록. 첫 값은 기본 키, 이후는 보조 키입니다.
   목록을 저장하지 않은 입력은 모드의 기본값을 사용하며 변경한 행만 기록합니다.

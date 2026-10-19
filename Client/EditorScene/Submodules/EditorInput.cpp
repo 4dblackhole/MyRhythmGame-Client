@@ -118,8 +118,11 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
     bool leave = false;
     if (input.WasKeyPressed(VK_ESCAPE))
     {
-        if (state_.Mode().CancelInteraction())
+        const bool selectedNotes = !state_.SelectedNoteIds().empty() || state_.NoteSelectionRange().has_value();
+        const bool interaction = state_.Mode().CancelInteraction();
+        if (selectedNotes || interaction)
         {
+            state_.SelectNotes({});
             state_.RequestRebuild();
         }
         else if (!state_.Document().Dirty() ||
@@ -129,6 +132,25 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
             leave = true;
     }
     const bool controlDown = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+    const bool shiftDown = input.IsKeyDown(VK_LSHIFT) || input.IsKeyDown(VK_RSHIFT);
+    if (controlDown)
+    {
+        if (input.WasKeyPressed('Z'))
+        {
+            if (shiftDown)
+                state_.Redo();
+            else
+                state_.Undo();
+        }
+        if (input.WasKeyPressed('Y'))
+            state_.Redo();
+        if (input.WasKeyPressed('C'))
+            state_.CopySelection();
+        if (input.WasKeyPressed('V'))
+            state_.PasteSelection(shiftDown);
+    }
+    if (input.WasKeyPressed(VK_DELETE))
+        state_.DeleteSelection();
     if (controlDown && input.WasKeyPressed('S'))
         state_.Save();
     if (!controlDown && !input.IsKeyDown(VK_LMENU) && !input.IsKeyDown(VK_RMENU))
@@ -157,6 +179,8 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
 void EditorView::UpdatePointer(const mrg::UpdateContext &context)
 {
     const auto &input = context.input;
+    toggleSelection_ = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
+    rangeSelection_ = input.IsKeyDown(VK_LSHIFT) || input.IsKeyDown(VK_RSHIFT);
     if (input.MouseWheelDelta() != 0)
     {
         const int delta = input.MouseWheelDelta() > 0 ? -1 : 1;
@@ -171,6 +195,9 @@ void EditorView::UpdatePointer(const mrg::UpdateContext &context)
     const v::Point point{(input.MousePositionX() - width * .5F) / scale + 960,
                          (input.MousePositionY() - height * .5F) / scale + 540};
     UpdateSliders(context);
+    if (state_.Tab() == EditorTab::Pattern &&
+        state_.Mode().UpdateScoreSelection(state_, point, !input.IsMouseButtonDown(mrg::platform::MouseButton::Left)))
+        return;
     if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Right) && state_.Tab() == EditorTab::Pattern &&
         !buildFailed_)
     {
@@ -194,6 +221,9 @@ void EditorView::UpdatePointer(const mrg::UpdateContext &context)
             action();
         }
         else if (state_.Tab() == EditorTab::Pattern && !buildFailed_)
-            state_.Mode().EditScore(state_, point, false);
+        {
+            if (!state_.Mode().BeginScoreSelection(state_, point))
+                state_.Mode().EditScore(state_, point, false);
+        }
     }
 }

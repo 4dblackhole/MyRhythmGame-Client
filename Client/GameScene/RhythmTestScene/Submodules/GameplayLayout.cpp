@@ -12,6 +12,23 @@ void GameplayPresenter::CreatePresentation()
                                      CanvasReferenceWidth, CanvasReferenceHeight},
                                     "Background");
     SetColor(*background_, {0.941F, 0.973F, 1.0F, 1.0F});
+    if (!backgroundPath_.empty())
+    {
+        try
+        {
+            backgroundImage_ = screenVisuals_.RegisterImage(backgroundPath_);
+            backgroundSize_ = screenVisuals_.GetImageSize(backgroundImage_);
+            if (backgroundSize_.width <= 0 || backgroundSize_.height <= 0)
+                throw std::runtime_error("Background image has no size.");
+            RequireComponent<mrg::visual2d::SpriteVisualComponent>(*background_).SetImage(backgroundImage_);
+            SetColor(*background_, {1, 1, 1, 1});
+        }
+        catch (const std::exception &error)
+        {
+            backgroundWarning_ = error.what();
+            backgroundImage_ = {};
+        }
+    }
 
     errorLabel_ = &mrg::visual2d::CreateLabel(root, {-500.0F, 320.0F, 1000.0F, 28.0F}, L"", "Hud.Error");
     errorLabel_->SetZIndex(20);
@@ -189,8 +206,18 @@ void GameplayPresenter::UpdatePresentationLayout()
 
     if (background_ != nullptr)
     {
-        background_->SetBounds({-logicalWidth * 0.5F, -CanvasReferenceHeight * 0.5F, logicalWidth,
-                                CanvasReferenceHeight});
+        float width = logicalWidth, height = CanvasReferenceHeight;
+        if (backgroundImage_.value != 0)
+        {
+            // Cover the viewport at the authored centre offset without blank edges.
+            const auto scale =
+                std::max((logicalWidth + 2 * std::abs(backgroundOffset_.x)) / backgroundSize_.width,
+                         (CanvasReferenceHeight + 2 * std::abs(backgroundOffset_.y)) / backgroundSize_.height);
+            width = backgroundSize_.width * scale;
+            height = backgroundSize_.height * scale;
+        }
+        const auto offset = backgroundImage_.value ? backgroundOffset_ : mrg::visual2d::Point{};
+        background_->SetBounds({-width * .5F + offset.x, -height * .5F + offset.y, width, height});
     }
     progressView_.SetLayout(
         {-logicalWidth * 0.5F + GearMargin, CanvasReferenceHeight * 0.5F - 16.0F - progressView_.Height(),

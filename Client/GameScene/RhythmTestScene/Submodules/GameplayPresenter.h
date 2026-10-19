@@ -21,6 +21,11 @@ class GameplayPresenter final
     void Initialize(const mrg::EngineServices &services,
                     const finger_drum::mode::PlaySession &session);
     bool PrepareAssets(const mrg::EngineServices &services);
+    void ConfigureBackground(std::filesystem::path path, double x, double y)
+    {
+        backgroundPath_ = std::move(path);
+        backgroundOffset_ = {static_cast<float>(x), static_cast<float>(y)};
+    }
     void SetVisible(bool visible)
     {
         static_cast<void>(canvasHandle_.SetVisible(visible));
@@ -39,6 +44,11 @@ class GameplayPresenter final
     void UpdateInputPresentation(const mrg::platform::InputState &input, const double deltaSeconds);
 
   private:
+    mrg::visual2d::ImageHandle backgroundImage_{};
+    mrg::visual2d::Size backgroundSize_{};
+    mrg::visual2d::Point backgroundOffset_{};
+    std::filesystem::path backgroundPath_;
+    std::string backgroundWarning_;
     enum class FocusNoteType : std::uint8_t
     {
         None,

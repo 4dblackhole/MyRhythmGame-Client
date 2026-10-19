@@ -51,6 +51,20 @@ namespace finger_drum::chart
         virtual void UpdateNote(std::size_t sourceOrder, PatternNote head, std::optional<MusicalPosition> end) = 0;
         virtual void DeleteNote(std::size_t sourceOrder) = 0;
         virtual void SetMeasureLength(std::int64_t measure, Rational length) = 0;
+        virtual bool CanUndo() const noexcept
+        {
+            return false;
+        }
+        virtual bool CanRedo() const noexcept
+        {
+            return false;
+        }
+        virtual void Undo()
+        {
+        }
+        virtual void Redo()
+        {
+        }
         virtual void Save() = 0;
     };
 } // namespace finger_drum::chart

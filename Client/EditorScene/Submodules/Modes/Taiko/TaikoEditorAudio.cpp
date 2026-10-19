@@ -10,10 +10,11 @@ using namespace editor_ui;
 #include "Taiko/Submodules/TaikoChartAudio.h"
 
 std::map<std::string, std::filesystem::path> TaikoEditorMode::AudioFiles(
-    const chart::IEditorDocument &document, const finger_drum::GameplayLaunchRequest &) const
+    const chart::IEditorDocument &document, const finger_drum::GameplayLaunchRequest &request) const
 {
     // YMP metadata references are relative to Songs, not the YMP folder.
-    const auto metadataPath = mrg_client::asset_paths::UserSongs() / document.Pattern().musicMetadataFile;
+    const auto root = request.songsRoot.empty() ? mrg_client::asset_paths::UserSongs() : request.songsRoot;
+    const auto metadataPath = root / document.Pattern().musicMetadataFile;
     const auto music = chart::ChartParser{}.ParseMusicFile(metadataPath);
     if (!music.Succeeded())
         throw std::runtime_error("Audio analysis: the selected YMM could not be parsed.");

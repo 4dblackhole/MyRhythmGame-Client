@@ -9,6 +9,30 @@
 
 ## 작업 위치와 경계
 
+Songs/BG·편집 이력(2026-10-19~20): [경로/배경](BuiltInAssets.md), [에디터 조작](ChartEditor.md).
+옵션의 Songs 폴더는 Option.ini의 General/SongsPath에 저장합니다. 빈 값은 기존 개발/배포
+자동 경로, 상대경로는 EXE 폴더 기준입니다. 곡 선택은 변경 즉시 최신 루트로 갱신하며,
+진입 Snapshot이 Songs 루트와 BG 경로/offset을 소유합니다. YMP의 BG는 Songs/BG 기준,
+`offset: x, y`는 엔진 2D 좌표(+Y 위쪽)입니다. 플레이 Presenter는 원본 비율을 유지해 화면을
+덮고 누락/실패는 기본 스킨 배경과 오류 메시지로 처리합니다. 기본 배포에는 빈 BG 폴더를 제공합니다.
+변환기는 별도 세션/저장소에서 BG 복사·바이트 재사용·충돌 보존을 구현하며 osu! 오프셋을
+`(1.5*x, -1.5*y)`로 변환합니다. [변환기 계약](OsuTaikoConverter.md)을 함께 참고합니다.
+
+Workspace의 EditorSelection/EditorClipboard는 노트 드래그, 박자표/이펙트 행 Ctrl/Shift 선택,
+공백 포함/제외 붙여넣기를 소유합니다. 붙여넣기는 현재 재생 위치의 격자에 첫 위치를 맞추며,
+MusicalTimeline의 정확한 유리수 덧셈/뺄셈으로 BPM/delay와 무관한 박자 간격을 보존합니다.
+ChartEditorHistory는 편집 원본의 최대 32개 동작을 기록합니다. 덮어쓴 노트와 롱노트 끝점도
+같은 한 동작으로 복원하며 저장한 상태로 돌아가면 dirty가 해제됩니다. 노트 단독 이력은
+추가/수정/삭제와 같은 트리 갱신 경로를 사용합니다. Space는 재생/정지, 실시간 휠은 격자 탐색입니다.
+첫 저장의 자동 YME 참조는 저장 성공 시에만 이력에도 확정하므로 메타데이터 Undo/Redo와
+저장된 파일이 일치합니다. Release의 기존 FingerDrum.Editor PDB LNK4020 경고는 별도 제한으로
+Verification에 기록했습니다. 소스 진단 억제나 범위 밖 빌드 설정 변경은 하지 않았습니다.
+
+판정 인디케이터는 최근 32개 타격을 고정 원형 큐로 유지하고 밀려난 최대 8개를 0.2초 동안
+페이드합니다. 자동 MISS/빈 입력에는 가짜 시각을 만들지 않습니다. 키 레이아웃 flash에도
+기존 동/캇 빨강/파랑 색을 적용합니다. 엔진 API·gitlink와 사용자 LaneKeyBeam.cpp는 변경하지 않습니다.
+검증 결과와 수동 확인 범위는 Verification의 같은 날짜 절을 참고합니다.
+
 에디터 오디오 도구(2026-10-17): [선택 시간·배속](ChartEditor.md).
 세 트랙의 드래그 선택은 Workspace의 절대 us 영역이며 View는 ms 시작/끝/길이를 표시합니다.
 0.25~2.00배 미리듣기는 원본/FFT를 바꾸지 않고 Voice 주파수와 DSP↔원본 시각 환산을 함께
@@ -50,7 +74,8 @@ EditorMetronome은 박자/재생 cue만 캐시하고 기존 EditorPlayback DSP �
 배포 기본본(같은 날짜): 사용자의 명시적 지시로 바탕화면 demo를 삭제/재생성했습니다.
 곡 없이 Asset/Songs/Music·Patterns, Asset/Skins, 원본 언어파일, Release EXE/fmod.dll,
 기본 Option.ini와 서명 확인한 Microsoft VC++ 설치 파일을 배치했습니다. [배포 절차](BuiltInAssets.md#release-배포-절차).
-공용 배경/BGA와 라이선스/랭크 무결성은 [설계 제안](RankedContentProposal.md)만 작성했으며 아직 구현하지 않았습니다.
+공용 BG 이미지의 참조/표시는 위 2026-10-19 변경에 포함됩니다. BGA와 라이선스/랭크 무결성은
+[설계 제안](RankedContentProposal.md)만 작성했으며 아직 구현하지 않았습니다.
 
 skin.ini(2026-10-16): [BuiltInAssets의 경로·키·fallback](BuiltInAssets.md#skinini와-씬별-이미지).
 `[Folders]`에서 Logo/InGame/MusicSelect/Result 폴더, 각 씬 섹션에서 파일을 지정합니다.

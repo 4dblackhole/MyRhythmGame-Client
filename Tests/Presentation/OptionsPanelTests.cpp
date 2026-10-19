@@ -208,9 +208,20 @@ namespace
         values.audioOutput = a::AudioOutputBackend::Wasapi;
         values.driverIndex = 2;
         values.driverName = "Headphones";
+        values.songsPath = folder / L"한국어 Songs";
         Check(settings.Save(values, error), error.c_str());
         mrg_client::OptionSettings restored(settings.Path());
         Check(restored.Load(error), error.c_str());
+        Check(restored.Values().songsPath == values.songsPath && restored.SongsRoot() == values.songsPath,
+              "Unicode absolute Songs paths must persist in UTF-8 Option.ini.");
+        auto relative = restored.Values();
+        relative.songsPath = L"custom/Songs";
+        Check(
+            restored.Save(relative, error) &&
+                restored.SongsRoot() ==
+                    (mrg_client::OptionSettings::NextToExecutable().parent_path() / L"custom/Songs").lexically_normal(),
+            "Relative Songs paths must use the executable directory, not the current working directory.");
+        Check(restored.Save(values, error), error.c_str());
         Check(restored.Values().skinSet == values.skinSet && restored.Values().driverIndex == 2 &&
               restored.Values().language == values.language && restored.Values().driverName == values.driverName,
               "Unicode skin, language and audio settings must survive another instance.");

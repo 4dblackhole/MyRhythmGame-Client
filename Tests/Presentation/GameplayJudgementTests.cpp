@@ -1,3 +1,4 @@
+#include "App/AssetPaths.h"
 #include "FingerDrumAssets.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayJudgementView.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayPresenter.h"
@@ -60,7 +61,8 @@ namespace
             file.read(reinterpret_cast<char *>(header.data()), static_cast<std::streamsize>(header.size()));
             Check(file.gcount() == static_cast<std::streamsize>(header.size()) && header[0] == 137 && header[1] == 'P',
                   "Judgement sprite must resolve to a real PNG.");
-            const auto dimension = [&header](const std::size_t offset) {
+            const auto dimension = [&header](const std::size_t offset)
+            {
                 return (static_cast<std::uint32_t>(header[offset]) << 24) |
                        (static_cast<std::uint32_t>(header[offset + 1]) << 16) |
                        (static_cast<std::uint32_t>(header[offset + 2]) << 8) |
@@ -75,19 +77,27 @@ namespace
             const auto found = sizes_.find(image.value);
             return found != sizes_.end() ? found->second : v::Size{};
         }
-        void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &,
-                          v::Point, std::uint32_t) override {}
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &,
-                         const DirectX::XMFLOAT4X4 &, v::Size, const DirectX::XMFLOAT4X4 &) override {}
+        void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, v::Point,
+                          std::uint32_t) override
+        {
+        }
+        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         v::Size, const DirectX::XMFLOAT4X4 &) override
+        {
+        }
         mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
-        { return {}; }
+        {
+            return {};
+        }
         void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
-                             const mrg::graphics::RenderContext &) override {}
+                             const mrg::graphics::RenderContext &) override
+        {
+        }
+
       private:
         std::map<std::uint64_t, v::Size> sizes_;
     };
-    r::NoteEvent Event(const r::NoteEventType type, const r::JudgementGrade grade,
-                       const r::RhythmDuration error = {})
+    r::NoteEvent Event(const r::NoteEventType type, const r::JudgementGrade grade, const r::RhythmDuration error = {})
     {
         r::NoteEvent event;
         event.type = type;
@@ -124,13 +134,16 @@ namespace
         {
             auto &band = Node(root, "Judgement.Band." + std::to_string(index));
             const auto color = band.GetComponent<v::SpriteVisualComponent>()->Style().normal;
-            const auto beamColor = finger_drum::presentation::LaneKeyBeam::GradeColor(static_cast<r::JudgementGrade>(index));
-            Check(Near(color.red, beamColor.red) && Near(color.green, beamColor.green) && Near(color.blue, beamColor.blue),
+            const auto beamColor =
+                finger_drum::presentation::LaneKeyBeam::GradeColor(static_cast<r::JudgementGrade>(index));
+            Check(Near(color.red, beamColor.red) && Near(color.green, beamColor.green) &&
+                      Near(color.blue, beamColor.blue),
                   "Each independent band must match the key-beam grade color.");
         }
         const std::array words{"MAX", "PERFECT", "GREAT", "GOOD", "BAD"};
         for (std::size_t index = 0; index < words.size(); ++index)
         {
+            view.Reset();
             const auto type = index == 4 ? r::NoteEventType::InputRejected : r::NoteEventType::HitAccepted;
             view.Present(Event(type, static_cast<r::JudgementGrade>(index), -base.Bands()[index].halfWindow));
             CheckOverlay(root, words[index]);
@@ -138,7 +151,7 @@ namespace
             const auto overlay = Node(root, "Lane.Judgement." + std::string(words[index])).BoundsInCanvas();
             const auto target = circle.BoundsInCanvas();
             Check(Near(overlay.x + overlay.width * 0.5F, target.x + target.width * 0.5F) &&
-                  Near(overlay.y + overlay.height * 0.5F, target.y + target.height * 0.5F),
+                      Near(overlay.y + overlay.height * 0.5F, target.y + target.height * 0.5F),
                   "Overlay and judgement circle must have the same world centre.");
             const auto world = DirectX::XMLoadFloat4x4(
                 &Node(root, "Lane.Judgement." + std::string(words[index])).Transform().WorldMatrix());
@@ -146,15 +159,18 @@ namespace
             Check(Near(DirectX::XMVectorGetX(right), 1.0F) && Near(DirectX::XMVectorGetY(right), 0.0F),
                   "Lettering must remain upright in the rotated lane.");
         }
+        view.Reset();
         view.Present(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Good, r::RhythmDuration{54'500}));
         Check(marker.Bounds().x > 0.0F, "Late input must place marker to the right.");
         view.Update(0.1);
-        Check(Near(Node(root, "Lane.Judgement.GOOD").GetComponent<v::SpriteVisualComponent>()->Style().normal.alpha, 0.5F),
+        Check(Near(Node(root, "Lane.Judgement.GOOD").GetComponent<v::SpriteVisualComponent>()->Style().normal.alpha,
+                   0.5F),
               "Judgement overlay must fade over 200ms.");
         view.Update(0.1);
         CheckOverlay(root, "");
-        Check(!marker.IsVisible(), "Marker expires after 200ms.");
+        Check(marker.IsVisible(), "Recent hits remain visible until displaced from the 32-hit ring.");
 
+        view.Reset();
         view.Present(Event(r::NoteEventType::InputRejected, r::JudgementGrade::Max));
         CheckOverlay(root, "POOR");
         Check(Near(marker.Bounds().x, 0.0F), "Zero-error POOR keeps the actual input timing.");
@@ -176,6 +192,7 @@ namespace
         view.Present(synced);
         CheckOverlay(root, "GOOD");
         Check(Near(bad.NodeSize().width, 400.0F), "Syncopation must not resize the base guide.");
+        view.Reset();
         view.Present(Event(r::NoteEventType::InputRejected, r::JudgementGrade::Bad, r::RhythmDuration{500'000}));
         Check(Near(marker.Bounds().x, margin.NodeSize().width * 0.5F), "Marker must be clamped to the visible guide.");
         view.OnResize(200.0F);
@@ -184,6 +201,25 @@ namespace
         view.OnResize(1280.0F);
         Check(Near(bad.NodeSize().width, 400.0F), "Resize restores the fixed time scale.");
         Check(NodeCount(root) == count && renderer.loads == loads, "Repeated hits/resize must reuse nodes and images.");
+        view.Reset();
+        for (int i = 0; i < 32; ++i)
+            view.Present(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Perfect, r::RhythmDuration{i * 1000}));
+        view.Update(1);
+        Check(marker.IsVisible() && !Node(root, "Judgement.RetiringMarker.0").IsVisible(),
+              "All 32 retained hits persist without retiring a slot early.");
+        for (int i = 32; i < 41; ++i)
+            view.Present(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Great, r::RhythmDuration{i * 1000}));
+        Check(Near(marker.Bounds().x, 32 * 1000 * 400.0F / 180'000), "Ring wrap must replace the oldest hit.");
+        for (int i = 0; i < 8; ++i)
+            Check(Node(root, "Judgement.RetiringMarker." + std::to_string(i)).IsVisible(),
+                  "At most eight displaced hits have reusable fade slots.");
+        view.Update(.1);
+        auto &retiring = Node(root, "Judgement.RetiringMarker.0");
+        Check(Near(retiring.GetComponent<v::SpriteVisualComponent>()->Style().normal.alpha, .5F) && marker.IsVisible(),
+              "Only displaced hits fade over 200ms.");
+        view.Update(.1);
+        Check(!retiring.IsVisible() && marker.IsVisible(), "Retiring hits expire while the recent 32 remain.");
+        Check(NodeCount(root) == count && renderer.loads == loads, "The hit rings allocate no per-hit nodes/images.");
         view.Shutdown();
         view.Update(1.0);
         view.OnResize(100.0F);
@@ -221,8 +257,8 @@ namespace
         for (const auto &[node, before] : descendants)
         {
             const auto after = node->BoundsInCanvas();
-            Check(Near(after.x - before.x, 37) && Near(after.y - before.y, 29) &&
-                      Near(after.width, before.width) && Near(after.height, before.height),
+            Check(Near(after.x - before.x, 37) && Near(after.y - before.y, 29) && Near(after.width, before.width) &&
+                      Near(after.height, before.height),
                   "One gear transform must move all nested keys, lane parts, notes and judgements together.");
         }
         const auto unchangedHud = Node(root, "Hud.GameProgress").BoundsInCanvas();
@@ -247,8 +283,22 @@ namespace
         mrg::audio::AudioSystem audio;
         finger_drum::texts::TextCatalog texts;
         GameplayPresenter presenter(visuals, texts);
+        presenter.ConfigureBackground(mrg_client::asset_paths::skin::title::Center(), 70, -25);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
+        auto &inputPanel = Node(root, "Input.Panel");
+        std::size_t keyIndex = 0;
+        for (const auto &child : inputPanel.Children())
+        {
+            if (child->Name() != "Input.Key.PressFlash")
+                continue;
+            const auto color = child->GetComponent<v::SpriteVisualComponent>()->Style().normal;
+            const bool kat = keyIndex == 0 || keyIndex == 3;
+            Check(kat ? color.blue > color.red : color.red > color.blue,
+                  "Both key flash sides must use their Don red / Kat blue ambient color.");
+            ++keyIndex;
+        }
+        Check(keyIndex == 4, "All four key flashes must exist.");
         auto &progress = Node(root, "Hud.GameProgress");
         auto &track = Node(root, "Progress.Track");
         auto &fill = Node(root, "Progress.Fill");
@@ -287,6 +337,13 @@ namespace
             const auto height = static_cast<std::uint32_t>(viewport.height);
             visuals.OnResize(width, height);
             presenter.OnResize(width, height);
+            const auto bg = Node(root, "Background").Bounds();
+            const auto logicalWidth = viewport.width / viewport.height * 720;
+            Check(bg.x <= -logicalWidth / 2 && bg.x + bg.width >= logicalWidth / 2 && bg.y <= -360 &&
+                      bg.y + bg.height >= 360,
+                  "Chart backgrounds must cover every viewport, including authored offsets.");
+            Check(Near(bg.x + bg.width / 2, 70) && Near(bg.y + bg.height / 2, -25),
+                  "Background offsets must follow the engine's +Y-up coordinate system.");
             checkFraction(.5F);
             CheckGearTransform(root);
             Check(Near(progress.Bounds().width, std::max(viewport.width / viewport.height * 720 - 40, 1.0F)),
@@ -442,14 +499,14 @@ namespace
                 const auto &note = Node(root, "Lane.Note.1");
                 const auto centre = note.Position();
                 const auto &lane = Node(root, "ScrollGear.Lane");
-                const auto aligned = std::ranges::count_if(lane.Children(),
-                                                           [&](const auto &child)
-                                                           {
-                                                               const auto position = child->Position();
-                                                               return child->Name() == "Lane.MeasureLine" &&
-                                                                      child->IsVisible() &&
-                                                                      Near(position.x, centre.x) && Near(position.y, centre.y);
-                                                           });
+                const auto aligned =
+                    std::ranges::count_if(lane.Children(),
+                                          [&](const auto &child)
+                                          {
+                                              const auto position = child->Position();
+                                              return child->Name() == "Lane.MeasureLine" && child->IsVisible() &&
+                                                     Near(position.x, centre.x) && Near(position.y, centre.y);
+                                          });
                 Check(aligned == 1,
                       "Coincident note and bar must stay centred together under Whole/Separate and resize.");
             }
@@ -498,16 +555,18 @@ namespace
                 const bool active = index < 2 || type == 11 || type == 13;
                 Check(counter.IsVisible() == active, "Every active counted note must show its remaining hits.");
                 if (active)
-                    Check(remaining.Text() == std::to_wstring(2 - index), "Each accepted hit must decrement the counter.");
+                    Check(remaining.Text() == std::to_wstring(2 - index),
+                          "Each accepted hit must decrement the counter.");
             }
             if (type == 11 || type == 13)
             {
                 Check(!Find(root, "Hud.NoteProcessing.1"), "Roll counters must not replace the moving roll head.");
-                presenter.ApplyFeedback({.keyPressed = true,
-                                         .result = loaded.session->ProcessInput(
-                                             'F', r::InputEdge::Pressed, r::RhythmTime{1'200'000})});
+                presenter.ApplyFeedback(
+                    {.keyPressed = true,
+                     .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{1'200'000})});
                 presenter.UpdatePresentation(r::RhythmTime{1'200'000});
-                Check(counter.IsVisible() && remaining.Text() == L"0", "Extra roll hits must not underflow the counter.");
+                Check(counter.IsVisible() && remaining.Text() == L"0",
+                      "Extra roll hits must not underflow the counter.");
             }
             presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{1'500'000})});
             CheckOverlay(root, "OK");

@@ -21,6 +21,11 @@ void EditorWorkspace::UpdateAnalysis()
 }
 void EditorWorkspace::DocumentChanged()
 {
+    selectedTiming_.clear();
+    selectedEffects_.clear();
+    timingSelectionAnchor_.reset();
+    effectSelectionAnchor_.reset();
+    std::erase_if(selectedNotes_, [this](auto id) { return !Document().FindNote(id); });
     // Resolved path comparison prevents unnecessary worker restarts. Marker
     // invalidation follows document identity/revision, regardless of active tab.
     if (audioSourceRevision_ != Document().AudioSourceRevision())

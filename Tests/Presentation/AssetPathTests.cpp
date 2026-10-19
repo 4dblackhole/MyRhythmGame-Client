@@ -2,6 +2,7 @@
 #include "FingerDrumAssets.h"
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
@@ -30,6 +31,19 @@ int wmain(int argc, wchar_t *argv[])
         Check(assets::UserSongsRoot() == expectedAssets / L"Songs", "Songs must use the selected asset root.");
         Check(mrg_client::OptionSettings::NextToExecutable() == expectedExecutable / L"Option.ini",
               "Option.ini must remain beside the executable in both environments.");
+        {
+            std::ofstream ini(expectedExecutable / L"Option.ini", std::ios::binary);
+            ini << "[General]\nSongsPath=../customSongs\n";
+        }
+        mrg_client::OptionSettings options(mrg_client::OptionSettings::NextToExecutable());
+        std::string error;
+        Check(options.Load(error), error.c_str());
+        Check(options.SongsRoot() == (expectedExecutable / L"../customSongs").lexically_normal(),
+              "Configured relative Songs paths must stay executable-relative after moving the executable.");
+        auto values = options.Values();
+        values.songsPath.clear();
+        Check(options.Save(values, error) && options.SongsRoot() == assets::UserSongsRoot(),
+              "Restoring the default Songs folder must reuse the development/deployment asset rule.");
         Check(assets::ResolveDefaultSkinAsset(L"path-test.dat") == expectedAssets / L"Skins/Default Skin/path-test.dat",
               "External default skins must use the same root as Songs.");
         std::cout << "Asset paths and Option.ini location passed.\n";

@@ -71,6 +71,66 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-19~20 Songs/BG·선택/붙여넣기·편집 기록·타격 표시
+
+- OptionSettings는 General/SongsPath의 저장·검증·EXE 상대경로 해석을, OptionsSongs는
+  폴더 선택 UI를 소유합니다. MusicSelectScene은 설정 루트 변경을 감지하고 카탈로그를
+  갱신합니다. SongCatalogLoader는 하나의 worker에 최신 요청만 대기시켜 구 루트 결과를
+  버립니다. GameplayLaunchRequest는 진입 당시 Songs/BG 경로와 2D 오프셋을 복사합니다.
+  YMM 조회·새 난이도·osu 가져오기·재시도도 같은 곡 루트를 사용합니다.
+- YMP의 BG/offset 파싱·검증·저장과 메타데이터 편집을 추가했습니다. BG는 Songs/BG 기준,
+  offset은 기준 높이 720/+Y 위쪽입니다. Presenter가 Loading에서 이미지를 준비하고
+  원본 비율과 오프셋을 고려해 화면을 덮습니다. 실패 시 기본 배경·오류 HUD를 사용합니다.
+  기존 사용자 곡 이미지가 없어 옮길 파일은 없었으며 빈 기본 BG 폴더만 추가했습니다.
+- EditorSelection/Clipboard는 선택·읽기 전용 복사본·묶음 적용을, TaikoEditorSelection과
+  공유 Layout은 좌표/박자 범위 해석을 소유합니다. MusicalTimeline의 유리수 연산으로
+  복사 시점의 박자 간격을 고정합니다. 붙여넣기는 목적지의 현재 마디 구조로 위치를 계산한 뒤
+  한 동작으로 적용합니다. 공백 제외는 겹침만 교체하고 공백 포함은 선택 영역을 먼저 비웁니다.
+  롱노트/Area는 연결된 끝점까지 복원합니다. Timing/Effects의 Ctrl/Shift 행 선택은 별도입니다.
+- ChartEditorHistory는 최근 32동작의 변경분과 저장 상태 ID를 소유하며 실패한 편집은
+  기존 문서·redo 분기를 보존합니다. 노트 단독 이력은 Add/Update/Delete와 같은
+  ApplyNotePatch의 트리/인덱스 게시를 사용합니다. 대량 붙여넣기의 충돌은 구간/트랙
+  인덱스로 찾고 기존 목록은 한 번만 지웁니다. Scene이나 engine에 편집 책임을 추가하지 않았습니다.
+- 판정 마커는 고정 배열 32개 원형 큐와 최대 8개/0.2초 퇴장 페이드입니다. 초기 노드를
+  재사용하며 자동 MISS/빈 입력에는 오차를 만들지 않습니다. 입력 오버레이의 flash는 기존
+  동/캇 빨강/파랑을 재사용합니다. 옵션 버튼 재클릭/ESC 닫기, Space 재생/정지와 실시간
+  휠의 격자 탐색도 검증 범위입니다.
+- 변경 코드와 직접 호출부의 소유권/콜백 수명, worker의 비소유 Scene 참조 부재,
+  파일/COM 자원 해제, 경로·ID·정수 변환 범위, 실패 후 상태 보존, 중복과 함수 책임을 검토했습니다.
+  사용자 보간식과 YME/노트 판정 규칙 자체는 변경하지 않았습니다.
+- Debug/Release x64 전체 솔루션 Build 성공. 실제 프로젝트의 x64/C++20/include/define/PCH로
+  MSVC 14.44.35207 Code Analysis를 실행했습니다. 구성별 Chart 13개/Rhythm.Tests 17개/
+  MRG.Client 89개의 /analyze 명령을 CL tlog로 확인했습니다. 파싱 오류와 새 C++/분석 진단은 없습니다.
+  Release 링크에서는 변경하지 않은 FingerDrum.Editor의 기존 **LNK4020 PDB 형식 경고**가
+  다시 발생합니다. PDB 삭제 후 해당 라이브러리의 직렬 Rebuild/Client 재링크에도 남았으며,
+  진단 억제나 범위 밖 빌드 설정 변경을 적용하지 않았습니다.
+- 마지막 저장 경계 회귀는 수정 전 실제 실패를 확인했습니다. 자동 YME 경로는 저장 전에
+  교체본을 준비하고 파일 트랜잭션 성공 후 이력의 경로도 noexcept swap으로 확정합니다.
+  메타데이터 Undo/Redo 뒤 저장 상태의 직렬화와 dirty가 정확히 일치합니다.
+  보완 후 두 구성 전체 솔루션 Build/분석·로직을 다시 통과했습니다. 마지막 솔루션 검사에는
+  ignored `build/editor-options-bg-2026-10-19/ClientAnalysis.props`를 MSBuild의
+  ForceImportBeforeCppProps로 전달하여 위 세 프로젝트만 분석하고 엔진/외부 프로젝트는
+  분석하지 않았습니다. 실제 TU 명령 수는 위와 같습니다.
+- Debug/Release 로직·카탈로그 각각 **63개/실패 0**, smoke-test/lobby/gameplay/editor 네 경로씩 exit 0.
+  EditorPresentation/GameplayJudgement/OptionsPanel/MusicSelectView/AssetPath/Skin 회귀도 성공했습니다.
+  옵션은 실제 FMOD Automatic→WASAPI/드라이버 전환을 포함합니다. EXE를 격리된 개발/배포
+  트리로 옮기고 다른 CWD에서 Songs override·빈 기본값·Option.ini 위치를 검사했습니다.
+  기존 Skin 실행기의 누락된 곡 추가 메뉴/가져오기 객체 링크도 현재 호출부에 맞게 보완했습니다.
+- 변환기 전용 세션은 두 구성 빌드·회귀·CLI·MSVC 분석과 실제 Omoiyoshino 861개/PANDORA
+  1,233개 노트, 이미지 바이트 일치/재사용/충돌 보존/실패 후 정리를 확인했습니다.
+  `(1.5*x, -1.5*y)` 변환과 `offset: 0, -75`를 검증하고 독립 저장소 main에
+  `a74aec6b7895e88823dae7098e9c4cf6cefe2661`을 반영했습니다.
+- 마지막 저장 보완 후 EditorPresentation의 기존 분석 완료 테스트 오브젝트 5개를
+  최신 Client/Chart 오브젝트·라이브러리에 다시 링크하고 양 구성에서 실행했습니다.
+  두 구성의 네 smoke도 최신 게임 EXE로 다시 실행했습니다. CheckArchitecture의
+  11개 프로젝트 소스/필터/의존성/엔진 경계와 git diff --check를 통과했습니다.
+- 사용자 LaneKeyBeam.cpp, Debug/Release Option.ini와 외부 en/ko.ini는 작업 전후 SHA-256이
+  같습니다. 사용자 곡/스킨과 엔진 gitlink는 변경하지 않았습니다. 새 문구는 언어 원본에만
+  추가했으며 외부 파일의 누락 항목은 내장 영어를 사용합니다.
+- 원시 로그·분석 명령·격리 경로 fixture는 ignored `build/editor-options-bg-2026-10-19/`에 있습니다.
+  위 검사는 자동 검증입니다. **실제 화면 배치·폴더 선택 대화상자·물리 키/마우스 조작·청취는
+  수동 확인하지 않았습니다.**
+
 ## 2026-10-17 오디오 영역 시간 측정·재생 배속
 
 - EditorAudioSelection은 세 트랙의 공통 사각형/부모 변환을 사용해 드래그를 받으며,

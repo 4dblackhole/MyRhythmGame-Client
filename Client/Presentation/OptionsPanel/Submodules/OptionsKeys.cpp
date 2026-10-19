@@ -21,7 +21,7 @@ namespace finger_drum::presentation
     } // namespace
     void OptionsPanel::CreateKeyControls()
     {
-        float top = 988;
+        float top = 1148;
         for (const auto &layout : inputLayouts_)
         {
             modeLabels_.push_back(
@@ -105,6 +105,21 @@ namespace finger_drum::presentation
         }
         if (action.type != mrg::visual2d::ActionType::Clicked)
             return false;
+        if (action.source == songsField_->Id())
+        {
+            CancelKeyboardEdit();
+            ChooseSongsFolder();
+            return true;
+        }
+        if (action.source == songsDefault_->Id())
+        {
+            auto candidate = options_.Values();
+            candidate.songsPath.clear();
+            SaveOptions(candidate);
+            RefreshSongsControls();
+            RefreshStatus();
+            return true;
+        }
         for (std::size_t i = 0; i < keyRows_.size(); ++i)
             if (action.source == keyRows_[i].button->Id())
             {

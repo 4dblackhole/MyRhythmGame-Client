@@ -1,7 +1,7 @@
 #include "App/AssetPaths.h"
+#include "GameScene/MusicSelectScene/Submodules/EditorOsuImport.h"
 #include "GameScene/MusicSelectScene/Submodules/MusicSelectView.h"
 #include "GameScene/MusicSelectScene/Submodules/SongCatalogLoader.h"
-#include "GameScene/MusicSelectScene/Submodules/EditorOsuImport.h"
 #include "Presentation/MarqueeTextComponent.h"
 #include <chrono>
 #include <fstream>
@@ -100,23 +100,31 @@ namespace
     void TestConverterProcess()
     {
         namespace fs = std::filesystem;
-        const auto directory = fs::temp_directory_path() / (L"YOMU-import-test-한글 " +
-            std::to_wstring(std::chrono::steady_clock::now().time_since_epoch().count()));
+        const auto directory =
+            fs::temp_directory_path() /
+            (L"YOMU-import-test-한글 " + std::to_wstring(std::chrono::steady_clock::now().time_since_epoch().count()));
         fs::create_directory(directory);
-        const auto cleanup = [](fs::path *path) { std::error_code ignored; fs::remove_all(*path, ignored); delete path; };
+        const auto cleanup = [](fs::path *path)
+        {
+            std::error_code ignored;
+            fs::remove_all(*path, ignored);
+            delete path;
+        };
         const auto guard = std::unique_ptr<fs::path, decltype(cleanup)>(new fs::path(directory), cleanup);
         const auto input = directory / L"map.osu", root = directory / L"Songs";
         std::ofstream(input) << "osu file format v14\n[General]\nAudioFilename: audio.mp3\nMode: 1\n"
-            "[Metadata]\nTitle:Song\nArtist:Artist\nCreator:Author\nVersion:Oni\n"
-            "[Difficulty]\nSliderMultiplier:1.4\nSliderTickRate:1\nOverallDifficulty:5\n"
-            "[TimingPoints]\n0,500,4,1,0,100,1,0\n[HitObjects]\n0,0,0,1,0\n";
+                                "[Metadata]\nTitle:Song\nArtist:Artist\nCreator:Author\nVersion:Oni\n"
+                                "[Difficulty]\nSliderMultiplier:1.4\nSliderTickRate:1\nOverallDifficulty:5\n"
+                                "[TimingPoints]\n0,500,4,1,0,100,1,0\n[HitObjects]\n0,0,0,1,0\n";
         std::ofstream(directory / "audio.mp3", std::ios::binary) << "audio fixture";
         EditorOsuImport importer;
-        const auto await = [&] {
+        const auto await = [&]
+        {
             const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{30};
             while (std::chrono::steady_clock::now() < deadline)
             {
-                if (auto result = importer.Poll()) return *result;
+                if (auto result = importer.Poll())
+                    return *result;
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
             }
             throw std::runtime_error("Converter process did not finish.");
@@ -129,7 +137,8 @@ namespace
               "The bundled converter process must produce a complete catalog entry.");
         importer.Start(input, root);
         const auto collision = await();
-        Check(!collision.success && !collision.message.empty(), "Converter collisions must report failure through Poll.");
+        Check(!collision.success && !collision.message.empty(),
+              "Converter collisions must report failure through Poll.");
         Check(finger_drum::chart::SongCatalog{}.Load(root).PatternCount() == 1,
               "A failed process must preserve the existing pattern.");
     }
@@ -160,6 +169,22 @@ namespace
             }
             clickable.Shutdown();
         }
+    }
+    void TestOptionsToggle(MusicSelectView &view, v::Visual2DCanvas &canvas)
+    {
+        auto *button = Find(canvas.Root(), "OptionSelect");
+        auto *panel = Find(canvas.Root(), "Options.Panel");
+        if (!button || !panel)
+            throw std::runtime_error("Options toggle controls missing.");
+        mrg::platform::InputState noKeys;
+        Click(canvas, *button);
+        static_cast<void>(view.Update(noKeys, .2));
+        static_cast<void>(view.Update(noKeys, .2));
+        Check(panel->IsVisible(), "Options button must open its panel.");
+        Click(canvas, *button);
+        static_cast<void>(view.Update(noKeys, 0));
+        static_cast<void>(view.Update(noKeys, .2));
+        Check(!panel->IsVisible(), "The same options button must close an open panel.");
     }
 } // namespace
 
@@ -209,6 +234,15 @@ int main()
         const auto failed = AwaitCatalog(loader);
         Check(failed.songs.empty() && !failed.diagnostics.empty(),
               "Worker I/O errors must be published as diagnostics.");
+        loader.Refresh(mrg_client::asset_paths::UserSongs());
+        loader.Refresh(mrg_client::asset_paths::UserSongs() / "missing-new-root");
+        const auto superseded = AwaitCatalog(loader);
+        Check(superseded.songs.empty() && !superseded.diagnostics.empty(),
+              "A root change must discard the older pending catalog.");
+        loader.Refresh(mrg_client::asset_paths::UserSongs());
+        loader.Refresh(mrg_client::asset_paths::UserSongs() / "missing-new-root");
+        loader.Refresh(mrg_client::asset_paths::UserSongs());
+        Check(!AwaitCatalog(loader).songs.empty(), "Switching back must cancel an obsolete queued root.");
 
         Renderer renderer;
         v::ScreenVisual2DManager visuals;
@@ -231,6 +265,8 @@ int main()
         MusicSelectView view(visuals, selection, SongSelectPurpose::Gameplay, texts, options);
         view.Initialize({meshes, textRendering, renderer, audio, 1280, 720});
         auto *canvas = visuals.FindCanvas(1);
+        if (!canvas)
+            throw std::runtime_error("Music selection Canvas missing.");
         Check(canvas && !Find(canvas->Root(), "AddDifficulty.0"), "Gameplay cards must not offer chart creation.");
         Check(canvas != nullptr && Cards(canvas->Root()) > 0 && Cards(canvas->Root()) < 20,
               "A 5,000-song library must create only viewport cards.");
@@ -247,6 +283,7 @@ int main()
         selection.searchText_ = L"no matching song";
         view.RebuildVisibleSongs();
         Check(Cards(canvas->Root()) == 0, "Empty searches must remove the former cards.");
+        TestOptionsToggle(view, *canvas);
         view.Shutdown();
         Check(visuals.CanvasCount() == 0, "Virtualized view must release its Canvas.");
         selection.searchText_.clear();
@@ -268,13 +305,15 @@ int main()
         auto *menu = Find(canvas->Root(), "SongAddition.Menu");
         auto *create = Find(canvas->Root(), "SongAddition.NewDifficulty");
         auto *convert = Find(canvas->Root(), "SongAddition.ConvertOsu");
-        if (!menu || !create || !convert) throw std::runtime_error("Song addition menu is incomplete.");
+        if (!menu || !create || !convert)
+            throw std::runtime_error("Song addition menu is incomplete.");
         Check(menu->IsVisible(), "Plus must show the addition popup.");
         Click(*canvas, *create);
         Check(editor.Update(input, 0) == SongSelectCommand::CreateDifficulty && !menu->IsVisible(),
               "New Difficulty must close the popup and preserve its existing command.");
         add = Find(canvas->Root(), "AddDifficulty.0");
-        if (!add) throw std::runtime_error("Refreshed plus button missing.");
+        if (!add)
+            throw std::runtime_error("Refreshed plus button missing.");
         Click(*canvas, *add);
         static_cast<void>(editor.Update(input, 0));
         Click(*canvas, *convert);

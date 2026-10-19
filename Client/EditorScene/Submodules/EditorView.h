@@ -107,6 +107,7 @@ class EditorView final : public IEditorModeCanvas
     EditorMenuBar menuBar_;
     EditorVisual *visual{};
     bool buildFailed_{};
+    bool toggleSelection_{}, rangeSelection_{};
     static constexpr v::Rect DivisionSliderRect{1240, 6 + EditorMenuBar::Height, 480, 26};
     static constexpr v::Rect TimelineSliderRect{205, 915, 1645, 44};
     static constexpr v::Rect PlaybackRateSliderRect{1260, 88, 340, 26};

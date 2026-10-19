@@ -3,11 +3,12 @@
 #include "Parsing/ChartParser.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
-#include <locale>
 #include <limits>
+#include <locale>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -140,6 +141,12 @@ void ValidateNote(const PatternNote &note, const EffectDocument &effects, const 
 
 void Validate(const PatternDocument &pattern, const EffectDocument &effects, const MusicalTimeline &timeline)
 {
+    const auto background = pattern.backgroundFile.lexically_normal();
+    if (background.has_root_path() || std::ranges::find(background, std::filesystem::path{".."}) != background.end() ||
+        !std::isfinite(pattern.backgroundOffsetX) || !std::isfinite(pattern.backgroundOffsetY) ||
+        std::abs(pattern.backgroundOffsetX) > std::numeric_limits<float>::max() / 4.0 ||
+        std::abs(pattern.backgroundOffsetY) > std::numeric_limits<float>::max() / 4.0)
+        throw std::invalid_argument("Background requires a Songs/BG relative path and finite 2D offsets.");
     const auto validPosition = [&timeline](MusicalPosition p) {
         return IsValidPosition(p, timeline);
     };
@@ -224,6 +231,11 @@ ChartEditor::ChartEditor(const ChartEditor &source)
     audioSourceRevision_ = source.audioSourceRevision_;
     dirty_ = source.dirty_;
     revision_ = source.revision_;
+    undo_ = source.undo_;
+    redo_ = source.redo_;
+    historyState_ = source.historyState_;
+    savedHistoryState_ = source.savedHistoryState_;
+    nextHistoryState_ = source.nextHistoryState_;
 }
 
 ChartEditor &ChartEditor::operator=(const ChartEditor &source)
@@ -237,10 +249,13 @@ ChartEditor &ChartEditor::operator=(const ChartEditor &source)
 }
 
 std::map<std::size_t, std::size_t> ChartEditor::BuildLongPartners(
-    std::optional<std::size_t> excluded, std::optional<std::size_t> excludedPartner,
-    std::span<const CompiledPatternNote> replacements) const
+    std::span<const std::size_t> excluded, std::span<const CompiledPatternNote> replacements) const
 {
     std::map<std::size_t, std::size_t> pairs;
+    const std::set<std::size_t> excludedIds(excluded.begin(), excluded.end());
+    std::map<std::size_t, const PatternNote *> replacementSources;
+    for (const auto &note : replacements)
+        replacementSources.emplace(note.note.sourceOrder, &note.note);
     std::optional<std::size_t> head;
     // Property edits stage only long endpoints. The existing add/delete paths
     // traverse their source tree directly and allocate no endpoint copy.
@@ -249,8 +264,7 @@ std::map<std::size_t, std::size_t> ChartEditor::BuildLongPartners(
     if (!replacements.empty())
     {
         changedEndpoints = longEndpoints_;
-        std::erase_if(changedEndpoints,
-                      [&](const auto &entry) { return entry.second == excluded || entry.second == excludedPartner; });
+        std::erase_if(changedEndpoints, [&](const auto &entry) { return excludedIds.contains(entry.second); });
         for (const auto &note : replacements)
             if (note.note.actionType != 0)
                 changedEndpoints.emplace(NoteKey{note.note.position, note.note.sourceOrder}, note.note.sourceOrder);
@@ -258,14 +272,14 @@ std::map<std::size_t, std::size_t> ChartEditor::BuildLongPartners(
     }
     const auto source = [&](std::size_t id) -> const PatternNote &
     {
-        const auto changed = std::ranges::find(replacements, id, [](const auto &n) { return n.note.sourceOrder; });
-        return changed != replacements.end() ? changed->note : noteTree_.at(noteKeys_.at(id)).note;
+        const auto changed = replacementSources.find(id);
+        return changed != replacementSources.end() ? *changed->second : noteTree_.at(noteKeys_.at(id)).note;
     };
     // Match the serialized/playback endpoint order, including overlapping edits.
     // Ordinary notes never require this traversal.
     for (const auto &[key, id] : *endpoints)
     {
-        if (replacements.empty() && (id == excluded || id == excludedPartner))
+        if (replacements.empty() && excludedIds.contains(id))
             continue;
         const auto &note = source(id);
         if (note.actionType == 1 && !head)
@@ -438,8 +452,20 @@ void ChartEditor::InvalidateNoteSnapshots() noexcept
 
 void ChartEditor::Replace(PatternDocument pattern, EffectDocument effects)
 {
-    // Construct caches before publishing the edit, preserving the old chart on error.
     ChartEditor replacement(std::move(pattern), std::move(effects), runtimeOffset_);
+    auto history = ReplacementHistory(replacement);
+    PublishReplacement(std::move(replacement));
+    CommitHistory(history);
+}
+
+void ChartEditor::ReplaceData(PatternDocument pattern, EffectDocument effects)
+{
+    ChartEditor replacement(std::move(pattern), std::move(effects), runtimeOffset_);
+    PublishReplacement(std::move(replacement));
+}
+
+void ChartEditor::PublishReplacement(ChartEditor &&replacement)
+{
     const bool sourcesChanged = replacement.pattern_.musicMetadataFile != pattern_.musicMetadataFile ||
         replacement.pattern_.sourcePath != pattern_.sourcePath ||
         replacement.effects_.sourcePath != effects_.sourcePath || replacement.effects_.hitSounds != effects_.hitSounds;
@@ -447,6 +473,7 @@ void ChartEditor::Replace(PatternDocument pattern, EffectDocument effects)
     replacement.nextNoteId_ = std::max(nextNoteId_, replacement.nextNoteId_);
     replacement.dirty_ = true;
     replacement.revision_ = revision_ + 1;
+    TransferHistory(replacement);
     *this = std::move(replacement);
 }
 
@@ -495,6 +522,10 @@ void ChartEditor::ReplaceTiming(std::vector<TimingDirective> timing)
         updates.push_back({&note, time, speed, timeline.IsPositionActive(note.note.position)});
     }
 
+    HistoryState before, after;
+    before.timing = Timing();
+    after.timing = timingPattern.timing;
+    auto history = PrepareHistory(std::move(before), std::move(after));
     // Publication performs no allocation; failed preparation leaves the edit untouched.
     timingTree_.swap(timingTree);
     timeIndex_.swap(times);
@@ -511,6 +542,7 @@ void ChartEditor::ReplaceTiming(std::vector<TimingDirective> timing)
     }
     timingDirty_ = notesDirty_ = dirty_ = true;
     ++revision_;
+    CommitHistory(history);
 }
 
 void ChartEditor::ReplaceEffects(EffectDocument effects)
@@ -519,6 +551,10 @@ void ChartEditor::ReplaceEffects(EffectDocument effects)
     if (effects.sourcePath.empty())
         effects.sourcePath = effects_.sourcePath;
     Validate(Pattern(), effects, timeline_);
+    HistoryState before, after;
+    before.effects = Effects();
+    after.effects = effects;
+    auto history = PrepareHistory(std::move(before), std::move(after));
     ScrollAutomation scroll(timeline_.CompileEffects(effects));
     decltype(effectTree_) commands;
     decltype(effectIndex_) index;
@@ -561,6 +597,7 @@ void ChartEditor::ReplaceEffects(EffectDocument effects)
     effectsDirty_ = notesDirty_ = dirty_ = true;
     audioSourceRevision_ += sourcesChanged;
     ++revision_;
+    CommitHistory(history);
 }
 
 void ChartEditor::AddNote(MusicalPosition position, int keyType, std::optional<MusicalPosition> end,
@@ -574,34 +611,17 @@ void ChartEditor::AddNote(MusicalPosition position, int keyType, std::optional<M
     std::optional<CompiledPatternNote> tail;
     if (end)
         tail = CompileNote({*end, keyType, 2, {}, {}, {}, nextNoteId_ + 1});
-    const auto insert = [this](CompiledPatternNote note) {
-        const auto id = note.note.sourceOrder;
-        const NoteKey key{note.note.position, id};
-        noteKeys_.emplace(id, key);
-        noteTree_.emplace(key, std::move(note));
-        timeIndex_.emplace(TimeKey{noteTree_.at(key).timing, id}, key);
-        if (noteTree_.at(key).note.actionType != 0)
-            longEndpoints_.emplace(key, id);
-        noteSpeedIndex_.emplace(noteTree_.at(key).scrollMultiplier, id);
-    };
-    try
-    {
-        insert(std::move(head));
-        if (tail)
-        {
-            insert(std::move(*tail));
-            auto pairs = BuildLongPartners();
-            longPartners_.swap(pairs);
-        }
-    }
-    catch (...)
-    {
-        EraseNote(nextNoteId_);
-        EraseNote(nextNoteId_ + 1);
-        throw;
-    }
+    HistoryState after;
+    after.notes.push_back(head.note);
+    if (tail)
+        after.notes.push_back(tail->note);
+    auto history = PrepareHistory({}, std::move(after));
+    std::vector<CompiledPatternNote> changed{std::move(head)};
+    if (tail)
+        changed.push_back(std::move(*tail));
+    ApplyNotePatch({}, changed);
     nextNoteId_ += end ? 2 : 1;
-    InvalidateNoteSnapshots();
+    CommitHistory(history);
 }
 
 void ChartEditor::EraseNote(std::size_t id) noexcept
@@ -619,6 +639,46 @@ void ChartEditor::EraseNote(std::size_t id) noexcept
     longEndpoints_.erase(key->second);
     noteKeys_.erase(key);
     longPartners_.erase(id);
+}
+
+void ChartEditor::ApplyNotePatch(std::span<const std::size_t> removed, std::span<const CompiledPatternNote> changed)
+{
+    decltype(noteTree_) notes;
+    decltype(noteKeys_) keys;
+    decltype(timeIndex_) times;
+    decltype(noteSpeedIndex_) speeds;
+    decltype(longEndpoints_) endpoints;
+    bool affectsPairs = false;
+    for (auto id : removed)
+        if (const auto old = noteKeys_.find(id); old != noteKeys_.end())
+            affectsPairs |= noteTree_.at(old->second).note.actionType != 0;
+    for (const auto &note : changed)
+    {
+        const auto id = note.note.sourceOrder;
+        const NoteKey key{note.note.position, id};
+        notes.emplace(key, note);
+        keys.emplace(id, key);
+        times.emplace(TimeKey{note.timing, id}, key);
+        speeds.emplace(note.scrollMultiplier, id);
+        if (note.note.actionType != 0)
+        {
+            endpoints.emplace(key, id);
+            affectsPairs = true;
+        }
+    }
+    auto pairs = affectsPairs ? BuildLongPartners(removed, changed) : decltype(longPartners_){};
+    // Addition, property edits, deletion and history replay share one atomic
+    // tree/index publication. Allocate only for changed events before this point.
+    for (auto id : removed)
+        EraseNote(id);
+    noteTree_.merge(notes);
+    noteKeys_.merge(keys);
+    timeIndex_.merge(times);
+    noteSpeedIndex_.merge(speeds);
+    longEndpoints_.merge(endpoints);
+    if (affectsPairs)
+        longPartners_.swap(pairs);
+    InvalidateNoteSnapshots();
 }
 
 std::optional<EditorNoteSelection> ChartEditor::FindNote(std::size_t id) const
@@ -669,38 +729,17 @@ void ChartEditor::UpdateNote(std::size_t id, PatternNote head, std::optional<Mus
         if (*end <= changed.front().note.position)
             throw std::invalid_argument("Long note end must follow its start in musical position.");
     }
-    // All allocation/validation precedes publication. These maps contain only
-    // the edited head/tail; map::merge transfers their nodes without allocating.
-    decltype(noteTree_) notes;
-    decltype(noteKeys_) keys;
-    decltype(timeIndex_) times;
-    decltype(noteSpeedIndex_) speeds;
-    decltype(longEndpoints_) endpoints;
+    const std::array excluded{id, oldTail.value_or(id)};
+    HistoryState before, after;
+    before.notes.push_back(selected->head.note);
+    if (selected->tail)
+        before.notes.push_back(selected->tail->note);
     for (const auto &note : changed)
-    {
-        const auto noteId = note.note.sourceOrder;
-        const NoteKey key{note.note.position, noteId};
-        notes.emplace(key, note);
-        keys.emplace(noteId, key);
-        times.emplace(TimeKey{note.timing, noteId}, key);
-        speeds.emplace(note.scrollMultiplier, noteId);
-        if (note.note.actionType != 0)
-            endpoints.emplace(key, noteId);
-    }
-    const bool affectsPairs = selected->head.note.actionType != 0 || end.has_value();
-    auto pairs = affectsPairs ? BuildLongPartners(id, oldTail, changed) : decltype(longPartners_){};
-    EraseNote(id);
-    if (oldTail)
-        EraseNote(*oldTail);
-    noteTree_.merge(notes);
-    noteKeys_.merge(keys);
-    timeIndex_.merge(times);
-    noteSpeedIndex_.merge(speeds);
-    longEndpoints_.merge(endpoints);
-    if (affectsPairs)
-        longPartners_.swap(pairs);
+        after.notes.push_back(note.note);
+    auto history = PrepareHistory(std::move(before), std::move(after));
+    ApplyNotePatch(excluded, changed);
     nextNoteId_ += needsId;
-    InvalidateNoteSnapshots();
+    CommitHistory(history);
 }
 
 void ChartEditor::DeleteNote(std::size_t sourceOrder)
@@ -710,14 +749,14 @@ void ChartEditor::DeleteNote(std::size_t sourceOrder)
     std::optional<std::size_t> partner;
     if (const auto pair = longPartners_.find(sourceOrder); pair != longPartners_.end())
         partner = pair->second;
-    const bool longNote = longEndpoints_.contains(noteKeys_.at(sourceOrder));
-    auto pairs = longNote ? BuildLongPartners(sourceOrder, partner) : std::map<std::size_t, std::size_t>{};
+    const std::array excluded{sourceOrder, partner.value_or(sourceOrder)};
+    HistoryState before;
+    before.notes.push_back(noteTree_.at(noteKeys_.at(sourceOrder)).note);
     if (partner)
-        EraseNote(*partner);
-    EraseNote(sourceOrder);
-    if (longNote)
-        longPartners_.swap(pairs);
-    InvalidateNoteSnapshots();
+        before.notes.push_back(noteTree_.at(noteKeys_.at(*partner)).note);
+    auto history = PrepareHistory(std::move(before), {});
+    ApplyNotePatch(excluded, {});
+    CommitHistory(history);
 }
 
 void ChartEditor::SetMeasureLength(std::int64_t measure, Rational length)
@@ -761,6 +800,8 @@ std::string ChartEditor::WritePattern(const PatternDocument &pattern)
     out << std::setprecision(17) << "Version: " << pattern.version << "\n[Metadata]\n"
         << "Music metadata: " << Utf8(pattern.musicMetadataFile) << '\n'
         << "Effect file: " << Utf8(pattern.effectFile) << '\n'
+        << "BG: " << Utf8(pattern.backgroundFile) << '\n'
+        << "offset: " << pattern.backgroundOffsetX << ", " << pattern.backgroundOffsetY << '\n'
         << "Pattern Name: " << pattern.name << '\n';
     for (std::size_t i = 0; i < pattern.makers.size(); ++i)
         out << "Pattern Maker " << i << ": " << pattern.makers[i] << '\n';
@@ -847,6 +888,7 @@ void ChartEditor::Save()
     if (!parsedPattern.Succeeded() || !parsedEffects.Succeeded() ||
         WritePattern(parsedPattern.document) != patternText || WriteEffects(parsedEffects.document) != effectText)
         throw std::runtime_error("Serialized chart failed validation; originals were not modified.");
+    auto historyPaths = PrepareSavedHistoryPaths(savedPattern.effectFile);
     if (!effectPath.parent_path().empty()) std::filesystem::create_directories(effectPath.parent_path());
 
     // Stage both files first and retain recoverable backups if any replace
@@ -907,6 +949,9 @@ void ChartEditor::Save()
     // Publication cannot allocate after the on-disk transaction has committed.
     pattern_.effectFile.swap(savedPattern.effectFile);
     effects_.sourcePath.swap(effectPath);
+    for (auto &[target, value] : historyPaths)
+        target->swap(value);
     dirty_ = false;
+    savedHistoryState_ = historyState_;
 }
 } // namespace finger_drum::chart

@@ -1,17 +1,15 @@
-#include "LogoView.h"
-#include "LogoStyle.h"
 #include "App/AssetPaths.h"
+#include "LogoStyle.h"
+#include "LogoView.h"
 using namespace logo_ui;
 
 void LogoView::ProcessPointer(const mrg::platform::InputState &input)
 {
-    canvasPointer_ =
-        input.IsMouseInsideWindow()
-            ? mrg::visual2d::MapScreenPointer(
-                  {static_cast<float>(input.MousePositionX()),
-                   static_cast<float>(input.MousePositionY())},
-                  {static_cast<float>(width_), static_cast<float>(height_)}, *canvas_)
-            : std::nullopt;
+    canvasPointer_ = input.IsMouseInsideWindow()
+                         ? mrg::visual2d::MapScreenPointer(
+                               {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
+                               {static_cast<float>(width_), static_cast<float>(height_)}, *canvas_)
+                         : std::nullopt;
 
     mrg::visual2d::PointerInput pointer{};
     pointer.available = canvasPointer_.has_value();
@@ -45,10 +43,8 @@ void LogoView::UpdateSelectionFromPointer(const mrg::platform::InputState &input
 
 void LogoView::HandleKeyboard(const mrg::platform::InputState &input)
 {
-    const bool previousPressed =
-        input.WasKeyPressed(VK_UP) || input.WasKeyPressed(static_cast<std::uint16_t>('W'));
-    const bool nextPressed =
-        input.WasKeyPressed(VK_DOWN) || input.WasKeyPressed(static_cast<std::uint16_t>('S'));
+    const bool previousPressed = input.WasKeyPressed(VK_UP) || input.WasKeyPressed(static_cast<std::uint16_t>('W'));
+    const bool nextPressed = input.WasKeyPressed(VK_DOWN) || input.WasKeyPressed(static_cast<std::uint16_t>('S'));
 
     if (previousPressed)
     {
@@ -73,6 +69,11 @@ bool LogoView::ApplyMenuActions()
         {
             RefreshSkinImages();
             ApplyTexts();
+            return true;
+        }
+        if (action.type == mrg::visual2d::ActionType::Clicked && action.source == menuButtonIds_[OptionIndex])
+        {
+            options_.Toggle();
             return true;
         }
         if (options_.IsVisible())
@@ -111,9 +112,8 @@ void LogoView::SetSelectedMenuItem(const std::size_t index)
     }
 
     selectionCursor_->SetSize(CursorSize);
-    selectionCursor_->SetPosition(
-        {CursorCenterX, MenuSize.height - ButtonHeight * 0.5F -
-                            ButtonVerticalStep * static_cast<float>(selectedMenuIndex_)});
+    selectionCursor_->SetPosition({CursorCenterX, MenuSize.height - ButtonHeight * 0.5F -
+                                                      ButtonVerticalStep * static_cast<float>(selectedMenuIndex_)});
 }
 
 void LogoView::ActivateMenuItem(std::size_t index)

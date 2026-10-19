@@ -118,6 +118,24 @@ class EditorWorkspace final : public IEditorContext
     void UpdateNote(std::size_t, finger_drum::chart::PatternNote,
                     std::optional<finger_drum::chart::MusicalPosition>) override;
     void DeleteNote(std::size_t sourceOrder) override;
+    const std::set<std::size_t> &SelectedNoteIds() const noexcept override
+    {
+        return selectedNotes_;
+    }
+    void SelectNotes(std::span<const std::size_t>) override;
+    void SelectNoteRange(finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition) override;
+    const std::optional<std::pair<finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition>> &
+    NoteSelectionRange() const noexcept override
+    {
+        return noteSelectionRange_;
+    }
+    void SelectListRow(std::size_t row, bool toggle, bool range);
+    bool IsListRowSelected(std::size_t) const noexcept;
+    void CopySelection();
+    void PasteSelection(bool includeBlanks);
+    void DeleteSelection();
+    void Undo();
+    void Redo();
     void SetMeasureLength(std::int64_t, finger_drum::chart::Rational);
     void RemoveTiming(std::size_t);
     void ApplyBpm();
@@ -130,6 +148,36 @@ class EditorWorkspace final : public IEditorContext
     std::size_t listOffset{};
 
   private:
+    template <class Event> struct ClipboardEvent
+    {
+        Event value;
+        finger_drum::chart::Rational offset;
+        std::optional<finger_drum::chart::Rational> endOffset;
+    };
+    struct ClipboardNote
+    {
+        finger_drum::chart::PatternNote head;
+        std::optional<finger_drum::chart::PatternNote> tail;
+        finger_drum::chart::Rational headOffset, tailOffset;
+    };
+    struct Clipboard
+    {
+        EditorTab tab{EditorTab::Pattern};
+        finger_drum::chart::Rational length;
+        std::vector<ClipboardNote> notes;
+        std::vector<ClipboardEvent<finger_drum::chart::TimingDirective>> timing;
+        std::vector<ClipboardEvent<finger_drum::chart::EffectCommand>> effects;
+        std::vector<ClipboardEvent<finger_drum::chart::HitSoundChange>> sounds;
+    };
+    void PasteNotes(const Clipboard &, finger_drum::chart::MusicalPosition, bool);
+    void PasteTiming(const Clipboard &, finger_drum::chart::MusicalPosition, bool);
+    void PasteEffects(const Clipboard &, finger_drum::chart::MusicalPosition, bool);
+    void ClearEditSelection();
+    std::set<std::size_t> selectedNotes_, selectedTiming_, selectedEffects_;
+    std::optional<std::pair<finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition>>
+        noteSelectionRange_;
+    std::optional<std::size_t> timingSelectionAnchor_, effectSelectionAnchor_;
+    std::optional<Clipboard> clipboard_;
     void DocumentChanged();
     EditorTab tab_{EditorTab::Pattern};
     bool rebuild_{true};

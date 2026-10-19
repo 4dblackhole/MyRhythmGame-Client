@@ -37,6 +37,9 @@ namespace finger_drum::chart
         std::filesystem::path sourcePath;
         std::filesystem::path musicMetadataFile;
         std::filesystem::path effectFile;
+        // Relative to <selected Songs>/BG, independently of the YMP folder.
+        std::filesystem::path backgroundFile;
+        double backgroundOffsetX{}, backgroundOffsetY{}; // 1280x720 logical space, +Y up.
         std::vector<std::string> makers;
         std::vector<std::string> tags;
         std::string name;

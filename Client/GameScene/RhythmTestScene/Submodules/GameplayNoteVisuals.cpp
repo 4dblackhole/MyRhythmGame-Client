@@ -61,7 +61,17 @@ bool GameplayPresenter::PrepareAssets(const mrg::EngineServices &services)
     const bool ready = services.visual2DRendering.PrepareImages(preparingImages_, error);
     if (!error.empty())
         throw std::runtime_error(error);
-    return ready;
+    if (!ready || backgroundPath_.empty())
+        return ready;
+    const std::array background{backgroundPath_};
+    const bool backgroundReady = services.visual2DRendering.PrepareImages(background, error);
+    if (!error.empty())
+    {
+        backgroundWarning_ = "Background image: " + error;
+        backgroundPath_.clear();
+        return true;
+    }
+    return backgroundReady;
 }
 
 void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time, bool enabled)

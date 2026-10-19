@@ -41,6 +41,9 @@ Scene마다 전용 폴더와 `Submodules/`를 둡니다. Scene은 작은 호출�
 에디터는 공통 화면과 `IEditorMode`의 도구/노트 표시/입력 정책,
 `IEditorDocument`의 파일 형식별 편집·저장을 분리합니다. 현재 구현은 Taiko와
 YMP/YME이며 새 모드 연결 경계는 [에디터 구조](Docs/ChartEditor.md)에 있습니다.
+Q로 박자 구간을 드래그하고 박자표·이펙트 탭에서 Ctrl/Shift 다중 선택을 사용합니다.
+Ctrl+C, Ctrl+V(공백 제외), Ctrl+Shift+V(공백 포함)를 지원하며 편집 전체의 최근 32동작을
+Ctrl+Z / Ctrl+Y로 되돌리고 다시 실행합니다. 덮어쓴 항목도 함께 복원됩니다.
 곡 카드 +에서 새 난이도 생성 또는 [.osu 가져오기](Docs/EditorSongSelect.md#osutaiko-가져오기)를
 선택할 수 있습니다. 가져오기는 기존 음원의 내용이 같으면 재사용하고 충돌 시 보존합니다.
 모드는 제한된 편집 context를 통해 문서를 수정하고, 비동기 분석은 별도의 읽기 전용
@@ -121,6 +124,9 @@ YMP/YME는 `Songs/Patterns/<곡>/<난이도>`에 한 쌍씩 정리합니다.
 [텍스트 관리](Docs/TextManagement.md)에서 관리합니다. 패널에서 FMOD, 일반(자동)/WASAPI/ASIO,
 실제 출력 드라이버를 선택하며 출력 방식/장치 변경은 즉시 적용합니다.
 열린 옵션 패널은 ESC로 닫으며 뒤 화면의 ESC 동작은 실행하지 않습니다.
+옵션 버튼을 다시 눌러도 닫힙니다. Songs 폴더를 패널에서 선택하고 Option.ini에 저장하며,
+변경 후 곡 목록을 갱신합니다. 채보 배경은 `Songs/BG`에 공유하고 YMP의 `BG:`와
+`offset: x, y`로 경로와 엔진 좌표 오프셋을 지정합니다.
 UI 색상은 `Client/Presentation/UiColors.h`에서 공유하고 옵션 배경은 기존 하늘색 중
 더 짙은 색을 사용합니다.
 해상도는 즉시 창 크기에 적용하며 모드별 기본·보조 키와 글로벌 오프셋(ms)을 설정할 수 있습니다.

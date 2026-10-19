@@ -28,6 +28,8 @@ class TaikoEditorMode final : public IEditorMode
     void CloseToolMenu() noexcept override
     {
         popup_ = -1;
+        selectionAnchor_.reset();
+        selecting_ = false;
     }
     bool OpenToolMenu(mrg::visual2d::Point) override;
     void DrawTools(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
@@ -35,6 +37,8 @@ class TaikoEditorMode final : public IEditorMode
     void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
     void EditScore(IEditorContext &, mrg::visual2d::Point, bool erase) override;
     void ScrollScore(IEditorContext &, int direction) override;
+    bool BeginScoreSelection(IEditorContext &, mrg::visual2d::Point) override;
+    bool UpdateScoreSelection(IEditorContext &, mrg::visual2d::Point, bool released) override;
     void DrawMetadata(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
     std::vector<EditorSoundChoice> SoundChoices(const finger_drum::texts::TextCatalog &) const override;
     std::wstring_view SoundEffectHelp(const finger_drum::texts::TextCatalog &) const override;
@@ -43,6 +47,10 @@ class TaikoEditorMode final : public IEditorMode
     std::vector<AudioMarker> AudioMarkers(const finger_drum::chart::IEditorDocument &) const override;
 
   private:
+    std::optional<finger_drum::chart::MusicalPosition> SnapPosition(IEditorContext &, mrg::visual2d::Point) const;
+    std::optional<finger_drum::chart::MusicalPosition> selectionAnchor_;
+    mrg::visual2d::Point selectionStart_{};
+    bool selecting_{};
     void DrawOverview(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &);
     void DrawRealtime(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &);
     void Circle(IEditorModeCanvas &, float x, float y, int type, float radius);

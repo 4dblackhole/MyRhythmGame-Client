@@ -1,5 +1,7 @@
 #pragma once
 #include "Editing/IEditorDocument.h"
+#include <set>
+#include <span>
 
 struct EditorScoreState
 {
@@ -32,4 +34,9 @@ class IEditorContext
     virtual void UpdateNote(std::size_t, finger_drum::chart::PatternNote,
                             std::optional<finger_drum::chart::MusicalPosition>) = 0;
     virtual void DeleteNote(std::size_t sourceOrder) = 0;
+    virtual const std::set<std::size_t> &SelectedNoteIds() const noexcept = 0;
+    virtual void SelectNotes(std::span<const std::size_t>) = 0;
+    virtual void SelectNoteRange(finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition) = 0;
+    virtual const std::optional<std::pair<finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition>> &
+    NoteSelectionRange() const noexcept = 0;
 };

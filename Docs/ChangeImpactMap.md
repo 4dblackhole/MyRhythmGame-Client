@@ -18,6 +18,7 @@
 | 로고/곡 선택 옵션 패널·ESC 닫기 | `Client/Presentation/OptionsPanel.*` | LogoView/MusicSelectView 입력 소비; OptionsPanelTests; logo/lobby smoke |
 | 공통 UI 색상 | `Client/Presentation/UiColors.h` | LogoStyle / SongSelectLayout / EditorSupport / TaikoResultLayout / GameplayPauseMenu; Options/MusicSelect/Editor/Result/Pause 표시 회귀 |
 | Option.ini·오디오 출력/드라이버·해상도·키·글로벌 오프셋 선택 | `Client/App/OptionSettings.*`, `OptionsPanel.*` / `OptionsPanel/Submodules` | FingerDrumGame 초기화; ModeInputLayout / PlayGameModeFactory / PlaySession; MusicalTimeline / ChartEditor; 엔진 WindowControl; OptionsPanelTests / OptionTimingTests, 네 smoke |
+| Songs 경로·즉시 catalog 갱신·BG/offset | OptionSettings::SongsRoot / OptionsSongs, MusicSelectScene / SongCatalogLoader, GameplayLaunchRequest | PatternDocument / PatternParser / ChartEditor; GameplayPresenter / GameplayLayout / PrepareAssets; TaikoEditorAudio/Metadata; Options/MusicSelect/Gameplay 표시 회귀; 변환기 전용 세션 |
 | skin.ini·씬 이미지·스킨 선택·내장 기본본 | `Client/App/SkinManifest.*`, `SkinSetSelection.*`, `AssetPaths.h`, `Presentation/SkinVisualComponent.*` | BuiltInAssets; RunSkinTests / 각 화면 표시 회귀, 네 smoke |
 | 배포 빌드·자산 | `Client/MRG.Client.vcxproj`, `Client/App/Main.cpp` | BuiltInAssets; Debug/Release smoke, CheckArchitecture |
 | Scene 전환/선택 전달 | Scene 주 파일, `Client/GameFlow/GameplayLaunchStore.h` | SceneStateTests; ExecutionFlow |
@@ -35,6 +36,7 @@
 | 에디터 상단 메뉴·저장 입력 | `Client/EditorScene/Submodules/EditorMenuBar.*`, EditorView / EditorInput | EditorWorkspace Save, EditorTexts; EditorMenuTests / EditorAudioViewTests, editor smoke |
 | 에디터 도구/배치 취소 | `Modes/Taiko/TaikoEditorMode.*`, TaikoEditorTool.h / TaikoEditorTools.cpp | ChartEditorTests, SceneStateTests, EditorModeTests |
 | 에디터 노트 선택/속성 | `Modes/Taiko/TaikoEditorNoteInspector.*`, TaikoEditorPlacement.h | IEditorContext/Workspace UpdateNote, IEditorDocument FindNote/UpdateNote, ChartEditor 인덱스/ID; ChartEditorTests/EditorModeTests |
+| 구간·행 다중 선택·두 붙여넣기·32 Undo/Redo | EditorSelection / EditorClipboard / TaikoEditorSelection·Layout, EditorTiming/EffectsView | MusicalTimeline AddWholeNotes/WholeNotesBetween; ChartEditorHistory / IEditorDocument; EditorModeTests / ChartEditorTests |
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
 | BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace/ReplaceTiming/ReplaceEffects, 저장 왕복 |
 | 오디오 탭·시간 영역 선택·타임라인/worker | EditorAudioView / EditorAudioSelection / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |

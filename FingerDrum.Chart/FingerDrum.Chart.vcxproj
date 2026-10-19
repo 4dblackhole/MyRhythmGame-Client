@@ -43,4 +43,5 @@
   <ItemGroup><ClCompile Include="Automation\ScrollAutomation.cpp" /></ItemGroup>
   <ItemGroup><ClInclude Include="Automation\EffectValidation.h" /><ClCompile Include="Automation\EffectValidation.cpp" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup><ClCompile Include="Editing\ChartEditorHistory.cpp" /></ItemGroup>
 </Project>

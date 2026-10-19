@@ -12,6 +12,8 @@ UTF-8 텍스트이며 빈 줄과 `//`로 시작하는 줄을 무시합니다. �
 [Metadata]
 Music metadata: Music/Angeldream/angel dream hand shaking.ymm
 Effect file: angeldream [long notes test].yme
+BG: abcd/bg1.png
+offset: 0, 0
 Pattern Maker Count: 1
 Pattern Maker 1: Maker Name
 Pattern Name: Long Notes Test
@@ -30,6 +32,8 @@ JudgeLevel: 50.00
 | `Version` | 정수 형식 버전입니다. 생략하면 1입니다. |
 | `Music metadata` | Songs 루트를 기준으로 한 YMM 상대 경로입니다. catalog가 YMM과 YMP를 연결할 때 사용합니다. |
 | `Effect file` | YMP 폴더 기준 YME 경로입니다. 효과가 없으면 생략할 수 있습니다. 같은 이름 YME를 자동 검색하지 않습니다. |
+| `BG` | 선택한 Songs 폴더의 `BG` 하위 기준 이미지 경로입니다. `abcd/bg1.png`는 `Songs/BG/abcd/bg1.png`입니다. 생략/빈 값은 기존 배경을 사용합니다. |
+| `offset` | 배경 중심의 `x, y` 오프셋입니다. 기본 `0, 0`. 엔진 2D 논리 좌표(기준 높이 720), +X 오른쪽/+Y 위쪽입니다. `Pattern Offset` 시간 보정과 별개입니다. |
 | `Pattern Maker ...` | 제작자 문자열입니다. `Pattern Maker Count`는 현재 개수 검증에 사용하지 않습니다. |
 | `Pattern Name` | 곡 선택 화면에 표시할 패턴 이름입니다. |
 | `Tags` | 쉼표로 구분한 패턴 태그입니다. |
@@ -45,6 +49,12 @@ JudgeLevel: 50.00
 `Version`, `JudgeLevel`, BPM·offset 등의 숫자 형식이 잘못된 YMP는 진단을 남기고
 곡 선택 catalog에서 해당 패턴만 제외합니다. 같은 catalog의 정상 곡과 패턴은
 계속 사용할 수 있습니다. 지정한 YME가 없거나 잘못된 경우도 해당 패턴에 진단을 남깁니다.
+
+BG 경로는 절대경로나 BG 밖으로 나가는 `..`를 허용하지 않습니다. 오프셋은 유한한
+2D 좌표여야 합니다. 인게임에서 원본 비율을 유지하고 화면 전체를 덮는 최소 크기로
+확대/축소합니다. 오프셋 이동 후에도 빈 가장자리가 생기지 않도록 필요한 배율을 계산합니다.
+이미지는 Loading에서 다른 이미지와 함께 준비합니다. 누락/디코드 실패는 기존
+배경을 유지하고 오류 HUD에 표시합니다. 채보와 음악의 시간/판정에는 영향을 주지 않습니다.
 
 ### 히트사운드 참조
 

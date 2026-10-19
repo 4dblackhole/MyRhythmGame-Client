@@ -1,4 +1,5 @@
 #include "Parsing/Submodules/PatternTiming.h"
+#include <limits>
 
 namespace finger_drum::chart
 {
@@ -110,6 +111,26 @@ namespace finger_drum::chart
                 result.document.musicMetadataFile = PathFromUtf8(value);
             else if (key == "Effect file")
                 result.document.effectFile = PathFromUtf8(value);
+            else if (key == "BG")
+            {
+                const auto path = PathFromUtf8(value).lexically_normal();
+                if (path.has_root_path() || std::ranges::find(path, std::filesystem::path{".."}) != path.end())
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber, "BG must be relative to Songs/BG.");
+                else
+                    result.document.backgroundFile = path;
+            }
+            else if (key == "offset")
+            {
+                const auto comma = value.find(',');
+                if (comma == std::string_view::npos ||
+                    !ParseDouble(Trim(value.substr(0, comma)), result.document.backgroundOffsetX) ||
+                    !ParseDouble(Trim(value.substr(comma + 1)), result.document.backgroundOffsetY) ||
+                    !IsFinite(result.document.backgroundOffsetX) || !IsFinite(result.document.backgroundOffsetY) ||
+                    std::abs(result.document.backgroundOffsetX) > std::numeric_limits<float>::max() / 4.0 ||
+                    std::abs(result.document.backgroundOffsetY) > std::numeric_limits<float>::max() / 4.0)
+                    AddDiagnostic(result.diagnostics, sourcePath, lineNumber,
+                                  "Background offset requires finite x, y values.");
+            }
             else if (StartsWithInsensitive(key, "Pattern Maker") &&
                      !StartsWithInsensitive(key, "Pattern Maker Count"))
                 result.document.makers.emplace_back(value);

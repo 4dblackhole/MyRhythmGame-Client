@@ -33,7 +33,9 @@ std::unique_ptr<chart::IEditorDocument> TaikoEditorMode::OpenDocument(
 bool TaikoEditorMode::CancelInteraction() noexcept
 {
     const bool hadSelection = inspector_.Clear();
-    const bool hadInteraction = pending_.has_value() || popup_ >= 0 || hadSelection;
+    const bool hadInteraction = pending_.has_value() || popup_ >= 0 || hadSelection || selectionAnchor_.has_value();
+    selectionAnchor_.reset();
+    selecting_ = false;
     pending_.reset();
     popup_ = -1;
     return hadInteraction;
@@ -49,6 +51,8 @@ bool TaikoEditorMode::OpenToolMenu(v::Point point)
 
 void TaikoEditorMode::SelectTool(int value)
 {
+    selectionAnchor_.reset();
+    selecting_ = false;
     tool_ = value;
     if (const auto *selected = editor_tools::Find(value))
     {

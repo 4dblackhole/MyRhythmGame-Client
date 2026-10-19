@@ -36,6 +36,10 @@ namespace finger_drum::chart
         [[nodiscard]] Rational MeasureLength(std::int64_t measure) const;
         [[nodiscard]] Rational PositionToWholeNotes(MusicalPosition position) const;
         [[nodiscard]] MusicalPosition PositionAtWholeNotes(const Rational &beat) const;
+        // Exact musical displacement, independent of BPM/delay. Compile the
+        // resulting position through the tempo prefix index only for playback.
+        [[nodiscard]] MusicalPosition AddWholeNotes(MusicalPosition, const Rational &delta) const;
+        [[nodiscard]] Rational WholeNotesBetween(MusicalPosition begin, MusicalPosition end) const;
         [[nodiscard]] long double WholeNotesAtTime(rhythm::RhythmTime time) const noexcept;
         [[nodiscard]] rhythm::RhythmTime TimeAtWholeNotes(long double beat) const;
         [[nodiscard]] double BaseBpm() const noexcept

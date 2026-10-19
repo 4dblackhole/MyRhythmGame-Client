@@ -24,7 +24,8 @@ Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 
 
 - 저장소의 `bin/x64/Debug` 또는 `bin/x64/Release`에서 실행: `Client/Assets`
 - 다른 폴더로 EXE를 복사해 실행: `<EXE 폴더>/Asset`
-- 곡: `<자산 루트>/Songs`, 사용자 스킨: `<자산 루트>/Skins`
+- 곡 기본값: `<자산 루트>/Songs`, 옵션 패널/Option.ini의 General/SongsPath로 변경 가능.
+  빈 값은 기존 자동 기본 경로이고, 상대경로는 EXE 폴더 기준입니다. 사용자 스킨은 `<자산 루트>/Skins`입니다.
 - 편집 가능한 UTF-8 UI 문구: `<자산 루트>/Languages/{ko,en}.ini`
 - `Option.ini`: 자산 루트와 별개로 항상 EXE 옆
 
@@ -73,6 +74,7 @@ demo/
     Languages/ko.ini
     Songs/Music/             음원과 YMM
     Songs/Patterns/           곡/난이도별 YMP·YME 쌍
+    Songs/BG/                 YMP가 참조하는 공유 배경 이미지
     Skins/                   사용자 스킨셋
   Prerequisites/VC_redist.x64.exe
   Licenses/                  배포 폰트 고지

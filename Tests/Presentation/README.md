@@ -28,6 +28,8 @@ Both gameplay and editor selection check one-shot launch from a difficulty click
 including a different difficulty and a second click on the selected difficulty.
 It also checks marquee Unicode preservation, shared repeated text payloads,
 pixel displacement and stopping after the label becomes wide enough.
+Options-button input closes an already open panel. Catalog refreshes queue only
+the latest Songs root, discard obsolete results and handle switching back mid-load.
 
 ## Gameplay judgement guide and overlays
 
@@ -46,6 +48,10 @@ and clamped markers, all seven overlays, MISS without invented input timing,
 POOR only on red-beam rejection, out-of-range/release/unjudged-tick suppression,
 200ms fade/retrigger/reset, inherited circle centre, resize, node/image reuse,
 and accepted-hit priority over a passive MISS.
+Timing markers retain the latest 32 hits in a fixed ring; up to eight evicted
+markers fade for 200ms. The test checks overflow, lifetime, resizing and node reuse.
+Key-overlay flashes share the Don/Kat red/blue palette. Background tests use real
+PNG metadata to verify aspect-preserving cover and 2D offsets at four viewports.
 It moves the shared ScrollGear parent and checks that every descendant moves together while
 the screen HUD stays fixed, and that the outer gear bottom remains on the centre line after resizing.
 It checks chronological note stacking across Separate speed changes and backward seeks, with notes
@@ -165,6 +171,11 @@ unchanged chart timing/revision and consecutive Z/X, last-tail/music-end destina
 missing/stale duration rejection, retry and manual-seek/direction reset behavior.
 Q cancels an unfinished placement and selects notes; inspector cycles stay within each of the six
 tool groups, retain paired endpoint IDs and reject cross-group drafts without modifying the chart.
+Selection tests cover real Taiko drag ranges, empty margins, note overwrite with/without
+blanks, grouped Undo/Redo restoring overwritten originals, Ctrl/Shift timing/effect
+row selection and metadata history. Realtime wheel navigation follows the beat grid
+without changing chart revision. Domain tests additionally cover the 32-action cap,
+saved-state dirty tracking, failed edits retaining redo and paired long-note restoration.
 Additional checks cover preview failure retry suppression, selection recovery, owned voice cleanup,
 and eight consecutive cancelled analysis jobs followed by successful real audio analysis.
 Drawing assertions do not initialize a GPU;
@@ -193,6 +204,8 @@ immediate close before the first animation step, stale selection rejection and r
 invalid values, all three audio ComboBoxes, sparse driver indices, output-scoped lists,
 failed switches and rollback after a read-only INI blocks saving. Test files are isolated
 in a unique temporary directory; the user's Option.ini and skins are not changed.
+Songs settings cover UTF-8 paths, persistence, the default root and EXE-relative resolution.
+The native folder-selection dialog still requires manual input validation.
 The ASIO transition/failure cases use a test backend. A separate actual FMOD check
 switches Automatic to WASAPI and selects the current driver while retaining a loaded
 sample. It does not play sound or replace manual mouse/listening/real ASIO-device checks.
@@ -249,7 +262,9 @@ After a solution build, run from an x64 Visual Studio developer PowerShell:
 This links the actual asset library and OptionSettings object. The same binary is
 copied to isolated development/deployment directory trees and launched with CWD
 pointing to the opposite tree. It checks external Songs/default-skin paths and
-that Option.ini stays beside the EXE. Fixtures stay under ignored build output;
+that Option.ini stays beside the EXE. A saved Songs override remains EXE-relative
+even when CWD points to the other tree, and an empty override restores default discovery.
+Fixtures stay under ignored build output;
 no user settings, songs, skins or embedded cache are changed. The test source
 uses MSVC Code Analysis. Catalog tests separately check the AngelDream YMP/YME pairs.
 

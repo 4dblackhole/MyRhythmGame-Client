@@ -35,6 +35,10 @@ Convert .osu는 Client의 EditorOsuImport가 EXE를 백그라운드에서 실행
 - `Core/Submodules/OutputWriting`: BPM·속도 반올림과 소수점 셋째 자리까지의 파일 출력.
 - `Core/Converter`: 노트/효과 대응, 기존 파서 저장 왕복과 실제 Taiko 세션 검증.
 - `Core/ConversionFiles`: 음원 복사, 상대 경로, 임시 출력 후 디렉터리 확정.
+- 배경 이미지는 선택한 Songs 루트의 `BG/<로마자 Artist - Title>/<원본 파일명>`에 복사합니다.
+  YMP의 `BG:`는 BG 기준 상대경로이며 `offset:`은 osu!의 `(x, y)`를
+  1280×720/엔진 2D 좌표의 `(1.5*x, -1.5*y)`로 변환합니다. 같은 대상의 바이트가
+  같으면 재사용하고 다르면 기존 파일을 보존한 채 충돌 오류를 반환합니다.
 - `App/Main`: UTF-16 Windows 인자, UTF-8 JSON stdout, stderr/종료 코드.
 
 ## 실행 계약
@@ -129,7 +133,13 @@ YMP는 최종 YMM을 Songs 기준으로, YME는 같은 난이도 폴더 기준�
 
 ## 제한과 검증
 
-커스텀 샘플 뱅크/파일·노트별 샘플 override, 배경·영상·스토리보드·break는 내보내지
+2026-10-19 BG 가져오기: 변환기 `main`의 `a74aec6b7895e88823dae7098e9c4cf6cefe2661`에서
+패키지/라이브러리 출력 모두 Songs/BG 복사와 YMP BG/offset을 지원합니다.
+Debug/Release 빌드·회귀·CLI·MSVC Code Analysis를 통과했습니다. Omoiyoshino 861개와
+PANDORA 1,233개 노트, 이미지 원본 바이트 일치, 재사용/충돌/실패 후 정리를 확인했습니다.
+Omoiyoshino의 osu! `(0, 50)`은 `offset: 0, -75`입니다. 실제 화면·청취는 수동 확인하지 않았습니다.
+
+커스텀 샘플 뱅크/파일·노트별 샘플 override, 영상·스토리보드·break는 내보내지
 않으며 JSON 경고로 알립니다. 기본 Client 스킨 히트사운드를 사용합니다.
 판정·점수·틱 끝점·롱노트 입력 동작은 [Client 판정 규칙](Gameplay/Rules.md)이 설명을 소유합니다.
 변환기의 README와 JSON 안내도 Client `main`의 같은 문서를 링크하며 세부 플레이 규칙을

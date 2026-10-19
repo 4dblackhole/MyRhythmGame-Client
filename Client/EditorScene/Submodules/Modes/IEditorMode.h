@@ -49,6 +49,14 @@ class IEditorMode : public IEditorAudioSource
     virtual void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) = 0;
     virtual void EditScore(IEditorContext &, mrg::visual2d::Point, bool erase) = 0;
     virtual void ScrollScore(IEditorContext &, int direction) = 0;
+    virtual bool BeginScoreSelection(IEditorContext &, mrg::visual2d::Point)
+    {
+        return false;
+    }
+    virtual bool UpdateScoreSelection(IEditorContext &, mrg::visual2d::Point, bool)
+    {
+        return false;
+    }
     virtual void DrawMetadata(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) = 0;
     virtual std::vector<EditorSoundChoice> SoundChoices(const finger_drum::texts::TextCatalog &) const = 0;
     virtual std::wstring_view SoundEffectHelp(const finger_drum::texts::TextCatalog &) const = 0;

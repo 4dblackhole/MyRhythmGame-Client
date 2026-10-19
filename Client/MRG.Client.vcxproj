@@ -298,4 +298,9 @@
     <ClInclude Include="GameScene\MusicSelectScene\Submodules\NewDifficultyDialog.h" />
     <ClCompile Include="GameScene\MusicSelectScene\Submodules\NewDifficultyDialog.cpp" />
   </ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\EditorSelection.cpp" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\EditorClipboard.cpp" /></ItemGroup>
+  <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorSelection.cpp" /></ItemGroup>
+  <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorLayout.h" /></ItemGroup>
+  <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsSongs.cpp" /></ItemGroup>
 </Project>

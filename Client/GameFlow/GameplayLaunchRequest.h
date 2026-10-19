@@ -25,6 +25,9 @@ namespace finger_drum
         std::int32_t globalOffsetMs{};
         std::map<std::string, std::vector<std::uint16_t>> inputKeys;
         std::wstring songArtist;
+        std::filesystem::path songsRoot;
+        std::filesystem::path backgroundPath;
+        double backgroundOffsetX{}, backgroundOffsetY{};
 
         [[nodiscard]] bool IsValid() const noexcept
         {
@@ -42,6 +45,9 @@ namespace finger_drum
             globalOffsetMs = 0;
             inputKeys.clear();
             songArtist.clear();
+            songsRoot.clear();
+            backgroundPath.clear();
+            backgroundOffsetX = backgroundOffsetY = 0;
         }
     };
 } // namespace finger_drum

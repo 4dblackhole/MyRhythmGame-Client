@@ -181,6 +181,24 @@ void EditorView::DrawNavigation()
 void EditorView::DrawFooter()
 {
     const auto &text = Texts();
+    if (state_.Tab() != EditorTab::Audio)
+    {
+        Button(
+            {132, 1000, 180, 26}, std::wstring(texts_.Get("Editor.undo")), [this] { state_.Undo(); },
+            state_.Document().CanUndo());
+        Button(
+            {320, 1000, 180, 26}, std::wstring(texts_.Get("Editor.redo")), [this] { state_.Redo(); },
+            state_.Document().CanRedo());
+        if (state_.Tab() != EditorTab::Metadata)
+        {
+            Button({508, 1000, 180, 26}, std::wstring(texts_.Get("Editor.copy")), [this] { state_.CopySelection(); });
+            Button({696, 1000, 210, 26}, std::wstring(texts_.Get("Editor.paste")),
+                   [this] { state_.PasteSelection(false); });
+            Button({914, 1000, 350, 26}, std::wstring(texts_.Get("Editor.pasteWithBlanks")),
+                   [this] { state_.PasteSelection(true); });
+            Text({1280, 1000, 600, 26}, std::wstring(texts_.Get("Editor.selectionHelp")), 14);
+        }
+    }
     Button(
         {1740, 1035, 150, 36}, std::wstring(state_.Document().Dirty() ? text.saveDirty : text.save),
         [this] { state_.Save(); }, true);

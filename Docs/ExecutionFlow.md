@@ -77,6 +77,9 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
   스킨 변경은 폴더 이름을 저장하고 이후 자산 로드에 적용합니다.
   공통 패널의 오디오 ComboBox 3개는 미들웨어(FMOD만 설치)·출력 방식·드라이버입니다.
   출력 방식/드라이버는 기존 오디오 객체를 유지하면서 즉시 적용하고 Option.ini에 저장합니다.
+  같은 옵션 버튼이나 ESC로 닫습니다. Songs 폴더 변경은 OptionSettings가 저장하고,
+  활성 곡 선택 Scene은 루트 변경을 감지해 미리듣기를 정지하고 카탈로그를 다시 요청합니다.
+  카탈로그 worker는 가장 최근 루트만 대기시키며 이전 결과를 화면에 게시하지 않습니다.
 - Logo에서 Editor를 누르면 기록 패널이 없는 EditorSongSelect로 이동합니다.
   이 Scene은 Lobby의 카탈로그·미리듣기·검색·정렬·곡/난이도 탐색을 공유하며,
   난이도를 확정하면 선택 경로를 기록하고 Editor Scene으로 이동합니다.
@@ -107,6 +110,8 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
   플레이/에디터 생성자는 store의 Snapshot을 복사하므로 활성 세션의 경로는
   다른 화면의 선택 변경으로 바뀌지 않습니다. 각 Scene의 Submodules 아래 Controller가
   논리/오디오를, View/Presenter가 Canvas/노드를 소유하고 Scene은 전환을 조립합니다.
+  Snapshot에는 선택 당시 Songs 루트와 해결한 BG 경로/2D 오프셋도 포함됩니다.
+  에디터 YMM 해석과 플레이 BG 로딩은 이 값을 사용하며 나중의 옵션 변경을 조회하지 않습니다.
 - Logo와 Lobby는 `KeepAlive`, gameplay route는 `DestroyOnExit`입니다.
   gameplay 등록 시에는 factory만 보관하고 곡 선택 후 `ChangeScene`이 호출될
   때 해당 모드의 객체를 동적으로 생성합니다.

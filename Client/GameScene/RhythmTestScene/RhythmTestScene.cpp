@@ -17,6 +17,8 @@ RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStor
       view_(std::make_unique<GameplayPresenter>(visuals, texts)),
       pauseMenu_(std::make_unique<GameplayPauseMenu>(visuals, texts))
 {
+    const auto launch = request->Snapshot();
+    view_->ConfigureBackground(launch.backgroundPath, launch.backgroundOffsetX, launch.backgroundOffsetY);
 }
 RhythmTestScene::~RhythmTestScene() = default;
 void RhythmTestScene::Initialize(const mrg::EngineServices &services)
