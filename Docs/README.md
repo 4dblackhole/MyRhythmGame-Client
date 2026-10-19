@@ -8,6 +8,7 @@
 | 수정/추가할 기능 | 먼저 읽을 문서 | 코드 진입점 |
 | --- | --- | --- |
 | 노트 판정·정확도·타이머 | [판정 규칙](Gameplay/Rules.md) | `FingerDrum.Rhythm/Note`, `Judgement`, `Time` |
+| 공통 PCM·MP3 패딩·재생/파형 시간축 | [오디오](Gameplay/Audio.md), [에디터 분석](ChartEditor.md) | 엔진 Audio/Decode; EditorAnalysisController의 reader 주입 |
 | Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `FingerDrum.Modes/Taiko` |
 | YMM/YMP/YME 문법·히트사운드 볼륨·보간·Whole/Separate·영역 상태 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model`, `Automation` |
 | osu!taiko 외부 EXE 변환·격자 보정·omit 마디 | [OsuTaikoConverter](OsuTaikoConverter.md) | 형제 저장소 `../OsuTaikoConverter`, Client 프로젝트 참조 |

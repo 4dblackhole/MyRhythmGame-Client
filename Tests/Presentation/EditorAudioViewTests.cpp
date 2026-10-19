@@ -144,7 +144,7 @@ namespace
     }
 } // namespace
 
-int main()
+int main(int argc, char** argv)
 {
     try
     {
@@ -165,7 +165,16 @@ int main()
 
         const auto songs = chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
         Check(!songs.songs.empty() && !songs.songs.front().patterns.empty(), "Real catalog missing");
-        const auto &song = songs.songs.front();
+        auto songIt = songs.songs.begin();
+        if (argc > 1)
+        {
+            const std::u8string_view filter{reinterpret_cast<const char8_t*>(argv[1])};
+            songIt = std::ranges::find_if(songs.songs, [&](const auto& item) {
+                return item.metadataPath.generic_u8string().find(filter) != std::u8string::npos;
+            });
+            Check(songIt != songs.songs.end(), "Requested timing song is missing.");
+        }
+        const auto &song = *songIt;
         TestEditorPlaybackWithFmod(song.audioPath);
         const auto &selected = song.patterns.front();
         {
@@ -244,6 +253,24 @@ int main()
             state.UpdateAnalysis();
         }
         Check(!state.Analysis().Running() && state.Analysis().Data().errors.empty(), "Audio worker failed");
+        if (argc > 1)
+        {
+            const auto& music = state.Analysis().Data().sounds.at("Music");
+            const auto attack = std::ranges::find_if(music.frames, [](const auto& frame) {
+                return frame.peak > .0316227766F;
+            });
+            Check(attack != music.frames.end(), "Requested timing song has no measurable attack.");
+            const double onsetBucket = static_cast<double>(attack - music.frames.begin()) *
+                                       music.secondsPerFrame * 1000;
+            state.SeekFirstNote();
+            const double firstNote = state.TimeMilliseconds();
+            Check(firstNote >= onsetBucket && firstNote < onsetBucket + music.secondsPerFrame * 1000,
+                  "The first note must fall inside the editor waveform's first attack interval.");
+            std::cout << "Canonical editor timing: first_note_ms=" << firstNote
+                      << " waveform_attack_bucket_ms=" << onsetBucket
+                      << " spectrum_frame_ms=" << music.secondsPerFrame * 1000 << '\n';
+            state.Seek(0);
+        }
         const auto musicDuration = state.Analysis().MusicDurationSeconds();
         if (!musicDuration)
             throw std::runtime_error("Current music duration is unavailable after analysis.");

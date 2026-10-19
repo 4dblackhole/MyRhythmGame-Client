@@ -14,22 +14,8 @@
   <ItemGroup>
     <ClCompile Include="Audio\EditorAudioAnalysis.cpp" />
     <ClCompile Include="Audio\Submodules\AudioDecode.cpp" />
-    <ClCompile Include="Audio\Submodules\VorbisDecode.cpp">
-      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
-      <AdditionalOptions>/external:I&quot;$(ProjectDir)ThirdParty\stb&quot; %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\StbVorbis.cpp">
-      <EnablePREfast>false</EnablePREfast>
-      <!-- These analysis switches otherwise re-enable /analyze after /analyze-. -->
-      <PREfastProjectDirectory />
-      <PREfastRulesetDirectories />
-      <PREfastRulesetFile />
-      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
-      <AdditionalOptions>/external:I&quot;$(ProjectDir)ThirdParty\stb&quot; %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
     <ClInclude Include="Audio\EditorAudioAnalysis.h" />
     <ClInclude Include="Audio\Submodules\AudioDecode.h" />
-    <None Include="ThirdParty\stb\stb_vorbis.c" />
     <None Include="ThirdParty\stb\LICENSE" />
     <None Include="ThirdParty\stb\README.md" />
   </ItemGroup>

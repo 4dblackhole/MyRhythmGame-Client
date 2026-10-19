@@ -1735,3 +1735,51 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - 배경/스토리보드/커스텀 샘플은 경고와 함께 생략하며 Client 스킨을 사용합니다.
   실제 화면·물리 입력·청음은 수동 검증하지 않았습니다. CLI/포맷 통합이며
   Client의 가져오기 UI나 프로세스 실행 Controller를 추가한 작업은 아닙니다.
+
+## 2026-10-20 공통 PCM·Omoiyoshino 시간축
+
+- 엔진 `9077d5c4f0c585f6626b9dbebf37f644e75dc93b`의 Audio/Decode는 장치와 독립적인
+  PCM reader를 소유합니다. MP3는 dr_mp3의 Info/LAME 패딩 처리를 사용하고, 기존
+  Vorbis/Windows 코덱도 같은 경로에서 읽습니다. FmodPcmClip은 비동기 PCM 준비와
+  raw-memory source 수명을 소유하며 기존 Voice/DSP/버스/탐색 계약을 재사용합니다.
+- Client EditorAnalysisController는 이 reader를 주입합니다. FingerDrum.Editor는
+  rolling PCM과 FFT만 소유하여 엔진 의존성을 추가하지 않았습니다. 중복된 Client
+  Vorbis 구현은 엔진으로 이동했고 고수준 reader의 취소/오류를 기존 worker가 전달합니다.
+- 실제 개발용 `Client/Assets/Songs/Patterns/Omoiyoshino/Inner Oni/Omoiyoshino [Inner Oni].ymp`
+  의 Pattern Offset만 사용자 요청에 따라 **787 → 752ms**로 변경했습니다. 이 사용자
+  곡은 ignored 데이터이며 Git에는 음악/채보를 추가하지 않습니다. 원본 MP3 SHA-256은
+  `df8b99a4b7ba786a9880f69f8fc88d45c259b134acceb33cfd7d47522863ffd6`로 동일합니다.
+- 엔진 Debug/Release x64 solution Rebuild와 기본 SDK 회귀가 통과했습니다.
+  공개 SDK `--audio-pcm` 회귀는 자체 생성한 LAME tone의 정확한 44100프레임,
+  의도된 250ms 무음, 취소, 재생/분석 길이 일치와 반복 탐색을 확인했습니다.
+  실제 Omoiyoshino도 두 구성에서 44100Hz/2ch/6080256프레임, 첫 -30dBFS 표본
+  **752.222ms**로 일치하며 async loading/seek/restart/end bounds를 통과했습니다.
+- Client Debug/Release x64 전체 solution Rebuild, 구성별 로직/카탈로그 **63개 실패 0**,
+  smoke-test/lobby/gameplay/editor 네 경로씩 exit 0입니다.
+- MSVC 14.44/v143/C++20의 실제 프로젝트 include/define/configuration으로 분석했습니다.
+  MRG.Audio는 구성별 소유 TU **11개**, Client는 구성별 MRG.Client **89개**,
+  FingerDrum.Editor **2개**, Rhythm.Tests **17개**의 /analyze 명령을 CL tlog로 확인했습니다.
+  소유한 변경 코드의 컴파일/분석 진단과 파싱 오류는 없습니다. 외부 codec 구현은
+  외부 header 경고 정책과 vendor-only 분석 제외를 적용합니다.
+- 초기에 전체 엔진 SDK를 분석했을 때 수정하지 않은 ScreenVisual2DManager의 C26478,
+  Visual2DSurface의 C26498/C6011, CollisionTests의 C26800와 WindowControlTests의
+  C6011이 보고됐습니다. 범위 밖 코드는 수정/억제하지 않았습니다. Release의 초기
+  SDK 링크 LNK1318은 해당 solution의 직렬 전체 Rebuild로 해소됐습니다.
+- `RunEditorPresentationTests.ps1 -configuration <Debug|Release> -SongFilter Omoiyoshino`
+  는 실제 편집 문서/analysis worker/EditorView draw packets를 사용하여 첫 노트
+  **752ms**, 첫 파형 구간 **750~760ms**와 spectrum/selection/transport/반복 seek를 확인했습니다.
+  FFT는 원본 시간에 중심을 둔 2048샘플 창, 표시는 10ms 간격이므로 44.1kHz에서
+  어택 주변 약 ±23ms에 에너지가 퍼질 수 있습니다. 이는 추가 시간 보정이 아닙니다.
+- `RunAllNotesGameplayTests.ps1 -Configuration <Debug|Release> -FmodRoot <SDK> -SongFilter Omoiyoshino`
+  는 실제 D3D12/출력 장치(FMOD output=1, NoSound fallback 금지)/타이머/노트/오디오 라우터로
+  시작 구간을 재생했습니다. 첫 노트 **752ms**와 PCM 어택 **752.222ms**의 차이가 1ms
+  미만이고 각 **360프레임**의 렌더링·입력 판정·히트사운드 재생을 통과했습니다.
+  같은 실행 파일의 기본 전체 노트 회귀도 두 구성에서 완료했습니다.
+  기존 테스트가 사용하던 폐기된 Ready 호출은 현재 PrepareResources 계약으로 수정했습니다.
+- 위 결과는 자동 데이터/렌더링/재생 검증입니다. 실제 게임 창의 실행/응답을 확인했으나
+  Windows computer-use capture가 `FrameArrived timed out` 및 `window capture timed out`으로
+  실패하여 **실제 화면을 눈으로 확인하거나 청취/물리 입력 보정은 검증하지 못했습니다**.
+- CheckArchitecture(11개 프로젝트)와 git diff --check를 통과했습니다. 사용자가 수정한
+  LaneKeyBeam.cpp, Option.ini와 원본 음원은 변경하지 않았습니다. 원시 로그와 분석 설정은
+  ignored `build/pcm-audio-20261020/`에 있습니다. 재생은 현재 곡의 전체 float PCM을
+  메모리에 준비하므로 기존 압축 스트리밍보다 메모리를 더 사용합니다.

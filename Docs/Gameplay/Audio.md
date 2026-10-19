@@ -6,7 +6,11 @@
 
 파일 등록은 라우터의 `RegisterSound`가 SoundId와 경로를 연결하고
 `AudioSystem::LoadSound`로 Clip을 로드합니다. 플레이 음악은 StreamAsyncAccurate, 히트사운드는
-SampleAsync 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 같은 Sample을 가리키는
+SampleAsync 방식이며 전역 파일 자동 검색이나 캐시는 없습니다. 압축 파일의 디코딩은
+엔진의 공통 DecodeAudioPcm이 맡고 FMOD는 준비한 원본 sample rate의 float PCM을 재생합니다.
+MP3의 Info/LAME 패딩은 여기서 한 번 제거하며 파형 분석도 같은 함수를 사용합니다.
+Stream 계열도 현재 음원 전체 PCM을 메모리에 준비하므로 파일 크기보다 메모리 사용량이 큽니다.
+음악/히트사운드의 0ms는 이 유효 PCM의 샘플 0이며 의도된 무음은 보존합니다. 같은 Sample을 가리키는
 SoundId 별칭은 하나의 활성 Voice를 공유합니다. 이전 재생이 끝나기 전에 같은
 Sample을 다시 요청하면 새 Channel을 만들지 않고 기존 Channel의 위치를 처음으로
 되돌려 재생하며, 끝난 뒤 요청한 경우에만 새 Voice를 만듭니다. 재생 관리자는 재생 중

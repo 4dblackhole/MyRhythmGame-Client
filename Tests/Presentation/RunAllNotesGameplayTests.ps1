@@ -1,6 +1,7 @@
 param(
     [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug',
     [string]$FmodRoot = $env:FMOD_ROOT,
+    [string]$SongFilter = '',
     [switch]$Effects
 )
 $ErrorActionPreference = 'Stop'
@@ -16,5 +17,6 @@ $objectDirectory = "build/obj/AllNotesGameplayTests/$Configuration"
 New-Item -ItemType Directory -Path $objectDirectory -Force | Out-Null
 & cl /nologo /utf-8 /std:c++20 /EHsc /W4 /analyze @runtime /DNOMINMAX /IClient /IFingerDrum.Rhythm /IFingerDrum.Chart /IFingerDrum.Modes /IFingerDrum.Editor /IFingerDrum.Assets/Public /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/AllNotesGameplayTests.cpp @objects @libraries "Dependencies/MRG-Engine/bin/x64/$Configuration/MRG.Core.lib" "/Fo$objectDirectory/" "/Febin/x64/$Configuration/AllNotesGameplayTests.exe" /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$FmodRoot/api/core/lib/x64" "build/obj/FingerDrum.Assets/x64/$Configuration/FingerDrum.Assets.res" user32.lib gdi32.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib
 if ($LASTEXITCODE -ne 0) { throw 'All-notes gameplay test build failed.' }
-& "./bin/x64/$Configuration/AllNotesGameplayTests.exe"
+if ($SongFilter) { & "./bin/x64/$Configuration/AllNotesGameplayTests.exe" $SongFilter }
+else { & "./bin/x64/$Configuration/AllNotesGameplayTests.exe" }
 if ($LASTEXITCODE -ne 0) { throw 'All-notes gameplay test failed.' }

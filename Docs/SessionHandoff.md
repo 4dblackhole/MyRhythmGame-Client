@@ -9,6 +9,14 @@
 
 ## 작업 위치와 경계
 
+공통 PCM(2026-10-20): [플레이 오디오](Gameplay/Audio.md), [에디터 분석](ChartEditor.md).
+재생/분석이 엔진 DecodeAudioPcm의 같은 시간축을 사용합니다. MP3는 dr_mp3로 Info/LAME
+패딩을 제거하고 Vorbis/Windows 코덱은 기존 경로를 공유합니다. FingerDrum.Editor는
+호스트가 주입한 PCM reader로 FFT만 수행하며 엔진 의존성이 없습니다. FMOD 출력/버스/DSP는
+유지합니다. Stream도 전체 float PCM을 준비하므로 메모리 비용과 취소/수명 계약은 엔진 문서를
+참고합니다. 개발용 Omoiyoshino YMP의 Pattern Offset은 사용자 요청으로 752ms입니다.
+
+
 Songs/BG·편집 이력(2026-10-19~20): [경로/배경](BuiltInAssets.md), [에디터 조작](ChartEditor.md).
 옵션의 Songs 폴더는 Option.ini의 General/SongsPath에 저장합니다. 빈 값은 기존 개발/배포
 자동 경로, 상대경로는 EXE 폴더 기준입니다. 곡 선택은 변경 즉시 최신 루트로 갱신하며,

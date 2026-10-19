@@ -31,8 +31,8 @@ namespace
     class ReplayGame final : public mrg::IGameClient
     {
       public:
-        ReplayGame(bool &verified, std::size_t &frames, bool effects)
-            : presenter_(visuals_, texts_), audio_(playback_), verified_(verified), frames_(frames), effects_(effects)
+        ReplayGame(bool &verified, std::size_t &frames, bool effects, std::string songFilter)
+            : presenter_(visuals_, texts_), audio_(playback_), verified_(verified), frames_(frames), effects_(effects), songFilter_(std::move(songFilter))
         {
         }
 
@@ -55,11 +55,13 @@ namespace
             const auto catalog = chart::SongCatalog{}.Load(root);
             const chart::SongCatalogEntry *song = nullptr;
             for (const auto &entry : catalog.songs)
-                if (entry.metadataPath.filename() == "angel dream hand shaking.ymm")
+                if ((!songFilter_.empty() && entry.metadataPath.generic_u8string().find(
+                        std::u8string_view{reinterpret_cast<const char8_t*>(songFilter_.c_str())}) != std::u8string::npos) ||
+                    (songFilter_.empty() && entry.metadataPath.filename() == "angel dream hand shaking.ymm"))
                     song = &entry;
             if (!song)
-                throw std::runtime_error("Actual engine replay requires AngelDream music.");
-            auto loaded = mode::TaikoMode{}.LoadSession(root / (effects_
+                throw std::runtime_error("Actual engine replay requires the selected catalog song.");
+            auto loaded = mode::TaikoMode{}.LoadSession(!songFilter_.empty() ? song->patterns.front().patternPath : root / (effects_
                 ? "Patterns/angeldream/YME Effects Verification/angeldream [effects test].ymp"
                 : "Patterns/angeldream/All Notes Verification/angeldream [all notes test].ymp"));
             Require(loaded.Succeeded(), "All-notes gameplay chart must load.");
@@ -67,7 +69,25 @@ namespace
             Require(!effects_ || session_->Gear().Lanes().front()->Notes().size() == 15,
                     "Effects replay must load the effect fixture, not the all-notes fixture.");
             std::cout << (effects_ ? "Replay fixture: YME effects\n" : "Replay fixture: all notes\n");
-            replay_ = std::make_unique<tests::AllNotesReplay>(*session_, !effects_);
+            replay_ = std::make_unique<tests::AllNotesReplay>(*session_, !effects_ && songFilter_.empty());
+            if (!songFilter_.empty())
+            {
+                std::uint64_t sourceFrames{}, attack = UINT64_MAX;
+                std::uint32_t sourceRate{};
+                mrg::audio::DecodeAudioPcm(song->audioPath, {}, [&](auto channels, auto rate, auto samples) {
+                    sourceRate = rate;
+                    for (std::size_t i = 0; i < samples.size(); ++i)
+                        if (attack == UINT64_MAX && std::abs(samples[i]) > .0316227766F)
+                            attack = sourceFrames + i / channels;
+                    sourceFrames += samples.size() / channels;
+                });
+                const auto note = session_->Gear().Lanes().front()->Notes().front()->Timing();
+                const double attackMs = static_cast<double>(attack) * 1000 / sourceRate;
+                Require(std::abs(note.count() / 1000.0 - attackMs) < 1,
+                        "Actual gameplay note timing must match the normalized PCM attack within 1 ms.");
+                std::cout << "Canonical gameplay timing: first_note_ms=" << note.count() / 1000.0
+                          << " pcm_attack_ms=" << attackMs << '\n';
+            }
             const auto imageDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
             while (!presenter_.PrepareAssets(services) && std::chrono::steady_clock::now() < imageDeadline)
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
@@ -78,12 +98,15 @@ namespace
             presenter_.SetVisible(true);
             RegisterAudio(services.audio, song->audioPath);
             const auto readyDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
-            while (!audio_.Ready() && std::chrono::steady_clock::now() < readyDeadline)
+            auto preparation = audio_.PrepareResources();
+            while (preparation == mrg::audio::AudioPreparationState::Loading &&
+                   std::chrono::steady_clock::now() < readyDeadline)
             {
                 services.audio.Update();
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
+                preparation = audio_.PrepareResources();
             }
-            Require(audio_.Ready() && audio_.LastError().empty(),
+            Require(preparation == mrg::audio::AudioPreparationState::Ready && audio_.LastError().empty(),
                     "Async gameplay resources must become ready before clock anchoring.");
             const auto initial = presenter_.InitialTimelineTime();
             const auto clock = services.audio.CaptureClockSnapshot();
@@ -102,6 +125,7 @@ namespace
             presenter_.AdvanceEffects(context.deltaSeconds);
             const bool keyPressed = std::ranges::any_of(result.events,
                 [](const rhythm::NoteEvent &event) { return event.inputAction.has_value(); });
+            sawInput_ = sawInput_ || keyPressed;
             presenter_.ApplyFeedback({.keyPressed = keyPressed, .result = result});
             presenter_.UpdatePresentation(time);
             const auto *progressSprite = ProgressFill(visuals_.FindCanvas(1)->Root())
@@ -117,6 +141,12 @@ namespace
             playback_.Update();
             Require(audio_.LastError().empty(), "Real hit/tick/pop playback must have no audio error.");
             Require(context.totalSeconds < 40, "Actual gameplay replay must finish within 40 seconds.");
+            if (!songFilter_.empty() && time >= rhythm::RhythmTime{4'000'000})
+            {
+                Require(sawInput_ && sawPartialProgress_, "The selected song must render, judge and play its opening notes.");
+                verified_ = true;
+                return false;
+            }
             if (time >= replay_->End())
             {
                 replay_->Verify(*session_);
@@ -203,10 +233,12 @@ namespace
         std::size_t &frames_;
         bool effects_{};
         bool sawPartialProgress_{};
+        bool sawInput_{};
+        std::string songFilter_;
     };
 } // namespace
 
-int main()
+int main(int argc, char** argv)
 {
     try
     {
@@ -219,7 +251,7 @@ int main()
 #else
         constexpr bool effects = false;
 #endif
-        const int exitCode = mrg::Run(std::make_unique<ReplayGame>(verified, frames, effects));
+        const int exitCode = mrg::Run(std::make_unique<ReplayGame>(verified, frames, effects, argc > 1 ? argv[1] : ""));
         Require(exitCode == 0 && verified && frames > 100,
                 "Actual engine must render and complete the entire gameplay replay.");
         std::cout << "D3D12/FMOD gameplay replay passed: " << frames << " rendered frames.\n";

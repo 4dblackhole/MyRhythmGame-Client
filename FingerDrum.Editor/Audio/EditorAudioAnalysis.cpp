@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <numbers>
+#include <stdexcept>
 
 namespace finger_drum::editor
 {
@@ -90,7 +91,7 @@ namespace finger_drum::editor
         }
     } // namespace
 
-    AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, const std::stop_token stop)
+    AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, const std::stop_token stop, const PcmReader &read)
     {
         if (stop.stop_requested())
             return {};
@@ -146,9 +147,20 @@ namespace finger_drum::editor
                 audio.firstFrame = keepFrom;
             }
         };
-        auto audio = detail::DecodeAudio(path, stop, [&](DecodedAudio &decoded) { consume(decoded, false); });
+        DecodedAudio audio;
+        read(path, stop, [&](std::uint32_t channels, std::uint32_t rate, std::span<const float> samples)
+        {
+            if (channels == 0 || rate == 0 ||
+                (audio.rate != 0 && (audio.channels != channels || audio.rate != rate)))
+                throw std::runtime_error("Analysis source returned an invalid or changing PCM format.");
+            audio.channels = channels;
+            audio.rate = rate;
+            detail::AppendPcm(audio, samples, [&](DecodedAudio &decoded) { consume(decoded, false); });
+        });
         if (stop.stop_requested())
             return {};
+        if (audio.rate == 0)
+            throw std::runtime_error("Analysis source returned no PCM format.");
         consume(audio, true);
         result.durationSeconds = static_cast<double>(audio.totalFrames) / audio.rate;
         return result;

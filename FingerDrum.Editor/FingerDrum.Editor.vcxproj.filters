@@ -8,9 +8,7 @@
     <ClCompile Include="Audio\EditorAudioAnalysis.cpp"><Filter>Audio</Filter></ClCompile>
     <ClInclude Include="Audio\EditorAudioAnalysis.h"><Filter>Audio</Filter></ClInclude>
     <ClCompile Include="Audio\Submodules\AudioDecode.cpp"><Filter>Audio\Submodules</Filter></ClCompile>
-    <ClCompile Include="Audio\Submodules\VorbisDecode.cpp"><Filter>Audio\Submodules</Filter></ClCompile>
     <ClInclude Include="Audio\Submodules\AudioDecode.h"><Filter>Audio\Submodules</Filter></ClInclude>
-    <ClCompile Include="ThirdParty\StbVorbis.cpp"><Filter>ThirdParty</Filter></ClCompile>
     <None Include="ThirdParty\stb\stb_vorbis.c"><Filter>ThirdParty\stb</Filter></None>
     <None Include="ThirdParty\stb\LICENSE"><Filter>ThirdParty\stb</Filter></None>
     <None Include="ThirdParty\stb\README.md"><Filter>ThirdParty\stb</Filter></None>

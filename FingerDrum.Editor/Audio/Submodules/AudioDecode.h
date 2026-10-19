@@ -20,6 +20,4 @@ namespace finger_drum::editor::detail
     // The analyzer consumes completed windows and removes old samples from this
     // rolling buffer. Decoders only append interleaved frames and advance its total.
     void AppendPcm(DecodedAudio &audio, std::span<const float> samples, const PcmConsumer &consume);
-    DecodedAudio DecodeAudio(const std::filesystem::path &path, std::stop_token stop, const PcmConsumer &consume);
-    DecodedAudio DecodeVorbis(const std::filesystem::path &path, std::stop_token stop, const PcmConsumer &consume);
 } // namespace finger_drum::editor::detail

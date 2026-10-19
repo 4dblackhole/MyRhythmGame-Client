@@ -1,4 +1,5 @@
 #include "EditorAnalysisController.h"
+#include "MRG_Core.h"
 #include <atomic>
 #include <condition_variable>
 #include <deque>
@@ -85,7 +86,7 @@ namespace
                 return;
             try
             {
-                result->sounds.emplace(id, finger_drum::editor::AnalyzeAudio(path, stop));
+                result->sounds.emplace(id, finger_drum::editor::AnalyzeAudio(path, stop, mrg::audio::DecodeAudioPcm));
             }
             catch (const std::exception &error)
             {

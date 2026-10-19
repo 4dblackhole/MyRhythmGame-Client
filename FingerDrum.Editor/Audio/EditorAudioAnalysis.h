@@ -2,6 +2,9 @@
 #include <array>
 #include <cstddef>
 #include <filesystem>
+#include <cstdint>
+#include <functional>
+#include <span>
 #include <stop_token>
 #include <vector>
 
@@ -23,6 +26,9 @@ namespace finger_drum::editor
         double minimumFrequencyHz{20}, maximumFrequencyHz{};
         std::vector<SpectrumFrame> frames;
     };
-    // Decode and FFT on a worker; no renderer, game clock or FMOD ownership.
-    AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, std::stop_token stop);
+    using PcmConsumer = std::function<void(std::uint32_t channels, std::uint32_t sampleRate,
+                                           std::span<const float> samples)>;
+    using PcmReader = std::function<void(const std::filesystem::path&, std::stop_token, const PcmConsumer&)>;
+    // Source decoding is supplied by the host; this domain owns only PCM/FFT.
+    AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, std::stop_token stop, const PcmReader &read);
 } // namespace finger_drum::editor

@@ -322,3 +322,21 @@ not physical mouse/keyboard validation. The real user Songs, Skins and Option.in
 MusicSelectViewTests additionally checks Editor-only plus buttons and their creation intent.
 EditorMetronomeTests checks cached grid generation, tempo/meter/offset/delay changes and
 separation of playback clicks from the original hit-sound analysis markers.
+
+## Canonical PCM timing check for an existing song
+
+After building both configurations, the editor and actual gameplay regression runners
+accept `-SongFilter <substring of the catalog metadata path>`. This is a test-only
+selection, not a game command-line option. Use a chart whose first note was authored
+at the first audible attack; this path checks that timing without saving the document.
+
+```powershell
+./Tests/Presentation/RunEditorPresentationTests.ps1 -configuration Debug -SongFilter Omoiyoshino
+./Tests/Presentation/RunAllNotesGameplayTests.ps1 -Configuration Debug -FmodRoot <SDK> -SongFilter Omoiyoshino
+```
+
+The editor checks that the first note belongs to the waveform attack's 10 ms bin and
+runs its normal spectrum geometry/transport tests. Gameplay compares the source PCM
+attack and compiled first-note time within 1 ms, then renders/judges/plays the opening
+four chart seconds through D3D12 and a real audio output. This mode does not replace
+the default full-note replay, screenshot review, listening, or physical input calibration.
