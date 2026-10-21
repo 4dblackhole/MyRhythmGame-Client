@@ -1,5 +1,4 @@
 #include "PlaySession.h"
-#include <set>
 #include <stdexcept>
 
 namespace finger_drum::mode
@@ -21,35 +20,29 @@ namespace finger_drum::mode
         ResetNoteState();
         if (resultCollector_)
             resultCollector_->ResetJudgements();
-        lastRecordedHeld_.clear();
-        std::set<rhythm::PhysicalKey> held;
+        lastRecordedHeldKeys_.clear();
         for (const auto &step : judgementHistory_)
         {
             rhythm::NoteProcessResult result;
             if (step.input)
             {
-                result = gear_.Lanes().front()->ProcessInput(*step.input);
-                if (step.input->edge == rhythm::InputEdge::Pressed)
-                    held.insert(step.input->physicalKey);
-                else
-                    held.erase(step.input->physicalKey);
+                result = gear_.Lanes().front()->ProcessInput(*step.input, heldActions_);
+                ApplyPhysicalInput(step.input->physicalKey, step.input->edge);
+                RefreshHeldActions();
             }
             else
             {
                 ResolveHeldActions(step.heldKeys);
                 result = gear_.Update(step.time, heldActions_);
-                held = std::set<rhythm::PhysicalKey>(step.heldKeys.begin(), step.heldKeys.end());
             }
             AccumulateAccuracy(result, step.input && step.input->edge == rhythm::InputEdge::Pressed);
         }
         // Catch up to the open left boundary without grading target-time notes.
         const auto before = target - rhythm::RhythmDuration{1};
-        const std::vector<rhythm::PhysicalKey> keys{held.begin(), held.end()};
-        ResolveHeldActions(keys);
-        lastRecordedHeld_ = heldActions_;
+        lastRecordedHeldKeys_ = heldPhysicalKeys_;
         auto result = gear_.Update(before, heldActions_);
         if (!result.events.empty() || !result.finalizedAccuracies.empty())
-            judgementHistory_.push_back({before, {}, keys});
+            judgementHistory_.push_back({before, {}, heldPhysicalKeys_});
         AccumulateAccuracy(result);
     }
     void PlaySession::RetireRemaining(rhythm::RhythmTime time)

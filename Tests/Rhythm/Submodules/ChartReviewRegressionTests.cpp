@@ -103,6 +103,62 @@ namespace finger_drum::tests
                 "YMP/YME aliasing must not overwrite the score.");
     }
 
+    void TestChartSavePathCollisions()
+    {
+        const std::array<std::pair<const wchar_t *, const wchar_t *>, 9> names{{
+            {L"score.ymp", L"score.ymp"},
+            {L"score.ymp", L"score.ymp.editor.tmp"},
+            {L"score.ymp", L"score.ymp.editor.bak"},
+            {L"score.ymp.editor.tmp", L"score.ymp"},
+            {L"score.ymp.editor.bak", L"score.ymp"},
+            {L"score.ymp", L"SCORE.YMP"},
+            {L"score.ymp", L"SCORE.YMP.EDITOR.TMP"},
+            {L"score.ymp", L"SCORE.YMP.EDITOR.BAK"},
+            {L"score.ymp", L"./score.ymp.editor.bak"}}};
+        const auto check = [](const chart::PatternDocument &pattern)
+        {
+            const auto original = ReadFile(pattern.sourcePath);
+            chart::ChartEditor editor(pattern);
+            editor.AddNote({0, {}}, 1);
+            const auto revision = editor.Revision();
+            bool refused = false;
+            try { editor.Save(); }
+            catch (const std::invalid_argument &) { refused = true; }
+            Require(refused && editor.Dirty() && editor.Revision() == revision &&
+                        ReadFile(pattern.sourcePath) == original && editor.Pattern().notes.size() == 1,
+                    "Save-path aliases must be rejected before changing files, dirty state or document.");
+            editor.Undo();
+            Require(editor.Pattern().notes.empty(), "A rejected save must preserve undo history.");
+            editor.Redo();
+            Require(editor.Pattern().notes.size() == 1, "A rejected save must preserve redo history.");
+        };
+        for (const auto &[source, effect] : names)
+        {
+            TemporaryDirectory folder("save-path-alias");
+            chart::PatternDocument pattern;
+            pattern.sourcePath = folder.Path() / source;
+            pattern.effectFile = effect;
+            WriteTextFile(pattern.sourcePath, "preserved source bytes");
+            check(pattern);
+            Require(std::distance(std::filesystem::directory_iterator(folder.Path()),
+                                  std::filesystem::directory_iterator{}) == 1,
+                    "Refusing a nonexistent alias must not create a YME or recovery file.");
+        }
+        for (const auto suffix : {L"", L".editor.tmp", L".editor.bak"})
+        {
+            TemporaryDirectory folder("save-hardlink-alias");
+            chart::PatternDocument pattern;
+            pattern.sourcePath = folder.Path() / L"score.ymp";
+            pattern.effectFile = "effects.yme";
+            WriteTextFile(pattern.sourcePath, "preserved hardlink bytes");
+            auto alias = folder.Path() / pattern.effectFile;
+            alias += suffix;
+            std::filesystem::create_hard_link(pattern.sourcePath, alias);
+            check(pattern);
+            Require(ReadFile(alias) == "preserved hardlink bytes", "Existing recovery aliases must be preserved.");
+        }
+    }
+
     void TestChartParserBoundaries()
     {
         chart::ChartParser parser;

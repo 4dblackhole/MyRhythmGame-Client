@@ -66,7 +66,8 @@ namespace finger_drum::rhythm
         currentIndex_ = 0;
     }
 
-    NoteProcessResult Lane::ProcessInput(const RhythmInputEvent& input)
+    NoteProcessResult Lane::ProcessInput(const RhythmInputEvent& input,
+                                         const std::span<const NoteAction> heldBeforeInput)
     {
         if (!finalized_)
         {
@@ -77,6 +78,17 @@ namespace finger_drum::rhythm
         NoteProcessResult result;
         AdvancePastTerminalNotes();
         INote* current = CurrentNote();
+        // Only retire notes whose entire acceptance window precedes this
+        // timestamp. Long-note ticks use the state before the incoming edge;
+        // never advance with the render/frame time or the post-edge snapshot.
+        while (current && input.time > current->ExpireTime())
+        {
+            result.Append(current->Update({input.time - RhythmDuration{1}, heldBeforeInput}));
+            if (current->State() != NoteState::Completed && current->State() != NoteState::Missed)
+                result.Append(current->MarkMissed(input.time));
+            AdvancePastTerminalNotes();
+            current = CurrentNote();
+        }
         if (current == nullptr)
         {
             return result;

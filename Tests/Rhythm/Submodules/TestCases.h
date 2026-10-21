@@ -21,6 +21,8 @@ namespace finger_drum::tests
     void TestJudgementScalingAndInterpolation();
     void TestRhythmTimerClockMapping();
     void TestLaneFocusRules();
+    void TestExpiredInputOrdering();
+    void TestAuthoritativeHeldInputs();
     void TestLargeNoteSoundState();
     void TestHoldTicksAreExactlyOnce();
     void TestLongNoteRemainsInScrollSnapshotUntilItsTail();
@@ -63,6 +65,7 @@ namespace finger_drum::tests
     void TestChartEditingAndSave();
     void TestChartEditorIndices();
     void TestChartSaveFailureRecovery();
+    void TestChartSavePathCollisions();
     void TestChartParserBoundaries();
     void TestChartPartialEdits();
     void TestEditorAudioAnalysis(const std::filesystem::path &songsRoot);

@@ -10,6 +10,8 @@
 [성능 수정 기록](Docs/Reviews/PerformanceFixes-2026-10-14.md)에 정리합니다.
 텍스트의 유지 배치·글리프 업로드·아틀라스 회수와 긴 제목 스크롤은
 [텍스트 개선 기록](Docs/Reviews/TextRenderingFixes-2026-10-14.md)에 정리합니다.
+판정 입력 순서·물리 키 유지·저장 경로와 엔진/변환기의 리뷰 8건 수정은
+[리뷰 수정 기록](Docs/Reviews/CodeReviewFixes-2026-10-22.md)에 정리합니다.
 
 ## 작업 시작
 

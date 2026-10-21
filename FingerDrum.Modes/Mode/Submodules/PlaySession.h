@@ -90,9 +90,11 @@ namespace finger_drum::mode
             std::vector<rhythm::PhysicalKey> heldKeys;
         };
         void ResetNoteState() noexcept;
+        void ApplyPhysicalInput(rhythm::PhysicalKey key, rhythm::InputEdge edge);
         void ResolveHeldActions(std::span<const rhythm::PhysicalKey> keys);
+        void RefreshHeldActions();
         std::vector<JudgementStep> judgementHistory_;
-        std::vector<rhythm::NoteAction> lastRecordedHeld_;
+        std::vector<rhythm::PhysicalKey> lastRecordedHeldKeys_;
         bool pauseMenuUsed_{};
         void AccumulateAccuracy(const rhythm::NoteProcessResult &result, bool keyPressed = false);
         void ResolveSoundOverrides(rhythm::NoteProcessResult &result) const;
@@ -105,6 +107,7 @@ namespace finger_drum::mode
         std::optional<chart::MusicalTimeline> timeline_;
         std::map<rhythm::PhysicalKey, rhythm::NoteAction> inputMapping_;
         std::vector<rhythm::NoteAction> heldActions_;
+        std::vector<rhythm::PhysicalKey> heldPhysicalKeys_;
         std::map<rhythm::NoteAction, rhythm::AudioCueRequest> freeInputCues_;
         std::map<rhythm::NoteId, NotePresentationInfo> notePresentation_;
         std::vector<chart::CompiledEffectCommand> effects_;

@@ -88,6 +88,8 @@ class GameplaySessionController final : public IPlaySessionController
     void ProcessDebugTimeline(const mrg::platform::InputState &input, const mrg::audio::AudioClockSnapshot &clock,
                               const double deltaSeconds);
     void ProcessRhythmInput(const mrg::platform::InputState &input, std::optional<std::int64_t> exitTicks);
+      void UpdateBeforeInput(const mrg::platform::InputState &input, std::size_t eventIndex,
+                             finger_drum::rhythm::RhythmTime time);
     void UpdateSession(const mrg::platform::InputState &input, const finger_drum::rhythm::RhythmTime time,
                        bool beforeExit = false);
     bool IsPatternComplete() const noexcept;

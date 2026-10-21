@@ -71,6 +71,58 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-22 엔진·변환기·클라이언트 리뷰 8건 수정
+
+- 변경 클래스의 책임·동작과 항목별 회귀는
+  [리뷰 수정 기록](Reviews/CodeReviewFixes-2026-10-22.md)을 참고합니다.
+  변경 코드와 직접 호출부의 판정 순서, 물리 키와 snapshot 수명, rewind 점수 복원,
+  파일 변경 전 검사·실패 후 문서/Undo/Redo 보존, GPU/업로드 fence 소유권,
+  입력 callback 예외 경계와 프로세스 간 저장 소유권을 검토했습니다.
+- Client Debug/Release x64 solution 전체 Rebuild 성공. 마지막 물리 키 helper 정리도
+  두 구성 전체 Build로 확인했습니다. 컴파일·링크 오류/경고는 없습니다.
+  Release의 `/GL` 모듈을 감지하여 `/LTCG`로 링크를 다시 시작한다는 메시지는
+  진단 코드가 있는 경고가 아니라 링크 안내입니다.
+- 실제 프로젝트의 include/define/PCH/C++20 및 Debug/Release x64 구성으로
+  **MSVC 14.44/v143 Code Analysis**를 실행했습니다. CL tlog에서 구성별
+  Rhythm 15개, Chart 13개, Modes 11개, Rhythm.Tests 18개, MRG.Client 89개의
+  `/analyze` 명령을 확인했습니다. 파싱 오류와 변경 코드의 새 분석 진단은 없습니다.
+  Client 분석에 엔진/제3자 코드를 포함하지 않았습니다.
+- 두 구성의 로직·카탈로그 각각 **66개, 실패 0**입니다. 마지막 테스트 보완은
+  100ms 입력 전에 0/5ms 두 노트가 모두 만료되는 경우를 명시합니다.
+  만료 경계와 롱테일→다음 헤드, preheld 보조 키·최종 해제·Pause snapshot·rewind,
+  양방향 tmp/bak·대소문자·상대경로·hardlink와 dirty/Undo/Redo 보존을 검사했습니다.
+  기존 밀집 Buzz 63조건 회귀도 포함합니다.
+- 두 구성에서 smoke-test/lobby/gameplay/editor **총 8개 exit 0**입니다.
+  GameplayPauseTests는 두 구성 모두 메뉴, 노트/점수 복원, HP 자격, 실제 음악
+  source seek, native rendering을 통과했습니다. 실제 D3D12/FMOD 자동 replay는
+  두 구성 모두 **19개 완료·85.1837%**, 출력 backend 1을 확인했고 Debug 1,554프레임,
+  Release 1,557프레임으로 성공했습니다. 미사용 테스트 Scene을 추가하지 않았습니다.
+- 엔진은 독립 저장소에서 Debug/Release solution Rebuild 후 최종 수정도 두 구성
+  Build/분석과 기본 SDK·`--input-state`·`--texture-lifetime`으로 확인했습니다.
+  4,096개 혼합 입력, 200회 해제/생성, 동시 16세트 용량 거부, upload fence와
+  64개 GPU 프레임의 참조 유지·회수/descriptor 중복 방지를 검사했습니다.
+  엔진 MSVC 분석의 범위 밖 기존 진단은 ScreenVisual2DManager C26478,
+  Visual2DSurface C26498/C6011, CollisionTests C26800, WindowControlTests C6011입니다.
+  새 코드에는 진단이 없으며 기존 코드를 억제하거나 범위 밖 수정하지 않았습니다.
+- 변환기는 기존 전용 세션에서 Debug/Release solution Rebuild, Core/EXE/Tests의
+  MSVC 분석(구성별 12개 TU), 단위/실제 CLI 회귀와 Pandora 1,233개 노트 검증을
+  통과했습니다. 생략된 볼륨·스피너 25경계·별도 프로세스의 같은/다른 Songs 루트·
+  BG 게시 중 경합·rollback/재사용 파일 보존·강제 종료 후 잠금 해제를 검사했습니다.
+  Client 최종 빌드 후 변환기 단위 회귀도 두 구성 모두 다시 통과했습니다.
+- CheckArchitecture의 11개 프로젝트 경로/필터/의존성/엔진 경계와 `git diff --check`
+  통과. 사용자 LaneKeyBeam.cpp, 두 bin Option.ini, 개발 언어파일의 작업 전후 SHA256은
+  같습니다. 사용자 곡·스킨은 수정하지 않았습니다.
+- 별도 개발용 `Client/Assets/Songs/Patterns/Rapbit - Saika` 일부 채보에는 기존 YMP
+  미지원 `#measurelinevisible` 명령이 있어 그 루트를 대상으로 한 카탈로그 검사가
+  실패했습니다. 원본을 보존했고 규정된 `FingerDrum.Assets/Assets/Songs`의 최종
+  로직·카탈로그는 위와 같이 성공했습니다. 기존 사용자 파일 오류를 숨기지 않습니다.
+- 엔진 `ebe5726136506763236317f42955d30a2fd75e6e`를 먼저 원격 main에 게시한 뒤
+  Client gitlink를 갱신했습니다. 변환기 main은 `e670d636360e598f36266ac1ed58f7f17bebbf9a`입니다.
+  원시 로그/분석 명령은 Client·엔진의 ignored `build/review-fixes-2026-10-22/`,
+  변환기의 `build/review-fixes-20261022/`에 있습니다.
+- **수동 확인:** 위 화면/재생은 숨긴 창과 지정 입력의 자동 검사입니다.
+  실제 화면을 눈으로 확인하거나 물리 키/마우스 조작·청취로 검증하지 않았습니다.
+
 ## 2026-10-19~20 Songs/BG·선택/붙여넣기·편집 기록·타격 표시
 
 - OptionSettings는 General/SongsPath의 저장·검증·EXE 상대경로 해석을, OptionsSongs는

@@ -121,8 +121,11 @@ void GameplaySessionController::ProcessDebugTimeline(const mrg::platform::InputS
 void GameplaySessionController::ProcessRhythmInput(const mrg::platform::InputState &input,
                                                    std::optional<std::int64_t> exitTicks)
 {
-    for (const mrg::platform::InputEvent &event : input.Events())
+    bool synchronized = false;
+    const auto events = input.Events();
+    for (std::size_t eventIndex = 0; eventIndex < events.size(); ++eventIndex)
     {
+        const auto &event = events[eventIndex];
         if (event.performanceCounterTicks < gameplayStartTicks_)
             continue;
         if ((exitTicks && event.performanceCounterTicks > *exitTicks) ||
@@ -139,7 +142,39 @@ void GameplaySessionController::ProcessRhythmInput(const mrg::platform::InputSta
                               ? finger_drum::rhythm::InputEdge::Pressed
                               : finger_drum::rhythm::InputEdge::Released;
         const auto eventTime = timer_.Now(event.performanceCounterTicks);
+        if (!synchronized)
+        {
+            UpdateBeforeInput(input, eventIndex, eventTime);
+            synchronized = true;
+        }
         finger_drum::rhythm::NoteProcessResult result = session_->ProcessInput(event.code, edge, eventTime);
         ConsumeResult(std::move(result), edge == finger_drum::rhythm::InputEdge::Pressed);
     }
+}
+
+void GameplaySessionController::UpdateBeforeInput(const mrg::platform::InputState &input,
+                                                  const std::size_t eventIndex,
+                                                  const finger_drum::rhythm::RhythmTime time)
+{
+    // Raw Input's snapshot is after the entire message batch. Undo this edge
+    // and every later edge to recover the physical state immediately before
+    // the first judged input, including keys already held during Loading/Pause.
+    heldKeys_.clear();
+    const auto remaining = input.Events().subspan(eventIndex);
+    for (const auto &[key, action] : session_->InputMapping())
+    {
+        bool down = input.IsKeyDown(key);
+        for (auto event = remaining.rbegin(); event != remaining.rend(); ++event)
+            if (event->code == key)
+            {
+                if (event->type == mrg::platform::InputEventType::KeyPressed)
+                    down = false;
+                else if (event->type == mrg::platform::InputEventType::KeyReleased)
+                    down = true;
+            }
+        if (down)
+            heldKeys_.push_back(key);
+    }
+    if (time != finger_drum::rhythm::RhythmTime::min())
+        ConsumeResult(session_->Update(time - finger_drum::rhythm::RhythmDuration{1}, heldKeys_));
 }

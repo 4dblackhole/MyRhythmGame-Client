@@ -29,6 +29,7 @@
 | Penpot 디자인 찾기 | [DesignReferences](DesignReferences.md) | 해당 화면 문서 |
 | Claude 리뷰 반영·정적 분석·테스트 실행기/CI | [리뷰 반영 기록](Reviews/ClaudeReview-2026-10-11.md), [검증](Verification.md) | `Tests/Rhythm`, `Tests/Presentation`, `.github/workflows/domain-tests.yml` |
 | 코드 품질 재검토·효과 오류 복구/조회/검증 일치 | [품질 수정 기록](Reviews/QualityFixes-2026-10-12.md), [검증](Verification.md) | EffectValidation / PlaySession / ChartEditor; 엔진 Run 숨김 오류 |
+| 엔진·변환기·클라이언트 리뷰 8건 수정 | [리뷰 수정 기록](Reviews/CodeReviewFixes-2026-10-22.md), [검증](Verification.md) | Lane/PlaySession/HoldInputRule, ChartEditor; 엔진 Input/TextureManager; 변환기 General/스피너/저장 잠금 |
 | FMOD 오류·샘플 수명·비동기 로딩/탐색·음원 끝 경계 조사 | [FMOD 오류 조사](Reviews/FmodErrorAudit-2026-10-17.md) | EditorPlayback / GameplayAudioRouter; 엔진 AudioPlaybackManager / FmodAudioClip / FmodAudioBackend |
 | FMOD 오류 수정·음악 채널 Pause 유지·준비 상태/실패·취소 종료 | [FMOD 수정 기록](Reviews/FmodErrorFixes-2026-10-17.md), [검증](Verification.md) | 같은 오디오 소유자; GameplayPause / GameplayState; 엔진 Voice PreparationState / AudioSystem Shutdown |
 | 레거시 제거·예제 폐기 범위 | [레거시 제거 기록](Reviews/LegacyAudit-2026-10-11.md) | Main/OptionSettings, EditorModeFactory, PatternTiming; 직접 계약 헤더 |

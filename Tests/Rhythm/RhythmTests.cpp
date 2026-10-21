@@ -52,6 +52,8 @@ int main(const int argumentCount, char *arguments[])
         {"TestJudgementScalingAndInterpolation", TestJudgementScalingAndInterpolation},
         {"TestRhythmTimerClockMapping", TestRhythmTimerClockMapping},
         {"TestLaneFocusRules", TestLaneFocusRules},
+        {"TestExpiredInputOrdering", TestExpiredInputOrdering},
+        {"TestAuthoritativeHeldInputs", TestAuthoritativeHeldInputs},
         {"TestLargeNoteSoundState", TestLargeNoteSoundState},
         {"TestHoldTicksAreExactlyOnce", TestHoldTicksAreExactlyOnce},
         {"TestLongNoteRemainsInScrollSnapshotUntilItsTail", TestLongNoteRemainsInScrollSnapshotUntilItsTail},
@@ -92,6 +94,7 @@ int main(const int argumentCount, char *arguments[])
         {"TestNumericFieldsRejectEmbeddedNulls", TestNumericFieldsRejectEmbeddedNulls},
         {"TestSongCatalogIsolatesInvalidFiles", TestSongCatalogIsolatesInvalidFiles},
         {"TestChartSaveFailureRecovery", TestChartSaveFailureRecovery},
+        {"TestChartSavePathCollisions", TestChartSavePathCollisions},
         {"TestChartParserBoundaries", TestChartParserBoundaries},
         {"TestChartPartialEdits", TestChartPartialEdits},
     };

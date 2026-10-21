@@ -32,6 +32,9 @@ namespace finger_drum::rhythm
         NoteAction action{};
         PhysicalKey physicalKey{};
         InputEdge edge{InputEdge::Pressed};
+        // Supplied by the input-state owner after applying this physical edge.
+        // Direct rule users may instead let the rule track their local keys.
+        std::optional<bool> actionHeldAfter;
     };
 
     enum class NoteEventType : std::uint8_t

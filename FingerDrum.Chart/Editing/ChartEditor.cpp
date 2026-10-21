@@ -10,8 +10,19 @@
 #include <limits>
 #include <locale>
 #include <set>
+#include <span>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#endif
 
 namespace finger_drum::chart
 {
@@ -46,6 +57,30 @@ void WriteFile(const std::filesystem::path &path, const std::string &text)
     file.exceptions(std::ios::badbit | std::ios::failbit);
     file.write(text.data(), static_cast<std::streamsize>(text.size()));
     file.close();
+}
+
+void ValidateSavePaths(std::span<const std::filesystem::path> paths)
+{
+    std::vector<std::filesystem::path> resolved;
+    resolved.reserve(paths.size());
+    for (const auto &path : paths)
+        resolved.push_back(std::filesystem::weakly_canonical(std::filesystem::absolute(path)));
+    for (std::size_t i = 0; i < paths.size(); ++i)
+        for (std::size_t j = 0; j < i; ++j)
+        {
+#ifdef _WIN32
+            const auto comparison = CompareStringOrdinal(resolved[i].c_str(), -1, resolved[j].c_str(), -1, TRUE);
+            if (comparison == 0)
+                throw std::runtime_error("Could not compare editor save paths.");
+            const bool sameName = comparison == CSTR_EQUAL;
+#else
+            const bool sameName = resolved[i] == resolved[j];
+#endif
+            const bool sameFile = std::filesystem::exists(paths[i]) && std::filesystem::exists(paths[j]) &&
+                                  std::filesystem::equivalent(paths[i], paths[j]);
+            if (sameName || sameFile)
+                throw std::invalid_argument("YMP, YME and their recovery files must have distinct save paths.");
+        }
 }
 
 void WritePosition(std::ostream &out, MusicalPosition p)
@@ -876,10 +911,16 @@ void ChartEditor::Save()
     if (savedPattern.effectFile.empty())
         savedPattern.effectFile = pattern_.sourcePath.stem().wstring() + L".yme";
     auto effectPath = (pattern_.sourcePath.parent_path() / savedPattern.effectFile).lexically_normal();
-    if (effectPath == pattern_.sourcePath.lexically_normal() ||
-        (std::filesystem::exists(effectPath) && std::filesystem::exists(pattern_.sourcePath) &&
-         std::filesystem::equivalent(effectPath, pattern_.sourcePath)))
-        throw std::invalid_argument("YMP and YME must have different save paths.");
+    auto patternTemp = pattern_.sourcePath;
+    patternTemp += L".editor.tmp";
+    auto effectTemp = effectPath;
+    effectTemp += L".editor.tmp";
+    auto patternBackup = pattern_.sourcePath;
+    patternBackup += L".editor.bak";
+    auto effectBackup = effectPath;
+    effectBackup += L".editor.bak";
+    const std::array savePaths{pattern_.sourcePath, effectPath, patternTemp, effectTemp, patternBackup, effectBackup};
+    ValidateSavePaths(savePaths);
     const std::string patternText = WritePattern(savedPattern);
     const std::string effectText = WriteEffects(Effects());
     ChartParser parser;
@@ -893,14 +934,6 @@ void ChartEditor::Save()
 
     // Stage both files first and retain recoverable backups if any replace
     // fails. Existing backups are never overwritten.
-    auto patternTemp = pattern_.sourcePath;
-    patternTemp += L".editor.tmp";
-    auto effectTemp = effectPath;
-    effectTemp += L".editor.tmp";
-    auto patternBackup = pattern_.sourcePath;
-    patternBackup += L".editor.bak";
-    auto effectBackup = effectPath;
-    effectBackup += L".editor.bak";
     for (const auto &path : {patternTemp, effectTemp, patternBackup, effectBackup})
         if (std::filesystem::exists(path))
             throw std::runtime_error("Editor recovery files exist; recover/remove them before saving.");

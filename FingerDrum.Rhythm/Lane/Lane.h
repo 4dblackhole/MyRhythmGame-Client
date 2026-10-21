@@ -19,7 +19,8 @@ namespace finger_drum::rhythm
         void Finalize();
         void Reset() noexcept;
 
-        [[nodiscard]] NoteProcessResult ProcessInput(const RhythmInputEvent &input);
+        [[nodiscard]] NoteProcessResult ProcessInput(
+            const RhythmInputEvent &input, std::span<const NoteAction> heldBeforeInput = {});
         [[nodiscard]] NoteProcessResult Update(RhythmTime time,
                                                std::span<const NoteAction> heldActions = {});
 

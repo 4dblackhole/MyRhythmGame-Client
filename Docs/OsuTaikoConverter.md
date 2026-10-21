@@ -1,5 +1,12 @@
 # osu!taiko 변환기
 
+2026-10-22 리뷰 수정: General의 SampleVolume은 TimingPoints에 볼륨이 생략된 경우의
+기본값이며 명시된 TimingPoints 값이 우선합니다. 스피너 요구 횟수는 원작의 연산
+순서와 `1.65f` 정밀도를 보존합니다(OD 5·4초는 32회). 같은 Songs 폴더의 import는
+패키지/라이브러리 배치 모두 전체 저장·rollback 동안 배타 잠금을 유지합니다.
+중복 실행은 기다리지 않고 출력 오류(code 5)로 거부하며 다른 Songs 루트는 독립적으로
+진행합니다. 임의로 기존 파일을 덮어쓰지 않는 충돌 정책은 유지합니다.
+
 `OsuTaikoConverter`는 Client와 같은 부모 폴더에 두는 별도 C++20 저장소입니다.
 원격: <https://github.com/4dblackhole/OsuTaikoConverter> (비공개).
 

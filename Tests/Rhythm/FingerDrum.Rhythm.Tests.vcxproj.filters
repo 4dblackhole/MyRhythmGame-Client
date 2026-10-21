@@ -14,6 +14,7 @@
     <ClCompile Include="Submodules\ChartReviewRegressionTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\EditorAudioAnalysisTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\RhythmCoreTests.cpp"><Filter>Submodules</Filter></ClCompile>
+    <ClCompile Include="Submodules\InputOrderingTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\SceneStateTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\SongCatalogTests.cpp"><Filter>Submodules</Filter></ClCompile>
     <ClCompile Include="Submodules\SoundPolicyTests.cpp"><Filter>Submodules</Filter></ClCompile>

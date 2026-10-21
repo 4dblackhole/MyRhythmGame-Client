@@ -9,6 +9,13 @@
 
 ## 작업 위치와 경계
 
+2026-10-22 통합 리뷰 수정: [책임과 회귀 검사](Reviews/CodeReviewFixes-2026-10-22.md).
+Lane은 입력 시각 전에 만료된 노트를 먼저 처리하고 PlaySession은 물리 키 유지 상태와
+rewind 기록을 소유합니다. ChartEditor는 여섯 저장/복구 경로의 별칭을 변경 전에 거부합니다.
+엔진은 Raw Input 전체 순서와 GPU fence 이후 SRV 블록 회수를, 변환기는 생략된 볼륨
+기본값·스피너 횟수·Songs 루트의 중복 import 즉시 거부를 담당합니다. 사용자 곡/스킨과
+기존 LaneKeyBeam.cpp 변경은 보존합니다. 검증·커밋은 Verification의 같은 날짜 절을 봅니다.
+
 변환기 오프셋(2026-10-20): [변환기 계약](OsuTaikoConverter.md). 새 변환은 원본 격자/마디
 계산 후 Pattern Offset과 출력 절대 검증 시각에 +25ms를 한 번 적용합니다. 원본 채보/음원과
 기존 변환 파일은 바꾸지 않으며, 패키지/라이브러리 배치가 같은 정책을 사용합니다.

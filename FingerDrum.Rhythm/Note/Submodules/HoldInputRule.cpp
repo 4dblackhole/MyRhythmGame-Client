@@ -66,7 +66,7 @@ namespace finger_drum::rhythm
         if (input.edge == InputEdge::Pressed)
         {
             heldPhysicalKeys_.insert(input.physicalKey);
-            held_ = true;
+            held_ = input.actionHeldAfter.value_or(true);
             state_ = NoteState::Holding;
             if (!started_)
             {
@@ -81,7 +81,7 @@ namespace finger_drum::rhythm
         }
 
         heldPhysicalKeys_.erase(input.physicalKey);
-        held_ = !heldPhysicalKeys_.empty();
+        held_ = input.actionHeldAfter.value_or(!heldPhysicalKeys_.empty());
         state_ = held_ ? NoteState::Holding : NoteState::Active;
         output.events.push_back(
             MakeEvent(context, NoteEventType::HoldReleased, before, state_, judgement, input.time));

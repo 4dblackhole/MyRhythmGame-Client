@@ -35,7 +35,12 @@ namespace finger_drum::mode
     void PlaySession::SetInputMapping(std::map<rhythm::PhysicalKey, rhythm::NoteAction> mapping)
     {
         heldActions_.reserve(mapping.size());
+        heldPhysicalKeys_.reserve(mapping.size());
+        lastRecordedHeldKeys_.reserve(mapping.size());
         inputMapping_ = std::move(mapping);
+        heldPhysicalKeys_.clear();
+        heldActions_.clear();
+        lastRecordedHeldKeys_.clear();
     }
 
     void PlaySession::SetFreeInputCue(const rhythm::NoteAction action, rhythm::AudioCueRequest cue)
@@ -155,10 +160,14 @@ namespace finger_drum::mode
             return result;
         }
 
-        const rhythm::RhythmInputEvent input{time, mapping->second, physicalKey, edge};
+        ApplyPhysicalInput(physicalKey, edge);
+        const bool actionHeld = std::ranges::any_of(heldPhysicalKeys_, [&](auto key)
+                                                   { return inputMapping_.at(key) == mapping->second; });
+        const rhythm::RhythmInputEvent input{time, mapping->second, physicalKey, edge, actionHeld};
         judgementHistory_.push_back({time, input, {}});
         if (resultCollector_) resultCollector_->RecordInput(input);
-        result = gear_.Lanes().front()->ProcessInput(input);
+        result = gear_.Lanes().front()->ProcessInput(input, heldActions_);
+        RefreshHeldActions();
         AccumulateAccuracy(result, edge == rhythm::InputEdge::Pressed);
 
         // Free-input feedback is deliberately separate from note-owned cues.
@@ -191,24 +200,38 @@ namespace finger_drum::mode
         rhythm::NoteProcessResult result = gear_.Update(time, heldActions_);
         // Do not record every unlimited-loop update. Keep only state-changing
         // updates and held-state edges, sufficient to reproduce long-note ticks.
-        if (!result.events.empty() || !result.finalizedAccuracies.empty() || heldActions_ != lastRecordedHeld_)
+        if (!result.events.empty() || !result.finalizedAccuracies.empty() || heldPhysicalKeys_ != lastRecordedHeldKeys_)
         {
-            judgementHistory_.push_back({time, {}, {heldPhysicalKeys.begin(), heldPhysicalKeys.end()}});
-            lastRecordedHeld_ = heldActions_;
+            judgementHistory_.push_back({time, {}, heldPhysicalKeys_});
+            lastRecordedHeldKeys_ = heldPhysicalKeys_;
         }
         AccumulateAccuracy(result);
         ResolveSoundOverrides(result);
         return result;
     }
+    void PlaySession::ApplyPhysicalInput(const rhythm::PhysicalKey key, const rhythm::InputEdge edge)
+    {
+        const auto held = std::ranges::find(heldPhysicalKeys_, key);
+        if (edge == rhythm::InputEdge::Pressed && held == heldPhysicalKeys_.end())
+            heldPhysicalKeys_.push_back(key);
+        else if (edge == rhythm::InputEdge::Released && held != heldPhysicalKeys_.end())
+            heldPhysicalKeys_.erase(held);
+    }
+
     void PlaySession::ResolveHeldActions(const std::span<const rhythm::PhysicalKey> heldPhysicalKeys)
     {
-        heldActions_.clear();
-        // Iterate bindings so repeated physical keys cannot exceed the reserved buffer.
+        heldPhysicalKeys_.clear();
         for (const auto &[key, action] : inputMapping_)
-        {
             if (std::ranges::find(heldPhysicalKeys, key) != heldPhysicalKeys.end())
-                heldActions_.push_back(action);
-        }
+                heldPhysicalKeys_.push_back(key);
+        RefreshHeldActions();
+    }
+    void PlaySession::RefreshHeldActions()
+    {
+        std::ranges::sort(heldPhysicalKeys_);
+        heldActions_.clear();
+        for (const auto key : heldPhysicalKeys_)
+            heldActions_.push_back(inputMapping_.at(key));
         std::ranges::sort(heldActions_);
         const auto duplicates = std::ranges::unique(heldActions_);
         heldActions_.erase(duplicates.begin(), duplicates.end());
@@ -281,12 +304,14 @@ namespace finger_drum::mode
         if (resultCollector_)
             resultCollector_->Reset();
         judgementHistory_.clear();
-        lastRecordedHeld_.clear();
+        lastRecordedHeldKeys_.clear();
         pauseMenuUsed_ = false;
     }
     void PlaySession::ResetNoteState() noexcept
     {
         gear_.Reset();
+        heldPhysicalKeys_.clear();
+        heldActions_.clear();
         accuracySum_ = 0;
         finalizedNoteCount_ = 0;
         lastNoteAccuracy_.reset();

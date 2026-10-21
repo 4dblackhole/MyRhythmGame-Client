@@ -44,6 +44,7 @@
 | 에디터 재생·배속·시간축 줌 | EditorPlayback / EditorWorkspace / EditorAudioControls / EditorScoreView | EditorInput / EditorScene / TaikoEditorScore; EditorPlaybackTests / EditorModeTests; 엔진 AudioClip/Voice |
 | JudgeLevel 고정소수점/범위 | `FingerDrum.Rhythm/Judgement/JudgeLevel.h`, AccuracyRange; PatternDocument / PatternParser / ChartEditor | TaikoSessionBuilder / IPlayResult / GameplayLayout; RhythmCoreTests / ChartParserTests / NewDifficultyTests |
 | 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
+| 만료 노트 입력 전달·복수 물리 키 유지·rewind | Lane / HoldInputRule / PlaySession / GameplayInput | InputOrderingTests; PlayPauseTests / GameplayPauseTests; Raw Input timestamp·전이 전 snapshot |
 | Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |
 | 문법 추가 | `FingerDrum.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |

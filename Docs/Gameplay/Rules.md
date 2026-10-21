@@ -9,6 +9,12 @@ Taiko는 한 레인에서 먼저 열린 롱노트 head를 유지합니다. 열�
 원래 파일/행의 Warning을 남깁니다. 유효 노트의 기존 플레이 결과는 유지합니다.
 새 배치의 겹침 거부는 [Taiko 에디터](../ChartEditor.md)가 담당합니다.
 유지 중인 물리 키의 action 목록은 바인딩 설정 시 예약한 버퍼를 재사용합니다.
+PlaySession이 모든 mapped 물리 키를 소유하고, 각 입력 직후 해당 action의 유지 여부를
+노트에 전달합니다. Buzz 시작 전에 눌린 보조 키도 같은 action의 유지 입력에 포함되며,
+rewind는 action이 같아도 다른 물리 키의 snapshot과 전이를 보존해 복원합니다.
+한 입력 묶음의 첫 전이 전 상태는 Controller가 최종 Raw Input snapshot에서 역산합니다.
+Lane은 입력 timestamp 전에 완전히 만료된 노트를 이전 유지 상태로 처리한 후 다음 노트를
+판정합니다. 렌더 시각이나 그 입력 이후의 key snapshot으로 과거 tick을 판정하지 않습니다.
 
 ## 한 개의 타이머
 
