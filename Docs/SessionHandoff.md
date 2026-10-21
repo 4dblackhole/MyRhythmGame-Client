@@ -7,6 +7,34 @@
 3. [변경 영향 지도](ChangeImpactMap.md)로 소유 파일·호출부·테스트를 찾습니다.
 4. 요구가 불명확하거나 해석에 따라 동작/설계가 크게 달라지면 구현을 멈추고 질문합니다.
 
+## MRG3 세션으로 이어갈 상태 (2026-10-22)
+
+- 같은 작업 폴더의 `main`을 이어서 사용합니다. 새 브랜치나 worktree는 만들지 않습니다.
+  인수인계 시 Client·엔진·변환기를 fetch하여 각각의 HEAD와 `origin/main`이 같은 것을
+  확인했습니다. 엔진 submodule은 깨끗한 detached HEAD이며 Client gitlink와 일치합니다.
+  정확한 시작 커밋은 MRG3의 첫 메시지에 전달하고, 이후 현재 상태는 Git으로 확인합니다.
+- 사용자의 "현재 로컬 변경을 전부 Git에 최신화" 요청에 따라 이번 인수인계 문서와
+  아래 채보 변경을 `main`에 커밋하고 원격에 반영하여 인계합니다.
+  `Client/Presentation/LaneKeyBeam.cpp`에도 기존 변경 표시가 있었으나 실제 내용 diff는
+  없었습니다. 파일 내용을 보존하며, 이번 이관에서 C++ 소스를 수정하지 않았습니다.
+- 직전 요청은 AngelDream Handshake의 기본 `Dream/angeldream.ymp` 오프셋을 51ms
+  빼는 작업이었습니다. `Pattern Offset: 104` → `Pattern Offset: 53`으로 변경했으며,
+  `FingerDrum.Assets/Assets/Songs/Patterns/angeldream/Dream/angeldream.ymp`와
+  ignored 개발용 `Client/Assets/Songs/Patterns/angeldream/Dream/angeldream.ymp`에
+  동일하게 반영했습니다. 다른 난이도의 오프셋은 변경하지 않았습니다.
+  개발용 Songs는 ignored 사용자 데이터이므로 로컬에 유지하며 Git에는 추가하지 않습니다.
+- 최신 코드 작업은 아래의 **2026-10-22 통합 리뷰 8건 수정**까지 완료되었습니다.
+  해당 시점의 Debug/Release x64 전체 빌드, 구성별 로직·카탈로그 66개, 네 smoke씩
+  총 8개, 정적 분석·관련 회귀의 결과는 [Verification](Verification.md)의 같은 날짜 절이
+  기준입니다. 실제 화면·물리 입력·청취는 수동 확인하지 않았습니다.
+  오프셋 수정과 이번 인수인계에서 이 전체 검증을 재실행한 것은 아니며,
+  값·변경 범위와 `git diff --check`를 확인했습니다.
+- 이관 시점에 이어서 구현할 별도 미완료 요구는 없습니다. MRG3는 시작 문서와
+  현재 Git 상태를 확인한 뒤 사용자의 다음 개발 요청을 기다립니다.
+  과거 제안·미구현 기능 목록을 새 구현 지시로 해석하지 않습니다.
+- 변환기 수정은 사용자가 지정한 기존 변환기 전용 세션/독립 저장소에서 수행합니다.
+  PC 종료는 사용자가 새로 명시적으로 요청한 경우에만 수행합니다.
+
 ## 작업 위치와 경계
 
 2026-10-22 통합 리뷰 수정: [책임과 회귀 검사](Reviews/CodeReviewFixes-2026-10-22.md).
@@ -210,15 +238,17 @@ PNG를 사용하고 현재/전체 m:ss를 런타임에 표시합니다. 노드 �
 AccuracyScore 정수 단위(100%=100,000,000)로 합산하며 기존 판정 창/등급은 유지합니다.
 PlaySession은 모드별 IPlayResultCollector를 소유하고 Taiko는 실제 생성된 논리 노트의
 판정·오차·최종 점수와 매핑된 게임 키 Pressed/Released를 정수 us로 수집합니다.
-모든 노트 처리 3초 뒤 또는 ESC 입력으로 Result에 이동하며, ESC는 그 QPC 시각에
-판정/held 상태를 고정합니다. 중도 종료의 미처리와 진행 중 롱노트는 0점/별도 개수이며
-실제 MISS와 구분합니다. R/뒤로 탐색 Reset은 집계와 입력 로그를 초기화합니다.
+모든 노트 처리 3초 뒤 Result로 이동합니다. 현재 ESC는 공통 Pause 상태로 전환하며,
+Retire는 미완료 롱노트를 포함한 남은 노트를 0점·MISS로 확정합니다.
+Resume은 처리 상태를 유지하고 Rewind는 이동 시각 이후의 판정·점수를 되돌립니다.
+현재 제어·입력 로그 정책은 [일시정지](Gameplay/Pause.md)가 기준입니다.
 
 RhythmTestScene → 루트 대기 슬롯 → Result factory로 unique_ptr를 이동합니다.
 ResultScene은 결과와 IResultView를 소유하고 TaikoResultView가 일반/큰/롤 정확도,
 MAX~BAD/OK/MISS/POOR 개수, 오차 통계와 두 그래프를 표시합니다. 두 Scene 모두
 DestroyOnExit이며 결과는 플레이 세션/노트/오디오 포인터를 보관하지 않습니다.
-Result의 버튼·ESC·Enter는 곡 선택으로 돌아갑니다. 모드 확장, 카운트 정의,
+Result는 Retry로 같은 채보의 새 시도를 시작하고 Replay는 비활성 표시합니다.
+곡 선택 복귀와 모드 확장, 카운트 정의,
 입력 로그 범위와 점수/그래프 계약은 [플레이 결과](Gameplay/Results.md)가 기준입니다.
 디스크 저장·리플레이 재생·곡 선택 기록은 이번 범위에 포함하지 않았습니다.
 검증은 Verification 및 Tests/Presentation의 Result 회귀 명령을 참고합니다.
@@ -319,7 +349,8 @@ Verification에 구분했습니다. 실제 화면/물리 입력/청음은 수동
   YME는 Interpolation/HitSounds 기본 데이터와 Speed/Sounds/Zone 명령을 분리합니다.
   볼륨은 히트사운드 대상입니다. 문법·보간·Whole/Separate·싱코페이션/Kiai는
   [YME](Formats/Yme.md), 실제 AngelDream 효과 테스트는 Presentation의 -Effects를 참고합니다.
-- 영구 기록·리플레이 재생, 에디터 Undo/Redo·드래그·다중 선택은 미구현입니다.
+- 영구 기록·리플레이 재생은 미구현입니다. 에디터의 최대 32동작 Undo/Redo,
+  노트 드래그·다중 선택과 박자표/이펙트 다중 선택·복사·붙여넣기는 구현되어 있습니다.
   이 목록은 추가 구현 지시가 아닙니다. 기능별 제한은 해당 문서가 기준입니다.
 - Scene 전용 폴더와 `Submodules`, Note 계약/규칙 트리를 사용합니다.
   파일 추가 시 프로젝트와 Visual Studio 필터도 같은 트리로 등록합니다.
@@ -352,18 +383,9 @@ Verification에 구분했습니다. 실제 화면/물리 입력/청음은 수동
 
 ## 마무리
 
-최근 변경은 [코드 품질 수정 기록](Reviews/QualityFixes-2026-10-12.md)에 있습니다.
-효과 값/보간 검증을 EffectValidation에서 공유하고 직접 세션 생성에도 적용했습니다.
-플레이 중 보간식 오류는 해당 트랙의 마지막 정상값을 유지하고 공통 오류 HUD에 표시합니다.
-첫 실패의 초기값은 검증된 From이며, 다음 정상 평가에서 재개하고 Reset/SetEffects 때 오류를 지웁니다.
-Separate 조회 범위는 실제 노트 배율 인덱스를 반영하고 사용자 식의 그리드는 끝값으로 제외하지 않습니다.
-분석 Controller는 복사/이동할 수 없습니다. 엔진 숨김 실행의 fatal error는 모달 UI 없이 종료합니다.
-엔진과 Client의 Debug/Release x64 전체 재빌드, 엔진 SDK 및 숨김 오류 주입 테스트,
-각 구성 44개 로직·카탈로그와 4개 Client smoke, 에디터·판정/오류 HUD 회귀를 통과했습니다.
-실제 D3D12/FMOD 자동 replay도 효과 채보 15개와 전체 종류 채보 19개 노트를 완료했습니다.
-Client 소유 4개 프로젝트의 MSVC 정적 분석은 새 경고 없이 완료했고 기존 3종 경고는
-Verification에 구분했습니다. 사용자 곡/스킨·기존 Option.ini는 보존했습니다.
-실제 화면/물리 입력/청음은 수동 확인하지 않았습니다. 상세 결과는 Verification이 기준입니다.
+최신 코드 변경은 [통합 리뷰 수정 기록](Reviews/CodeReviewFixes-2026-10-22.md)에 있습니다.
+완료 검증·기존 진단·사용자 파일의 제한은 [Verification](Verification.md)의
+2026-10-22 절을 참고합니다. 이후 로컬 변경은 위 MRG3 인수인계 절에서 구분합니다.
 
 [Verification](Verification.md)에 따라 검증하고 실제 결과만 보고합니다.
 smoke 통과는 픽셀/마우스 수동 검증을 뜻하지 않습니다.
