@@ -1,6 +1,6 @@
 # YME 이펙트·히트사운드
 
-파서/모델: `FingerDrum.Chart/Parsing/Submodules/EffectParser.cpp`,
+파서/모델: `YOUMU.Chart/Parsing/Submodules/EffectParser.cpp`,
 `Model/Submodules/EffectDocument.h`. 보간/스크롤: `Automation/InterpolationExpression.*`,
 `Automation/ScrollAutomation.*`. 저장: `Editing/ChartEditor.cpp`.
 효과 값/보간의 공통 검증은 `Automation/EffectValidation.*`이며 파서, 편집 문서와

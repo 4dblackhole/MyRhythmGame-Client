@@ -16,11 +16,11 @@ OnResize에서 창 크기를 갱신하고 Shutdown에서 해제합니다. worker
 ```mermaid
 flowchart TD
     Entry["Client/App/Main.cpp\nwWinMain"] --> Assets["RCDATA asset pack 확인 · cache 준비"]
-    Assets --> Game["FingerDrumGame · Option.ini 복원"]
-    Game --> Run["mrg::Run"]
+    Assets --> Game["YOUMUGame · Option.ini 복원"]
+    Game --> Run["Run"]
     Run --> Systems["Win32 · D3D12 · Raw Input · Audio"]
     Game --> Manager["SceneManager"]
-    Manager --> Logo["FingerDrumLogoScene"]
+    Manager --> Logo["YOUMULogoScene"]
     Logo --> Lobby["MusicSelectScene · Music Select"]
     Logo --> EditorSelect["MusicSelectScene · Editor Song Select"]
     EditorSelect --> Editor["EditorScene · ChartEditor / YMP + YME"]
@@ -36,13 +36,13 @@ flowchart TD
 ## 시작
 
 1. `wWinMain`이 Debug CRT 누수 검사를 켜고 EXE의 RCDATA 기본 자산 팩을
-   `%LOCALAPPDATA%/FingerDrum/BuiltInAssets/<pack hash>`에 준비합니다. 같은 팩의
+   `%LOCALAPPDATA%/YOUMU/BuiltInAssets/<pack hash>`에 준비합니다. 같은 팩의
    유효한 캐시가 있으면 다시 기록하지 않습니다.
-2. 일반 실행과 FingerDrum smoke는 `FingerDrumGame`을 생성합니다. EXE 옆
+2. 일반 실행과 YOUMU smoke는 `YOUMUGame`을 생성합니다. EXE 옆
    `Option.ini`에서 언어·스킨·오디오 미들웨어/출력 방식/드라이버·창 크기·모드별 키·글로벌 오프셋을 읽습니다.
    파일이 없으면 기본 설정을 저장합니다. 저장된 스킨
    폴더가 없으면 `Default Skin`을 사용합니다. 상세 형식은 [TextManagement](TextManagement.md)입니다.
-3. `mrg::Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
+3. `Run`이 `GetEngineConfig`를 읽어 창, 렌더러, Raw Input과 오디오를
    초기화합니다. 창 제목은 공통 `Texts/GameIdentity.h`의 `GameName`을 사용합니다.
 4. `RegisterScenes`가 Logo, Lobby, EditorSongSelect, Editor, RhythmTest, Result route를 등록합니다.
 5. `SceneManager`가 최초 Scene을 활성화하고 `Initialize`를 한 번 호출합니다.
@@ -57,14 +57,14 @@ flowchart TD
 세부 계약은 [내장 자산](BuiltInAssets.md)에 있습니다.
 
 `SceneGameClient`는 SceneManager, 공통 AudioPlaybackManager와 화면
-ScreenVisual2DManager를 함께 소유합니다. `FingerDrumGame`은 여기에 Client 소유
+ScreenVisual2DManager를 함께 소유합니다. `YOUMUGame`은 여기에 Client 소유
 `TextCatalog`를 두고 Scene factory를 통해 View/Presenter에 전달합니다. 이 객체의
 현재 언어와 글꼴 profile은 KeepAlive/DestroyOnExit Scene 전환과 관계없이 유지됩니다.
 
 엔진 루프에서 예외가 발생하면 GPU 대기를 최선으로 시도한 뒤 Client를 먼저
 Shutdown하고, 그 다음 Audio와 renderer 지역 객체를 정리합니다. 따라서 Scene이
 보관한 Canvas·이미지·voice는 해당 서비스를 참조할 수 있는 동안 해제됩니다.
-`FingerDrumGame`은 gameplay factory에 `AudioPlayback()` 참조를 전달하고,
+`YOUMUGame`은 gameplay factory에 `AudioPlayback()` 참조를 전달하고,
 GameplayAudioRouter는 이를 통해 재생하며 세션에 속한 ID만 관리합니다.
 Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신 후 끝난 재생을
 정리하고 종료 시에는 Scene의 세션 정리 후 남은 전역 재생을 모두 정지합니다.
@@ -118,7 +118,7 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
 - gameplay에서 Escape는 [일시정지 메뉴](Gameplay/Pause.md)를 엽니다. Retire 또는
   모든 노트 처리 후 3초에 Result 전환을 요청합니다. update가 끝난 다음 `EndScene → Shutdown → delete` 순서로
   gameplay 객체가 파기되므로 다음 곡이나 모드의 상태가 남지 않습니다.
-- `FingerDrumGame`의 대기 슬롯으로 결과 unique_ptr를 이동하고 Result factory가 이를
+- `YOUMUGame`의 대기 슬롯으로 결과 unique_ptr를 이동하고 Result factory가 이를
   소비합니다. Result도 `DestroyOnExit`이며 `IResultView`가 모드별 표시를 맡습니다.
   BACK·Escape·Enter는 Lobby로 돌아갑니다. Retry는 플레이 선택 snapshot을 복원하고
   RhythmTest factory에서 새 세션을 생성하며 Replay는 비활성입니다. 수집/정밀도/입력 로그는
@@ -139,6 +139,6 @@ D3D12 command 기록과 present는 엔진이 담당합니다. 종료 시 활성 
 `Shutdown`하여 Canvas observer와 오디오 voice를 먼저 해제한 후 엔진 장치를
 역순으로 종료합니다.
 
-`FingerDrumGame`의 Client hook은 F7을 감지하고 게임용 Rajdhani 글꼴의 FPS와
+`YOUMUGame`의 Client hook은 F7을 감지하고 게임용 Rajdhani 글꼴의 FPS와
 UPS를 Scene 렌더 뒤 우측 하단에 제출합니다. 이 표시는 Scene이나 엔진 루프의
 소유물이 아니므로 Scene 전환과 관계없이 유지됩니다.

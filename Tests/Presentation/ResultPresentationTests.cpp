@@ -1,5 +1,5 @@
-#include "FingerDrumAssets.h"
-#include "GameFlow/FingerDrumSceneIds.h"
+#include "YOUMUAssets.h"
+#include "GameFlow/YOUMUSceneIds.h"
 #include "GameScene/ResultScene/ResultScene.h"
 #include "GameScene/ResultScene/Submodules/ResultViewFactory.h"
 #include "GameScene/ResultScene/Submodules/Taiko/TaikoResultGraphs.h"
@@ -18,18 +18,16 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
-    namespace mode = finger_drum::mode;
-    namespace r = finger_drum::rhythm;
+
     void Check(bool condition, const char *message)
     {
         if (!condition)
             throw std::runtime_error(message);
     }
-    class NullRenderer final : public mrg::graphics::Visual2DRenderSystem
+    class NullRenderer final : public Visual2DRenderSystem
     {
       public:
-        v::ImageHandle LoadImage(const std::filesystem::path &path) override
+        ImageHandle LoadImage(const std::filesystem::path &path) override
         {
             std::ifstream file(path, std::ios::binary);
             std::array<unsigned char, 24> header{};
@@ -49,48 +47,48 @@ namespace
                             LoadedImage{{static_cast<float>(dimension(16)), static_cast<float>(dimension(20))}, path});
             return {id};
         }
-        v::Size GetImageSize(v::ImageHandle image) const noexcept override
+        Size GetImageSize(ImageHandle image) const noexcept override
         {
             const auto found = images_.find(image.value);
-            return found == images_.end() ? v::Size{} : found->second.size;
+            return found == images_.end() ? Size{} : found->second.size;
         }
-        const std::filesystem::path &ImagePath(v::ImageHandle image) const
+        const std::filesystem::path &ImagePath(ImageHandle image) const
         {
             return images_.at(image.value).path;
         }
-        void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, v::Point,
+        void SubmitScreen(const Visual2DCanvas &, const RenderContext &, Point,
                           std::uint32_t) override
         {
         }
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
-                         v::Size, const DirectX::XMFLOAT4X4 &) override
+        void SubmitPlane(const Visual2DCanvas &, const RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         Size, const DirectX::XMFLOAT4X4 &) override
         {
         }
-        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
+        RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
         {
             return {};
         }
-        void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
-                             const mrg::graphics::RenderContext &) override
+        void RenderToTexture(const Visual2DCanvas &, const RenderTargetTextureHandle &,
+                             const RenderContext &) override
         {
         }
 
       private:
         struct LoadedImage
         {
-            v::Size size;
+            Size size;
             std::filesystem::path path;
         };
         std::map<std::uint64_t, LoadedImage> images_;
         std::uint64_t imageId_{};
     };
-    bool HasText(const v::Visual2DCanvas &canvas, std::wstring_view text)
+    bool HasText(const Visual2DCanvas &canvas, std::wstring_view text)
     {
         const auto packets = canvas.BuildDrawList();
         return std::ranges::any_of(packets, [&](const auto &packet)
                                    { return packet.text && packet.text->value.find(text) != std::wstring::npos; });
     }
-    const v::Visual2DNode *FindNode(const v::Visual2DNode &node, std::string_view name)
+    const Visual2DNode *FindNode(const Visual2DNode &node, std::string_view name)
     {
         if (node.Name() == name)
             return &node;
@@ -99,9 +97,9 @@ namespace
                 return found;
         return nullptr;
     }
-    const v::Visual2DNode *FindText(const v::Visual2DNode &node, std::wstring_view value)
+    const Visual2DNode *FindText(const Visual2DNode &node, std::wstring_view value)
     {
-        const auto *text = node.GetComponent<v::TextVisualComponent>();
+        const auto *text = node.GetComponent<TextVisualComponent>();
         if (text && text->Text() == value)
             return &node;
         for (const auto &child : node.Children())
@@ -127,16 +125,16 @@ namespace
         }};
         for (const auto &test : cases)
         {
-            mode::TaikoPlayResult result;
+            TaikoPlayResult result;
             result.summary.totalNotes = result.summary.processedNotes = 1;
-            result.summary.accuracy = r::AccuracyScore::FromUnits(test.units);
+            result.summary.accuracy = AccuracyScore::FromUnits(test.units);
             NullRenderer renderer;
-            v::ScreenVisual2DManager visuals;
+            ScreenVisual2DManager visuals;
             visuals.Initialize(renderer, {1280, 720});
-            finger_drum::texts::TextCatalog texts;
-            mrg::graphics::MeshRenderSystem meshes;
-            mrg::graphics::TextRenderSystem textRendering;
-            mrg::audio::AudioSystem audio;
+            TextCatalog texts;
+            MeshRenderSystem meshes;
+            TextRenderSystem textRendering;
+            AudioSystem audio;
             auto view = CreateResultView(result, visuals, texts);
             view->Initialize({meshes, textRendering, renderer, audio, 1280, 720});
             auto *canvas = visuals.FindCanvas(1);
@@ -147,7 +145,7 @@ namespace
                 const auto *rank = FindNode(canvas->Root(), "Result.Rank");
                 if (!rank)
                     throw std::runtime_error("Rank must render an image instead of a placeholder.");
-                const auto *sprite = rank->GetComponent<v::SpriteVisualComponent>();
+                const auto *sprite = rank->GetComponent<SpriteVisualComponent>();
                 if (!sprite)
                     throw std::runtime_error("Rank must own an image component.");
                 Check(renderer.ImagePath(sprite->Style().normalImage).stem().wstring() == test.rank,
@@ -166,27 +164,27 @@ namespace
             Check(visuals.CanvasCount() == 0, "Rank view must release its Canvas on shutdown.");
         }
     }
-    std::unique_ptr<mode::IPlayResult> FixtureResult()
+    std::unique_ptr<IPlayResult> FixtureResult()
     {
-        finger_drum::chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.name = "Result regression";
         for (int i = 0; i < 3; ++i)
             pattern.notes.push_back(
                 {.position = {0, {i, 4}}, .keyType = 1, .sourceOrder = static_cast<std::size_t>(i)});
-        auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+        auto loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Result fixture must load.");
-        loaded.session->SetResultInitialTime(r::RhythmTime{-2'000'000});
+        loaded.session->SetResultInitialTime(RhythmTime{-2'000'000});
         for (const std::int64_t us : {0, 510'000, 990'000})
-            static_cast<void>(loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{us}));
-        return loaded.session->TakeResult(mode::PlayEndReason::Completed, r::RhythmTime{1'000'000});
+            static_cast<void>(loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{us}));
+        return loaded.session->TakeResult(PlayEndReason::Completed, RhythmTime{1'000'000});
     }
     void TestMillisecondHistogram()
     {
-        mode::TaikoPlayResult result;
+        TaikoPlayResult result;
         for (const std::int64_t error : {-1500, -500, -499, 0, 499, 500, 1500})
-            result.timingErrors.push_back({.error = r::RhythmDuration{error}, .grade = r::JudgementGrade::Max});
-        const v::Rect scatter{0, 0, 400, 100}, histogram{0, 200, 400, 120};
+            result.timingErrors.push_back({.error = RhythmDuration{error}, .grade = JudgementGrade::Max});
+        const Rect scatter{0, 0, 400, 100}, histogram{0, 200, 400, 120};
         auto graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
         const auto firstBar = 2 + result.timingErrors.size();
         Check(graph.maximumBinCount == 3 && graph.rectangles.size() == firstBar + 5,
@@ -206,13 +204,13 @@ namespace
                       narrow.rectangles[i].bounds.x + narrow.rectangles[i].bounds.width <=
                           histogram.x + histogram.width,
                   "Small viewports must keep bars visible and inside the plot.");
-        result.timingErrors = {{.error = r::RhythmDuration{-125'000}}, {.error = r::RhythmDuration{126'000}}};
+        result.timingErrors = {{.error = RhythmDuration{-125'000}}, {.error = RhythmDuration{126'000}}};
         graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
         Check(graph.halfRangeMilliseconds == 130 && graph.maximumBinCount == 1 && graph.rectangles.size() == 6 &&
                   graph.rectangles.back().bounds.width < 2,
               "Expanding the error axis must preserve 1ms bin resolution instead of keeping 41 wide bins.");
-        result.timingErrors = {{.error = r::RhythmDuration{-1'000'000'000'000}},
-                               {.error = r::RhythmDuration{1'000'000'000'000}}};
+        result.timingErrors = {{.error = RhythmDuration{-1'000'000'000'000}},
+                               {.error = RhythmDuration{1'000'000'000'000}}};
         graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
         Check(graph.rectangles.size() == 6 && graph.maximumBinCount == 1,
               "Large outliers must allocate only the occupied bins.");
@@ -221,21 +219,21 @@ namespace
                       rectangle.bounds.width > 0,
                   "Sparse outlier graphs must keep finite positive geometry.");
     }
-    bool SameColor(v::Color left, v::Color right)
+    bool SameColor(Color left, Color right)
     {
         return left.red == right.red && left.green == right.green && left.blue == right.blue &&
                left.alpha == right.alpha;
     }
     void TestHistogramJudgementColors()
     {
-        mode::TaikoPlayResult result;
-        result.timingErrors = {{.error = r::RhythmDuration{4500}, .grade = r::JudgementGrade::Max},
-                               {.error = r::RhythmDuration{4501}, .grade = r::JudgementGrade::Perfect},
-                               {.error = r::RhythmDuration{4900}, .grade = r::JudgementGrade::Perfect},
-                               {.error = r::RhythmDuration{15000}, .grade = r::JudgementGrade::Great},
-                               {.error = r::RhythmDuration{35000}, .grade = r::JudgementGrade::Good},
-                               {.error = r::RhythmDuration{70000}, .grade = r::JudgementGrade::Bad}};
-        const v::Rect scatter{0, 0, 400, 100}, histogram{0, 200, 400, 120};
+        TaikoPlayResult result;
+        result.timingErrors = {{.error = RhythmDuration{4500}, .grade = JudgementGrade::Max},
+                               {.error = RhythmDuration{4501}, .grade = JudgementGrade::Perfect},
+                               {.error = RhythmDuration{4900}, .grade = JudgementGrade::Perfect},
+                               {.error = RhythmDuration{15000}, .grade = JudgementGrade::Great},
+                               {.error = RhythmDuration{35000}, .grade = JudgementGrade::Good},
+                               {.error = RhythmDuration{70000}, .grade = JudgementGrade::Bad}};
+        const Rect scatter{0, 0, 400, 100}, histogram{0, 200, 400, 120};
         const auto graph = taiko_result_ui::BuildGraphs(result, scatter, histogram);
         const auto firstBar = 2 + result.timingErrors.size();
         Check(graph.maximumBinCount == 3 && graph.rectangles.size() == firstBar + 5,
@@ -264,10 +262,10 @@ namespace
     void TestGraphsAndView()
     {
         auto result = FixtureResult();
-        auto *taiko = dynamic_cast<mode::TaikoPlayResult *>(result.get());
+        auto *taiko = dynamic_cast<TaikoPlayResult *>(result.get());
         if (!taiko)
             throw std::runtime_error("Taiko result must retain its concrete data.");
-        const v::Rect scatter{0, 0, 500, 150}, histogram{550, 0, 500, 150};
+        const Rect scatter{0, 0, 500, 150}, histogram{550, 0, 500, 150};
         auto data = taiko_result_ui::BuildGraphs(*taiko, scatter, histogram);
         Check(data.maximumBinCount == 1 && data.halfRangeMilliseconds == 100 && data.startSeconds == -2 &&
                   data.endSeconds == 1,
@@ -282,12 +280,12 @@ namespace
         const auto sample = taiko->timingErrors.front();
         taiko->timingErrors.insert(taiko->timingErrors.end(), 10'000, sample);
         NullRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        finger_drum::texts::TextCatalog texts;
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
+        TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
         auto view = CreateResultView(*result, visuals, texts,
                                      {L"Recorded song", L"Recorded creator", true, L"Recorded artist"});
         view->Initialize({meshes, textRendering, renderer, audio, 1280, 720});
@@ -312,7 +310,7 @@ namespace
                   creator->Bounds().x == 744 && creator->Bounds().y == 396 && rank->Bounds().x == 705.75F,
               "Song/artist occupy the new top banner, while rank and creator match the centered Penpot column.");
         for (const auto &packet : packets)
-            if (packet.type == v::DrawPacketType::RectangleBatch)
+            if (packet.type == DrawPacketType::RectangleBatch)
                 for (const auto &primitive : *packet.rectangles)
                 {
                     const auto b = primitive.bounds;
@@ -323,10 +321,10 @@ namespace
                     Check(inHistogram || inScatter,
                           "Actual graph samples must remain inside the narrower design plots.");
                 }
-        Check(std::ranges::count(packets, v::DrawPacketType::RectangleBatch, &v::DrawPacket::type) == 1 &&
+        Check(std::ranges::count(packets, DrawPacketType::RectangleBatch, &DrawPacket::type) == 1 &&
                   packets.size() < 200,
               "Large result graphs must use one batch with constant widget count.");
-        mrg::platform::InputState input;
+        InputState input;
         for (int i = 0; i < 20; ++i)
             Check(view->Update(input) == ResultAction::None, "Idle result view must not leave the Scene.");
         Check(canvas->BuildDrawList().size() == packets.size(), "Idle updates must not rebuild graph nodes.");
@@ -339,11 +337,11 @@ namespace
         Check(replay->Bounds().x == 1344 && retry->Bounds().x == 1616 && replay->Bounds().width == 256 &&
                   retry->Bounds().width == 256,
               "Actions must fit the new 528px right column.");
-        const auto click = [&](const v::Visual2DNode &button)
+        const auto click = [&](const Visual2DNode &button)
         {
             const auto b = button.BoundsInCanvas();
-            v::Visual2DInputRouter router;
-            v::PointerInput p;
+            Visual2DInputRouter router;
+            PointerInput p;
             p.available = true;
             p.position = {b.x + b.width / 2, b.y + b.height / 2};
             p.leftButtonDown = p.leftButtonPressed = true;
@@ -357,10 +355,10 @@ namespace
         Check(view->Update(input) == ResultAction::Retry, "A retry click must emit the neutral retry action.");
         click(*replay);
         Check(view->Update(input) == ResultAction::None, "Disabled replay must not emit any action.");
-        texts.SetLanguage(finger_drum::texts::Language::English);
+        texts.SetLanguage(Language::English);
         Check(view->Update(input) == ResultAction::None && HasText(*canvas, L"Judgement counts"),
               "Result strings must follow the shared language catalog.");
-        for (const v::Size size : {v::Size{1024, 768}, v::Size{2560, 1080}, v::Size{720, 1280}})
+        for (const Size size : {Size{1024, 768}, Size{2560, 1080}, Size{720, 1280}})
         {
             view->OnResize(static_cast<std::uint32_t>(size.width), static_cast<std::uint32_t>(size.height));
             const auto *root = FindNode(canvas->Root(), "Result.Content");
@@ -374,8 +372,8 @@ namespace
         if (!back)
             throw std::runtime_error("Result return button must exist.");
         const auto bounds = back->BoundsInCanvas();
-        v::Visual2DInputRouter pointerRouter;
-        v::PointerInput pointer;
+        Visual2DInputRouter pointerRouter;
+        PointerInput pointer;
         pointer.available = true;
         pointer.position = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
         pointer.leftButtonDown = pointer.leftButtonPressed = true;
@@ -392,31 +390,31 @@ namespace
         data = taiko_result_ui::BuildGraphs(*taiko, scatter, histogram);
         Check(data.rectangles.size() == 2 && data.maximumBinCount == 0, "Empty graphs must not invent samples.");
     }
-    class ReturnRoute final : public mrg::scene::GameScene
+    class ReturnRoute final : public GameScene
     {
       public:
-        void Initialize(const mrg::EngineServices &) override
+        void Initialize(const EngineServices &) override
         {
         }
-        void Update(const mrg::UpdateContext &, mrg::scene::SceneManager &) override
+        void Update(const UpdateContext &, SceneManager &) override
         {
         }
-        void Render(const mrg::graphics::RenderContext &) override
+        void Render(const RenderContext &) override
         {
         }
         void Shutdown() noexcept override
         {
         }
     };
-    class TransitionGame final : public mrg::scene::SceneGameClient
+    class TransitionGame final : public SceneGameClient
     {
       public:
         explicit TransitionGame(bool &verified) : verified_(verified)
         {
         }
-        mrg::EngineConfig GetEngineConfig() const override
+        EngineConfig GetEngineConfig() const override
         {
-            mrg::EngineConfig config;
+            EngineConfig config;
             config.showWindow = false;
             config.audio.allowNoSoundFallback = false;
             config.renderRateOverrideHz = 60;
@@ -426,19 +424,19 @@ namespace
       protected:
         std::string_view InitialSceneId() const noexcept override
         {
-            return finger_drum::scene_ids::RhythmTest;
+            return RhythmTestSceneId;
         }
-        void RegisterScenes(mrg::scene::SceneManager &scenes) override
+        void RegisterScenes(SceneManager &scenes) override
         {
-            launch_ = std::make_shared<finger_drum::GameplayLaunchStore>();
+            launch_ = std::make_shared<GameplayLaunchStore>();
             PrepareSession();
-            Check(scenes.RegisterScene<RhythmTestScene>(std::string(finger_drum::scene_ids::RhythmTest),
-                                                        mrg::scene::SceneRetention::DestroyOnExit, launch_,
+            Check(scenes.RegisterScene<RhythmTestScene>(std::string(RhythmTestSceneId),
+                                                        SceneRetention::DestroyOnExit, launch_,
                                                         std::ref(AudioPlayback()), std::ref(ScreenVisuals()), false,
                                                         std::ref(texts_), std::ref(pending_)),
                   "Register production gameplay Scene.");
-            Check(scenes.RegisterScene(std::string(finger_drum::scene_ids::Result),
-                                       mrg::scene::SceneRetention::DestroyOnExit,
+            Check(scenes.RegisterScene(std::string(ResultSceneId),
+                                       SceneRetention::DestroyOnExit,
                                        [this]
                                        {
                                            ++resultCreations_;
@@ -447,25 +445,25 @@ namespace
                                            return std::make_unique<ResultScene>(
                                                std::move(pending_), ScreenVisuals(), texts_,
                                                ResultViewContext{L"Retry fixture", L"Regression", true},
-                                               [this](mrg::scene::SceneManager &manager)
+                                               [this](SceneManager &manager)
                                                {
                                                    PrepareSession();
-                                                   return manager.ChangeScene(finger_drum::scene_ids::RhythmTest);
+                                                   return manager.ChangeScene(RhythmTestSceneId);
                                                });
                                        }),
                   "Register production Result Scene.");
-            Check(scenes.RegisterScene<ReturnRoute>(std::string(finger_drum::scene_ids::Lobby),
-                                                    mrg::scene::SceneRetention::KeepAlive),
+            Check(scenes.RegisterScene<ReturnRoute>(std::string(LobbySceneId),
+                                                    SceneRetention::KeepAlive),
                   "Register test return route.");
             Check(resultCreations_ == 0 && !pending_, "Result construction must be deferred.");
         }
-        void OnClientUpdated(const mrg::UpdateContext &context) override
+        void OnClientUpdated(const UpdateContext &context) override
         {
             Check(context.totalSeconds < 12, "Result transition regression timed out.");
-            if (Scenes().CurrentSceneId() == finger_drum::scene_ids::Result && !retryRequested_)
+            if (Scenes().CurrentSceneId() == ResultSceneId && !retryRequested_)
             {
                 const auto &summary = resultData_->Summary();
-                Check(summary.endReason == mode::PlayEndReason::Completed && summary.processedNotes == 1 &&
+                Check(summary.endReason == PlayEndReason::Completed && summary.processedNotes == 1 &&
                           summary.unprocessedNotes == 0 && context.totalSeconds >= 4.9,
                       "All notes must finalize before the three-second Result delay.");
                 Check(resultCreations_ == 1 && !pending_ && ScreenVisuals().CanvasCount() == 1 &&
@@ -479,11 +477,11 @@ namespace
                     throw std::runtime_error("The retry button must exist.");
                 Check(retry->IsEnabled(), "The retry button must be enabled.");
                 const auto bounds = retry->BoundsInCanvas();
-                v::PointerInput p;
+                PointerInput p;
                 p.available = true;
                 p.position = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
                 p.leftButtonDown = p.leftButtonPressed = true;
-                v::Visual2DInputRouter router;
+                Visual2DInputRouter router;
                 router.Process(*canvas, p);
                 p.leftButtonDown = p.leftButtonPressed = false;
                 p.leftButtonReleased = true;
@@ -491,16 +489,16 @@ namespace
                 router.Reset(*canvas);
                 retryRequested_ = true;
             }
-            else if (Scenes().CurrentSceneId() == finger_drum::scene_ids::RhythmTest && retryRequested_ &&
+            else if (Scenes().CurrentSceneId() == RhythmTestSceneId && retryRequested_ &&
                      !returnRequested_)
             {
                 Check(sessionCreations_ == 2 && resultCreations_ == 1 && !pending_ &&
                           ScreenVisuals().CanvasCount() == 1 && !ScreenVisuals().FindCanvas(2),
                       "Retry must construct fresh gameplay after destroying Result and its Canvas.");
-                Check(Scenes().ChangeScene(finger_drum::scene_ids::Lobby), "Queue returning after retry.");
+                Check(Scenes().ChangeScene(LobbySceneId), "Queue returning after retry.");
                 returnRequested_ = true;
             }
-            else if (Scenes().CurrentSceneId() == finger_drum::scene_ids::Lobby && returnRequested_)
+            else if (Scenes().CurrentSceneId() == LobbySceneId && returnRequested_)
             {
                 Check(ScreenVisuals().CanvasCount() == 0 && resultCreations_ == 1,
                       "Leaving Result must destroy its transient Canvas.");
@@ -512,11 +510,11 @@ namespace
       private:
         void PrepareSession()
         {
-            finger_drum::chart::PatternDocument pattern;
+            PatternDocument pattern;
             pattern.name = "Automatic completion regression";
             pattern.mode = "Taiko";
             pattern.notes.push_back({.keyType = 1});
-            auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+            auto loaded = TaikoMode{}.CreateSession(pattern);
             Check(loaded.Succeeded(), "Transition fixture must load.");
             launch_->SetValidated({}, std::move(loaded.session));
             ++sessionCreations_;
@@ -526,10 +524,10 @@ namespace
         bool returnRequested_{};
         std::size_t sessionCreations_{};
         std::size_t resultCreations_{};
-        std::shared_ptr<finger_drum::GameplayLaunchStore> launch_;
-        std::unique_ptr<mode::IPlayResult> pending_;
-        const mode::IPlayResult *resultData_{};
-        finger_drum::texts::TextCatalog texts_;
+        std::shared_ptr<GameplayLaunchStore> launch_;
+        std::unique_ptr<IPlayResult> pending_;
+        const IPlayResult *resultData_{};
+        TextCatalog texts_;
     };
 } // namespace
 int main()
@@ -537,13 +535,13 @@ int main()
     try
     {
         std::string error;
-        Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
+        Check(InitializeBuiltInAssets(error), error.c_str());
         TestAccuracyRanks();
         TestMillisecondHistogram();
         TestHistogramJudgementColors();
         TestGraphsAndView();
         bool verified{};
-        Check(mrg::Run(std::make_unique<TransitionGame>(verified)) == 0 && verified,
+        Check(Run(std::make_unique<TransitionGame>(verified)) == 0 && verified,
               "Actual D3D12/FMOD Result transition must complete.");
         std::puts("Result ranks (21 boundary cases), graphs, six-decimal display, ownership and actual deferred "
                   "transition passed.");

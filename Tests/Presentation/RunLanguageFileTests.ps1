@@ -17,12 +17,12 @@ foreach ($folder in 'App','EditorScene','GameScene','Presentation','Texts') {
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd','/D_DEBUG') } else { @('/MD','/DNDEBUG') }
 $units = @('Pch','TextCatalog','LanguageFile','LogoTexts','OptionTexts','EditorTexts','TaikoEditorTexts',
     'MusicSelectTexts','GameplayTexts','PauseTexts','ResultTexts')
-$objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
+$objects = $units | ForEach-Object { "build/obj/YOUMU.Client/x64/$Configuration/$_.obj" }
 $directory = "build/obj/LanguageFileTests/$Configuration"
 New-Item -ItemType Directory -Force $directory | Out-Null
-& cl /nologo /W4 /analyze /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IDependencies/MRG-Engine/Engine/SDK `
-    Tests/Presentation/LanguageFileTests.cpp @objects "bin/x64/$Configuration/FingerDrum.Assets.lib" `
-    "Dependencies/MRG-Engine/bin/x64/$Configuration/MRG.Core.lib" "/Fo$directory/" "/Febin/x64/$Configuration/LanguageFileTests.exe" `
+& cl /nologo /W4 /analyze /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IDependencies/PhantomCore/Engine/SDK `
+    Tests/Presentation/LanguageFileTests.cpp @objects "bin/x64/$Configuration/YOUMU.Assets.lib" `
+    "Dependencies/PhantomCore/bin/x64/$Configuration/PhantomCore.lib" "/Fo$directory/" "/Febin/x64/$Configuration/LanguageFileTests.exe" `
     /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" user32.lib gdi32.lib ole32.lib
 if ($LASTEXITCODE -ne 0) { throw 'Language-file test build failed.' }
 & "bin/x64/$Configuration/LanguageFileTests.exe"

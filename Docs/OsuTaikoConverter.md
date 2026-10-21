@@ -12,7 +12,7 @@
 
 ```text
 부모 폴더/
-  MyRhythmGame-Client/
+  YOUMU/
   OsuTaikoConverter/
 ```
 
@@ -28,8 +28,8 @@ git clone https://github.com/4dblackhole/OsuTaikoConverter.git ../OsuTaikoConver
 ## 빌드와 책임
 
 Client 솔루션은 변환기의 Core 정적 라이브러리, 콘솔 EXE, 테스트 프로젝트를
-포함합니다. `MRG.Client`는 변환기 EXE를 빌드 의존성으로 참조하고 같은 구성의
-`OsuTaikoConverter.exe`를 `MyRhythmGame.exe` 옆에 복사합니다. EXE를 링크하지 않습니다.
+포함합니다. `YOUMU.Client`는 변환기 EXE를 빌드 의존성으로 참조하고 같은 구성의
+`OsuTaikoConverter.exe`를 `Y's Orchestral Unison - Melodic Ultimatum.exe` 옆에 복사합니다. EXE를 링크하지 않습니다.
 
 변환기는 Client의 엔진 비종속 Chart/Modes/Rhythm 라이브러리만 재사용합니다.
 도메인 라이브러리가 변환기나 Client 실행 프로젝트를 역참조하지 않습니다.
@@ -166,7 +166,8 @@ Taiko lane이 노트를 누락시킬 겹침은 실패합니다. 첫 빨간 포�
 
 빨간 기준점은 온음표 `1e-9` 단위로 수치 표현합니다(음악 격자 보정과 별개).
 선택된 틱과 기존 MusicalTimeline이 복원한 시각의 차이는 최대 2µs여야 합니다.
-저장 왕복, 파서 진단, 실제 Taiko 세션의 노트 개수 일치도 확인한 뒤 성공합니다.
+변환기는 저장 왕복과 파서 진단까지 확인합니다. 실제 Taiko 세션의 생성과 원본 객체 대비
+플레이 노트 개수 검증은 Client의 OsuImportValidation이 저장된 결과를 받아 수행합니다.
 변환기 테스트는 `..\OsuTaikoConverter\bin\x64\<구성>\OsuTaikoConverter.Tests.exe`입니다.
 전체 Client 검증 명령은 [Verification](Verification.md)을 사용합니다.
 

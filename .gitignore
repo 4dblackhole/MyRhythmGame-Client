@@ -10,12 +10,12 @@ build/
 # Third-party SDKs and runtime binaries are supplied locally.
 ThirdParty/
 # This pinned source-only decoder is redistributed with its license.
-!FingerDrum.Editor/ThirdParty/
+!YOUMU.Editor/ThirdParty/
 *.dll
 *.lib
 
 # Development Songs and skins are user-added local content.
-# Redistributed fallback content is tracked by FingerDrum.Assets instead.
+# Redistributed fallback content is tracked by YOUMU.Assets instead.
 Client/Assets/Songs/
 Client/Assets/Skins/
 Client/Assets/Languages/

@@ -7,20 +7,20 @@ using namespace editor_ui;
 #include <sstream>
 
 void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &state,
-                                   const finger_drum::texts::TextCatalog &catalog)
+                                   const TextCatalog &catalog)
 {
-    const auto &text = finger_drum::texts::Editor(catalog);
+    const auto &text = Editor(catalog);
     canvas.Text({136, 105, 1000, 40}, std::wstring(text.metadataTitle), 28);
     canvas.Box({132, 173, 1728, 800}, White, 12);
     auto metadata =
         [&state, &canvas, &catalog](float y, const wchar_t *title, std::string value,
-                                    std::function<void(chart::PatternDocument &, const std::string &)> apply)
+                                    std::function<void(PatternDocument &, const std::string &)> apply)
     {
         canvas.Text({156, y, 360, 40}, title, 22);
         canvas.Button({520, y, 1295, 44}, Wide(value),
                       [&state, &catalog, title, value, apply]
                       {
-                          if (auto edited = EditText(title, value, finger_drum::texts::Editor(catalog)))
+                          if (auto edited = EditText(title, value, Editor(catalog)))
                           {
                               auto p = state.Document().Pattern();
                               apply(p, *edited);
@@ -63,7 +63,7 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
     metadata(575, text.baseBpm.data(), std::to_string(p.baseBpm),
              [](auto &d, const auto &value) { d.baseBpm = Number(value); });
     metadata(645, catalog.Get("Editor.accuracyDifficulty").data(), p.judgementLevel.Format(),
-             [](auto &d, const auto &value) { d.judgementLevel = editor_values::JudgeLevel(value); });
+             [](auto &d, const auto &value) { d.judgementLevel = ParseJudgeLevel(value); });
     std::string sounds;
     for (const auto &[id, path] : state.Document().Effects().hitSounds)
         sounds += id + ": " + Utf8(path.wstring()) + "\n";
@@ -71,10 +71,10 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
     canvas.Button({520, 715, 1295, 44}, Wide(sounds),
                   [&state, &catalog, sounds]
                   {
-                      const auto &labels = finger_drum::texts::Editor(catalog);
+                      const auto &labels = Editor(catalog);
                       if (auto edited = EditText(labels.hitSoundTable.data(), sounds, labels))
                       {
-                          const auto parsed = chart::ChartParser{}.ParseEffect("[HitSounds]\n" + *edited);
+                          const auto parsed = ChartParser{}.ParseEffect("[HitSounds]\n" + *edited);
                           if (!parsed.Succeeded())
                               throw std::invalid_argument("Invalid YME hit sound table.");
                           auto effects = state.Document().Effects();
@@ -89,7 +89,7 @@ void TaikoEditorMode::DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &st
              std::to_string(p.backgroundOffsetX) + ", " + std::to_string(p.backgroundOffsetY),
              [](auto &d, const auto &value)
              {
-                 const auto parsed = chart::ChartParser{}.ParsePattern("[Metadata]\noffset: " + value);
+                 const auto parsed = ChartParser{}.ParsePattern("[Metadata]\noffset: " + value);
                  if (!parsed.Succeeded())
                      throw std::invalid_argument("Background offset requires x, y numbers.");
                  d.backgroundOffsetX = parsed.document.backgroundOffsetX;

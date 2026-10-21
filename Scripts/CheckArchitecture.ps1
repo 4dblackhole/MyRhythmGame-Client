@@ -33,12 +33,15 @@ foreach ($projectPath in $projectPaths) {
     }
     $references = @($project.SelectNodes('//*[local-name()="ProjectReference"]'))
     $edges[[IO.Path]::GetFullPath($projectPath)] = @($references | ForEach-Object {
-        [IO.Path]::GetFullPath((Join-Path $directory $_.Include))
+        [IO.Path]::GetFullPath([IO.Path]::Combine($directory, $_.Include.Replace('$(YOUMURoot)', ($repoRoot + '\'))))
     })
     foreach ($reference in $edges[[IO.Path]::GetFullPath($projectPath)]) {
         if (!(Test-Path -LiteralPath $reference)) { $problems.Add("Missing project reference: $reference") }
-        if ($directory -match 'FingerDrum\.(Rhythm|Chart|Modes|Editor)$' -and $reference -match '[\\/](Client|Dependencies)[\\/]') {
+        if ($directory -match 'YOUMU\.(Rhythm|Chart|Modes|Editor)$' -and $reference -match '[\\/](Client|Dependencies)[\\/]') {
             $problems.Add("Domain depends on Client/engine: $projectPath -> $reference")
+        }
+        if ($directory -eq $converterRoot -and $reference -match '[\\/](Client|Dependencies)[\\/]') {
+            $problems.Add("Converter depends on Client/engine: $projectPath -> $reference")
         }
     }
 }
@@ -58,15 +61,19 @@ if (Test-Path -LiteralPath $converterRoot) {
 foreach ($source in $sources) {
     $body = Get-Content -Raw -LiteralPath $source
     if ($body -match '#include\s*[<"][^">]+\.cpp[">]') { $problems.Add("Implementation include: $source") }
-    if ($source -match '[\\/]FingerDrum\.(Rhythm|Chart|Modes|Editor)[\\/]' -and
-        $body -match '#include\s*[<"](?:MRG_Core|.*(?:Client/|Client\\|Dependencies/|Engine/))') {
+    if ($source -match '[\\/]YOUMU\.(Rhythm|Chart|Modes|Editor)[\\/]' -and
+        $body -match '#include\s*[<"](?:PhantomCore|.*(?:Client/|Client\\|Dependencies/|Engine/))') {
         $problems.Add("Domain includes Client/engine: $source")
     }
     if ($source -match '[\\/]Client[\\/]' -and
-        $body -match '#include\s*[<"][^">]*(?:MRG-Engine|Engine/|Engine\\)[^">]*[">]') {
-        $problems.Add("Client bypasses MRG_Core.h: $source")
+        $body -match '#include\s*[<"][^">]*(?:PhantomCore[/\\]|Engine/|Engine\\)[^">]*[">]') {
+        $problems.Add("Client bypasses PhantomCore.h: $source")
     }
-    if ($body -match 'class\s+(\w+Scene)\s+final\s*:\s*public\s+mrg::scene::GameScene') {
+    if ($source.StartsWith($converterRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -and
+        $body -match '#include\s*[<"][^">]*(?:PhantomCore\.h|TaikoMode\.h|PlaySession\.h|PlayGameModeFactory\.h)[">]') {
+        $problems.Add("Converter includes Client playback verification: $source")
+    }
+    if ($body -match 'class\s+(\w+Scene)\s+final\s*:\s*public\s+GameScene') {
         if ((Split-Path -Leaf (Split-Path -Parent $source)) -ne $Matches[1]) {
             $problems.Add("Scene lacks its own directory: $source")
         }

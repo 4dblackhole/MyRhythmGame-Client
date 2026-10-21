@@ -1,7 +1,7 @@
 # 플레이 오디오
 
 파일 등록/기본 cue: `GameFlow/Submodules/GameplayAudio.cpp`.
-규칙별 정책: `FingerDrum.Modes/Taiko/Submodules/TaikoSoundPolicy.cpp`, 공통 ID: `TaikoSoundIds.h`.
+규칙별 정책: `YOUMU.Modes/Taiko/Submodules/TaikoSoundPolicy.cpp`, 공통 ID: `TaikoSoundIds.h`.
 실제 재생: `Client/Audio/GameplayAudioRouter.*`. 엔진 API 변경 때만 엔진 Audio 문서를 읽습니다.
 
 파일 등록은 라우터의 `RegisterSound`가 SoundId와 경로를 연결하고
@@ -14,7 +14,7 @@ Stream 계열도 현재 음원 전체 PCM을 메모리에 준비하므로 파일
 SoundId 별칭은 하나의 활성 Voice를 공유합니다. 이전 재생이 끝나기 전에 같은
 Sample을 다시 요청하면 새 Channel을 만들지 않고 기존 Channel의 위치를 처음으로
 되돌려 재생하며, 끝난 뒤 요청한 경우에만 새 Voice를 만듭니다. 재생 관리자는 재생 중
-Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system은 `mrg::Run`이
+Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system은 `Run`이
 소유하는 AudioSystem 하나가 관리합니다.
 
 YME 표의 실제 참조 항목만 세션의 HitSoundFiles에 모읍니다. 비동기 Clip을 등록한 뒤
@@ -117,7 +117,7 @@ Lane 위·아래까지의 거리가 같습니다. Lane과 ScrollGear 표면은 �
 끝까지 이어지고 마지막 `Lane.png` 타일만 UV로 잘립니다.
 
 노트와 플레이 HUD의 배포 기본본은
-`FingerDrum.Assets/Assets/Skins/Default Skin/InGame`의 PNG입니다. 실행 파일 옆
+`YOUMU.Assets/Assets/Skins/Default Skin/InGame`의 PNG입니다. 실행 파일 옆
 스킨에서 누락된 파일만 이 내장 기본본으로 대체합니다.
 `note.png`, `bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient
 색상을 곱하고 대응하는 `*Overlay.png`는 흰색 원본으로 위에 그립니다. 일반/큰

@@ -22,7 +22,7 @@ namespace
 void EditorView::SyncTimelineSlider()
 {
     const auto [begin, end] = state_.TimelineRangeMilliseconds();
-    timelineSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue(
+    timelineSliderNode_->GetComponent<SliderBehaviorComponent>()->SetValue(
         static_cast<float>(std::clamp((state_.TimeMilliseconds() - begin) / (end - begin), 0.0, 1.0)));
 }
 
@@ -47,7 +47,7 @@ void EditorView::DrawTimeline()
     }
 }
 
-void EditorView::DrawTimeInput(v::Rect rect)
+void EditorView::DrawTimeInput(Rect rect)
 {
     Button(rect, std::wstring(Texts().currentTime), [this] {
         if (auto value =

@@ -2,11 +2,11 @@
 #include "Utility/IntervalIndex.h"
 #include <set>
 
-namespace finger_drum::tests
+namespace tests
 {
     void TestIntervalRangeQueries()
     {
-        using Index = chart::IntervalIndex<std::int64_t, std::size_t>;
+        using Index = IntervalIndex<std::int64_t, std::size_t>;
         std::vector<Index::Entry> entries;
         for (std::size_t i = 0; i < 1000; ++i)
         {
@@ -33,7 +33,7 @@ namespace finger_drum::tests
 
     void TestLongViewportIndexEdits()
     {
-        chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.baseBpm = 120;
         for (std::size_t i = 0; i < 1000; ++i)
         {
@@ -41,9 +41,9 @@ namespace finger_drum::tests
             pattern.notes.push_back({{measure, {}}, 11, 1, {}, {}, {}, i * 2});
             pattern.notes.push_back({{measure + 1, {1, 2}}, 11, 2, {}, {}, {}, i * 2 + 1});
         }
-        chart::ChartEditor editor(pattern);
+        ChartEditor editor(pattern);
         const auto query = [&]
-        { return editor.NotesInTimeRange(rhythm::RhythmTime{1'000'000}, rhythm::RhythmTime{1'100'000}); };
+        { return editor.NotesInTimeRange(RhythmTime{1'000'000}, RhythmTime{1'100'000}); };
         Require(query().size() == 2, "A viewport between both endpoints must retain its long note.");
         editor.DeleteNote(1);
         Require(query().empty(), "Deleting through a tail must invalidate the interval projection.");
@@ -51,24 +51,24 @@ namespace finger_drum::tests
         Require(selected.has_value(), "Other stable IDs must survive deletion.");
         auto head = selected->head.note;
         head.position = {0, {}};
-        editor.UpdateNote(2, head, chart::MusicalPosition{1, {1, 2}});
+        editor.UpdateNote(2, head, MusicalPosition{1, {1, 2}});
         Require(query().size() == 2 && query().front().note.sourceOrder == 2,
                 "Moving a long note into the viewport must refresh its interval without changing its ID.");
-        editor.ReplaceTiming({{{0, {}}, chart::TimingDirectiveType::Bpm, 240}});
-        Require(editor.NotesInTimeRange(rhythm::RhythmTime{1'600'000}, rhythm::RhythmTime{1'700'000}).empty(),
+        editor.ReplaceTiming({{{0, {}}, TimingDirectiveType::Bpm, 240}});
+        Require(editor.NotesInTimeRange(RhythmTime{1'600'000}, RhythmTime{1'700'000}).empty(),
                 "Tempo edits must invalidate cached interval endpoints.");
     }
 
     void TestUnusedChartSoundsAreNotPrepared()
     {
-        chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.notes.push_back({{0, {}}, 1, 0, "2"});
-        chart::EffectDocument effects;
+        EffectDocument effects;
         effects.hitSounds = {{"1", "unused.wav"}, {"2", "used.wav"}};
-        auto loaded = mode::TaikoMode{}.CreateSession(pattern, effects);
+        auto loaded = TaikoMode{}.CreateSession(pattern, effects);
         Require(loaded.Succeeded() && loaded.session->HitSoundFiles().size() == 1 &&
                     loaded.session->HitSoundFiles().contains("Chart.HitSound.2"),
                 "Unused sound table entries must not become gameplay loading work.");
     }
-} // namespace finger_drum::tests
+} // namespace youmu::tests

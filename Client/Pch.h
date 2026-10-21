@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 
 #include <algorithm>
 #include <array>

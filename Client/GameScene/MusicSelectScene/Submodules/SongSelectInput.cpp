@@ -4,19 +4,19 @@
 
 using namespace song_select;
 
-void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
+void MusicSelectView::ProcessPointer(const InputState &input)
 {
     canvasPointer_ = input.IsMouseInsideWindow()
-                         ? mrg::visual2d::MapScreenPointer(
+                         ? MapScreenPointer(
                                {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
                                {static_cast<float>(width_), static_cast<float>(height_)}, *canvas_)
                          : std::nullopt;
-    mrg::visual2d::PointerInput pointer{};
+    PointerInput pointer{};
     pointer.available = canvasPointer_.has_value();
-    pointer.position = canvasPointer_.value_or(mrg::visual2d::Point{});
-    pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
-    pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
-    pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
+    pointer.position = canvasPointer_.value_or(Point{});
+    pointer.leftButtonDown = input.IsMouseButtonDown(MouseButton::Left);
+    pointer.leftButtonPressed = input.WasMouseButtonPressed(MouseButton::Left);
+    pointer.leftButtonReleased = input.WasMouseButtonReleased(MouseButton::Left);
     pointer.wheelDelta = input.MouseWheelDelta();
     pointer.timestampTicks = LatestPointerTimestamp(input);
     if (additionMenu_ && additionMenu_->IsVisible() &&
@@ -36,7 +36,7 @@ void MusicSelectView::ProcessPointer(const mrg::platform::InputState &input)
 
 bool MusicSelectView::ProcessActions()
 {
-    for (const mrg::visual2d::Action &action : canvas_->TakeActions())
+    for (const Action &action : canvas_->TakeActions())
     {
         if (options_.ProcessAction(action))
         {
@@ -44,7 +44,7 @@ bool MusicSelectView::ProcessActions()
             RebuildSongCards();
             return true;
         }
-        if (action.type == mrg::visual2d::ActionType::Clicked && action.source == optionButtonId_)
+        if (action.type == ActionType::Clicked && action.source == optionButtonId_)
         {
             options_.Toggle();
             return true;
@@ -53,14 +53,14 @@ bool MusicSelectView::ProcessActions()
         {
             continue;
         }
-        if (action.type == mrg::visual2d::ActionType::SelectionChanged && action.source == sortSelectorId_)
+        if (action.type == ActionType::SelectionChanged && action.source == sortSelectorId_)
         {
             selection_.sortMode_ = static_cast<SortMode>(
                 std::min<std::size_t>(action.selectedIndex, static_cast<std::size_t>(SortMode::Artist)));
             RebuildVisibleSongs();
             return false;
         }
-        if (action.type != mrg::visual2d::ActionType::Clicked)
+        if (action.type != ActionType::Clicked)
         {
             continue;
         }
@@ -115,7 +115,7 @@ bool MusicSelectView::ProcessActions()
     return false;
 }
 
-bool MusicSelectView::ProcessKeyboard(const mrg::platform::InputState &input)
+bool MusicSelectView::ProcessKeyboard(const InputState &input)
 {
     if (options_.IsVisible())
     {
@@ -173,7 +173,7 @@ bool MusicSelectView::ProcessKeyboard(const mrg::platform::InputState &input)
     return false;
 }
 
-bool MusicSelectView::ProcessSearchKeyboard(const mrg::platform::InputState &input)
+bool MusicSelectView::ProcessSearchKeyboard(const InputState &input)
 {
     if (!searchFocused_)
     {
@@ -258,7 +258,7 @@ void MusicSelectView::SelectPattern(const std::size_t index)
             const bool selected = patternIndex == selection_.selectedPatternIndex_;
             ApplyButtonStyle(*button, selected ? AccentBlue : PureWhite, selected ? AccentHover : PaleBlue,
                              selected ? PureWhite : DeepBlue);
-            finger_drum::presentation::BindSkinImage(*button, screenVisuals_, "MusicSelect",
+            BindSkinImage(*button, screenVisuals_, "MusicSelect",
                                                      selected ? "DifficultySelected" : "Difficulty");
         }
     }

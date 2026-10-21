@@ -1,9 +1,8 @@
 #include "EditorForms.h"
 #include "EditorValueParsing.h"
 #include <algorithm>
-using namespace editor_values;
 
-void EditorEffectForm::Load(const chart::EffectDocument &effects, std::size_t row)
+void EditorEffectForm::Load(const EffectDocument &effects, std::size_t row)
 {
     auto draft = *this;
     draft.endMeasure.clear();
@@ -38,7 +37,7 @@ void EditorEffectForm::Load(const chart::EffectDocument &effects, std::size_t ro
     }
     *this = std::move(draft);
 }
-chart::EffectDocument EditorEffectForm::Apply(const chart::EffectDocument &source) const
+EffectDocument EditorEffectForm::Apply(const EffectDocument &source) const
 {
     auto effects = source;
     const auto position = Position(startMeasure, startFraction);
@@ -50,9 +49,9 @@ chart::EffectDocument EditorEffectForm::Apply(const chart::EffectDocument &sourc
     }
     else
     {
-        chart::EffectCommand command;
+        EffectCommand command;
         command.position = position;
-        command.type = std::get<chart::EffectCommandType>(selection);
+        command.type = std::get<EffectCommandType>(selection);
         const auto definition = std::ranges::find(EditorEffectDefinitions, command.type, &EditorEffectDefinition::type);
         if (definition == EditorEffectDefinitions.end())
             throw std::invalid_argument("Unsupported automation type.");
@@ -61,7 +60,7 @@ chart::EffectDocument EditorEffectForm::Apply(const chart::EffectDocument &sourc
         command.endValue = Number(endValue);
         command.curve = curve;
         command.curveName = curveName;
-        if (command.curve == chart::AutomationCurve::Expression)
+        if (command.curve == AutomationCurve::Expression)
         {
             const auto current = std::ranges::find_if(source.commands, [&](const auto &c) { return c.curveName == curveName; });
             if (current != source.commands.end()) command.interpolation = current->interpolation;

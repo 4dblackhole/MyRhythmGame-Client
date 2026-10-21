@@ -6,7 +6,7 @@ ColoredCube 계열 기술 예제까지 제거했습니다. 새 엔진 검증 실
 
 | 대상 | 변경과 현재 계약 |
 | --- | --- |
-| ColoredCubeGame, ColoredCube/Blank/Mesh/Collision/Widget Scene | 소스 13개와 보관 문서 5개 삭제. Main의 예제 선택 분기와 프로젝트/필터 등록도 제거. Debug/Release 모두 FingerDrum 게임만 실행. |
+| ColoredCubeGame, ColoredCube/Blank/Mesh/Collision/Widget Scene | 소스 13개와 보관 문서 5개 삭제. Main의 예제 선택 분기와 프로젝트/필터 등록도 제거. Debug/Release 모두 YOUMU 게임만 실행. |
 | 구형 skin-set.txt 가져오기 | ImportLegacySkin과 Win32 known-folder 의존 제거. 최초 Option.ini는 현재 기본값으로 생성하고 이후 Option.ini만 사용. |
 | 빈 모드의 Taiko 대체 | EditorModeFactory, 에디터 파일 열기, 곡 선택 플레이 진입, Taiko 세션 생성에서 빈/다른 모드를 거부. 유효 채보는 Mode: Taiko를 명시. |
 | YMP 안의 구형 효과 명령 | 알 수 없는 타이밍 명령을 Warning으로 무시하던 경로 제거. #measure/#bpm/#delay만 허용하고 나머지는 Error. 효과는 YME 소유. |
@@ -17,7 +17,7 @@ ColoredCube 계열 기술 예제까지 제거했습니다. 새 엔진 검증 실
 
 현재 계약으로 구분한 항목은 다음과 같습니다.
 
-- `MRG_Core.h`는 현재 지원되는 단일 공개 SDK이며 과거 호출부용 호환 헤더가 아닙니다.
+- `PhantomCore.h`는 현재 지원되는 단일 공개 SDK이며 과거 호출부용 호환 헤더가 아닙니다.
   Texture/Mesh handle과 callback 별칭도 현재 소유권·호출 계약에 사용됩니다.
 - Collision/Geometry/Visual2D 등 재사용 엔진 기능은 예제 Scene과 독립된 기능입니다.
   엔진의 SDK 단위 테스트와 Client의 로직/presentation/smoke 테스트는 유지합니다.

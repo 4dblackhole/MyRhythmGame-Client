@@ -1,8 +1,8 @@
-# MyRhythmGame-Client
+# YOUMU
 
 비공개 리듬게임 **Y's Orchestral Unison: Melodic Ultimatum**의 Client 코드와 게임 자산 저장소입니다.
-재사용 엔진은 `Dependencies/MRG-Engine` private submodule입니다.
-게임 표시 이름은 [GameIdentity.h](Client/Texts/GameIdentity.h)의 `GameName` 한 곳에서 관리합니다.
+재사용 엔진은 `Dependencies/PhantomCore` private submodule입니다.
+게임 표시 이름과 EXE 이름은 [GameIdentity.props](Client/Texts/GameIdentity.props)의 `GameDisplayName` 한 곳에서 관리합니다.
 고정 UI 문구는 외부 `Languages/ko.ini`, `en.ini`를 수정하고 재실행하면 반영됩니다.
 누락/잘못된 항목은 항상 영어 기본 문구를 사용합니다. [언어파일 경로·문법](Docs/TextManagement.md#언어파일-교체)
 
@@ -26,13 +26,13 @@
 | 위치 | 책임 |
 | --- | --- |
 | `Client/` | 실행 파일, Scene 조립, 화면·오디오 연결; `Texts`는 문구·언어별 글꼴 소유 |
-| `FingerDrum.Rhythm/` | 판정, 노트 규칙, Lane, 스크롤, 타이머 |
-| `FingerDrum.Chart/` | YMM/YMP/YME 파싱, 타이밍 컴파일, 편집·저장 |
-| `FingerDrum.Modes/` | PlaySession과 Taiko 노트 생성·사운드 정책 |
-| `FingerDrum.Editor/` | 에디터용 오디오 디코딩·분석 |
-| `FingerDrum.Assets/` | 기본 스킨/글꼴 RCDATA와 외부 기본 제공곡 |
+| `YOUMU.Rhythm/` | 판정, 노트 규칙, Lane, 스크롤, 타이머 |
+| `YOUMU.Chart/` | YMM/YMP/YME 파싱, 타이밍 컴파일, 편집·저장 |
+| `YOUMU.Modes/` | PlaySession과 Taiko 노트 생성·사운드 정책 |
+| `YOUMU.Editor/` | 에디터용 오디오 디코딩·분석 |
+| `YOUMU.Assets/` | 기본 스킨/글꼴 RCDATA와 외부 기본 제공곡 |
 | `Tests/Rhythm/` | 분야별 로직·파일·선택 상태 회귀 테스트 |
-| `Dependencies/MRG-Engine/` | 독립 저장소의 재사용 엔진 |
+| `Dependencies/PhantomCore/` | 독립 저장소의 재사용 엔진 |
 | `../OsuTaikoConverter/` | 별도 C++ 저장소의 osu!taiko → YMM/YMP/YME 변환기 EXE |
 
 Scene마다 전용 폴더와 `Submodules/`를 둡니다. Scene은 작은 호출로 책임 클래스를
@@ -84,18 +84,18 @@ Visual Studio 2022 / MSVC v143 / Windows SDK / FMOD Studio API for Windows가
 필요합니다. FMOD SDK·DLL은 커밋하지 않습니다.
 
 ```powershell
-git clone --recurse-submodules https://github.com/4dblackhole/MyRhythmGame-Client.git
-cd MyRhythmGame-Client
+git clone --recurse-submodules https://github.com/4dblackhole/YOUMU.git
+cd YOUMU
 git clone https://github.com/4dblackhole/OsuTaikoConverter.git ../OsuTaikoConverter
-msbuild MyRhythmGame-Client.sln /m /p:Configuration=Debug /p:Platform=x64
-msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
+msbuild YOUMU.sln /m /p:Configuration=Debug /p:Platform=x64
+msbuild YOUMU.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 ```
 
 전체 솔루션 빌드에는 형제 폴더의 비공개 변환기 저장소도 필요합니다.
 `OsuTaikoConverter.exe`는 게임 EXE 옆에 복사됩니다. 인자와 격자/omit 규칙,
 지원 범위는 [변환기 문서](Docs/OsuTaikoConverter.md)를 참고합니다.
 
-도메인 테스트만 빌드할 때는 `Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접
+도메인 테스트만 빌드할 때는 `Tests/Rhythm/YOUMU.Rhythm.Tests.vcxproj`를 직접
 빌드할 수 있으며 엔진 checkout/FMOD SDK가 필요하지 않습니다. Windows CI가
 Debug/Release 로직·카탈로그를 검사합니다. 선택 실행(`--filter`)과 정적 분석 방법은
 [검증 문서](Docs/Verification.md)를 참고하세요.
@@ -115,7 +115,7 @@ Ogg Vorbis는 내장 디코더로 분석하며 MP3/WAV 등은 기존 Media Found
 재생·일시정지합니다. Z는 첫 노트/0ms, X는 마지막 노트(테일 포함)/음원 끝을 번갈아 이동합니다.
 Q는 노트 선택 도구이며, 우측 노트 정보의 종류 변경은 같은 도구 묶음 안에서만 허용합니다.
 Debug/Release 모두 게임 Scene만 포함합니다. 배포할 때는 깨끗한 폴더에
-`MyRhythmGame.exe`, `fmod.dll`, 제공할 `Asset/Songs`를 복사합니다.
+`Y's Orchestral Unison - Melodic Ultimatum.exe`, `fmod.dll`, 제공할 `Asset/Songs`를 복사합니다.
 개발 실행은 `Client/Assets`, 다른 폴더에 복사한 EXE는 그 옆 `Asset`을 사용합니다.
 YMP/YME는 `Songs/Patterns/<곡>/<난이도>`에 한 쌍씩 정리합니다.
 빌드·테스트·smoke 명령은 [검증](Docs/Verification.md), Scene 수명과 공통 관리자는

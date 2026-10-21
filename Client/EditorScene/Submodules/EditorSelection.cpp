@@ -2,12 +2,10 @@
 #include "EditorWorkspace.h"
 #include <limits>
 
-namespace chart = finger_drum::chart;
-
 void EditorWorkspace::SelectNotes(std::span<const std::size_t> ids)
 {
     std::set<std::size_t> selected;
-    std::optional<std::pair<chart::MusicalPosition, chart::MusicalPosition>> range;
+    std::optional<std::pair<MusicalPosition, MusicalPosition>> range;
     for (const auto id : ids)
         if (const auto note = Document().FindNote(id))
         {
@@ -29,7 +27,7 @@ void EditorWorkspace::SelectNotes(std::span<const std::size_t> ids)
     RequestRebuild();
 }
 
-void EditorWorkspace::SelectNoteRange(chart::MusicalPosition begin, chart::MusicalPosition end)
+void EditorWorkspace::SelectNoteRange(MusicalPosition begin, MusicalPosition end)
 {
     if (end < begin)
         std::swap(begin, end);
@@ -122,7 +120,7 @@ void EditorWorkspace::CopySelection()
 {
     Clipboard result;
     result.tab = tab_;
-    std::optional<std::pair<chart::MusicalPosition, chart::MusicalPosition>> bounds;
+    std::optional<std::pair<MusicalPosition, MusicalPosition>> bounds;
     const auto extend = [&bounds](auto first, auto last)
     {
         if (!bounds)
@@ -204,7 +202,7 @@ void EditorWorkspace::PasteSelection(bool includeBlanks)
         return;
     const auto &timeline = Document().Timeline();
     const auto divisions = static_cast<std::int64_t>(score_.division) * 4;
-    const auto whole = std::max(0.0L, timeline.WholeNotesAtTime(editor_time::Microseconds(timeMs_)));
+    const auto whole = std::max(0.0L, timeline.WholeNotesAtTime(Microseconds(timeMs_)));
     const auto value = std::round(whole * divisions);
     if (!std::isfinite(value) || value >= std::numeric_limits<std::int64_t>::max())
         throw std::out_of_range("Paste position exceeds the supported musical range.");

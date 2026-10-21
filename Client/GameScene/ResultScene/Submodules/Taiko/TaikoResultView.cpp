@@ -9,12 +9,12 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string_view>
-namespace v = mrg::visual2d;
+
 using namespace taiko_result_ui::layout;
 
 namespace
 {
-    std::wstring_view RankImageKey(const finger_drum::rhythm::AccuracyScore accuracy) noexcept
+    std::wstring_view RankImageKey(const AccuracyScore accuracy) noexcept
     {
         struct RankThreshold
         {
@@ -41,8 +41,8 @@ namespace
     }
 } // namespace
 
-TaikoResultView::TaikoResultView(const finger_drum::mode::TaikoPlayResult &result, v::ScreenVisual2DManager &visuals,
-                                 finger_drum::texts::TextCatalog &texts, ResultViewContext context)
+TaikoResultView::TaikoResultView(const TaikoPlayResult &result, ScreenVisual2DManager &visuals,
+                                 TextCatalog &texts, ResultViewContext context)
     : result_(result), visuals_(visuals), texts_(texts), context_(std::move(context))
 {
 }
@@ -53,19 +53,19 @@ TaikoResultView::~TaikoResultView()
 void TaikoResultView::LoadAssets()
 {
     const auto load = [this](const auto &path)
-    { return visuals_.RegisterImage(mrg_client::asset_paths::skin::Result(path)); };
+    { return visuals_.RegisterImage(Result(path)); };
     sky_ = load(L"Background.Sky");
     clouds_ = load(L"Background.Clouds");
     modeIcon_ = load(L"Mode.Taiko");
     rankFrame_ = load(L"Rank.Frame");
     rankImage_ = load(RankImageKey(result_.summary.accuracy));
-    font_ = {v::TextFontSource::File, mrg_client::asset_paths::fonts::NotoSansKR().wstring()};
+    font_ = {TextFontSource::File, NotoSansKR().wstring()};
 }
-void TaikoResultView::Initialize(const mrg::EngineServices &services)
+void TaikoResultView::Initialize(const EngineServices &services)
 {
     width_ = services.windowWidth;
     height_ = services.windowHeight;
-    canvasHandle_ = visuals_.CreateOwnedCanvas({{Width, Height}, v::CanvasScaleMode::FixedHeight});
+    canvasHandle_ = visuals_.CreateOwnedCanvas({{Width, Height}, CanvasScaleMode::FixedHeight});
     canvas_ = canvasHandle_.Get();
     if (!canvas_)
         throw std::runtime_error("Failed to create result Canvas.");
@@ -73,11 +73,11 @@ void TaikoResultView::Initialize(const mrg::EngineServices &services)
     LoadAssets();
     Build();
 }
-v::Visual2DNode &TaikoResultView::Label(v::Visual2DNode &root, v::Rect designBounds, std::wstring text, float size,
-                                        std::uint16_t weight, v::TextAlignment alignment, v::Color color)
+Visual2DNode &TaikoResultView::Label(Visual2DNode &root, Rect designBounds, std::wstring text, float size,
+                                        std::uint16_t weight, TextAlignment alignment, Color color)
 {
-    auto &label = v::CreateLabel(root, Bounds(designBounds), std::move(text), "Result.Label");
-    auto &component = *label.GetComponent<v::TextVisualComponent>();
+    auto &label = CreateLabel(root, Bounds(designBounds), std::move(text), "Result.Label");
+    auto &component = *label.GetComponent<TextVisualComponent>();
     component.SetFont(font_);
     component.SetFontSize(size);
     component.SetFontWeight(weight);
@@ -86,13 +86,13 @@ v::Visual2DNode &TaikoResultView::Label(v::Visual2DNode &root, v::Rect designBou
     label.SetClipRect({0, 0, designBounds.width, designBounds.height});
     return label;
 }
-void TaikoResultView::Panel(v::Visual2DNode &root, v::Rect designBounds, v::Color fill, float radius, float border,
-                            v::Color borderColor)
+void TaikoResultView::Panel(Visual2DNode &root, Rect designBounds, Color fill, float radius, float border,
+                            Color borderColor)
 {
-    const auto layer = [&](v::Rect bounds, v::Color color, float corner)
+    const auto layer = [&](Rect bounds, Color color, float corner)
     {
-        auto &panel = v::CreatePanel(root, Bounds(bounds), "Result.Panel");
-        auto &visual = *panel.GetComponent<v::SpriteVisualComponent>();
+        auto &panel = CreatePanel(root, Bounds(bounds), "Result.Panel");
+        auto &visual = *panel.GetComponent<SpriteVisualComponent>();
         visual.SetTint(color);
         visual.SetCornerRadius(corner);
     };
@@ -104,13 +104,13 @@ void TaikoResultView::Panel(v::Visual2DNode &root, v::Rect designBounds, v::Colo
     }
     layer(designBounds, fill, std::max(0.0F, radius - border));
 }
-v::Visual2DNode &TaikoResultView::Button(v::Visual2DNode &root, v::Rect designBounds, std::string name,
+Visual2DNode &TaikoResultView::Button(Visual2DNode &root, Rect designBounds, std::string name,
                                          std::wstring title, bool outlined)
 {
-    auto &button = v::CreateButton(root, Bounds(designBounds), L"", std::move(name));
-    auto &sprite = *button.GetComponent<v::SpriteVisualComponent>();
-    v::VisualStyle style;
-    style.normal = outlined ? Accent : Color(0x75B9E4);
+    auto &button = CreateButton(root, Bounds(designBounds), L"", std::move(name));
+    auto &sprite = *button.GetComponent<SpriteVisualComponent>();
+    VisualStyle style;
+    style.normal = outlined ? Accent : ResultColor(0x75B9E4);
     style.hovered = Accent;
     style.pressed = Ink;
     style.disabled = style.normal;
@@ -119,35 +119,35 @@ v::Visual2DNode &TaikoResultView::Button(v::Visual2DNode &root, v::Rect designBo
     if (outlined)
     {
         auto &inner =
-            v::CreatePanel(button, {3, 3, designBounds.width - 6, designBounds.height - 6}, "Result.ButtonInset");
-        inner.GetComponent<v::SpriteVisualComponent>()->SetTint(Surface);
-        inner.GetComponent<v::SpriteVisualComponent>()->SetCornerRadius(17);
+            CreatePanel(button, {3, 3, designBounds.width - 6, designBounds.height - 6}, "Result.ButtonInset");
+        inner.GetComponent<SpriteVisualComponent>()->SetTint(Surface);
+        inner.GetComponent<SpriteVisualComponent>()->SetCornerRadius(17);
         inner.SetZIndex(-1);
     }
     const auto key = button.Name().substr(std::string_view("Result.").size()) + "Button";
-    finger_drum::presentation::BindSkinImage(button, visuals_, "Result", key, "Result.ButtonInset");
+    BindSkinImage(button, visuals_, "Result", key, "Result.ButtonInset");
     // Child text paints after the inset. Parent-component text would be hidden
     // by the inset's later rectangle/depth contribution.
     auto &caption =
-        v::CreateLabel(button, {20, 15, designBounds.width - 40, 32}, std::move(title), "Result.ButtonText");
-    auto &text = *caption.GetComponent<v::TextVisualComponent>();
+        CreateLabel(button, {20, 15, designBounds.width - 40, 32}, std::move(title), "Result.ButtonText");
+    auto &text = *caption.GetComponent<TextVisualComponent>();
     text.SetFont(font_);
     text.SetFontSize(20);
     text.SetFontWeight(700);
-    text.SetHorizontalAlignment(v::TextAlignment::Center);
-    text.SetTextColor(outlined ? Ink : Color(0xFFFFFF));
+    text.SetHorizontalAlignment(TextAlignment::Center);
+    text.SetTextColor(outlined ? Ink : ResultColor(0xFFFFFF));
     return button;
 }
 void TaikoResultView::BuildBackground()
 {
     const auto size = canvas_->LogicalSize();
-    auto &anchor = canvas_->AnchorNode(v::Anchor::Center);
+    auto &anchor = canvas_->AnchorNode(Anchor::Center);
     auto &sky =
-        v::CreateSprite(anchor, {-size.width / 2, -size.height / 2, size.width, size.height}, sky_, "Result.Sky");
+        CreateSprite(anchor, {-size.width / 2, -size.height / 2, size.width, size.height}, sky_, "Result.Sky");
     sky.SetZIndex(-10);
     backgroundId_ = sky.Id();
     auto &clouds =
-        v::CreateSprite(anchor, {-size.width / 2, -size.height / 2, size.width, 168}, clouds_, "Result.Clouds");
+        CreateSprite(anchor, {-size.width / 2, -size.height / 2, size.width, 168}, clouds_, "Result.Clouds");
     // Footer decoration stays above the sky and behind all result content.
     clouds.SetZIndex(-9);
     footerId_ = clouds.Id();
@@ -158,7 +158,7 @@ void TaikoResultView::Build()
     for (const auto id : {contentId_, backId_, backgroundId_, footerId_})
         if (id)
             static_cast<void>(canvas_->RemoveNode(id));
-    auto &root = canvas_->CreateNode(v::Anchor::Center, "Result.Content");
+    auto &root = canvas_->CreateNode(Anchor::Center, "Result.Content");
     root.SetBounds({0, 0, Width, Height});
     root.SetPivot({.5F, .5F});
     const float scale = std::min(canvas_->LogicalSize().width / Width, 1.0F);
@@ -177,22 +177,22 @@ void TaikoResultView::SetVisible(bool visible) noexcept
 {
     static_cast<void>(canvasHandle_.SetVisible(visible));
 }
-void TaikoResultView::ProcessPointer(const mrg::platform::InputState &input)
+void TaikoResultView::ProcessPointer(const InputState &input)
 {
     const auto position = input.IsMouseInsideWindow()
-                              ? v::MapScreenPointer({static_cast<float>(input.MousePositionX()),
+                              ? MapScreenPointer({static_cast<float>(input.MousePositionX()),
                                                      static_cast<float>(input.MousePositionY())},
                                                     {static_cast<float>(width_), static_cast<float>(height_)}, *canvas_)
                               : std::nullopt;
-    v::PointerInput pointer;
+    PointerInput pointer;
     pointer.available = position.has_value();
-    pointer.position = position.value_or(v::Point{});
-    pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
-    pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
-    pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
+    pointer.position = position.value_or(Point{});
+    pointer.leftButtonDown = input.IsMouseButtonDown(MouseButton::Left);
+    pointer.leftButtonPressed = input.WasMouseButtonPressed(MouseButton::Left);
+    pointer.leftButtonReleased = input.WasMouseButtonReleased(MouseButton::Left);
     router_.Process(*canvas_, pointer);
 }
-ResultAction TaikoResultView::Update(const mrg::platform::InputState &input)
+ResultAction TaikoResultView::Update(const InputState &input)
 {
     if (!canvas_)
         return ResultAction::None;
@@ -201,7 +201,7 @@ ResultAction TaikoResultView::Update(const mrg::platform::InputState &input)
     ProcessPointer(input);
     for (const auto &action : canvas_->TakeActions())
     {
-        if (action.type != v::ActionType::Clicked)
+        if (action.type != ActionType::Clicked)
             continue;
         if (action.source == backId_)
             return ResultAction::Back;

@@ -1,6 +1,6 @@
 #include "GameplayPresenter.h"
 #include "GameplaySupport.h"
-using namespace gameplay;
+
 namespace
 {
     constexpr std::wstring_view NoteImageKeys[]{L"note",
@@ -25,7 +25,7 @@ namespace
                                                 L"HitCounterCloud"};
 }
 
-bool GameplayPresenter::PrepareAssets(const mrg::EngineServices &services)
+bool GameplayPresenter::PrepareAssets(const EngineServices &services)
 {
     if (preparingImages_.empty())
     {
@@ -74,7 +74,7 @@ bool GameplayPresenter::PrepareAssets(const mrg::EngineServices &services)
     return backgroundReady;
 }
 
-void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time, bool enabled)
+void GameplayPresenter::UpdateMeasureLines(RhythmTime time, bool enabled)
 {
     for (auto &visual : measureLineVisuals_)
         visual.node->SetVisible(false);
@@ -94,7 +94,7 @@ void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
                                      return;
                                  if (used == measureLineVisuals_.size())
                                  {
-                                     auto &line = mrg::visual2d::CreatePanel(*laneRoot_, {}, "Lane.MeasureLine");
+                                     auto &line = CreatePanel(*laneRoot_, {}, "Lane.MeasureLine");
                                      line.SetPivot({0.5F, 0.5F});
                                      SetColor(line, {.78F, .85F, .90F, .72F});
                                      line.SetZIndex(1);
@@ -109,9 +109,9 @@ void GameplayPresenter::UpdateMeasureLines(finger_drum::rhythm::RhythmTime time,
 }
 
 void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
-                                          const finger_drum::mode::NotePresentationInfo &presentation,
-                                          finger_drum::rhythm::RhythmTime time,
-                                          finger_drum::rhythm::RhythmTime anchor, std::size_t processedTicks)
+                                          const NotePresentationInfo &presentation,
+                                          RhythmTime time,
+                                          RhythmTime anchor, std::size_t processedTicks)
 {
     std::size_t used = 0;
     const auto &ticks = presentation.tickTimes;
@@ -134,7 +134,7 @@ void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
             continue;
         if (used == layers.ticks.size())
         {
-            auto &node = mrg::visual2d::CreateSprite(*layers.root, {}, layers.tickImage, "LongNote.Tick");
+            auto &node = CreateSprite(*layers.root, {}, layers.tickImage, "LongNote.Tick");
             node.SetZIndex(4);
             layers.ticks.push_back({{}, &node});
         }
@@ -149,7 +149,7 @@ void GameplayPresenter::UpdateTickVisuals(NoteVisualLayers &layers,
         layers.ticks[used].node->SetVisible(false);
 }
 
-mrg::visual2d::ImageHandle GameplayPresenter::NoteImage(std::wstring_view file)
+ImageHandle GameplayPresenter::NoteImage(std::wstring_view file)
 {
     const auto found = noteImages_.find(file);
     if (found != noteImages_.end())
@@ -174,7 +174,7 @@ void GameplayPresenter::CreateNoteVisuals()
             noteModels_.emplace(note->Id(), note.get());
 }
 
-void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &source)
+void GameplayPresenter::CreateNoteVisual(const INote &source)
 {
     const auto *note = &source;
     const auto noteImage = NoteImage(L"note");
@@ -214,30 +214,30 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
     const auto dengDengProcessingSize = ScaledImageSize(screenVisuals_, dengDengProcessingImage);
     const auto counterSize = ScaledImageSize(screenVisuals_, counterImage);
 
-    const finger_drum::mode::NotePresentationInfo *presentation =
+    const NotePresentationInfo *presentation =
         session_->FindNotePresentation(note->Id());
-    const finger_drum::mode::NoteVisualKind visualKind =
-        presentation == nullptr ? finger_drum::mode::NoteVisualKind::Don
+    const NoteVisualKind visualKind =
+        presentation == nullptr ? NoteVisualKind::Don
                                 : presentation->visualKind;
     const bool big = IsBigVisual(visualKind);
-    const bool balloon = visualKind == finger_drum::mode::NoteVisualKind::Balloon;
-    const bool dengDeng = visualKind == finger_drum::mode::NoteVisualKind::DengDeng;
+    const bool balloon = visualKind == NoteVisualKind::Balloon;
+    const bool dengDeng = visualKind == NoteVisualKind::DengDeng;
     const bool customHead = balloon || dengDeng;
-    const bool roll = (visualKind == finger_drum::mode::NoteVisualKind::Roll ||
-                       visualKind == finger_drum::mode::NoteVisualKind::BigRoll) &&
+    const bool roll = (visualKind == NoteVisualKind::Roll ||
+                       visualKind == NoteVisualKind::BigRoll) &&
                       note->Progress().has_value();
     const bool longNote = presentation != nullptr && presentation->hasEndTime &&
                           IsLongVisual(visualKind) && !customHead;
-    const bool bigLongParts = visualKind == finger_drum::mode::NoteVisualKind::BigRoll;
-    const bool buzz = visualKind == finger_drum::mode::NoteVisualKind::DonBuzz ||
-                      visualKind == finger_drum::mode::NoteVisualKind::KatBuzz;
+    const bool bigLongParts = visualKind == NoteVisualKind::BigRoll;
+    const bool buzz = visualKind == NoteVisualKind::DonBuzz ||
+                      visualKind == NoteVisualKind::KatBuzz;
     const auto headImage =
         balloon ? balloonImage
                 : (dengDeng ? dengDengImage : (big ? bigNoteImage : noteImage));
     const auto headSize =
         balloon ? balloonSize : (dengDeng ? dengDengSize : (big ? bigNoteSize : noteSize));
     const float diameter = headSize.width;
-    const mrg::visual2d::Color ambientColor = AmbientColor(visualKind);
+    const Color ambientColor = AmbientColor(visualKind);
 
     NoteVisualLayers layers;
     layers.focusType = balloon ? FocusNoteType::Balloon
@@ -269,26 +269,26 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
         layers.tailHeight = selectedTailSize.height;
         const float bodyX = (diameter - layers.bodyWidth) * 0.5F;
         const float tailX = (diameter - layers.tailWidth) * 0.5F;
-        layers.body = &mrg::visual2d::CreateSprite(
+        layers.body = &CreateSprite(
             *layers.root, {bodyX, diameter * 0.5F, layers.bodyWidth, 1.0F},
             selectedBodyImage, "AmbientBody");
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(*layers.body)
+        RequireComponent<SpriteVisualComponent>(*layers.body)
             .SetTint(ambientColor);
         layers.body->SetZIndex(0);
-        layers.bodyOverlay = &mrg::visual2d::CreateSprite(
+        layers.bodyOverlay = &CreateSprite(
             *layers.root, {bodyX, diameter * 0.5F, layers.bodyWidth, 1.0F},
             selectedBodyOverlayImage, "BodyOverlay");
         layers.bodyOverlay->SetZIndex(1);
-        layers.tail = &mrg::visual2d::CreateSprite(
+        layers.tail = &CreateSprite(
             *layers.root, {tailX, 0.0F, layers.tailWidth, layers.tailHeight},
             selectedTailImage, "AmbientTail");
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(*layers.tail)
+        RequireComponent<SpriteVisualComponent>(*layers.tail)
             .SetTint(ambientColor);
         layers.tail->SetZIndex(2);
         layers.tail->SetPivot({0.5F, 0.5F});
         layers.tail->SetPosition(
             {tailX + layers.tailWidth * 0.5F, layers.tailHeight * 0.5F});
-        layers.tailOverlay = &mrg::visual2d::CreateSprite(
+        layers.tailOverlay = &CreateSprite(
             *layers.root, {tailX, 0.0F, layers.tailWidth, layers.tailHeight},
             selectedTailOverlayImage, "TailOverlay");
         layers.tailOverlay->SetZIndex(3);
@@ -300,18 +300,18 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
         layers.tickSize = buzz ? buzzTickSize : tickSize;
     }
 
-    layers.ambient = &mrg::visual2d::CreateSprite(
+    layers.ambient = &CreateSprite(
         *layers.root, {0.0F, 0.0F, headSize.width, headSize.height}, headImage,
         "AmbientHead");
-    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*layers.ambient)
-        .SetTint(customHead ? mrg::visual2d::Color{1.0F, 1.0F, 1.0F, 1.0F} : ambientColor);
+    RequireComponent<SpriteVisualComponent>(*layers.ambient)
+        .SetTint(customHead ? Color{1.0F, 1.0F, 1.0F, 1.0F} : ambientColor);
     layers.ambient->SetZIndex(3);
     if (!customHead)
     {
-        layers.overlay = &mrg::visual2d::CreateSprite(
+        layers.overlay = &CreateSprite(
             *layers.root, {0.0F, 0.0F, headSize.width, headSize.height},
             big ? bigOverlay : noteOverlay, "UntintedOverlay");
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(*layers.overlay)
+        RequireComponent<SpriteVisualComponent>(*layers.overlay)
             .SetTint({1.0F, 1.0F, 1.0F, 1.0F});
         layers.overlay->SetZIndex(4);
     }
@@ -320,7 +320,7 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
         const auto processingImage =
             balloon ? balloonProcessingImage : dengDengProcessingImage;
         layers.processingSize = balloon ? balloonProcessingSize : dengDengProcessingSize;
-        layers.processing = &mrg::visual2d::CreateSprite(
+        layers.processing = &CreateSprite(
             canvas_->Root(),
             {0.0F, 0.0F, layers.processingSize.width, layers.processingSize.height},
             processingImage, std::format("Hud.NoteProcessing.{}", note->Id()));
@@ -330,7 +330,7 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
         if (balloon)
         {
             layers.successSize = balloonBurstSize;
-            layers.success = &mrg::visual2d::CreateSprite(
+            layers.success = &CreateSprite(
                 canvas_->Root(),
                 {0.0F, 0.0F, balloonBurstSize.width, balloonBurstSize.height},
                 balloonBurstImage, std::format("Hud.NoteSuccess.{}", note->Id()));
@@ -341,29 +341,29 @@ void GameplayPresenter::CreateNoteVisual(const finger_drum::rhythm::INote &sourc
     }
     if (customHead || roll)
     {
-        layers.counter = &mrg::visual2d::CreateSprite(
+        layers.counter = &CreateSprite(
             canvas_->Root(), {0.0F, 0.0F, counterSize.width, counterSize.height},
             counterImage, std::format("Hud.NoteCounter.{}", note->Id()));
         layers.counter->SetZIndex(8);
         layers.counter->SetVisible(false);
         layers.counterText =
-            &mrg::visual2d::CreateLabel(*layers.counter,
+            &CreateLabel(*layers.counter,
                                         {0.0F, counterSize.height * 0.22F,
                                          counterSize.width, counterSize.height * 0.58F},
                                         L"", "RemainingHits");
         auto &text =
-            RequireComponent<mrg::visual2d::TextVisualComponent>(*layers.counterText);
+            RequireComponent<TextVisualComponent>(*layers.counterText);
         texts_.ApplyFont(text);
         text.SetFontSize(22.0F);
         text.SetTextColor({1.0F, 1.0F, 1.0F, 1.0F});
-        text.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
+        text.SetHorizontalAlignment(TextAlignment::Center);
     }
     noteVisuals_.emplace(note->Id(), std::move(layers));
 }
 
 void GameplayPresenter::HideTransientNoteVisuals()
 {
-    for (const finger_drum::rhythm::NoteId id : presentedNoteIds_)
+    for (const NoteId id : presentedNoteIds_)
     {
         const auto visual = noteVisuals_.find(id);
         if (visual == noteVisuals_.end())
@@ -388,17 +388,17 @@ void GameplayPresenter::HideTransientNoteVisuals()
     presentedNoteIds_.clear();
 }
 
-void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime time)
+void GameplayPresenter::UpdatePresentation(const RhythmTime time)
 {
     progressView_.Update(time);
     UpdateAccuracyPresentation();
-    using Duration = finger_drum::rhythm::RhythmDuration;
+    using Duration = RhythmDuration;
     if (visibilityRevision_ != session_->PresentationRevision())
         RebuildVisibilityIndices();
     visibleNoteModels_.clear();
     const auto distance = session_->ScrollDistance(time, {});
     noteVisibility_.Visit(distance, distance,
-                          [&](finger_drum::rhythm::NoteId id)
+                          [&](NoteId id)
                           {
                               const auto *model = noteModels_.at(id);
                               if (time <= model->ExpireTime() + MissedTravelDuration)
@@ -417,13 +417,13 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
     HideTransientNoteVisuals();
     bool showMeasureLines = true;
     for (const auto &value : session_->EvaluateAutomation(time))
-        if (value.type == finger_drum::chart::EffectCommandType::MeasureLineVisible)
+        if (value.type == EffectCommandType::MeasureLineVisible)
             showMeasureLines = value.value >= 0.5;
     UpdateMeasureLines(time, showMeasureLines);
     bool focusClaimed{};
     for (const auto *model : visibleNoteModels_)
     {
-        const finger_drum::rhythm::ScrollNoteSnapshot note{.noteId = model->Id(),
+        const ScrollNoteSnapshot note{.noteId = model->Id(),
                                                            .timing = model->Timing(),
                                                            .expireTime = model->ExpireTime(),
                                                            .state = model->State(),
@@ -441,7 +441,7 @@ void GameplayPresenter::UpdatePresentation(const finger_drum::rhythm::RhythmTime
         layers.root->SetZIndex(--noteZIndex);
         presentedNoteIds_.push_back(note.noteId);
         layers.presentedGeneration = presentationGeneration_;
-        const finger_drum::mode::NotePresentationInfo *presentation =
+        const NotePresentationInfo *presentation =
             session_->FindNotePresentation(note.noteId);
         const bool focusNote = layers.focusType != FocusNoteType::None;
         auto targetTime = layers.timing;
@@ -527,8 +527,8 @@ void GameplayPresenter::RemoveUnusedNoteVisuals()
 
 void GameplayPresenter::RebuildVisibilityIndices()
 {
-    using NoteIndex = finger_drum::chart::IntervalIndex<long double, finger_drum::rhythm::NoteId>;
-    using MeasureIndex = finger_drum::chart::IntervalIndex<long double, std::size_t>;
+    using NoteIndex = IntervalIndex<long double, NoteId>;
+    using MeasureIndex = IntervalIndex<long double, std::size_t>;
     std::vector<NoteIndex::Entry> notes;
     std::vector<MeasureIndex::Entry> lines;
     notes.reserve(noteModels_.size());

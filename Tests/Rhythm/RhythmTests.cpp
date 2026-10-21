@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-using namespace finger_drum::tests;
+using namespace tests;
 
 int main(const int argumentCount, char *arguments[])
 {
@@ -25,7 +25,7 @@ int main(const int argumentCount, char *arguments[])
             listOnly = true;
         else
         {
-            std::cerr << "Usage: FingerDrum.Rhythm.Tests [--catalog-root path] [--filter substring] [--list]\n";
+            std::cerr << "Usage: YOUMU.Rhythm.Tests [--catalog-root path] [--filter substring] [--list]\n";
             return EXIT_FAILURE;
         }
     }

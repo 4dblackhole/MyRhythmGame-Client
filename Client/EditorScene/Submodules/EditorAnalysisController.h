@@ -8,7 +8,7 @@
 #include <string>
 struct AnalysisBatch
 {
-    std::map<std::string, finger_drum::editor::AudioAnalysis> sounds;
+    std::map<std::string, AudioAnalysis> sounds;
     std::string errors;
 };
 struct EditorAnalysisJob;
@@ -29,9 +29,9 @@ class EditorAnalysisController final
         analysisDirty = true;
     }
     void Stop() noexcept;
-    bool Update(const finger_drum::chart::IEditorDocument &, const IEditorAudioSource &,
-                const finger_drum::GameplayLaunchRequest &, std::string &status);
-    void CacheAudioMarkers(const finger_drum::chart::IEditorDocument &, const IEditorAudioSource &);
+    bool Update(const IEditorDocument &, const IEditorAudioSource &,
+                const GameplayLaunchRequest &, std::string &status);
+    void CacheAudioMarkers(const IEditorDocument &, const IEditorAudioSource &);
     const AnalysisBatch &Data() const noexcept
     {
         static const AnalysisBatch empty;
@@ -67,6 +67,6 @@ class EditorAnalysisController final
     std::map<std::string, std::filesystem::path> analysisFiles;
     std::vector<AudioMarker> audioMarkers;
     std::uint64_t audioMarkerRevision{};
-    const finger_drum::chart::IEditorDocument *audioMarkerDocument{};
+    const IEditorDocument *audioMarkerDocument{};
     const IEditorAudioSource *audioMarkerMode{};
 };

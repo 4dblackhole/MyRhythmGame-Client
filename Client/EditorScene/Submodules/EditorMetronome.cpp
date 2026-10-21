@@ -7,19 +7,19 @@ namespace
 {
     constexpr const char *BeatId = "Editor.Metronome.Beat";
     constexpr const char *AccentId = "Editor.Metronome.Accent";
-    std::vector<EditorMetronome::Beat> CompileBeats(const finger_drum::chart::MusicalTimeline &timeline,
+    std::vector<EditorMetronome::Beat> CompileBeats(const MusicalTimeline &timeline,
                                                     double endSeconds)
     {
-        namespace chart = finger_drum::chart;
-        const auto end = editor_time::Microseconds(endSeconds * 1000);
-        const auto last = editor_time::MeasureNearTime(timeline, endSeconds * 1000);
+
+        const auto end = Microseconds(endSeconds * 1000);
+        const auto last = MeasureNearTime(timeline, endSeconds * 1000);
         std::vector<EditorMetronome::Beat> beats;
         for (std::int64_t measure = 0; measure <= last; ++measure)
         {
             const auto length = timeline.MeasureLength(measure);
             const auto origin = timeline.PositionToWholeNotes({measure, {}});
             // Quarter-note clicks, with an accent at each surviving measure start.
-            for (chart::Rational offset{}; offset < length; offset = offset + chart::Rational{1, 4})
+            for (Rational offset{}; offset < length; offset = offset + Rational{1, 4})
             {
                 const auto position = timeline.PositionAtWholeNotes(origin + offset);
                 if (!timeline.IsPositionActive(position))
@@ -27,7 +27,7 @@ namespace
                 const auto time = timeline.Compile(position);
                 if (time > end)
                     break;
-                beats.push_back({time.count() / 1'000'000.0, offset == chart::Rational{}});
+                beats.push_back({time.count() / 1'000'000.0, offset == Rational{}});
             }
         }
         std::ranges::stable_sort(beats, {}, &EditorMetronome::Beat::seconds);
@@ -35,15 +35,15 @@ namespace
     }
 } // namespace
 
-void EditorMetronome::Prepare(const finger_drum::chart::IEditorDocument &document, double endSeconds,
+void EditorMetronome::Prepare(const IEditorDocument &document, double endSeconds,
                               const std::map<std::string, std::filesystem::path> &files, std::uint64_t filesRevision,
                               const std::vector<AudioMarker> &markers)
 {
     if (filesRevision_ != filesRevision)
     {
         auto prepared = files;
-        prepared[BeatId] = mrg_client::asset_paths::skin::EditorSound(L"MetronomeBeat.wav");
-        prepared[AccentId] = mrg_client::asset_paths::skin::EditorSound(L"MetronomeAccent.wav");
+        prepared[BeatId] = EditorSound(L"MetronomeBeat.wav");
+        prepared[AccentId] = EditorSound(L"MetronomeAccent.wav");
         files_ = std::move(prepared);
         filesRevision_ = filesRevision;
     }

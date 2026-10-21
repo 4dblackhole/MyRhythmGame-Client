@@ -70,7 +70,7 @@ instance 버퍼까지 합한 총 텍스트 메모리의 상한은 아닙니다.
 별도 `font`/`fontSize`/`horizontalAlignment` 필드는 payload로 이동했습니다.
 이 저장소의 에디터 직접 생성부와 텍스트를 검사하는 회귀 호출부를 함께 갱신하고 SDK 헤더는
 생성기로 갱신했습니다. 유지 배치 API와 offset/repeat/측정 계약은
-[엔진 TextRendering](../../Dependencies/MRG-Engine/Docs/TextRendering.md)에 있습니다.
+[엔진 TextRendering](../../Dependencies/PhantomCore/Docs/TextRendering.md)에 있습니다.
 
 ## 실제 D3D12 회귀 결과
 
@@ -90,7 +90,7 @@ instance 버퍼까지 합한 총 텍스트 메모리의 상한은 아닙니다.
 
 ## 측정·검증 기록
 
-같은 PC에서 MSVC x64 Release `/O2 /std:c++20 /MD /DNDEBUG`, 실제 MRG.Core.lib,
+같은 PC에서 MSVC x64 Release `/O2 /std:c++20 /MD /DNDEBUG`, 실제 PhantomCore.lib,
 숨김 D3D12/NoSound 프로세스로 조건마다 100프레임을 두 번 실행했습니다.
 첫 20프레임을 제외한 80프레임의 CPU 평균 범위입니다. 문자열 생성·초기화·
 유지 handle 최초 준비 시간·GPU 완료/Present는 반복 Submit/Flush 시간에 포함하지 않습니다.

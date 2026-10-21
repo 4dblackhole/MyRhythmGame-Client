@@ -9,7 +9,7 @@
 
 namespace
 {
-    namespace chart = finger_drum::chart;
+
     enum Field : int
     {
         Name = 100,
@@ -22,9 +22,9 @@ namespace
     struct Dialog
     {
         const std::filesystem::path &root;
-        const chart::SongCatalogEntry &song;
-        const finger_drum::texts::TextCatalog &texts;
-        std::optional<chart::SongCatalogPattern> result;
+        const SongCatalogEntry &song;
+        const TextCatalog &texts;
+        std::optional<SongCatalogPattern> result;
         std::exception_ptr failure;
         HWND errorLabel{};
     };
@@ -70,15 +70,15 @@ namespace
         }
         return result;
     }
-    chart::PatternDocument ReadMetadata(HWND dialog)
+    PatternDocument ReadMetadata(HWND dialog)
     {
-        chart::PatternDocument metadata;
+        PatternDocument metadata;
         metadata.name = Read(dialog, Name);
         metadata.makers = Lines(Read(dialog, Makers));
         metadata.tags = Lines(Read(dialog, Tags));
-        metadata.baseBpm = editor_values::Number(Read(dialog, Bpm));
-        metadata.patternOffsetMilliseconds = editor_values::Number(Read(dialog, Offset));
-        metadata.judgementLevel = editor_values::JudgeLevel(Read(dialog, JudgeLevel));
+        metadata.baseBpm = Number(Read(dialog, Bpm));
+        metadata.patternOffsetMilliseconds = Number(Read(dialog, Offset));
+        metadata.judgementLevel = ParseJudgeLevel(Read(dialog, JudgeLevel));
         return metadata;
     }
     void Initialize(HWND dialog, Dialog &data)
@@ -132,16 +132,16 @@ namespace
             {
                 try
                 {
-                    data->result = editor_pattern_creation::Create(data->root, data->song, ReadMetadata(dialog));
+                    data->result = Create(data->root, data->song, ReadMetadata(dialog));
                     EndDialog(dialog, IDOK);
                 }
                 catch (const std::exception &error)
                 {
                     auto key = "MusicSelect.createDifficultyError";
-                    if (const auto *specific = dynamic_cast<const editor_pattern_creation::Error *>(&error))
-                        if (specific->reason == editor_pattern_creation::Failure::ExistingFolder)
+                    if (const auto *specific = dynamic_cast<const Error *>(&error))
+                        if (specific->reason == Failure::ExistingFolder)
                             key = "MusicSelect.createDifficultyExists";
-                        else if (specific->reason == editor_pattern_creation::Failure::InvalidName)
+                        else if (specific->reason == Failure::InvalidName)
                             key = "MusicSelect.createDifficultyNameError";
                     const auto messageText =
                         std::wstring(data->texts.Get(key)) + L"\r\n" + song_select::DecodeDisplayText(error.what());
@@ -165,9 +165,9 @@ namespace
     }
 } // namespace
 
-std::optional<chart::SongCatalogPattern> CreateDifficultyWithDialog(const std::filesystem::path &songsRoot,
-                                                                    const chart::SongCatalogEntry &song,
-                                                                    const finger_drum::texts::TextCatalog &texts)
+std::optional<SongCatalogPattern> CreateDifficultyWithDialog(const std::filesystem::path &songsRoot,
+                                                                    const SongCatalogEntry &song,
+                                                                    const TextCatalog &texts)
 {
     struct Template
     {

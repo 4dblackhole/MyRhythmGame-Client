@@ -26,16 +26,15 @@
 #include <string>
 #include <vector>
 
-namespace finger_drum::tests
+namespace tests
 {
-    using namespace finger_drum;
 
-    [[nodiscard]] inline std::unique_ptr<rhythm::INote> MakeTap(
-        rhythm::NoteId id, rhythm::RhythmTime time,
-        const std::shared_ptr<const rhythm::AccuracyRange> &profile)
+    [[nodiscard]] inline std::unique_ptr<INote> MakeTap(
+        NoteId id, RhythmTime time,
+        const std::shared_ptr<const AccuracyRange> &profile)
     {
-        return std::make_unique<rhythm::RuleBasedNote>(id, time, profile,
-                                                       std::make_unique<rhythm::TapInputRule>(1));
+        return std::make_unique<RuleBasedNote>(id, time, profile,
+                                                       std::make_unique<TapInputRule>(1));
     }
 
     inline void Require(const bool condition, const std::string &message)
@@ -83,31 +82,31 @@ namespace finger_drum::tests
         stream.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     }
 
-    [[nodiscard]] inline bool HasEvent(const rhythm::NoteProcessResult &result,
-                                       const rhythm::NoteEventType type)
+    [[nodiscard]] inline bool HasEvent(const NoteProcessResult &result,
+                                       const NoteEventType type)
     {
         return std::ranges::any_of(
-            result.events, [type](const rhythm::NoteEvent &event) { return event.type == type; });
+            result.events, [type](const NoteEvent &event) { return event.type == type; });
     }
 
-    [[nodiscard]] inline chart::PatternDocument MakeLongPattern(
-        const mode::TaikoNoteType type, std::vector<std::string> extraData = {})
+    [[nodiscard]] inline PatternDocument MakeLongPattern(
+        const TaikoNoteType type, std::vector<std::string> extraData = {})
     {
-        chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 120.0;
         pattern.judgementLevel = 50;
-        pattern.notes.push_back(chart::PatternNote{
-            .position = {0, chart::Rational{0, 1}},
+        pattern.notes.push_back(PatternNote{
+            .position = {0, Rational{0, 1}},
             .keyType = static_cast<int>(type),
-            .actionType = static_cast<int>(mode::TaikoPatternAction::LongNoteStart),
+            .actionType = static_cast<int>(TaikoPatternAction::LongNoteStart),
             .extraData = std::move(extraData),
             .sourceOrder = 0});
-        pattern.notes.push_back(chart::PatternNote{
-            .position = {0, chart::Rational{1, 2}},
+        pattern.notes.push_back(PatternNote{
+            .position = {0, Rational{1, 2}},
             .keyType = static_cast<int>(type),
-            .actionType = static_cast<int>(mode::TaikoPatternAction::LongNoteEnd),
+            .actionType = static_cast<int>(TaikoPatternAction::LongNoteEnd),
             .sourceOrder = 1});
         return pattern;
     }
-} // namespace finger_drum::tests
+} // namespace youmu::tests

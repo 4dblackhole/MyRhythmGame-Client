@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 
-namespace finger_drum::tests
+namespace tests
 {
     void TestIntervalRangeQueries();
     void TestLongViewportIndexEdits();
@@ -69,4 +69,4 @@ namespace finger_drum::tests
     void TestChartParserBoundaries();
     void TestChartPartialEdits();
     void TestEditorAudioAnalysis(const std::filesystem::path &songsRoot);
-} // namespace finger_drum::tests
+} // namespace youmu::tests

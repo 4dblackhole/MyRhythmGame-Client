@@ -51,7 +51,7 @@ Realtime View, Time Signature, Metadata, Effects 보드를 기준으로 구성�
 `EditorMetronome`은 문서 revision/음원 길이별 박자 눈금과 재생 전용 클릭 cue를 캐시합니다.
 `EditorPlayback`은 에디터 전용 Voice/Clip과 DSP 기준 재생 시각을 소유합니다.
 모드가 제공하는 파일/예상 cue만 소비하며 문서·화면·노트 규칙은 참조하지 않습니다.
-PCM/FFT 자체는 `FingerDrum.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
+PCM/FFT 자체는 `YOUMU.Editor/Audio/EditorAudioAnalysis`만 읽으면 됩니다.
 문법 변경이 없으면 다른 형식 문서와 엔진 내부를 읽을 필요가 없습니다.
 
 화면 구간의 롱노트는 ChartEditor의 시간/마디 구간 인덱스로 조회합니다. 양 끝점이
@@ -201,7 +201,7 @@ Taiko로 열었는데 다른 모드가 기록된 문서는 오류로 거부하�
 Taiko의 도구 ID/그룹/선택 상태, 미완성 롱노트, 팝업, 노트 색/모양,
 악보/실시간 레인, 노트 hit-test/스냅/마디 스크롤, YMP 메타데이터 편집과
 오디오 파일 해석은 `Modes/Taiko/`가 소유합니다. 플레이와 공유하는 옵션 해석·기본
-사운드 ID·예상 cue 생성은 `FingerDrum.Modes/Taiko/Submodules/`에 있습니다.
+사운드 ID·예상 cue 생성은 `YOUMU.Modes/Taiko/Submodules/`에 있습니다.
 도구 문구와 동·캇 이펙트
 문구는 `Client/Texts/EditorScene/Taiko/`에 있습니다. 공통 화면에는 Taiko
 노트 enum/숫자 의미나 도구 개수/그룹을 넣지 않습니다. 이펙트의 공통 자동화
@@ -233,7 +233,7 @@ BMS 파싱·저장, 7키/스크래치 배치와 전용 도구는 아직 구현�
 
 ### 공통 처리와 검증
 
-`FingerDrum.Chart/Editing/ChartEditor`는 `IEditorDocument`의 현재 구현으로
+`YOUMU.Chart/Editing/ChartEditor`는 `IEditorDocument`의 현재 구현으로
 엔진 비종속 편집 상태와 YMP/YME 저장을 소유합니다.
 편집 원본 노트는 `(MusicalPosition, 고유 ID)` 균형 트리, BPM/마디 길이는 위치별
 다중 트리, 자동화와 히트사운드 변경도 각각 위치별 다중 트리가 소유합니다.
@@ -273,12 +273,12 @@ timeline·시간 인덱스·시간에 의존하는 속도 캐시만 재생성하
 파형은 각 10ms 구간의 모든 채널 최솟값/최댓값을 표시합니다.
 디코딩은 입력 chunk와 FFT 주변 window만 보관하며 음원 전체 PCM을 메모리에 쌓지 않습니다.
 호스트의 EditorAnalysisController가 공개 엔진 `DecodeAudioPcm`을 분석 함수에 주입합니다.
-FingerDrum.Editor는 엔진을 참조하지 않고 전달받은 interleaved PCM의 FFT/파형만 계산합니다.
+YOUMU.Editor는 엔진을 참조하지 않고 전달받은 interleaved PCM의 FFT/파형만 계산합니다.
 재생과 분석은 같은 디코더/원본 sample rate/샘플 0을 사용합니다. MP3는 dr_mp3의
 Info/LAME 패딩 처리를 적용하며 Vorbis/Windows 코덱은 기존 경로를 엔진에서 공유합니다.
 분석은 rolling PCM을 유지하고 재생은 현재 음원의 전체 float PCM을 준비합니다.
 형식 오류와 취소는 기존 상태 메시지/worker 경로로 전달합니다. 디코더 출처와 수명은
-[엔진 오디오 문서](../Dependencies/MRG-Engine/Docs/AudioPlayback.md#공통-pcm-시간축-2026-10-20)를 참고합니다.
+[엔진 오디오 문서](../Dependencies/PhantomCore/Docs/AudioPlayback.md#공통-pcm-시간축-2026-10-20)를 참고합니다.
 프로세스 수명의 단일 worker가 복사한 파일 목록/취소 토큰만 소유합니다. Scene 종료는
 취소를 요청하고 결과 참조를 내려놓으며 worker 완료를 기다리지 않습니다. 큰 분석 결과의
 해제도 worker에 넘깁니다. 실제 프로세스 종료에서는 worker를 정리합니다.

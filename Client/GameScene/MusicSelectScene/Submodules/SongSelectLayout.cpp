@@ -14,7 +14,7 @@ void MusicSelectView::UpdateResponsiveLayout()
         return;
     }
 
-    const mrg::visual2d::Size canvasSize = canvas_->LogicalSize();
+    const Size canvasSize = canvas_->LogicalSize();
     const ResponsiveSongSelectLayout responsive =
         CalculateResponsiveLayout(canvasSize.width, IsEditorSongSelect());
     board_->SetSize(canvasSize);
@@ -153,7 +153,7 @@ void MusicSelectView::UpdateSongBrowserLayout()
     searchField_->SetBounds(
         ScaleTopLeftBounds({14.0F, layout::SearchField.y, innerWidth, layout::SearchField.height},
                            browserPanel_->NodeSize().height));
-    auto &searchText = RequireComponent<mrg::visual2d::TextVisualComponent>(*searchField_);
+    auto &searchText = RequireComponent<TextVisualComponent>(*searchField_);
     const float countWidth = std::min(96.0F, innerWidth);
     const float searchTextWidth = std::max(innerWidth - countWidth - 18.0F, 1.0F);
     searchText.SetContentBounds(
@@ -200,10 +200,10 @@ void MusicSelectView::UpdateFooterLayout()
     optionLabel_->SetBounds(
         {0.0F, 0.0F, optionButton_->NodeSize().width, optionButton_->NodeSize().height});
 
-    const auto resizeEdgeButton = [](mrg::visual2d::Visual2DNode &button,
-                                     mrg::visual2d::Visual2DNode &fill,
-                                     mrg::visual2d::Visual2DNode &label) {
-        const mrg::visual2d::Size buttonSize = button.NodeSize();
+    const auto resizeEdgeButton = [](Visual2DNode &button,
+                                     Visual2DNode &fill,
+                                     Visual2DNode &label) {
+        const Size buttonSize = button.NodeSize();
         const float padding = std::min(
             {4.0F * DesignToCanvasScale, buttonSize.width * 0.1F, buttonSize.height * 0.1F});
         fill.SetBounds({padding, padding, std::max(buttonSize.width - padding * 2.0F, 1.0F),
@@ -214,8 +214,8 @@ void MusicSelectView::UpdateFooterLayout()
     resizeEdgeButton(*goButton_, *goFill_, *goLabel_);
 }
 
-void MusicSelectView::ResizeBorderedPanel(mrg::visual2d::Visual2DNode &panel,
-                                          const mrg::visual2d::Rect bounds,
+void MusicSelectView::ResizeBorderedPanel(Visual2DNode &panel,
+                                          const Rect bounds,
                                           const float penpotBorderWidth)
 {
     panel.SetBounds(bounds);

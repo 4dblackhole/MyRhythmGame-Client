@@ -5,10 +5,10 @@
 #include <algorithm>
 #include <format>
 #include <stdexcept>
-namespace v = mrg::visual2d;
+
 namespace
 {
-    namespace colors = finger_drum::presentation::ui_colors;
+
     constexpr std::array<GameplayPauseAction, 4> Actions{GameplayPauseAction::Resume, GameplayPauseAction::Rewind,
                                                          GameplayPauseAction::Retry, GameplayPauseAction::Retire};
 } // namespace
@@ -26,7 +26,7 @@ void GameplayPauseMenu::Show(std::uint32_t width, std::uint32_t height, bool can
     width_ = width;
     height_ = height;
     if (!handle_)
-        handle_ = visuals_.CreateOwnedCanvas({{1280, 720}, v::CanvasScaleMode::FixedHeight, {}, 10});
+        handle_ = visuals_.CreateOwnedCanvas({{1280, 720}, CanvasScaleMode::FixedHeight, {}, 10});
     if (!handle_)
         throw std::runtime_error("Failed to create pause menu Canvas.");
     handle_.Get()->SetViewportSize({static_cast<float>(width), static_cast<float>(height)});
@@ -40,7 +40,7 @@ void GameplayPauseMenu::RefreshRows()
 {
     if (!handle_)
         return;
-    const auto &text = finger_drum::texts::Pause(texts_);
+    const auto &text = Pause(texts_);
     const double seconds = static_cast<double>(choice_.leadIn.count()) / 1'000'000;
     const std::array<std::wstring, 2> values{
         canResume_ ? std::vformat(text.resumeValueFormat, std::make_wformat_args(seconds)) : std::wstring(text.preparing),
@@ -56,15 +56,15 @@ void GameplayPauseMenu::RefreshRows()
             continue;
         row->SetEnabled(available);
         if (auto *fill = canvas.FindNode(fills_[i]))
-            fill->GetComponent<v::SpriteVisualComponent>()->SetTint(
-                available ? (i == focus_ ? colors::pause::Focus : colors::pause::Surface) : colors::pause::Disabled);
+            fill->GetComponent<SpriteVisualComponent>()->SetTint(
+                available ? (i == focus_ ? ui_colors::pause::Focus : ui_colors::pause::Surface) : ui_colors::pause::Disabled);
         if (auto *caption = canvas.FindNode(captions_[i]))
-            caption->GetComponent<v::TextVisualComponent>()->SetTextColor(
-                i == focus_ && available ? colors::White : colors::pause::Ink);
+            caption->GetComponent<TextVisualComponent>()->SetTextColor(
+                i == focus_ && available ? ui_colors::White : ui_colors::pause::Ink);
         if (i < values_.size())
         {
             if (auto *value = canvas.FindNode(values_[i]))
-                value->GetComponent<v::TextVisualComponent>()->SetText(values[i]);
+                value->GetComponent<TextVisualComponent>()->SetText(values[i]);
             for (const auto id : {previous_[i], next_[i]})
                 if (auto *arrow = canvas.FindNode(id))
                     arrow->SetEnabled(available);
@@ -75,7 +75,7 @@ void GameplayPauseMenu::RefreshRows()
 void GameplayPauseMenu::AdjustValue(std::size_t index, int direction)
 {
     if (index == 0)
-        choice_.leadIn = finger_drum::rhythm::RhythmDuration{
+        choice_.leadIn = RhythmDuration{
             std::clamp(choice_.leadIn.count() + direction * 500'000, 500'000LL, 3'000'000LL)};
     if (index == 1)
     {
@@ -90,7 +90,7 @@ void GameplayPauseMenu::ProcessActions(GameplayPauseChoice &result)
     const auto actions = handle_.Get()->TakeActions();
     for (const auto &action : actions)
     {
-        if (action.type != v::ActionType::Clicked)
+        if (action.type != ActionType::Clicked)
             continue;
         for (std::size_t i = 0; i < rows_.size(); ++i)
         {
@@ -115,11 +115,11 @@ void GameplayPauseMenu::ProcessActions(GameplayPauseChoice &result)
     if (!actions.empty())
         RefreshRows();
 }
-void GameplayPauseMenu::ProcessPointer(const mrg::platform::InputState &input)
+void GameplayPauseMenu::ProcessPointer(const InputState &input)
 {
     auto &canvas = *handle_.Get();
     const auto p = input.IsMouseInsideWindow()
-                       ? v::MapScreenPointer(
+                       ? MapScreenPointer(
                              {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
                              {static_cast<float>(width_), static_cast<float>(height_)}, canvas)
                        : std::nullopt;
@@ -134,12 +134,12 @@ void GameplayPauseMenu::ProcessPointer(const mrg::platform::InputState &input)
                 focus_ = i;
         }
     lastPointer_ = p;
-    v::PointerInput pointer;
+    PointerInput pointer;
     pointer.available = p.has_value();
-    pointer.position = p.value_or(v::Point{});
-    pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
-    pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
-    pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
+    pointer.position = p.value_or(Point{});
+    pointer.leftButtonDown = input.IsMouseButtonDown(MouseButton::Left);
+    pointer.leftButtonPressed = input.WasMouseButtonPressed(MouseButton::Left);
+    pointer.leftButtonReleased = input.WasMouseButtonReleased(MouseButton::Left);
     router_.Process(canvas, pointer);
 }
 GameplayPauseChoice GameplayPauseMenu::HandleKey(std::uint16_t key)
@@ -164,7 +164,7 @@ GameplayPauseChoice GameplayPauseMenu::HandleKey(std::uint16_t key)
         result.action = Actions[focus_];
     return result;
 }
-GameplayPauseChoice GameplayPauseMenu::Update(const mrg::platform::InputState &input)
+GameplayPauseChoice GameplayPauseMenu::Update(const InputState &input)
 {
     GameplayPauseChoice result = choice_;
     result.action = GameplayPauseAction::None;

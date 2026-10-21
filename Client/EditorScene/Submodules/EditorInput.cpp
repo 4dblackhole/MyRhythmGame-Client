@@ -5,25 +5,25 @@
 #include <sstream>
 using namespace editor_ui;
 
-void EditorView::UpdateSliders(const mrg::UpdateContext &context)
+void EditorView::UpdateSliders(const UpdateContext &context)
 {
     if (state_.Tab() != EditorTab::Pattern && state_.Tab() != EditorTab::Audio)
         return;
 
     const auto &input = context.input;
-    v::PointerInput pointer{};
+    PointerInput pointer{};
     const auto mapped =
-        v::MapScreenPointer({static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
+        MapScreenPointer({static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
                             {static_cast<float>(width), static_cast<float>(height)}, *canvas.Get());
     pointer.available = input.IsMouseInsideWindow() && mapped.has_value();
     pointer.position =
-        mapped.value_or(v::Point{static_cast<float>(input.MousePositionX()) / canvas.Get()->PixelScale() -
+        mapped.value_or(Point{static_cast<float>(input.MousePositionX()) / canvas.Get()->PixelScale() -
                                      canvas.Get()->LogicalSize().width * .5F,
                                  canvas.Get()->LogicalSize().height * .5F -
                                      static_cast<float>(input.MousePositionY()) / canvas.Get()->PixelScale()});
-    pointer.leftButtonDown = input.IsMouseButtonDown(mrg::platform::MouseButton::Left);
-    pointer.leftButtonPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
-    pointer.leftButtonReleased = input.WasMouseButtonReleased(mrg::platform::MouseButton::Left);
+    pointer.leftButtonDown = input.IsMouseButtonDown(MouseButton::Left);
+    pointer.leftButtonPressed = input.WasMouseButtonPressed(MouseButton::Left);
+    pointer.leftButtonReleased = input.WasMouseButtonReleased(MouseButton::Left);
     sliderInput_.Process(*canvas.Get(), pointer);
 
     bool changed = false;
@@ -31,9 +31,9 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
     bool rateChanged = false;
     for (const auto &action : canvas.Get()->TakeActions())
     {
-        changed |= action.source == divisionSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
-        timeChanged |= action.source == timelineSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
-        rateChanged |= action.source == playbackRateSliderNode_->Id() && action.type == v::ActionType::ValueChanged;
+        changed |= action.source == divisionSliderNode_->Id() && action.type == ActionType::ValueChanged;
+        timeChanged |= action.source == timelineSliderNode_->Id() && action.type == ActionType::ValueChanged;
+        rateChanged |= action.source == playbackRateSliderNode_->Id() && action.type == ActionType::ValueChanged;
     }
     // A direct-input value above 16 can share the slider's end position.
     if (pointer.leftButtonPressed && sliderInput_.CapturedNode() == divisionSliderNode_->Id())
@@ -42,7 +42,7 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
         timeChanged = true;
     if (changed)
     {
-        const float value = divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
+        const float value = divisionSliderNode_->GetComponent<SliderBehaviorComponent>()->Value();
         const int division = std::clamp(1 + static_cast<int>(std::lround(value * 15)), 1, 16);
         if (state_.Score().division != division)
         {
@@ -53,27 +53,27 @@ void EditorView::UpdateSliders(const mrg::UpdateContext &context)
     if (timeChanged)
     {
         const auto [begin, end] = state_.TimelineRangeMilliseconds();
-        const float value = timelineSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
+        const float value = timelineSliderNode_->GetComponent<SliderBehaviorComponent>()->Value();
         state_.Seek(std::round(std::lerp(begin, end, static_cast<double>(value))));
     }
     if (rateChanged)
     {
-        const float value = playbackRateSliderNode_->GetComponent<v::SliderBehaviorComponent>()->Value();
+        const float value = playbackRateSliderNode_->GetComponent<SliderBehaviorComponent>()->Value();
         const double rate = std::round(std::lerp(EditorPlayback::MinimumRate, EditorPlayback::MaximumRate,
                                                static_cast<double>(value)) * 20) / 20;
         state_.SetPlaybackRate(rate);
     }
 }
 
-EditorMenuInputResult EditorView::UpdateMenu(const mrg::platform::InputState &input)
+EditorMenuInputResult EditorView::UpdateMenu(const InputState &input)
 {
     EditorMenuInput menu;
     if (input.IsMouseInsideWindow())
-        menu.pointer = v::MapScreenPointer(
+        menu.pointer = MapScreenPointer(
             {static_cast<float>(input.MousePositionX()), static_cast<float>(input.MousePositionY())},
             {static_cast<float>(width), static_cast<float>(height)}, *canvas.Get());
-    menu.leftPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left);
-    menu.rightPressed = input.WasMouseButtonPressed(mrg::platform::MouseButton::Right);
+    menu.leftPressed = input.WasMouseButtonPressed(MouseButton::Left);
+    menu.rightPressed = input.WasMouseButtonPressed(MouseButton::Right);
     const bool alt = input.IsKeyDown(VK_LMENU) || input.IsKeyDown(VK_RMENU);
     const bool control = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
     menu.toggle = input.WasKeyPressed(VK_F10) || (alt && input.WasKeyPressed('F'));
@@ -83,7 +83,7 @@ EditorMenuInputResult EditorView::UpdateMenu(const mrg::platform::InputState &in
     return menuBar_.Update(menu, state_.Document().Dirty());
 }
 
-bool EditorView::Update(const mrg::UpdateContext &context)
+bool EditorView::Update(const UpdateContext &context)
 {
     bool leave = false;
     const auto &input = context.input;
@@ -113,7 +113,7 @@ bool EditorView::Update(const mrg::UpdateContext &context)
     return leave;
 }
 
-bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
+bool EditorView::UpdateKeyboard(const InputState &input)
 {
     bool leave = false;
     if (input.WasKeyPressed(VK_ESCAPE))
@@ -127,7 +127,7 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
         }
         else if (!state_.Document().Dirty() ||
                  MessageBoxW(GetActiveWindow(), Texts().discardChanges.data(),
-                             std::format(L"{} {}", finger_drum::texts::GameName, Texts().editorTitleSuffix).c_str(),
+                             std::format(L"{} {}", GameName, Texts().editorTitleSuffix).c_str(),
                              MB_YESNO | MB_ICONQUESTION) == IDYES)
             leave = true;
     }
@@ -176,7 +176,7 @@ bool EditorView::UpdateKeyboard(const mrg::platform::InputState &input)
     return leave;
 }
 
-void EditorView::UpdatePointer(const mrg::UpdateContext &context)
+void EditorView::UpdatePointer(const UpdateContext &context)
 {
     const auto &input = context.input;
     toggleSelection_ = input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
@@ -192,13 +192,13 @@ void EditorView::UpdatePointer(const mrg::UpdateContext &context)
         state_.RequestRebuild();
     }
     const float scale = std::max(.001F, std::min(width / 1920.0F, height / 1080.0F));
-    const v::Point point{(input.MousePositionX() - width * .5F) / scale + 960,
+    const Point point{(input.MousePositionX() - width * .5F) / scale + 960,
                          (input.MousePositionY() - height * .5F) / scale + 540};
     UpdateSliders(context);
     if (state_.Tab() == EditorTab::Pattern &&
-        state_.Mode().UpdateScoreSelection(state_, point, !input.IsMouseButtonDown(mrg::platform::MouseButton::Left)))
+        state_.Mode().UpdateScoreSelection(state_, point, !input.IsMouseButtonDown(MouseButton::Left)))
         return;
-    if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Right) && state_.Tab() == EditorTab::Pattern &&
+    if (input.WasMouseButtonPressed(MouseButton::Right) && state_.Tab() == EditorTab::Pattern &&
         !buildFailed_)
     {
         if (state_.Mode().OpenToolMenu(point))
@@ -208,7 +208,7 @@ void EditorView::UpdatePointer(const mrg::UpdateContext &context)
         else
             state_.Mode().EditScore(state_, point, true);
     }
-    if (input.WasMouseButtonPressed(mrg::platform::MouseButton::Left) &&
+    if (input.WasMouseButtonPressed(MouseButton::Left) &&
         sliderInput_.CapturedNode() != divisionSliderNode_->Id() &&
         sliderInput_.CapturedNode() != timelineSliderNode_->Id() &&
         sliderInput_.CapturedNode() != playbackRateSliderNode_->Id())

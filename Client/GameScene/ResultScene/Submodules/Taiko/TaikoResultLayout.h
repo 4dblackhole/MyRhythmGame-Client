@@ -1,32 +1,32 @@
 #pragma once
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "Presentation/UiColors.h"
 #include <array>
 #include <format>
 #include <string>
 namespace taiko_result_ui::layout
 {
-    namespace v = mrg::visual2d;
+
     inline constexpr float Width = 1920, Height = 1080;
     // Penpot uses top-left / Y-down; convert once at UI construction.
-    constexpr v::Rect Bounds(v::Rect source)
+    constexpr Rect Bounds(Rect source)
     {
         return {source.x, Height - source.y - source.height, source.width, source.height};
     }
-    constexpr v::Color Color(unsigned rgb, float alpha = 1)
+    constexpr Color ResultColor(unsigned rgb, float alpha = 1)
     {
-        return finger_drum::presentation::ui_colors::Rgb(rgb, alpha);
+        return ui_colors::Rgb(rgb, alpha);
     }
-    namespace palette = finger_drum::presentation::ui_colors::result;
-    inline constexpr auto Ink = palette::Ink, Muted = palette::Muted, Accent = palette::Accent;
-    inline constexpr auto Surface = palette::Surface, Plot = palette::Plot, Keyline = palette::Keyline;
-    inline constexpr std::array<v::Color, 8> Markers{Color(0xFFFFFF), Color(0x2DDFFF), Color(0x28FF28),
-                                                     Color(0xFFBF20), Color(0x4018FF), Accent,
-                                                     Color(0x829AB3), Color(0xFF3A26)};
-    inline constexpr v::Rect Banner{0, 0, 1920, 88};
-    inline constexpr v::Rect HistogramPanel{1344, 104, 528, 352}, ScatterPanel{1344, 476, 528, 416};
-    inline constexpr v::Rect Scatter{1434, 620, 410, 188}, Histogram{1420, 182, 424, 206};
-    inline constexpr v::Rect ReplayButton{1344, 914, 256, 62}, RetryButton{1616, 914, 256, 62};
+
+    inline constexpr auto Ink = ui_colors::result::Ink, Muted = ui_colors::result::Muted, Accent = ui_colors::result::Accent;
+    inline constexpr auto Surface = ui_colors::result::Surface, Plot = ui_colors::result::Plot, Keyline = ui_colors::result::Keyline;
+    inline constexpr std::array<Color, 8> Markers{ResultColor(0xFFFFFF), ResultColor(0x2DDFFF), ResultColor(0x28FF28),
+                                                     ResultColor(0xFFBF20), ResultColor(0x4018FF), Accent,
+                                                     ResultColor(0x829AB3), ResultColor(0xFF3A26)};
+    inline constexpr Rect Banner{0, 0, 1920, 88};
+    inline constexpr Rect HistogramPanel{1344, 104, 528, 352}, ScatterPanel{1344, 476, 528, 416};
+    inline constexpr Rect Scatter{1434, 620, 410, 188}, Histogram{1420, 182, 424, 206};
+    inline constexpr Rect ReplayButton{1344, 914, 256, 62}, RetryButton{1616, 914, 256, 62};
     template <typename... Args> std::wstring Format(std::wstring_view value, Args &&...args)
     {
         return std::vformat(value, std::make_wformat_args(args...));

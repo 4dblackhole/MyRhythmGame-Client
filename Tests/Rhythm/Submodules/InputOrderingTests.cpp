@@ -1,19 +1,19 @@
 #include "Taiko/Results/TaikoPlayResult.h"
 #include "TestSupport.h"
 
-namespace finger_drum::tests
+namespace tests
 {
     void TestExpiredInputOrdering()
     {
-        using namespace rhythm;
+
         // Identical input, with and without an intervening unlimited-loop update.
         for (const bool split : {false, true})
         {
-            chart::PatternDocument pattern;
+            PatternDocument pattern;
             pattern.mode = "Taiko";
-            for (const auto fraction : {chart::Rational{0, 1}, chart::Rational{1, 400}, chart::Rational{1, 20}})
+            for (const auto fraction : {Rational{0, 1}, Rational{1, 400}, Rational{1, 20}})
                 pattern.notes.push_back({.position = {0, fraction}, .keyType = 1});
-            auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+            auto loaded = TaikoMode{}.CreateSession(pattern);
             Require(loaded.Succeeded(), "Expired input fixture must load.");
             auto &session = *loaded.session;
             static_cast<void>(session.Update(RhythmTime{89'000}));
@@ -21,8 +21,8 @@ namespace finger_drum::tests
                 static_cast<void>(session.Update(RhythmTime{99'999}));
             const auto hit = session.ProcessInput('F', InputEdge::Pressed, RhythmTime{100'000});
             Require(HasEvent(hit, NoteEventType::HitAccepted), "Input must pass all expired notes before judging.");
-            auto result = session.TakeResult(mode::PlayEndReason::Completed, RhythmTime{100'001});
-            const auto &taiko = dynamic_cast<const mode::TaikoPlayResult &>(*result);
+            auto result = session.TakeResult(PlayEndReason::Completed, RhythmTime{100'001});
+            const auto &taiko = dynamic_cast<const TaikoPlayResult &>(*result);
             Require(taiko.judgements[0] == 1 && taiko.judgements[5] == 2 && taiko.timingErrors.size() == 1 &&
                         taiko.timingErrors.front().error == RhythmDuration{} && taiko.summary.processedNotes == 3,
                     "Frame splitting must preserve hit/miss counts, accuracy and timing error.");
@@ -40,9 +40,9 @@ namespace finger_drum::tests
 
         for (const bool split : {false, true})
         {
-            auto pattern = MakeLongPattern(mode::TaikoNoteType::Buzz, {"TickDivision=8", "Action=Don"});
+            auto pattern = MakeLongPattern(TaikoNoteType::Buzz, {"TickDivision=8", "Action=Don"});
             pattern.notes.push_back({.position = {0, {1001, 2000}}, .keyType = 1});
-            auto loaded = mode::TaikoMode{}.CreateSession(pattern);
+            auto loaded = TaikoMode{}.CreateSession(pattern);
             Require(loaded.Succeeded(), "Tail-to-head fixture must load.");
             auto &session = *loaded.session;
             static_cast<void>(session.ProcessInput('J', InputEdge::Pressed, {}));
@@ -58,11 +58,11 @@ namespace finger_drum::tests
 
     void TestAuthoritativeHeldInputs()
     {
-        using namespace rhythm;
+
         for (const bool split : {false, true})
         {
-            auto loaded = mode::TaikoMode{}.CreateSession(
-                MakeLongPattern(mode::TaikoNoteType::Buzz, {"TickDivision=8", "Action=Don"}));
+            auto loaded = TaikoMode{}.CreateSession(
+                MakeLongPattern(TaikoNoteType::Buzz, {"TickDivision=8", "Action=Don"}));
             Require(loaded.Succeeded(), "Held-input fixture must load.");
             auto &session = *loaded.session;
             static_cast<void>(session.Update(RhythmTime{-100'000}, std::array<PhysicalKey, 1>{'F'}));
@@ -89,4 +89,4 @@ namespace finger_drum::tests
                     "Rewind must reproduce physical snapshots and exactly-once tick decisions.");
         }
     }
-} // namespace finger_drum::tests
+} // namespace youmu::tests

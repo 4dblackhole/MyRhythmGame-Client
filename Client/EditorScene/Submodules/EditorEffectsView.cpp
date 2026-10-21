@@ -4,10 +4,10 @@ using namespace editor_ui;
 
 std::wstring EditorView::EffectLabel(const EditorEffectSelection &selection) const
 {
-    if (const auto *type = std::get_if<chart::EffectCommandType>(&selection))
+    if (const auto *type = std::get_if<EffectCommandType>(&selection))
     {
         // Kiai is named in the list even though its ON/OFF editor is not supported yet.
-        if (*type == chart::EffectCommandType::Kiai)
+        if (*type == EffectCommandType::Kiai)
             return std::wstring(Texts().effectTypes[4]);
         const auto definition = std::ranges::find(EditorEffectDefinitions, *type, &EditorEffectDefinition::type);
         return definition == EditorEffectDefinitions.end() ? std::to_wstring(static_cast<int>(*type))
@@ -29,8 +29,8 @@ void EditorView::CycleEffectType()
     const auto matches = [&](const EditorEffectSelection &value) {
         if (value.index() != state_.effectForm.selection.index())
             return false;
-        if (const auto *type = std::get_if<chart::EffectCommandType>(&value))
-            return *type == std::get<chart::EffectCommandType>(state_.effectForm.selection);
+        if (const auto *type = std::get_if<EffectCommandType>(&value))
+            return *type == std::get<EffectCommandType>(state_.effectForm.selection);
         return std::get<EditorHitSoundTarget>(value).keyType ==
                std::get<EditorHitSoundTarget>(state_.effectForm.selection).keyType;
     };
@@ -109,7 +109,7 @@ void EditorView::DrawEffectFields()
                                                                        : text.startValue.data(),
           form.beginValue);
     Field({500, 718, 319, 42}, text.endValue.data(), form.endValue);
-    const std::array curves{chart::AutomationCurve::Linear, chart::AutomationCurve::Exponential, chart::AutomationCurve::Harmonic};
+    const std::array curves{AutomationCurve::Linear, AutomationCurve::Exponential, AutomationCurve::Harmonic};
     const auto found = std::ranges::find(curves, form.curve);
     const auto label = found == curves.end() ? Wide(form.curveName) : std::wstring(text.curves[static_cast<std::size_t>(found - curves.begin())]);
     Button({844, 718, 360, 42}, label, [this, curves] {

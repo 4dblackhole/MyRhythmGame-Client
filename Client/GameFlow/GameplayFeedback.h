@@ -5,5 +5,5 @@ struct GameplayFeedback
 {
     bool reset{};
     bool keyPressed{};
-    finger_drum::rhythm::NoteProcessResult result;
+    NoteProcessResult result;
 };

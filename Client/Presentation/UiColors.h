@@ -1,11 +1,10 @@
 #pragma once
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 
 // Shared UI colors. Scene layouts map these tokens to their local roles;
 // note/judgement colors remain owned by their gameplay presentation policy.
-namespace finger_drum::presentation::ui_colors
+namespace ui_colors
 {
-    using Color = mrg::visual2d::Color;
     constexpr Color Rgb(unsigned rgb, float alpha = 1)
     {
         return {static_cast<float>((rgb >> 16) & 255) / 255, static_cast<float>((rgb >> 8) & 255) / 255,
@@ -54,4 +53,4 @@ namespace finger_drum::presentation::ui_colors
         inline constexpr auto Keyline = result::Keyline, Selector = result::Plot;
         inline constexpr auto Hover = sky::AccentHover, Pressed = sky::Ink, Disabled = sky::Disabled;
     } // namespace pause
-} // namespace finger_drum::presentation::ui_colors
+} // namespace ui_colors

@@ -145,7 +145,7 @@ TaikoSessionBuilder가 표시 마디 시작 위치에서 배율을 고정하고,
 들어올 시간이 더 필요하면 그만큼 늘어납니다.
 
 노트와 플레이 HUD의 배포 기본본은
-`FingerDrum.Assets/Assets/Skins/Default Skin/InGame`의 PNG입니다. 실행 파일 옆
+`YOUMU.Assets/Assets/Skins/Default Skin/InGame`의 PNG입니다. 실행 파일 옆
 스킨에서 누락된 파일만 이 내장 기본본으로 대체합니다.
 `note.png`, `bignote.png`, `LNBody.png`, `LNTail.png`에는 Don/Kat/Roll Ambient
 색상을 곱하고 대응하는 `*Overlay.png`는 흰색 원본으로 위에 그립니다. 일반/큰

@@ -1,7 +1,7 @@
 # 문구·언어·글꼴 관리
 
 게임의 고정 UI 문구는 UTF-8 INI로 관리하며 화면별 문구 계약과 글꼴은 `Client/Texts`가 소유합니다.
-`FingerDrumGame`이 하나의 `TextCatalog`를 소유하고 각 View/Presenter에 빌려주므로,
+`YOUMUGame`이 하나의 `TextCatalog`를 소유하고 각 View/Presenter에 빌려주므로,
 로고에서 바꾼 언어가 곡 선택·플레이·에디터에도 이어집니다. 기본 언어는 한국어입니다.
 
 ```text
@@ -11,7 +11,7 @@ Client/Texts/
   Submodules/LanguageFile.*             UTF-8 INI 파싱·자리표시자 검증
   GameIdentity.h                        언어와 무관한 제품 표시 이름
   Options/OptionTexts.*                 공통 옵션 패널
-  GameScene/FingerDrumLogoScene/        로고 화면
+  GameScene/YOUMULogoScene/        로고 화면
   GameScene/MusicSelectScene/           플레이/에디터 곡 선택
   GameScene/RhythmTestScene/            플레이 화면
   GameScene/ResultScene/                리절트 문구·통계 축·액션
@@ -19,7 +19,7 @@ Client/Texts/
     Taiko/TaikoEditorTexts.*            Taiko 도구/동·캇 이펙트 문구
 ```
 
-물리 폴더와 `MRG.Client.vcxproj.filters`의 `Texts` 트리는 같습니다.
+물리 폴더와 `YOUMU.Client.vcxproj.filters`의 `Texts` 트리는 같습니다.
 화면별 `*TextSet`은 INI 키를 해당 화면의 이름 있는 필드로 묶습니다.
 문자열 값이나 언어 선택 분기는 이 C++ 표에 복제하지 않습니다.
 
@@ -73,16 +73,14 @@ TextCatalog가 읽은 문자열은 실행 중 불변이며 화면은 해당 소�
 
 ## 게임 이름 변경
 
-`Client/Texts/GameIdentity.h`의 `finger_drum::texts::GameName`이 제품 표시 이름의 유일한 정의입니다.
-이 값을 바꾸고 다시 빌드하면 게임 창 제목과 시작/내장 자산 오류창에 함께 적용됩니다.
-에디터의 미저장 변경 확인창은 같은 이름에 EditorTexts의 언어별 `editorTitleSuffix`를 붙입니다.
-접미사 표에 게임 이름을 복사하거나 언어마다 같은 이름을 따로 정의하지 않습니다.
-이름은 정적 수명의 UTF-16 문자열이므로 Win32 제목에도 변환 없이 전달합니다.
-
-저장소·프로젝트/클래스명, Scene/Canvas ID, EXE 파일명과 자산 캐시 경로는 표시 이름과
-분리된 내부 식별자입니다. 표시 이름을 바꿔도 기존 설정/캐시/스킨 참조는 유지됩니다.
-재사용 엔진의 기본 창 제목은 Client가 GetEngineConfig에서 덮어씁니다.
-현재 로고 PNG의 `Logo` 문구는 별도의 임시 그림이며 게임 이름 문자열을 포함하지 않습니다.
+`Client/Texts/GameIdentity.props`의 `GameDisplayName`이 제품 표시 이름의 유일한 원본입니다.
+현재 이름은 `Y's Orchestral Unison: Melodic Ultimatum`입니다.
+빌드는 `GenerateGameIdentity.ps1`로 `GameIdentity.h`의 전역 UTF-16 `GameName`을 생성하며,
+게임 창·시작 오류창·에디터 확인창이 같은 값을 사용합니다. 생성 헤더는 직접 수정하지 않습니다.
+EXE TargetName도 같은 속성에서 계산하며 Windows 파일명에 사용할 수 없는 콜론은
+` -`로 바꿉니다. Debug/Release 결과는 `Y's Orchestral Unison - Melodic Ultimatum.exe`입니다.
+코드/프로젝트/Scene ID·자산 캐시의 제품 식별자는 YOUMU이며 표시 이름 변경과 별도로 관리합니다.
+에디터 확인창은 같은 이름에 언어별 editorTitleSuffix를 붙입니다.
 
 ## 언어와 글꼴 추가
 
@@ -113,7 +111,7 @@ TextCatalog는 문구와 글꼴 선택을 소유하고, 엔진 TextVisual/ComboB
 글꼴과 배치 handle을 유지하므로 Client에 DirectWrite 객체나 아틀라스 UV를 저장하지 않습니다.
 직접 DrawPacket을 만드는 에디터도 `packet.text`에 이 payload를 전달합니다.
 자세한 배치·측정·아틀라스 수명은
-[엔진 텍스트 계약](../Dependencies/MRG-Engine/Docs/TextRendering.md), 구현/검증은
+[엔진 텍스트 계약](../Dependencies/PhantomCore/Docs/TextRendering.md), 구현/검증은
 [텍스트 개선 기록](Reviews/TextRenderingFixes-2026-10-14.md)에 있습니다.
 
 ## 옵션 패널
@@ -190,7 +188,7 @@ OptionsKeys, OptionsOffset이 각 표시·적용 함수를 분리합니다. Opti
 
 ## Option.ini
 
-`FingerDrumGame`이 `App/OptionSettings`를 소유하고 로고/곡 선택 패널에 빌려줍니다.
+`YOUMUGame`이 `App/OptionSettings`를 소유하고 로고/곡 선택 패널에 빌려줍니다.
 이 클래스는 파일 읽기·쓰기와 저장한 값만 담당합니다. `OptionsPanel`이 기존 엔진
 API에 선택을 전달하며 별도 옵션 Controller나 새로운 오디오 미들웨어는 추가하지 않습니다.
 

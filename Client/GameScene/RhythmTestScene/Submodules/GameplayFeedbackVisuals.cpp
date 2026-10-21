@@ -1,15 +1,14 @@
 #include "GameplayPresenter.h"
 #include "GameplaySupport.h"
 #include "Texts/GameScene/RhythmTestScene/GameplayTexts.h"
-using namespace gameplay;
 
 void GameplayPresenter::PresentJudgementFeedback(const GameplayFeedback &feedback)
 {
-    using namespace finger_drum::rhythm;
+
     // Match the key beam's input priority. A passive miss or a duplicate
     // Completed/HoldStarted event must not overwrite this press's actual hit.
     const NoteEvent *selected = feedback.keyPressed
-        ? finger_drum::presentation::LaneKeyBeam::InputResponse(feedback.result) : nullptr;
+        ? LaneKeyBeam::InputResponse(feedback.result) : nullptr;
     if (!feedback.keyPressed)
         for (const auto &event : feedback.result.events)
             if (event.type == NoteEventType::Missed)
@@ -54,13 +53,13 @@ void GameplayPresenter::PresentErrorMessage(std::string_view message)
     errorLabel_->SetVisible(!message.empty());
     if (message.empty())
         return;
-    const auto &text = finger_drum::texts::Gameplay(texts_);
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*errorLabel_)
+    const auto &text = Gameplay(texts_);
+    RequireComponent<TextVisualComponent>(*errorLabel_)
         .SetText(std::wstring(text.errorPrefix) + Utf8ToWide(message, text.audioInitializationFailed));
 }
 
 void GameplayPresenter::PresentHitCounter(NoteVisualLayers &layers,
-                                            const finger_drum::rhythm::NoteProgress &progress,
+                                            const NoteProgress &progress,
                                             const float visualHeight)
 {
     if (canvas_ == nullptr || layers.counter == nullptr || layers.counterText == nullptr)
@@ -74,13 +73,13 @@ void GameplayPresenter::PresentHitCounter(NoteVisualLayers &layers,
     layers.counter->SetVisible(true);
     const std::size_t remaining =
         progress.required > progress.accepted ? progress.required - progress.accepted : 0;
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*layers.counterText)
+    RequireComponent<TextVisualComponent>(*layers.counterText)
         .SetText(std::to_wstring(remaining));
 }
 
 void GameplayPresenter::PresentFocusNoteProcessing(
-    NoteVisualLayers &layers, const finger_drum::rhythm::NoteProgress &progress,
-    const finger_drum::rhythm::RhythmTime time)
+    NoteVisualLayers &layers, const NoteProgress &progress,
+    const RhythmTime time)
 {
     if (canvas_ == nullptr || layers.processing == nullptr || progress.required == 0)
     {
@@ -91,7 +90,7 @@ void GameplayPresenter::PresentFocusNoteProcessing(
         static_cast<float>(progress.accepted) / static_cast<float>(progress.required), 0.0F, 1.0F);
     const float scale =
         layers.focusType == FocusNoteType::Balloon ? 0.72F + completion * 0.38F : 1.0F;
-    const mrg::visual2d::Size size{layers.processingSize.width * scale,
+    const Size size{layers.processingSize.width * scale,
                                    layers.processingSize.height * scale};
     layers.processing->SetSize(size);
     layers.processing->SetPosition({0.0F, 0.0F});
@@ -101,13 +100,13 @@ void GameplayPresenter::PresentFocusNoteProcessing(
         layers.processing->Transform().SetRotationRollPitchYaw(0.0F, 0.0F,
                                                                std::fmod(turns * TwoPi, TwoPi));
     }
-    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*layers.processing)
+    RequireComponent<SpriteVisualComponent>(*layers.processing)
         .SetTint({1.0F, 1.0F, 1.0F, 1.0F});
     layers.processing->SetVisible(true);
     PresentHitCounter(layers, progress, size.height);
 }
 
-void GameplayPresenter::PresentCompletionEffect(const finger_drum::rhythm::RhythmTime time)
+void GameplayPresenter::PresentCompletionEffect(const RhythmTime time)
 {
     auto selected = completionEffects_.end();
     for (auto effect = completionEffects_.begin(); effect != completionEffects_.end();)
@@ -118,7 +117,7 @@ void GameplayPresenter::PresentCompletionEffect(const finger_drum::rhythm::Rhyth
             effect = completionEffects_.erase(effect);
             continue;
         }
-        if (elapsed >= finger_drum::rhythm::RhythmDuration::zero() &&
+        if (elapsed >= RhythmDuration::zero() &&
             (selected == completionEffects_.end() || effect->second > selected->second))
         {
             selected = effect;
@@ -140,8 +139,8 @@ void GameplayPresenter::PresentCompletionEffect(const finger_drum::rhythm::Rhyth
     const float progress = std::clamp(static_cast<float>((time - selected->second).count()) /
                                           static_cast<float>(FocusSuccessDuration.count()),
                                       0.0F, 1.0F);
-    mrg::visual2d::Visual2DNode *node = layers.processing;
-    mrg::visual2d::Size size = layers.processingSize;
+    Visual2DNode *node = layers.processing;
+    Size size = layers.processingSize;
     if (layers.focusType == FocusNoteType::Balloon && layers.success != nullptr)
     {
         node = layers.success;
@@ -160,7 +159,7 @@ void GameplayPresenter::PresentCompletionEffect(const finger_drum::rhythm::Rhyth
         const float turns = static_cast<float>(time.count()) / 600'000.0F;
         node->Transform().SetRotationRollPitchYaw(0.0F, 0.0F, std::fmod(turns * TwoPi, TwoPi));
     }
-    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*node).SetTint(
+    RequireComponent<SpriteVisualComponent>(*node).SetTint(
         {1.0F, 1.0F, 1.0F, 1.0F - progress});
     node->SetVisible(true);
 }
@@ -169,12 +168,12 @@ void GameplayPresenter::UpdateAccuracyPresentation()
 {
     const std::optional<double> accuracy = session_->AccuracyRate();
     const double percent = accuracy.value_or(0) * 100.0;
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*accuracyIndicator_)
+    RequireComponent<TextVisualComponent>(*accuracyIndicator_)
         .SetText(accuracy.has_value()
                      ? std::vformat(texts_.Get("Gameplay.accuracyFormat"), std::make_wformat_args(percent))
                      : std::wstring(texts_.Get("Gameplay.emptyAccuracy")));
 #if defined(_DEBUG)
-    const auto &text = finger_drum::texts::Gameplay(texts_);
+    const auto &text = Gameplay(texts_);
     std::wstring debug(text.focusNone);
     if (session_->Gear().LaneCount() > 0)
     {
@@ -193,7 +192,7 @@ void GameplayPresenter::UpdateAccuracyPresentation()
     {
         debug += text.lastNone;
     }
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*noteDebugLabel_)
+    RequireComponent<TextVisualComponent>(*noteDebugLabel_)
         .SetText(std::move(debug));
 #endif
 }

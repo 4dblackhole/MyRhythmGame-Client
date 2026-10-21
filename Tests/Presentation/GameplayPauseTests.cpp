@@ -1,4 +1,4 @@
-#include "FingerDrumAssets.h"
+#include "YOUMUAssets.h"
 #include "GameFlow/GameplaySessionController.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayPauseMenu.h"
 #include "Taiko/Results/TaikoPlayResult.h"
@@ -13,44 +13,41 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
-    namespace a = mrg::audio;
-    namespace r = finger_drum::rhythm;
-    namespace mode = finger_drum::mode;
+
     void Check(bool value, const char *message)
     {
         if (!value)
             throw std::runtime_error(message);
     }
-    class NullRenderer final : public mrg::graphics::Visual2DRenderSystem
+    class NullRenderer final : public Visual2DRenderSystem
     {
       public:
-        v::ImageHandle LoadImage(const std::filesystem::path &) override
+        ImageHandle LoadImage(const std::filesystem::path &) override
         {
             return {};
         }
-        v::Size GetImageSize(v::ImageHandle) const noexcept override
+        Size GetImageSize(ImageHandle) const noexcept override
         {
             return {};
         }
-        void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, v::Point,
+        void SubmitScreen(const Visual2DCanvas &, const RenderContext &, Point,
                           std::uint32_t) override
         {
         }
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
-                         v::Size, const DirectX::XMFLOAT4X4 &) override
+        void SubmitPlane(const Visual2DCanvas &, const RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         Size, const DirectX::XMFLOAT4X4 &) override
         {
         }
-        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
+        RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
         {
             return {};
         }
-        void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
-                             const mrg::graphics::RenderContext &) override
+        void RenderToTexture(const Visual2DCanvas &, const RenderTargetTextureHandle &,
+                             const RenderContext &) override
         {
         }
     };
-    const v::Visual2DNode *Find(const v::Visual2DNode &node, std::string_view name)
+    const Visual2DNode *Find(const Visual2DNode &node, std::string_view name)
     {
         if (node.Name() == name)
             return &node;
@@ -62,9 +59,9 @@ namespace
     void TestMenu()
     {
         NullRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        finger_drum::texts::TextCatalog texts;
+        TextCatalog texts;
         GameplayPauseMenu menu(visuals, texts);
         menu.Show(1280, 720, false, 12);
         Check(menu.HandleKey(VK_RETURN).action == GameplayPauseAction::None, "Preparation must block Resume.");
@@ -100,11 +97,11 @@ namespace
             if (!button)
                 throw std::runtime_error("Selector button must exist.");
             const auto bounds = button->BoundsInCanvas();
-            v::PointerInput pointer;
+            PointerInput pointer;
             pointer.available = true;
             pointer.position = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
             pointer.leftButtonDown = pointer.leftButtonPressed = true;
-            v::Visual2DInputRouter clicks;
+            Visual2DInputRouter clicks;
             clicks.Process(*canvas, pointer);
             menu.Show(1280, 720, true, 12);
             pointer.leftButtonDown = pointer.leftButtonPressed = false;
@@ -126,17 +123,17 @@ namespace
         if (!retire)
             throw std::runtime_error("Retire row missing.");
         const auto b = retire->BoundsInCanvas();
-        v::PointerInput p;
+        PointerInput p;
         p.available = true;
         p.position = {b.x + b.width / 2, b.y + b.height / 2};
-        v::Visual2DInputRouter router;
+        Visual2DInputRouter router;
         p.leftButtonDown = p.leftButtonPressed = true;
         router.Process(*canvas, p);
         p.leftButtonDown = p.leftButtonPressed = false;
         p.leftButtonReleased = true;
         router.Process(*canvas, p);
         router.Reset(*canvas);
-        mrg::platform::InputState input;
+        InputState input;
         Check(menu.Update(input).action == GameplayPauseAction::Retire,
               "Mouse Retire must emit the same action as keyboard focus.");
         for (const auto [row, action] :
@@ -159,7 +156,7 @@ namespace
             Check(menu.Update(input).action == action, "A button release must immediately emit its action.");
             router.Reset(*canvas);
         }
-        texts.SetLanguage(finger_drum::texts::Language::English);
+        texts.SetLanguage(Language::English);
         static_cast<void>(menu.Update(input));
         const auto packets = canvas->BuildDrawList();
         Check(std::ranges::any_of(packets,
@@ -175,7 +172,7 @@ namespace
         menu.Shutdown();
         Check(visuals.CanvasCount() == 0, "Pause Canvas must be owned and released.");
     }
-    std::vector<a::AudioPlaybackSettings> musicStarts;
+    std::vector<AudioPlaybackSettings> musicStarts;
     std::vector<std::uint64_t> musicSchedules;
     std::int64_t musicScheduleTicks{};
     std::size_t sampleStarts{}, clipLoads{}, musicResumes{};
@@ -186,11 +183,11 @@ namespace
         bool music{};
         std::chrono::steady_clock::time_point readyAt{};
     };
-    void WaitForGameplay(IPlaySessionController &controller, const mrg::UpdateContext &ctx)
+    void WaitForGameplay(IPlaySessionController &controller, const UpdateContext &ctx)
     {
         const auto target = controller.Time();
         const auto start = std::chrono::steady_clock::now();
-        mrg::platform::InputState empty;
+        InputState empty;
         while (controller.CurrentState() != PlayState::Gameplay)
         {
             const auto elapsed = std::chrono::steady_clock::now() - start;
@@ -206,7 +203,7 @@ namespace
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
     }
-    class Voice final : public a::IAudioVoiceBackend
+    class Voice final : public IAudioVoiceBackend
     {
       public:
         explicit Voice(std::shared_ptr<ClipState> state) : state_(std::move(state))
@@ -216,13 +213,13 @@ namespace
         {
             return playing_;
         }
-        a::AudioPreparationState PreparationState(std::string &error) override
+        AudioPreparationState PreparationState(std::string &error) override
         {
             error.clear();
             return std::chrono::steady_clock::now() < state_->readyAt
-                       ? a::AudioPreparationState::Loading : a::AudioPreparationState::Ready;
+                       ? AudioPreparationState::Loading : AudioPreparationState::Ready;
         }
-        bool Restart(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *, std::string &error) override
+        bool Restart(const AudioPlaybackSettings &settings, IAudioBusBackend *, std::string &error) override
         {
             if (state_->music)
             {
@@ -279,7 +276,7 @@ namespace
         bool playing_{true};
         std::shared_ptr<ClipState> state_;
     };
-    class Clip final : public a::IAudioClipBackend
+    class Clip final : public IAudioClipBackend
     {
       public:
         explicit Clip(bool music) : state_(std::make_shared<ClipState>())
@@ -287,23 +284,23 @@ namespace
             state_->music = music;
             ++clipLoads;
         }
-        a::AudioClipLoadState LoadState(std::string &error) const override
+        AudioClipLoadState LoadState(std::string &error) const override
         {
             if (!state_->music && failSampleLoads)
             {
                 error = "Injected hit sound load failure.";
-                return a::AudioClipLoadState::Failed;
+                return AudioClipLoadState::Failed;
             }
             error.clear();
-            return std::chrono::steady_clock::now() < state_->readyAt ? a::AudioClipLoadState::Loading
-                                                                      : a::AudioClipLoadState::Ready;
+            return std::chrono::steady_clock::now() < state_->readyAt ? AudioClipLoadState::Loading
+                                                                      : AudioClipLoadState::Ready;
         }
         bool GetDurationMicroseconds(std::uint64_t &duration, std::string &) const override
         {
             duration = 120'000'000;
             return true;
         }
-        std::unique_ptr<a::IAudioVoiceBackend> Play(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *,
+        std::unique_ptr<IAudioVoiceBackend> Play(const AudioPlaybackSettings &settings, IAudioBusBackend *,
                                                     std::string &error) override
         {
             if (state_->music)
@@ -328,57 +325,57 @@ namespace
         std::shared_ptr<ClipState> state_;
     };
 
-    std::unique_ptr<a::IAudioClipBackend> CreateClip(a::IAudioBackend &, const std::filesystem::path &path,
-                                                     a::AudioLoadMode load, std::string &)
+    std::unique_ptr<IAudioClipBackend> CreateClip(IAudioBackend &, const std::filesystem::path &path,
+                                                     AudioLoadMode load, std::string &)
     {
         const bool music = path.filename() == "probe-music.mp3";
         if (music)
-            Check(load == a::AudioLoadMode::StreamAsyncAccurate,
+            Check(load == AudioLoadMode::StreamAsyncAccurate,
                   "Gameplay music must prepare accurate seek data once.");
         return std::make_unique<Clip>(music);
     }
-    finger_drum::chart::PatternDocument Pattern()
+    PatternDocument Pattern()
     {
-        namespace c = finger_drum::chart;
-        c::PatternDocument p;
+
+        PatternDocument p;
         p.mode = "Taiko";
-        p.timing.push_back({{2, {}}, c::TimingDirectiveType::MeasureLength, 0, {3, 4}});
-        p.timing.push_back({{3, {}}, c::TimingDirectiveType::Bpm, 240});
-        p.timing.push_back({{4, {}}, c::TimingDirectiveType::MeasureLength, 0, {1, 1}});
+        p.timing.push_back({{2, {}}, TimingDirectiveType::MeasureLength, 0, {3, 4}});
+        p.timing.push_back({{3, {}}, TimingDirectiveType::Bpm, 240});
+        p.timing.push_back({{4, {}}, TimingDirectiveType::MeasureLength, 0, {1, 1}});
         for (const std::int64_t i : {10, 11, 12})
             p.notes.push_back({.position = {i, {}}, .keyType = 1});
         return p;
     }
-    class ProbeResult final : public mode::IPlayResult
+    class ProbeResult final : public IPlayResult
     {
       public:
-        mode::PlayResultSummary summary;
+        PlayResultSummary summary;
         std::string_view ModeId() const noexcept override
         {
             return "Probe";
         }
-        const mode::PlayResultSummary &Summary() const noexcept override
+        const PlayResultSummary &Summary() const noexcept override
         {
             return summary;
         }
     };
-    class ProbeCollector final : public mode::IPlayResultCollector
+    class ProbeCollector final : public IPlayResultCollector
     {
       public:
-        void RecordInput(const r::RhythmInputEvent &) override
+        void RecordInput(const RhythmInputEvent &) override
         {
         }
-        void RecordControl(mode::PlayControlEvent event) override
+        void RecordControl(PlayControlEvent event) override
         {
             summary_.controls.push_back(event);
         }
-        void Consume(const r::NoteProcessResult &, bool) override
+        void Consume(const NoteProcessResult &, bool) override
         {
         }
-        void RecordRetirement(const r::NoteAccuracy &) override
+        void RecordRetirement(const NoteAccuracy &) override
         {
         }
-        void SetInitialTime(r::RhythmTime time) noexcept override
+        void SetInitialTime(RhythmTime time) noexcept override
         {
             summary_.initialTime = time;
         }
@@ -389,7 +386,7 @@ namespace
         void ResetJudgements() noexcept override
         {
         }
-        std::unique_ptr<mode::IPlayResult> TakeResult(mode::PlayEndReason reason, r::RhythmTime time) override
+        std::unique_ptr<IPlayResult> TakeResult(PlayEndReason reason, RhythmTime time) override
         {
             auto result = std::make_unique<ProbeResult>();
             result->summary = summary_;
@@ -399,14 +396,14 @@ namespace
         }
 
       private:
-        mode::PlayResultSummary summary_;
+        PlayResultSummary summary_;
     };
     // A second mode exists only in this test. It supplies no Taiko note, sound
     // or result implementation, and uses exactly the same controller/interface.
-    class ProbeMode final : public mode::IPlayGameMode
+    class ProbeMode final : public IPlayGameMode
     {
       public:
-        mode::ModeInputLayout InputLayout() const override
+        ModeInputLayout InputLayout() const override
         {
             return {"Probe", {}};
         }
@@ -414,52 +411,52 @@ namespace
         {
             return "Probe";
         }
-        mode::ModeLoadResult LoadSession(const std::filesystem::path &,
+        ModeLoadResult LoadSession(const std::filesystem::path &,
                                          const std::optional<std::filesystem::path> &) const override
         {
             return CreateSession({}, {});
         }
-        mode::ModeLoadResult CreateSession(const finger_drum::chart::PatternDocument &pattern,
-                                           const finger_drum::chart::EffectDocument &) const override
+        ModeLoadResult CreateSession(const PatternDocument &pattern,
+                                           const EffectDocument &) const override
         {
-            auto session = std::make_unique<mode::PlaySession>();
+            auto session = std::make_unique<PlaySession>();
             session->SetInputLayout(InputLayout());
-            session->SetTimeline(finger_drum::chart::MusicalTimeline(pattern));
+            session->SetTimeline(MusicalTimeline(pattern));
             session->Gear().CreateLane();
             session->Gear().Finalize();
             session->SetResultCollector(std::make_unique<ProbeCollector>());
             return {std::move(session), {}};
         }
     };
-    class PauseClient final : public mrg::IGameClient
+    class PauseClient final : public IGameClient
     {
       public:
         explicit PauseClient(bool &verified) : verified_(verified)
         {
         }
-        mrg::EngineConfig GetEngineConfig() const override
+        EngineConfig GetEngineConfig() const override
         {
-            mrg::EngineConfig c;
+            EngineConfig c;
             c.showWindow = false;
-            c.audio.preferredBackend = a::AudioOutputBackend::NoSound;
+            c.audio.preferredBackend = AudioOutputBackend::NoSound;
             c.audioClipBackendFactory = CreateClip;
             return c;
         }
-        void Initialize(const mrg::EngineServices &services) override
+        void Initialize(const EngineServices &services) override
         {
             services_.emplace(services);
-            auto loaded = mode::TaikoMode{}.CreateSession(Pattern());
+            auto loaded = TaikoMode{}.CreateSession(Pattern());
             Check(loaded.Succeeded(), "Transport fixture must load.");
             session_ = loaded.session.get();
             visuals_.Initialize(services.visual2DRendering, {1280, 720});
             controller_ = std::make_unique<GameplaySessionController>(
-                finger_drum::GameplayLaunchRequest{"probe.ymp", {}, "probe-music.mp3", "Taiko"}, playback_, false,
+                GameplayLaunchRequest{"probe.ymp", {}, "probe-music.mp3", "Taiko"}, playback_, false,
                 std::move(loaded.session));
             controller_->InitializeSession();
-            controller_->Start(services, r::RhythmTime{12'240'000});
+            controller_->Start(services, RhythmTime{12'240'000});
             menu_ = std::make_unique<GameplayPauseMenu>(visuals_, texts_);
         }
-        bool Update(const mrg::UpdateContext &ctx) override
+        bool Update(const UpdateContext &ctx) override
         {
             Check(ctx.totalSeconds < 10, "Pause transport timed out.");
             controller_->Update(ctx);
@@ -467,7 +464,7 @@ namespace
                 return true;
             if (phase_ == 0 && controller_->Time().count() >= 12'250'000)
             {
-                static_cast<void>(session_->ProcessInput('F', r::InputEdge::Pressed, controller_->Time()));
+                static_cast<void>(session_->ProcessInput('F', InputEdge::Pressed, controller_->Time()));
                 controller_->OpenPauseMenu(ctx);
                 paused_ = controller_->Time();
                 phase_ = 1;
@@ -482,30 +479,30 @@ namespace
                 if (++pausedUpdates_ < 20)
                     return true;
                 const auto musicVoicesBeforeResume = musicStarts.size();
-                Check(controller_->ResumeFromPause(ctx, r::RhythmDuration{500'000}), "Resume must succeed.");
-                Check(controller_->Time() == paused_ - r::RhythmDuration{500'000} &&
+                Check(controller_->ResumeFromPause(ctx, RhythmDuration{500'000}), "Resume must succeed.");
+                Check(controller_->Time() == paused_ - RhythmDuration{500'000} &&
                           session_->FinalizedNoteCount() == 1,
                       "Resume must move half a second without undoing the processed note.");
                 Check(controller_->CurrentState() == PlayState::Pause && !controller_->PauseMenuOpen(),
                       "Resume must accept the action while the seek keeps gameplay paused.");
-                Check(!controller_->ResumeFromPause(ctx, r::RhythmDuration{500'000}),
+                Check(!controller_->ResumeFromPause(ctx, RhythmDuration{500'000}),
                       "A duplicate Resume must not subtract the lead-in again.");
                 const auto samplesBefore = sampleStarts;
                 WaitForGameplay(*controller_, ctx);
                 Check(sampleStarts == samplesBefore && musicStarts.size() == musicVoicesBeforeResume,
                       "Resume must retain the music voice and must not replay hit sounds.");
-                CheckClockAlignment(ctx, paused_ - r::RhythmDuration{500'000});
+                CheckClockAlignment(ctx, paused_ - RhythmDuration{500'000});
                 Check(musicStarts.back().startPositionMicroseconds ==
-                          static_cast<std::uint64_t>((paused_ - r::RhythmDuration{500'000}).count()),
+                          static_cast<std::uint64_t>((paused_ - RhythmDuration{500'000}).count()),
                       "Music source position must equal the resumed chart time.");
                 controller_->OpenPauseMenu(ctx);
                 const auto from = controller_->Time();
-                Check(controller_->ResumeFromPause(ctx, r::RhythmDuration{3'000'000}) &&
-                          controller_->Time() == from - r::RhythmDuration{3'000'000},
+                Check(controller_->ResumeFromPause(ctx, RhythmDuration{3'000'000}) &&
+                          controller_->Time() == from - RhythmDuration{3'000'000},
                       "The three-second Resume must move the same clock.");
                 WaitForGameplay(*controller_, ctx);
                 controller_->OpenPauseMenu(ctx);
-                Check(controller_->RewindFromPause(ctx, 4) && controller_->Time() == r::RhythmTime{4'000'000} &&
+                Check(controller_->RewindFromPause(ctx, 4) && controller_->Time() == RhythmTime{4'000'000} &&
                           session_->FinalizedNoteCount() == 0,
                       "Four source measures must ignore meter/BPM duration differences and restore grades.");
                 WaitForGameplay(*controller_, ctx);
@@ -524,18 +521,18 @@ namespace
                 Check(clipLoads == loadsBefore, "Retry must reuse the loaded clips.");
                 // Negative pre-roll must schedule source zero in the future,
                 // and Rewind must never jump forwards after a long Resume.
-                while (controller_->Time() > r::RhythmTime{3'000'000})
+                while (controller_->Time() > RhythmTime{3'000'000})
                 {
                     controller_->OpenPauseMenu(ctx);
-                    Check(controller_->ResumeFromPause(ctx, r::RhythmDuration{3'000'000}),
+                    Check(controller_->ResumeFromPause(ctx, RhythmDuration{3'000'000}),
                           "Repeated Resume must succeed.");
                     WaitForGameplay(*controller_, ctx);
                 }
                 controller_->OpenPauseMenu(ctx);
                 const auto negativeFrom = controller_->Time();
-                Check(controller_->ResumeFromPause(ctx, r::RhythmDuration{3'000'000}),
+                Check(controller_->ResumeFromPause(ctx, RhythmDuration{3'000'000}),
                       "Negative pre-roll Resume must succeed.");
-                Check(controller_->Time() == negativeFrom - r::RhythmDuration{3'000'000} &&
+                Check(controller_->Time() == negativeFrom - RhythmDuration{3'000'000} &&
                           musicStarts.back().startPositionMicroseconds == 0 &&
                           controller_->CurrentState() == PlayState::Pause,
                       "Negative Resume must preserve source zero while preparing.");
@@ -556,7 +553,7 @@ namespace
                 auto result = controller_->TakeResult();
                 Check(!controller_->TakeResult() && !controller_->ShouldShowResult(),
                       "Result ownership must be transferred only once.");
-                const auto *taiko = dynamic_cast<const mode::TaikoPlayResult *>(result.get());
+                const auto *taiko = dynamic_cast<const TaikoPlayResult *>(result.get());
                 if (!taiko)
                     throw std::runtime_error("Retirement result missing.");
                 Check(taiko->summary.processedNotes == 3 && taiko->summary.unprocessedNotes == 0 &&
@@ -577,7 +574,7 @@ namespace
             }
             return true;
         }
-        void Render(const mrg::graphics::RenderContext &ctx) override
+        void Render(const RenderContext &ctx) override
         {
             visuals_.Render(ctx);
             rendered_ = true;
@@ -599,59 +596,59 @@ namespace
         }
 
       private:
-        void CheckTransientVoices(const mrg::UpdateContext &ctx)
+        void CheckTransientVoices(const UpdateContext &ctx)
         {
-            finger_drum::audio::GameplayAudioRouter router(playback_);
+            GameplayAudioRouter router(playback_);
             std::string error;
             Check(router.Initialize(ctx.audio, error), "The audio resume fixture must initialize.");
-            Check(router.RegisterSound("Probe.Hit", "probe-hit.wav", a::AudioLoadMode::SampleAsync, error),
+            Check(router.RegisterSound("Probe.Hit", "probe-hit.wav", AudioLoadMode::SampleAsync, error),
                   "The transient sample must load.");
-            Check(router.RegisterSound("Music.Track", "probe-music.mp3", a::AudioLoadMode::StreamAsyncAccurate, error),
+            Check(router.RegisterSound("Music.Track", "probe-music.mp3", AudioLoadMode::StreamAsyncAccurate, error),
                   "The background music must load.");
             const auto voicesBefore = playback_.PlaybackCount();
-            const std::array<r::AudioCueRequest, 1> cue{{{"Probe.Hit"}}};
+            const std::array<AudioCueRequest, 1> cue{{{"Probe.Hit"}}};
             router.PlayNow(cue);
             Check(playback_.PlaybackCount() == voicesBefore + 1, "The old hit sound must actually be playing.");
             const auto samplesBefore = sampleStarts;
             router.StopAllVoices();
             Check(playback_.PlaybackCount() == voicesBefore, "Pause must discard the old hit sound.");
-            using Preparation = a::AudioPreparationState;
-            auto ready = router.PrepareMusicAt(r::RhythmTime{500'000});
+            using Preparation = AudioPreparationState;
+            auto ready = router.PrepareMusicAt(RhythmTime{500'000});
             const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{2};
             while (ready == Preparation::Loading && std::chrono::steady_clock::now() < deadline)
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
-                ready = router.PrepareMusicAt(r::RhythmTime{500'000});
+                ready = router.PrepareMusicAt(RhythmTime{500'000});
             }
             Check(ready == Preparation::Ready, "Only background music must finish seek preparation.");
             const auto clock = ctx.audio.CaptureClockSnapshot();
-            r::RhythmTimer timer;
-            timer.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, r::RhythmTime{500'000});
-            timer.AnchorDspClock(r::RhythmTime{500'000}, clock.dspClock, clock.sampleRate);
-            Check(router.StartPreparedMusic(r::RhythmTime{500'000}, timer) && sampleStarts == samplesBefore &&
+            RhythmTimer timer;
+            timer.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, RhythmTime{500'000});
+            timer.AnchorDspClock(RhythmTime{500'000}, clock.dspClock, clock.sampleRate);
+            Check(router.StartPreparedMusic(RhythmTime{500'000}, timer) && sampleStarts == samplesBefore &&
                       playback_.PlaybackCount() == voicesBefore + 1,
                   "Resume must recreate background music without replaying the discarded hit sound.");
             router.StopAllVoices();
             const auto startsBeforeEnd = musicStarts.size();
-            Check(router.PrepareMusicAt(r::RhythmTime{120'000'000}) == Preparation::Ready &&
-                      router.StartPreparedMusic(r::RhythmTime{120'000'000}, timer) &&
+            Check(router.PrepareMusicAt(RhythmTime{120'000'000}) == Preparation::Ready &&
+                      router.StartPreparedMusic(RhythmTime{120'000'000}, timer) &&
                       musicStarts.size() == startsBeforeEnd && playback_.PlaybackCount() == voicesBefore,
                   "A chart beyond the music's end must resume without creating an out-of-range voice.");
         }
-        void CheckResourceLoadFailure(const mrg::UpdateContext &ctx)
+        void CheckResourceLoadFailure(const UpdateContext &ctx)
         {
-            auto loaded = mode::TaikoMode{}.CreateSession(Pattern());
+            auto loaded = TaikoMode{}.CreateSession(Pattern());
             Check(loaded.Succeeded(), "Failed-resource fixture must load its chart.");
             GameplaySessionController failed({"probe.ymp", {}, "probe-music.mp3", "Taiko"}, playback_, false,
                                              std::move(loaded.session));
             failed.InitializeSession();
             failSampleLoads = true;
-            failed.Start(*services_, r::RhythmTime{});
+            failed.Start(*services_, RhythmTime{});
             failed.Update(ctx);
             Check(failed.CurrentState() == PlayState::Pause && failed.PauseMenuOpen() && !failed.CanContinue() &&
                       failed.ErrorMessage().find("hit sound load failure") != std::string_view::npos,
                   "A failed sample must block gameplay and expose the pause menu with an error.");
-            Check(!failed.ResumeFromPause(ctx, r::RhythmDuration{500'000}),
+            Check(!failed.ResumeFromPause(ctx, RhythmDuration{500'000}),
                   "Failed resources must not be bypassed with Resume.");
             failSampleLoads = false;
             failed.RetryFromPause(ctx);
@@ -661,64 +658,64 @@ namespace
             failed.Shutdown();
         }
 
-        void CheckClockAlignment(const mrg::UpdateContext &ctx, r::RhythmTime target)
+        void CheckClockAlignment(const UpdateContext &ctx, RhythmTime target)
         {
             const auto before = ctx.audio.CaptureClockSnapshot();
-            mrg::platform::InputState empty;
+            InputState empty;
             controller_->Update({0, ctx.totalSeconds + 1, ctx.updateIndex, empty, ctx.audio, {}});
             const auto after = ctx.audio.CaptureClockSnapshot();
             const auto startTicks = musicScheduleTicks + before.performanceCounterFrequency / 50;
             const auto elapsed = [&](std::int64_t ticks)
             {
-                return r::RhythmDuration{static_cast<std::int64_t>(static_cast<long double>(ticks - startTicks) *
+                return RhythmDuration{static_cast<std::int64_t>(static_cast<long double>(ticks - startTicks) *
                                                                    1'000'000 / before.performanceCounterFrequency)};
             };
-            Check(controller_->Time() >= target + elapsed(before.performanceCounterTicks) - r::RhythmDuration{5'000} &&
-                      controller_->Time() <= target + elapsed(after.performanceCounterTicks) + r::RhythmDuration{5'000},
+            Check(controller_->Time() >= target + elapsed(before.performanceCounterTicks) - RhythmDuration{5'000} &&
+                      controller_->Time() <= target + elapsed(after.performanceCounterTicks) + RhythmDuration{5'000},
                   "The DSP scheduling lead must also be reflected in the QPC gameplay epoch.");
         }
-        void CheckSharedLifecycle(const mrg::UpdateContext &ctx)
+        void CheckSharedLifecycle(const UpdateContext &ctx)
         {
             auto created = ProbeMode{}.CreateSession({}, {});
             std::unique_ptr<IPlaySessionController> common = std::make_unique<GameplaySessionController>(
-                finger_drum::GameplayLaunchRequest{"probe.ymp", {}, "probe-music.mp3", "Probe"}, playback_, false,
+                GameplayLaunchRequest{"probe.ymp", {}, "probe-music.mp3", "Probe"}, playback_, false,
                 std::move(created.session));
             common->InitializeSession();
             Check(common->CurrentState() == PlayState::Loading, "Every mode must start in Loading.");
             common->OpenPauseMenu(ctx);
             Check(common->CurrentState() == PlayState::Pause && !common->CanContinue(),
                   "ESC before asset loading must pause without enabling Resume.");
-            common->Start(*services_, r::RhythmTime{1'000'000});
+            common->Start(*services_, RhythmTime{1'000'000});
             common->Update(ctx);
             Check(common->CanContinue(), "Paused loading must finish without starting the timer.");
             failNextMusicStart = true;
-            Check(common->ResumeFromPause(ctx, r::RhythmDuration{500'000}), "A seek request must be accepted.");
+            Check(common->ResumeFromPause(ctx, RhythmDuration{500'000}), "A seek request must be accepted.");
             Check(common->CurrentState() == PlayState::Pause && common->PauseMenuOpen() &&
-                      common->Time() == r::RhythmTime{500'000} && !common->ErrorMessage().empty(),
+                      common->Time() == RhythmTime{500'000} && !common->ErrorMessage().empty(),
                   "Audio failure must keep a frozen clock and expose the pause menu/error.");
             common->RetryFromPause(ctx);
             Check(common->CurrentState() == PlayState::Loading, "Retry must use Loading for every mode.");
             WaitForGameplay(*common, ctx);
             Check(common->ErrorMessage().empty(), "A successful Retry must clear the resolved music error.");
-            mrg::platform::InputState empty;
+            InputState empty;
             common->Update({3, ctx.totalSeconds + 3, ctx.updateIndex, empty, ctx.audio, {}});
             Check(common->CurrentState() == PlayState::Ending && common->ShouldShowResult(),
                   "A different mode must complete through the common Ending state.");
             auto result = common->TakeResult();
             Check(result && result->ModeId() == "Probe" &&
-                      result->Summary().endReason == mode::PlayEndReason::Completed,
+                      result->Summary().endReason == PlayEndReason::Completed,
                   "Ending must preserve a mode-specific polymorphic result.");
             common->Update(ctx);
             Check(!common->ShouldShowResult() && !common->TakeResult(), "Ending must never generate a second result.");
         }
-        void CheckConfirmedRewindExample(const mrg::UpdateContext &ctx)
+        void CheckConfirmedRewindExample(const UpdateContext &ctx)
         {
-            auto loaded = mode::TaikoMode{}.CreateSession(Pattern());
+            auto loaded = TaikoMode{}.CreateSession(Pattern());
             Check(loaded.Succeeded(), "Confirmed measure example must load.");
             const auto start = loaded.session->Timeline().Compile({9, {3, 4}});
             const auto expected = loaded.session->Timeline().Compile({5, {}});
             GameplaySessionController example(
-                finger_drum::GameplayLaunchRequest{"probe.ymp", {}, "probe-music.mp3", "Taiko"}, playback_, false,
+                GameplayLaunchRequest{"probe.ymp", {}, "probe-music.mp3", "Taiko"}, playback_, false,
                 std::move(loaded.session));
             example.InitializeSession();
             example.Start(*services_, start);
@@ -730,45 +727,45 @@ namespace
         bool &verified_;
         bool rendered_{};
         int phase_{}, pausedUpdates_{};
-        r::RhythmTime paused_{};
-        mode::PlaySession *session_{};
-        std::optional<mrg::EngineServices> services_;
-        a::AudioPlaybackManager playback_;
-        v::ScreenVisual2DManager visuals_;
-        finger_drum::texts::TextCatalog texts_;
+        RhythmTime paused_{};
+        PlaySession *session_{};
+        std::optional<EngineServices> services_;
+        AudioPlaybackManager playback_;
+        ScreenVisual2DManager visuals_;
+        TextCatalog texts_;
         std::unique_ptr<GameplaySessionController> controller_;
         std::unique_ptr<GameplayPauseMenu> menu_;
     };
     void TestActualMusicSeek()
     {
-        a::AudioSystem audio;
-        a::AudioConfig config;
-        config.preferredBackend = a::AudioOutputBackend::NoSound;
+        AudioSystem audio;
+        AudioConfig config;
+        config.preferredBackend = AudioOutputBackend::NoSound;
         std::string error;
         Check(audio.Initialize(config, nullptr, nullptr, error), error.c_str());
-        a::AudioPlaybackManager playback;
-        finger_drum::audio::GameplayAudioRouter router(playback);
+        AudioPlaybackManager playback;
+        GameplayAudioRouter router(playback);
         Check(router.Initialize(audio, error), error.c_str());
         const auto path =
-            std::filesystem::path("FingerDrum.Assets/Assets/Songs/Music/Angeldream/angel dream hand shaking.mp3");
-        Check(router.RegisterSound("Music.Track", path, a::AudioLoadMode::StreamAsyncAccurate, error), error.c_str());
+            std::filesystem::path("YOUMU.Assets/Assets/Songs/Music/Angeldream/angel dream hand shaking.mp3");
+        Check(router.RegisterSound("Music.Track", path, AudioLoadMode::StreamAsyncAccurate, error), error.c_str());
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
-        while (router.PrepareResources() == a::AudioPreparationState::Loading && std::chrono::steady_clock::now() < deadline)
+        while (router.PrepareResources() == AudioPreparationState::Loading && std::chrono::steady_clock::now() < deadline)
         {
             audio.Update();
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
-        Check(router.PrepareResources() == a::AudioPreparationState::Ready && router.LastError().empty(), "Actual FMOD music must load.");
-        auto clip = audio.LoadSound(path, a::AudioLoadMode::Stream, error);
+        Check(router.PrepareResources() == AudioPreparationState::Ready && router.LastError().empty(), "Actual FMOD music must load.");
+        auto clip = audio.LoadSound(path, AudioLoadMode::Stream, error);
         if (!clip)
             throw std::runtime_error(error);
         std::uint64_t duration{};
         Check(clip->GetDurationMicroseconds(duration, error), error.c_str());
-        const r::RhythmTime nearEnd{static_cast<r::RhythmTime::rep>(duration - 100'000)};
-        using Preparation = a::AudioPreparationState;
-        for (const auto position : {r::RhythmTime{1'000'000}, r::RhythmTime{500'000}, r::RhythmTime{5'000'000},
-                                    r::RhythmTime{1'000'000}, r::RhythmTime{500'000}, r::RhythmTime{5'000'000},
-                                    r::RhythmTime{}, nearEnd})
+        const RhythmTime nearEnd{static_cast<RhythmTime::rep>(duration - 100'000)};
+        using Preparation = AudioPreparationState;
+        for (const auto position : {RhythmTime{1'000'000}, RhythmTime{500'000}, RhythmTime{5'000'000},
+                                    RhythmTime{1'000'000}, RhythmTime{500'000}, RhythmTime{5'000'000},
+                                    RhythmTime{}, nearEnd})
         {
             router.StopAllVoices();
             auto prepared = router.PrepareMusicAt(position);
@@ -782,7 +779,7 @@ namespace
             Check(prepared == Preparation::Ready, "Actual MP3 seek must finish before scheduling playback.");
             auto clock = audio.CaptureClockSnapshot();
             clock.dspClock += static_cast<std::uint64_t>(clock.sampleRate) / 50;
-            r::RhythmTimer timer;
+            RhythmTimer timer;
             timer.Start(clock.performanceCounterTicks, clock.performanceCounterFrequency, position);
             timer.AnchorDspClock(position, clock.dspClock, clock.sampleRate);
             Check(router.StartPreparedMusic(position, timer), "Actual FMOD repeated seek must succeed.");
@@ -802,16 +799,16 @@ namespace
         audio.Update();
         // Cancel an in-flight source seek and immediately close the service.
         // Retired native sounds must finish release before FMOD is closed.
-        std::shared_ptr<a::AudioClip> pending = audio.LoadSound(path, a::AudioLoadMode::StreamAsyncAccurate, error);
+        std::shared_ptr<AudioClip> pending = audio.LoadSound(path, AudioLoadMode::StreamAsyncAccurate, error);
         Check(pending != nullptr, error.c_str());
         const auto cancelDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
-        while (pending->LoadState(error) == a::AudioClipLoadState::Loading &&
+        while (pending->LoadState(error) == AudioClipLoadState::Loading &&
                std::chrono::steady_clock::now() < cancelDeadline)
         {
             audio.Update();
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
-        a::AudioPlaybackSettings pendingSettings;
+        AudioPlaybackSettings pendingSettings;
         pendingSettings.startPaused = true;
         pendingSettings.startPositionMicroseconds = 20'000'000;
         Check(playback.Play(pending, pendingSettings, nullptr, error) != 0, error.c_str());
@@ -825,11 +822,11 @@ int main()
     try
     {
         std::string error;
-        Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
+        Check(InitializeBuiltInAssets(error), error.c_str());
         TestMenu();
         TestActualMusicSeek();
         bool verified{};
-        Check(mrg::Run(std::make_unique<PauseClient>(verified)) == 0 && verified,
+        Check(Run(std::make_unique<PauseClient>(verified)) == 0 && verified,
               "Native pause transport must complete.");
         std::puts("Pause menu, note restoration, eligibility, music source seeks and native rendering passed.");
         return 0;

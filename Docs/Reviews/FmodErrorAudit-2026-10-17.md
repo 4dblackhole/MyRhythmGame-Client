@@ -184,7 +184,7 @@ Play 설정을 다른 호출부가 그대로 사용할 때 남아 있습니다.
 ## 검증과 한계
 
 제품 오브젝트를 다시 구현하지 않고 기존 Debug/Release의 EditorPlayback.obj,
-GameplayAudioRouter.obj와 MRG.Core.lib를 연결한 별도 진단 실행 파일을 사용했습니다.
+GameplayAudioRouter.obj와 PhantomCore.lib를 연결한 별도 진단 실행 파일을 사용했습니다.
 FMOD NoSound, 출력 48kHz에서 실제 FMOD/코덱/믹서/비동기 로더를 실행했습니다.
 이 방식은 가짜 오디오 백엔드 검사와 다르지만 실제 스피커 청취 검증은 아닙니다.
 임시 WAV/진단 소스/로그는 ignored `build/fmod-audit-2026-10-17/`, 실행 파일은 ignored bin에 있습니다.

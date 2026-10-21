@@ -7,25 +7,26 @@
 
 | 수정/추가할 기능 | 먼저 읽을 문서 | 코드 진입점 |
 | --- | --- | --- |
-| 노트 판정·정확도·타이머 | [판정 규칙](Gameplay/Rules.md) | `FingerDrum.Rhythm/Note`, `Judgement`, `Time` |
+| 제품/프로젝트 이름·EXE·namespace·변환 결과 검증 | [제품 이름과 검증 책임](Reviews/IdentityMigration-2026-10-22.md), [검증](Verification.md) | GameIdentity.props / GenerateGameIdentity; YOUMU.sln; EditorOsuImport / OsuImportValidation |
+| 노트 판정·정확도·타이머 | [판정 규칙](Gameplay/Rules.md) | `YOUMU.Rhythm/Note`, `Judgement`, `Time` |
 | 공통 PCM·MP3 패딩·재생/파형 시간축 | [오디오](Gameplay/Audio.md), [에디터 분석](ChartEditor.md) | 엔진 Audio/Decode; EditorAnalysisController의 reader 주입 |
-| Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `FingerDrum.Modes/Taiko` |
-| YMM/YMP/YME 문법·히트사운드 볼륨·보간·Whole/Separate·영역 상태 | [ChartFormats](ChartFormats.md) | `FingerDrum.Chart/Parsing`, `Model`, `Automation` |
+| Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `YOUMU.Modes/Taiko` |
+| YMM/YMP/YME 문법·히트사운드 볼륨·보간·Whole/Separate·영역 상태 | [ChartFormats](ChartFormats.md) | `YOUMU.Chart/Parsing`, `Model`, `Automation` |
 | osu!taiko 외부 EXE 변환·+25ms 오프셋·격자 보정·omit 마디 | [OsuTaikoConverter](OsuTaikoConverter.md) | 형제 저장소 `../OsuTaikoConverter`, Client 프로젝트 참조 |
-| BPM·마디·유리수 위치·음수 delay 무효 구간 | [타이밍 문법](Formats/Timing.md) | `FingerDrum.Chart/Timing`, `Utility` |
-| 편집 트리·드래그/다중 선택·공백 포함/제외 붙여넣기·32단계 Undo/Redo·노트 속성·모드 확장·오디오 탭/OGG 분석·재생/배속/휠 탐색 | [ChartEditor](ChartEditor.md) | ChartEditor/ChartEditorHistory의 원본 트리·편집 이력; EditorSelection / EditorClipboard / EditorWorkspace / Modes/Taiko; `FingerDrum.Editor` |
-| 곡 목록·포커스·난이도 클릭 진입·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `FingerDrum.Chart/Catalog` |
+| BPM·마디·유리수 위치·음수 delay 무효 구간 | [타이밍 문법](Formats/Timing.md) | `YOUMU.Chart/Timing`, `Utility` |
+| 편집 트리·드래그/다중 선택·공백 포함/제외 붙여넣기·32단계 Undo/Redo·노트 속성·모드 확장·오디오 탭/OGG 분석·재생/배속/휠 탐색 | [ChartEditor](ChartEditor.md) | ChartEditor/ChartEditorHistory의 원본 트리·편집 이력; EditorSelection / EditorClipboard / EditorWorkspace / Modes/Taiko; `YOUMU.Editor` |
+| 곡 목록·포커스·난이도 클릭 진입·UI·미리듣기 | [SongSelect](SongSelect.md) | `Client/GameScene/MusicSelectScene`, `YOUMU.Chart/Catalog` |
 | 에디터용 곡 선택·+ 메뉴·새 난이도·osu 가져오기 | [EditorSongSelect](EditorSongSelect.md) | 같은 MusicSelectScene의 Editor 구성; EditorOsuImport / 변환기 ConversionFiles |
 | 플레이 화면·노트/마디선 스크롤·키빔·판정 인디케이터/문구·상단 진행바 | [플레이 표시](Gameplay/Presentation.md) | `Client/GameScene/RhythmTestScene`, `Client/Presentation` |
 | 공통 플레이 상태머신·ESC·Penpot 일시정지 UI·Resume/Rewind/Retry/Retire·향후 HP/리플레이 계약 | [플레이 일시정지](Gameplay/Pause.md) | GameFlow의 IPlaySessionController / GameplayState; GameplayPauseMenu / GameplayPauseLayout / PlaySessionSeeking / PlayControlEvent |
-| Penpot 결과 화면·정확도 랭크·상단 곡 정보·리트라이·판정 통계·오차 그래프·us 입력 로그 | [플레이 결과](Gameplay/Results.md) | `FingerDrum.Modes/Mode/Results`, `Taiko/Results`, `Client/GameScene/ResultScene`; 내장 Result PNG |
+| Penpot 결과 화면·정확도 랭크·상단 곡 정보·리트라이·판정 통계·오차 그래프·us 입력 로그 | [플레이 결과](Gameplay/Results.md) | `YOUMU.Modes/Mode/Results`, `Taiko/Results`, `Client/GameScene/ResultScene`; 내장 Result PNG |
 | 플레이 디버그 조작·전체 노트/Buzz 재현 | [디버깅](Gameplay/Debugging.md) | `GameFlow/Submodules/GameplayInput.cpp`, `Tests/Rhythm/Submodules/BuzzReplayTests.cpp` |
-| 로고·타이틀 | [FingerDrum](FingerDrum.md) | `Client/GameScene/FingerDrumLogoScene` |
+| 로고·타이틀 | [YOUMU](YOUMU.md) | `Client/GameScene/YOUMULogoScene` |
 | 게임 표시 이름·UTF-8 언어 INI/영어 fallback·문구·글꼴·공통 UI 색상·옵션/ESC·Songs 경로·해상도·키·글로벌 오프셋·Option.ini | [TextManagement](TextManagement.md) | `Client/Texts/Languages`, TextCatalog/LanguageFile, GameIdentity/화면별 Texts; OptionsPanel/OptionSettings |
 | Canvas·입력·클리핑 API 사용 | [Visual2DGuide](Visual2DGuide.md) | 해당 Scene의 Submodules |
-| 개발/배포 자산 경로·Songs/BG·YMP BG/offset·난이도별 YMP/YME·skin.ini/씬별 이미지/fallback | [BuiltInAssets](BuiltInAssets.md), [YMP](Formats/Ymp.md) | OptionSettings / GameplayLaunchRequest / GameplayPresenter; SkinManifest / SkinSetSelection / SkinVisualComponent; `FingerDrum.Assets` |
+| 개발/배포 자산 경로·Songs/BG·YMP BG/offset·난이도별 YMP/YME·skin.ini/씬별 이미지/fallback | [BuiltInAssets](BuiltInAssets.md), [YMP](Formats/Ymp.md) | OptionSettings / GameplayLaunchRequest / GameplayPresenter; SkinManifest / SkinSetSelection / SkinVisualComponent; `YOUMU.Assets` |
 | 시작·Scene 전환·종료·소유권 | [ExecutionFlow](ExecutionFlow.md) | `Client/App`, `Client/GameFlow` |
-| 엔진 API 자체 수정 | 엔진 AGENTS, EngineOverview의 해당 기능 | `Dependencies/MRG-Engine` |
+| 엔진 API 자체 수정 | 엔진 AGENTS, EngineOverview의 해당 기능 | `Dependencies/PhantomCore` |
 | Penpot 디자인 찾기 | [DesignReferences](DesignReferences.md) | 해당 화면 문서 |
 | Claude 리뷰 반영·정적 분석·테스트 실행기/CI | [리뷰 반영 기록](Reviews/ClaudeReview-2026-10-11.md), [검증](Verification.md) | `Tests/Rhythm`, `Tests/Presentation`, `.github/workflows/domain-tests.yml` |
 | 코드 품질 재검토·효과 오류 복구/조회/검증 일치 | [품질 수정 기록](Reviews/QualityFixes-2026-10-12.md), [검증](Verification.md) | EffectValidation / PlaySession / ChartEditor; 엔진 Run 숨김 오류 |

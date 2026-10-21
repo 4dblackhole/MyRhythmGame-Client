@@ -9,30 +9,29 @@
 
 namespace
 {
-    namespace a = mrg::audio;
-    namespace v = mrg::visual2d;
+
     void Check(bool condition, const char *message)
     {
         if (!condition) throw std::runtime_error(message);
     }
 
-    class TestBackend final : public a::IAudioBackend
+    class TestBackend final : public IAudioBackend
     {
       public:
         bool rejectAsio{};
-        a::AudioOutputBackend requested{a::AudioOutputBackend::Automatic};
+        AudioOutputBackend requested{AudioOutputBackend::Automatic};
         int driver{};
         int lastSetDriver{-1};
-        std::vector<a::AudioDeviceInfo> devices;
+        std::vector<AudioDeviceInfo> devices;
         void SetDevices()
         {
-            if (requested == a::AudioOutputBackend::Asio)
+            if (requested == AudioOutputBackend::Asio)
                 devices = {{requested, 5, "ASIO device", 48000, 2}};
-            else devices = {{a::AudioOutputBackend::Wasapi, 0, "Speakers", 48000, 2},
-                            {a::AudioOutputBackend::Wasapi, 2, "Headphones", 48000, 2}};
+            else devices = {{AudioOutputBackend::Wasapi, 0, "Speakers", 48000, 2},
+                            {AudioOutputBackend::Wasapi, 2, "Headphones", 48000, 2}};
             driver = devices.front().driverIndex;
         }
-        bool Initialize(const a::AudioConfig &config, std::string &error) override
+        bool Initialize(const AudioConfig &config, std::string &error) override
         {
             requested = config.preferredBackend;
             SetDevices();
@@ -42,14 +41,14 @@ namespace
         void Update() override {}
         void Shutdown() noexcept override {}
         std::string_view Name() const noexcept override { return "Test"; }
-        a::AudioOutputBackend RequestedOutput() const noexcept override { return requested; }
-        a::AudioOutputBackend ActiveOutput() const noexcept override
+        AudioOutputBackend RequestedOutput() const noexcept override { return requested; }
+        AudioOutputBackend ActiveOutput() const noexcept override
         {
-            return requested == a::AudioOutputBackend::Automatic ? a::AudioOutputBackend::Wasapi : requested;
+            return requested == AudioOutputBackend::Automatic ? AudioOutputBackend::Wasapi : requested;
         }
-        bool SetOutputBackend(a::AudioOutputBackend value, std::string &error) override
+        bool SetOutputBackend(AudioOutputBackend value, std::string &error) override
         {
-            if (value == a::AudioOutputBackend::Asio && rejectAsio)
+            if (value == AudioOutputBackend::Asio && rejectAsio)
             {
                 error = "ASIO device unavailable";
                 return false;
@@ -59,7 +58,7 @@ namespace
             return true;
         }
         int DriverCount() const noexcept override { return 6; }
-        const std::vector<a::AudioDeviceInfo> &OutputDrivers() const noexcept override { return devices; }
+        const std::vector<AudioDeviceInfo> &OutputDrivers() const noexcept override { return devices; }
         int ActiveDriverIndex() const noexcept override { return driver; }
         bool SetOutputDriver(int index, std::string &error) override
         {
@@ -81,29 +80,29 @@ namespace
         bool SetSampleRate(int, std::string &) override { return false; }
         bool SetDspBufferSize(std::uint32_t, int, std::string &) override { return false; }
         std::uint64_t DspClock() const noexcept override { return 0; }
-        std::unique_ptr<a::IAudioBusBackend> CreateBus(std::string_view,
-            a::IAudioBusBackend *, std::string &) override { return {}; }
+        std::unique_ptr<IAudioBusBackend> CreateBus(std::string_view,
+            IAudioBusBackend *, std::string &) override { return {}; }
     };
     TestBackend *backend{};
     int backendCreations{};
-    std::unique_ptr<a::IAudioBackend> CreateBackend()
+    std::unique_ptr<IAudioBackend> CreateBackend()
     {
         auto value = std::make_unique<TestBackend>();
         backend = value.get();
         ++backendCreations;
         return value;
     }
-    class TestClip final : public a::IAudioClipBackend
+    class TestClip final : public IAudioClipBackend
     {
         bool GetDurationMicroseconds(std::uint64_t& duration, std::string&) const override
         { duration = 0; return true; }
-        std::unique_ptr<a::IAudioVoiceBackend> Play(const a::AudioPlaybackSettings &,
-            a::IAudioBusBackend *, std::string &) override { return {}; }
+        std::unique_ptr<IAudioVoiceBackend> Play(const AudioPlaybackSettings &,
+            IAudioBusBackend *, std::string &) override { return {}; }
     };
-    std::unique_ptr<a::IAudioClipBackend> CreateClip(a::IAudioBackend &,
-        const std::filesystem::path &, a::AudioLoadMode, std::string &) { return std::make_unique<TestClip>(); }
+    std::unique_ptr<IAudioClipBackend> CreateClip(IAudioBackend &,
+        const std::filesystem::path &, AudioLoadMode, std::string &) { return std::make_unique<TestClip>(); }
 
-    v::Visual2DNode &FindNode(v::Visual2DNode &root, std::string_view name)
+    Visual2DNode &FindNode(Visual2DNode &root, std::string_view name)
     {
         if (root.Name() == name) return root;
         for (const auto &child : root.Children())
@@ -113,33 +112,33 @@ namespace
         }
         throw std::out_of_range("Node not found");
     }
-    v::ComboBoxBehaviorComponent &Combo(v::Visual2DCanvas &canvas, std::string_view name)
+    ComboBoxBehaviorComponent &Combo(Visual2DCanvas &canvas, std::string_view name)
     {
-        return *FindNode(canvas.Root(), name).GetComponent<v::ComboBoxBehaviorComponent>();
+        return *FindNode(canvas.Root(), name).GetComponent<ComboBoxBehaviorComponent>();
     }
-    v::Action Select(v::Visual2DCanvas &canvas, std::string_view name, std::size_t index)
+    Action Select(Visual2DCanvas &canvas, std::string_view name, std::size_t index)
     {
-        v::Action action;
-        action.type = v::ActionType::SelectionChanged;
+        Action action;
+        action.type = ActionType::SelectionChanged;
         action.source = FindNode(canvas.Root(), name).Id();
         action.selectedIndex = index;
         return action;
     }
 
-    void TestPanelAppearanceAndClosing(finger_drum::presentation::OptionsPanel &panel, v::Visual2DCanvas &canvas,
-                                       v::Visual2DInputRouter &router)
+    void TestPanelAppearanceAndClosing(OptionsPanel &panel, Visual2DCanvas &canvas,
+                                       Visual2DInputRouter &router)
     {
-        const auto luminance = [](v::Color c) { return .2126F * c.red + .7152F * c.green + .0722F * c.blue; };
+        const auto luminance = [](Color c) { return .2126F * c.red + .7152F * c.green + .0722F * c.blue; };
         const auto background =
-            FindNode(canvas.Root(), "Options.Panel").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+            FindNode(canvas.Root(), "Options.Panel").GetComponent<SpriteVisualComponent>()->Style().normal;
         const auto field =
-            FindNode(canvas.Root(), "Options.Output.Combo").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+            FindNode(canvas.Root(), "Options.Output.Combo").GetComponent<SpriteVisualComponent>()->Style().normal;
         Check(background.alpha == 1 &&
-                  luminance(background) + .06F < luminance(finger_drum::presentation::ui_colors::sky::Background),
+                  luminance(background) + .06F < luminance(ui_colors::sky::Background),
               "The options surface must visibly separate from the scene background.");
         Check(luminance(field) > luminance(background) + .06F, "Fields must remain visible on the darker panel.");
         const auto b = FindNode(canvas.Root(), "Options.Output.Combo").BoundsInCanvas();
-        v::PointerInput pointer;
+        PointerInput pointer;
         pointer.position = {b.x + b.width / 2, b.y + b.height / 2};
         pointer.leftButtonDown = pointer.leftButtonPressed = true;
         router.Process(canvas, pointer);
@@ -170,7 +169,7 @@ namespace
     void TestInvalidOptionFallback(const std::filesystem::path &folder)
     {
         const auto path = folder / L"설정 오류.ini";
-        mrg_client::OptionSettings settings(path);
+        OptionSettings settings(path);
         std::string error;
         for (const std::string content : {"[General]\nLanguage=ja\n", "missing separator\n",
                                           "[Audio]\nMiddleware=uninstalled\n"})
@@ -188,7 +187,7 @@ namespace
         }
         Check(settings.Save(settings.Values(), error) && settings.LoadWarning().empty(),
               "A successful user save must clear the startup warning.");
-        mrg_client::OptionSettings unavailable(folder / "missing-directory" / "Option.ini");
+        OptionSettings unavailable(folder / "missing-directory" / "Option.ini");
         Check(!unavailable.Load(error) && unavailable.Values().driverIndex == -1 && !unavailable.LoadWarning().empty(),
               "Failure creating a first-run INI must still provide defaults.");
     }
@@ -196,21 +195,21 @@ namespace
     void TestOptions(const std::filesystem::path &folder)
     {
         std::string error;
-        mrg_client::OptionSettings settings(folder / "Option.ini");
+        OptionSettings settings(folder / "Option.ini");
         Check(settings.Load(error), error.c_str());
         Check(std::filesystem::exists(settings.Path()), "First load must create Option.ini.");
         Check(settings.Values().skinSet == L"Default Skin" && settings.Values().driverIndex == -1 &&
-                  settings.Values().audioOutput == a::AudioOutputBackend::Automatic,
+                  settings.Values().audioOutput == AudioOutputBackend::Automatic,
               "First-run settings must use only the current defaults.");
         auto values = settings.Values();
         values.skinSet = L"한국어 Skin";
-        values.language = finger_drum::texts::Language::English;
-        values.audioOutput = a::AudioOutputBackend::Wasapi;
+        values.language = Language::English;
+        values.audioOutput = AudioOutputBackend::Wasapi;
         values.driverIndex = 2;
         values.driverName = "Headphones";
         values.songsPath = folder / L"한국어 Songs";
         Check(settings.Save(values, error), error.c_str());
-        mrg_client::OptionSettings restored(settings.Path());
+        OptionSettings restored(settings.Path());
         Check(restored.Load(error), error.c_str());
         Check(restored.Values().songsPath == values.songsPath && restored.SongsRoot() == values.songsPath,
               "Unicode absolute Songs paths must persist in UTF-8 Option.ini.");
@@ -219,7 +218,7 @@ namespace
         Check(
             restored.Save(relative, error) &&
                 restored.SongsRoot() ==
-                    (mrg_client::OptionSettings::NextToExecutable().parent_path() / L"custom/Songs").lexically_normal(),
+                    (OptionSettings::NextToExecutable().parent_path() / L"custom/Songs").lexically_normal(),
             "Relative Songs paths must use the executable directory, not the current working directory.");
         Check(restored.Save(values, error), error.c_str());
         Check(restored.Values().skinSet == values.skinSet && restored.Values().driverIndex == 2 &&
@@ -229,7 +228,7 @@ namespace
             std::ofstream file(folder / "invalid.ini");
             file << "[Audio]\nDriverIndex=-5\n";
         }
-        mrg_client::OptionSettings invalid(folder / "invalid.ini");
+        OptionSettings invalid(folder / "invalid.ini");
         Check(!invalid.Load(error) && invalid.Values().driverIndex == -1,
               "Malformed settings must not publish a partial candidate.");
         values.driverName = "bad\nentry";
@@ -241,17 +240,17 @@ namespace
         values.skinSet = L"Default Skin";
         values.driverIndex = 2;
         Check(settings.Save(values, error), error.c_str());
-        finger_drum::texts::TextCatalog texts;
+        TextCatalog texts;
         texts.SetLanguage(values.language);
-        a::AudioSystem audio;
-        a::AudioConfig config;
+        AudioSystem audio;
+        AudioConfig config;
         config.preferredBackend = values.audioOutput;
         Check(audio.Initialize(config, &CreateBackend, &CreateClip, error), error.c_str());
         auto clip = audio.LoadSound("test.wav", error);
         Check(clip != nullptr, "Test clip must load.");
 
-        v::Visual2DCanvas canvas;
-        finger_drum::presentation::OptionsPanel panel(texts, settings);
+        Visual2DCanvas canvas;
+        OptionsPanel panel(texts, settings);
         panel.Initialize(canvas, audio);
         panel.Toggle();
         panel.Update(0.2);
@@ -259,7 +258,7 @@ namespace
         { std::ofstream file(settings.Path()); file << "[General]\nLanguage=ja\n"; }
         Check(!settings.Load(error), "Invalid language must trigger startup fallback.");
         panel.Update(0);
-        Check(FindNode(canvas.Root(), "Options.Status").GetComponent<v::TextVisualComponent>()->Text().find(L"Using defaults") != std::wstring::npos,
+        Check(FindNode(canvas.Root(), "Options.Status").GetComponent<TextVisualComponent>()->Text().find(L"Using defaults") != std::wstring::npos,
               "The panel must expose the retained startup warning.");
         Check(settings.Save(values, error), "Could not restore the option test fixture.");
         panel.Update(0);
@@ -271,16 +270,16 @@ namespace
               "Sparse driver numbers must use the device's index rather than ComboBox row.");
         backend->rejectAsio = true;
         Check(panel.ProcessAction(Select(canvas, "Options.Output.Combo", 2)) && audio.ActiveDriverIndex() == 2 &&
-              settings.Values().audioOutput == a::AudioOutputBackend::Wasapi,
+              settings.Values().audioOutput == AudioOutputBackend::Wasapi,
               "Rejected output must preserve the previous selection and persisted preferences.");
         backend->rejectAsio = false;
         // Scroll-position geometry: the ASIO popup row overlaps the driver field.
         // Exercise the real hit router so the lower field cannot steal this click.
         FindNode(canvas.Root(), "Options.Content")
             .SetPosition({0, 860 - FindNode(canvas.Root(), "Options.Content").NodeSize().height});
-        v::Visual2DInputRouter router;
-        auto click = [&](v::Point position) {
-            v::PointerInput input;
+        Visual2DInputRouter router;
+        auto click = [&](Point position) {
+            PointerInput input;
             input.position = position;
             input.leftButtonDown = input.leftButtonPressed = true;
             router.Process(canvas, input);
@@ -296,7 +295,7 @@ namespace
         Check(actions.size() == 1 && actions.front().source == FindNode(canvas.Root(), "Options.Output.Combo").Id() &&
               actions.front().selectedIndex == 2 && panel.ProcessAction(actions.front()),
               "The ASIO popup row must receive clicks ahead of the driver field below it.");
-        Check(audio.ActiveOutput() == a::AudioOutputBackend::Asio && backendCreations == 1 && clip->IsValid(),
+        Check(audio.ActiveOutput() == AudioOutputBackend::Asio && backendCreations == 1 && clip->IsValid(),
               "Output switching must reuse the system and retain loaded clips without restart.");
         Check(Combo(canvas, "Options.Driver.Combo").Items() == std::vector<std::wstring>{L"5: ASIO device"},
               "Drivers must refresh from the selected output API only.");
@@ -306,20 +305,20 @@ namespace
         Check(SetFileAttributesW(settings.Path().c_str(), FILE_ATTRIBUTE_READONLY) != FALSE,
               "Test file must be made read-only.");
         Check(panel.ProcessAction(Select(canvas, "Options.Output.Combo", 1)) &&
-              audio.ActiveOutput() == a::AudioOutputBackend::Asio && audio.ActiveDriverIndex() == 5 &&
-              settings.Values().audioOutput == a::AudioOutputBackend::Asio,
+              audio.ActiveOutput() == AudioOutputBackend::Asio && audio.ActiveDriverIndex() == 5 &&
+              settings.Values().audioOutput == AudioOutputBackend::Asio,
               "Saving failure must restore runtime audio and preserve persisted values.");
         Check(panel.ProcessAction(Select(canvas, "Options.Language.Combo", 0)) &&
-              texts.CurrentLanguage() == finger_drum::texts::Language::English,
+              texts.CurrentLanguage() == Language::English,
               "Saving failure must preserve the current language.");
         Check(SetFileAttributesW(settings.Path().c_str(), FILE_ATTRIBUTE_NORMAL) != FALSE,
               "Test file attributes must be restored.");
         Check(panel.ProcessAction(Select(canvas, "Options.Language.Combo", 0)) &&
-              texts.CurrentLanguage() == finger_drum::texts::Language::Korean,
+              texts.CurrentLanguage() == Language::Korean,
               "Language must apply after a successful save.");
-        mrg_client::OptionSettings nextRun(settings.Path());
-        Check(nextRun.Load(error) && nextRun.Values().language == finger_drum::texts::Language::Korean &&
-              nextRun.Values().audioOutput == a::AudioOutputBackend::Asio && nextRun.Values().driverIndex == 5,
+        OptionSettings nextRun(settings.Path());
+        Check(nextRun.Load(error) && nextRun.Values().language == Language::Korean &&
+              nextRun.Values().audioOutput == AudioOutputBackend::Asio && nextRun.Values().driverIndex == 5,
               "The next run must read the most recent successful settings.");
         backend->devices.clear();
         backend->driver = -1;
@@ -333,20 +332,20 @@ namespace
         clip.reset();
     }
 
-    class TestWindow final : public mrg::platform::IWindowControl
+    class TestWindow final : public IWindowControl
     {
       public:
-        mrg::platform::WindowResolution size{1280, 720};
+        WindowResolution size{1280, 720};
         bool reject{};
-        mrg::platform::WindowResolution ClientSize() const noexcept override
+        WindowResolution ClientSize() const noexcept override
         {
             return size;
         }
-        std::vector<mrg::platform::WindowResolution> DisplayResolutions() const override
+        std::vector<WindowResolution> DisplayResolutions() const override
         {
             return {{1280, 720}, {960, 540}};
         }
-        bool SetClientSize(mrg::platform::WindowResolution value, std::string &error) override
+        bool SetClientSize(WindowResolution value, std::string &error) override
         {
             if (reject)
             {
@@ -360,24 +359,24 @@ namespace
     };
     void TestExtraOptions(const std::filesystem::path &folder)
     {
-        mrg_client::OptionSettings settings(folder / "Extra.ini");
+        OptionSettings settings(folder / "Extra.ini");
         std::string error;
         Check(settings.Load(error), "Create extra options fixture.");
-        a::AudioSystem audio;
+        AudioSystem audio;
         Check(audio.Initialize({}, &CreateBackend, &CreateClip, error), "Initialize extra option audio fixture.");
-        finger_drum::texts::TextCatalog texts;
-        v::Visual2DCanvas canvas;
+        TextCatalog texts;
+        Visual2DCanvas canvas;
         TestWindow window;
-        finger_drum::presentation::OptionsPanel panel(texts, settings);
+        OptionsPanel panel(texts, settings);
         panel.Initialize(canvas, audio, &window);
         panel.Toggle();
         panel.Update(.2);
-        v::Visual2DInputRouter router;
+        Visual2DInputRouter router;
         const auto click = [&](std::string_view name)
         {
-            v::Action action;
+            Action action;
             action.source = FindNode(canvas.Root(), name).Id();
-            action.type = v::ActionType::Clicked;
+            action.type = ActionType::Clicked;
             Check(panel.ProcessAction(action), "Option field click is consumed.");
         };
         Check(panel.ProcessAction(Select(canvas, "Options.Resolution.Combo", 1)) && window.size.width == 960 &&
@@ -431,7 +430,7 @@ namespace
         candidate.modeKeys["FutureMode"]["Lane1"] = {'L'};
         Check(settings.Save(candidate, error),
               "Other mode settings can be preserved before loading its implementation.");
-        mrg_client::OptionSettings restored(settings.Path());
+        OptionSettings restored(settings.Path());
         Check(restored.Load(error) && restored.Values().globalOffsetMs == -5 && restored.Values().windowWidth == 960 &&
                   restored.Values().modeKeys == candidate.modeKeys,
               "Resolution, offset and all mode profiles survive restart.");
@@ -445,18 +444,18 @@ namespace
 
     void TestActualAudio()
     {
-        a::AudioSystem audio;
-        a::AudioConfig config;
+        AudioSystem audio;
+        AudioConfig config;
         config.allowNoSoundFallback = false;
         std::string error;
         Check(audio.Initialize(config, nullptr, nullptr, error), error.c_str());
-        auto clip = audio.LoadSound(std::filesystem::path(L"FingerDrum.Assets/Assets/Skins/Default Skin/HitSounds/TaikoMode/pop.wav"), error);
+        auto clip = audio.LoadSound(std::filesystem::path(L"YOUMU.Assets/Assets/Skins/Default Skin/HitSounds/TaikoMode/pop.wav"), error);
         Check(clip != nullptr, error.c_str());
-        Check(audio.SetOutputBackend(a::AudioOutputBackend::Wasapi, error), error.c_str());
-        Check(audio.ActiveOutput() == a::AudioOutputBackend::Wasapi && !audio.OutputDrivers().empty(),
+        Check(audio.SetOutputBackend(AudioOutputBackend::Wasapi, error), error.c_str());
+        Check(audio.ActiveOutput() == AudioOutputBackend::Wasapi && !audio.OutputDrivers().empty(),
               "Actual FMOD must report WASAPI and its current drivers after switching.");
         Check(audio.SetOutputDriver(audio.ActiveDriverIndex(), error), error.c_str());
-        Check(clip->IsValid() && clip->LoadState(error) == a::AudioClipLoadState::Ready,
+        Check(clip->IsValid() && clip->LoadState(error) == AudioClipLoadState::Ready,
               "A loaded native clip must remain usable after output/driver selection.");
         std::cout << "Actual FMOD Automatic -> WASAPI and driver selection passed (loaded clip retained).\n";
     }
@@ -465,7 +464,7 @@ namespace
 int main()
 {
     const auto folder = std::filesystem::temp_directory_path() /
-        (L"FingerDrumOptionsTest-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
+        (L"YOUMUOptionsTest-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
          std::to_wstring(std::chrono::steady_clock::now().time_since_epoch().count()));
     try
     {

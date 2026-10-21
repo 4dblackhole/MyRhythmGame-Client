@@ -4,6 +4,6 @@
 #include <optional>
 
 // Returns only a fully written pair. Cancel and validation failures create no chart.
-std::optional<finger_drum::chart::SongCatalogPattern> CreateDifficultyWithDialog(
-    const std::filesystem::path &songsRoot, const finger_drum::chart::SongCatalogEntry &song,
-    const finger_drum::texts::TextCatalog &texts);
+std::optional<SongCatalogPattern> CreateDifficultyWithDialog(
+    const std::filesystem::path &songsRoot, const SongCatalogEntry &song,
+    const TextCatalog &texts);

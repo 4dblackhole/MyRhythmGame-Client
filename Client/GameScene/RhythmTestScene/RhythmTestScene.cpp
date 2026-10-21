@@ -1,15 +1,15 @@
 #include "RhythmTestScene.h"
-#include "GameFlow/FingerDrumSceneIds.h"
+#include "GameFlow/YOUMUSceneIds.h"
 #include "GameFlow/GameplaySessionController.h"
 #include "Submodules/GameplayPauseMenu.h"
 #include "Submodules/GameplayPresenter.h"
 #include <stdexcept>
 
-RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStore> request,
-                                 mrg::audio::AudioPlaybackManager &playback,
-                                 mrg::visual2d::ScreenVisual2DManager &visuals, bool debug,
-                                 finger_drum::texts::TextCatalog &texts,
-                                 std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult)
+RhythmTestScene::RhythmTestScene(std::shared_ptr<GameplayLaunchStore> request,
+                                 AudioPlaybackManager &playback,
+                                 ScreenVisual2DManager &visuals, bool debug,
+                                 TextCatalog &texts,
+                                 std::unique_ptr<IPlayResult> &pendingResult)
     : pendingResult_(pendingResult),
       controller_(std::make_unique<GameplaySessionController>(
           request ? request->Snapshot() : throw std::invalid_argument("Gameplay requires a launch store."), playback,
@@ -21,7 +21,7 @@ RhythmTestScene::RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStor
     view_->ConfigureBackground(launch.backgroundPath, launch.backgroundOffsetX, launch.backgroundOffsetY);
 }
 RhythmTestScene::~RhythmTestScene() = default;
-void RhythmTestScene::Initialize(const mrg::EngineServices &services)
+void RhythmTestScene::Initialize(const EngineServices &services)
 {
     controller_->InitializeSession();
     services_.emplace(services);
@@ -48,7 +48,7 @@ void RhythmTestScene::EndScene() noexcept
 {
     view_->SetVisible(false);
 }
-void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
+void RhythmTestScene::Update(const UpdateContext &context, SceneManager &scenes)
 {
     if (!presentationReady_ && (context.totalSeconds < nextPreparationPoll_ || !PreparePresentation()))
     {
@@ -71,7 +71,7 @@ void RhythmTestScene::Update(const mrg::UpdateContext &context, mrg::scene::Scen
     if (controller_->ShouldShowResult())
         ShowResult(scenes);
 }
-void RhythmTestScene::UpdatePauseMenu(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
+void RhythmTestScene::UpdatePauseMenu(const UpdateContext &context, SceneManager &scenes)
 {
     if (!controller_->PauseMenuOpen())
     {
@@ -104,13 +104,13 @@ void RhythmTestScene::UpdatePauseMenu(const mrg::UpdateContext &context, mrg::sc
         break;
     }
 }
-void RhythmTestScene::ShowResult(mrg::scene::SceneManager &scenes)
+void RhythmTestScene::ShowResult(SceneManager &scenes)
 {
     pendingResult_ = controller_->TakeResult();
-    if (!scenes.ChangeScene(finger_drum::scene_ids::Result))
+    if (!scenes.ChangeScene(ResultSceneId))
         throw std::runtime_error("Failed to enter the Result Scene.");
 }
-void RhythmTestScene::Render(const mrg::graphics::RenderContext &)
+void RhythmTestScene::Render(const RenderContext &)
 {
     if (presentationReady_)
         view_->UpdatePresentation(controller_->Time());

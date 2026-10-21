@@ -9,7 +9,7 @@
 namespace
 {
     namespace fs = std::filesystem;
-    namespace chart = finger_drum::chart;
+
     void Check(bool value, const char *message)
     {
         if (!value)
@@ -87,35 +87,35 @@ int main()
         // Catalog discovery needs a file; this test does not decode audio.
         const auto sample = root / L"Music/sample.wav";
         Write(sample, "fixture");
-        auto parsedMusic = chart::ChartParser{}.ParseMusicFile(music);
+        auto parsedMusic = ChartParser{}.ParseMusicFile(music);
         Check(parsedMusic.Succeeded(), "YMM fixture must parse.");
-        chart::SongCatalogEntry song{music, sample, parsedMusic.document, {}};
-        chart::PatternDocument draft;
+        SongCatalogEntry song{music, sample, parsedMusic.document, {}};
+        PatternDocument draft;
         draft.name = "Beginner";
         draft.makers = {"Tester"};
         draft.tags = {"new", "chart"};
-        const auto created = editor_pattern_creation::Create(root, song, draft);
+        const auto created = Create(root, song, draft);
         Check(created.patternPath.parent_path() == root / L"Patterns/음악/Beginner", "Difficulty directory layout.");
         Check(created.pattern.musicMetadataFile == fs::path(L"Music/음악.ymm") &&
                   created.pattern.effectFile == L"음악 [Beginner].yme",
               "YMM root and sibling YME paths.");
-        const auto parsed = chart::ChartParser{}.ParsePatternFile(created.patternPath);
-        const auto effects = chart::ChartParser{}.ParseEffectFile(*created.effectPath);
+        const auto parsed = ChartParser{}.ParsePatternFile(created.patternPath);
+        const auto effects = ChartParser{}.ParseEffectFile(*created.effectPath);
         Check(parsed.Succeeded() && effects.Succeeded(), "New pair must parse.");
-        chart::ChartEditor editor(parsed.document, effects.document);
+        ChartEditor editor(parsed.document, effects.document);
         Check(editor.Notes().empty() && parsed.document.timing.empty() && effects.document.commands.empty() &&
                   parsed.document.baseBpm == 120 && parsed.document.patternOffsetMilliseconds == 0 &&
-                  parsed.document.mode == "Taiko" && editor.Timeline().MeasureLength(0) == chart::Rational{1},
+                  parsed.document.mode == "Taiko" && editor.Timeline().MeasureLength(0) == Rational{1},
               "New chart defaults and empty score.");
         const auto before = Read(created.patternPath);
         bool refused{};
         try
         {
-            static_cast<void>(editor_pattern_creation::Create(root, song, draft));
+            static_cast<void>(Create(root, song, draft));
         }
-        catch (const editor_pattern_creation::Error &e)
+        catch (const Error &e)
         {
-            refused = e.reason == editor_pattern_creation::Failure::ExistingFolder;
+            refused = e.reason == Failure::ExistingFolder;
         }
         Check(refused && Read(created.patternPath) == before, "Never overwrite existing difficulty.");
         for (const auto &name : {"../escape", "", "x/y", "name.", " name", "x\nheader"})
@@ -124,11 +124,11 @@ int main()
             refused = false;
             try
             {
-                static_cast<void>(editor_pattern_creation::Create(root, song, draft));
+                static_cast<void>(Create(root, song, draft));
             }
-            catch (const editor_pattern_creation::Error &e)
+            catch (const Error &e)
             {
-                refused = e.reason == editor_pattern_creation::Failure::InvalidName;
+                refused = e.reason == Failure::InvalidName;
             }
             Check(refused, "Unsafe difficulty names must not create files.");
         }
@@ -137,7 +137,7 @@ int main()
         refused = false;
         try
         {
-            static_cast<void>(editor_pattern_creation::Create(root, song, draft));
+            static_cast<void>(Create(root, song, draft));
         }
         catch (const std::exception &)
         {
@@ -147,10 +147,10 @@ int main()
         draft.baseBpm = 120;
         draft.name = "Another";
         song.patterns.push_back(created);
-        auto another = editor_pattern_creation::Create(root, song, draft);
+        auto another = Create(root, song, draft);
         Check(another.patternPath.parent_path().parent_path() == created.patternPath.parent_path().parent_path(),
               "Reuse the song's actual pattern parent.");
-        finger_drum::texts::TextCatalog texts(root / "NoLanguages");
+        TextCatalog texts(root / "NoLanguages");
         DialogProbe cancelled;
         cancelled.cancel = true;
         probe = &cancelled;
@@ -165,7 +165,7 @@ int main()
                   fromDialog->pattern.makers.size() == 2 &&
                   fromDialog->pattern.tags == std::vector<std::string>{"tag1", "tag2"},
               "Unicode metadata persists after correcting invalid input in the same dialog.");
-        const auto catalog = chart::SongCatalog{}.Load(root);
+        const auto catalog = SongCatalog{}.Load(root);
         Check(catalog.songs.size() == 1 && catalog.PatternCount() == 3, "New difficulties reload into the catalog.");
         Check(Read(music) == "Version: 1\nFile: sample.wav\nMusic Name 1: Test\nArtist 1: Test\n",
               "The shared YMM must remain untouched.");

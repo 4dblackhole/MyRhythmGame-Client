@@ -34,19 +34,19 @@ namespace song_select
         return result;
     }
 
-    [[nodiscard]] inline std::wstring SongTitle(const finger_drum::chart::SongCatalogEntry &song)
+    [[nodiscard]] inline std::wstring SongTitle(const SongCatalogEntry &song)
     {
         return song.music.names.empty() ? song.metadataPath.stem().wstring()
                                         : DecodeDisplayText(song.music.names.front());
     }
 
-    [[nodiscard]] inline std::wstring SongArtist(const finger_drum::chart::SongCatalogEntry &song)
+    [[nodiscard]] inline std::wstring SongArtist(const SongCatalogEntry &song)
     {
         return song.music.artists.empty() ? L"—" : DecodeDisplayText(song.music.artists.front());
     }
 
     [[nodiscard]] inline std::wstring PatternName(
-        const finger_drum::chart::SongCatalogPattern &pattern)
+        const SongCatalogPattern &pattern)
     {
         return pattern.pattern.name.empty() ? pattern.patternPath.stem().wstring()
                                             : DecodeDisplayText(pattern.pattern.name);
@@ -60,7 +60,7 @@ namespace song_select
         return value;
     }
 
-    [[nodiscard]] inline bool MatchesSearch(const finger_drum::chart::SongCatalogEntry &song,
+    [[nodiscard]] inline bool MatchesSearch(const SongCatalogEntry &song,
                                             const std::wstring &searchText)
     {
         if (searchText.empty())

@@ -1,25 +1,25 @@
 #include "EditorScene.h"
-#include "GameFlow/FingerDrumSceneIds.h"
+#include "GameFlow/YOUMUSceneIds.h"
 #include "Submodules/EditorView.h"
 #include "Submodules/EditorWorkspace.h"
 #include <stdexcept>
 
-EditorScene::EditorScene(mrg::visual2d::ScreenVisual2DManager &visuals,
-                         std::shared_ptr<finger_drum::GameplayLaunchStore> request,
-                         finger_drum::texts::TextCatalog &texts)
+EditorScene::EditorScene(ScreenVisual2DManager &visuals,
+                         std::shared_ptr<GameplayLaunchStore> request,
+                         TextCatalog &texts)
     : workspace_(std::make_unique<EditorWorkspace>(
           request ? request->Snapshot() : throw std::invalid_argument("Editor requires a launch store."))),
       view_(std::make_unique<EditorView>(visuals, *workspace_, texts))
 {
 }
 EditorScene::~EditorScene() = default;
-void EditorScene::Initialize(const mrg::EngineServices &services)
+void EditorScene::Initialize(const EngineServices &services)
 {
     workspace_->Initialize();
     workspace_->InitializePlayback(services.audio);
     view_->Initialize(services);
 }
-void EditorScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
+void EditorScene::Update(const UpdateContext &context, SceneManager &scenes)
 {
     try
     {
@@ -31,7 +31,7 @@ void EditorScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneMan
     }
     if (view_->Update(context))
     {
-        static_cast<void>(scenes.ChangeScene(finger_drum::scene_ids::EditorSongSelect));
+        static_cast<void>(scenes.ChangeScene(EditorSongSelectSceneId));
         return;
     }
     workspace_->UpdatePlayback();
@@ -46,6 +46,6 @@ void EditorScene::Shutdown() noexcept
     workspace_->ShutdownPlayback();
     view_->Shutdown();
 }
-void EditorScene::Render(const mrg::graphics::RenderContext &)
+void EditorScene::Render(const RenderContext &)
 {
 }

@@ -1,0 +1,81 @@
+#include "Taiko/TaikoMode.h"
+#include "Automation/EffectValidation.h"
+#include "Parsing/ChartParser.h"
+#include "Taiko/Submodules/TaikoInputBinding.h"
+#include "Taiko/Submodules/TaikoSessionBuilder.h"
+
+ModeInputLayout TaikoMode::InputLayout() const
+{
+    static constexpr std::array ids{"LeftKat", "LeftDon", "RightDon", "RightKat"};
+    static constexpr std::array names{"Left Kat", "Left Don", "Right Don", "Right Kat"};
+    ModeInputLayout layout{"Taiko", {}};
+    for (std::size_t i = 0; i < TaikoInputBindings.size(); ++i)
+    {
+        const auto &source = TaikoInputBindings[i];
+        ModeInputBinding binding{
+            ids[i], names[i], static_cast<NoteAction>(source.action), {source.primaryKey}};
+        for (const auto key : source.secondaryKeys)
+            if (key)
+                binding.keys.push_back(key);
+        layout.bindings.push_back(std::move(binding));
+    }
+    return layout;
+}
+
+std::string_view TaikoMode::Id() const noexcept
+{
+    return "Taiko";
+}
+
+ModeLoadResult TaikoMode::LoadSession(
+    const std::filesystem::path &patternPath,
+    const std::optional<std::filesystem::path> &effectPath) const
+{
+    ChartParser parser;
+    ParseResult<PatternDocument> pattern = parser.ParsePatternFile(patternPath);
+    ParseResult<EffectDocument> effect;
+    const auto resolvedEffect = effectPath ? *effectPath : pattern.document.effectFile.empty()
+        ? std::filesystem::path{} : patternPath.parent_path() / pattern.document.effectFile;
+    if (!resolvedEffect.empty())
+    {
+        effect = parser.ParseEffectFile(resolvedEffect);
+    }
+
+    ModeLoadResult result;
+    result.diagnostics = std::move(pattern.diagnostics);
+    result.diagnostics.insert(result.diagnostics.end(),
+                              std::make_move_iterator(effect.diagnostics.begin()),
+                              std::make_move_iterator(effect.diagnostics.end()));
+    if (std::ranges::any_of(result.diagnostics, [](const Diagnostic &diagnostic) {
+            return diagnostic.severity == DiagnosticSeverity::Error;
+        }))
+    {
+        return result;
+    }
+
+    ModeLoadResult created = CreateSession(pattern.document, effect.document);
+    result.session = std::move(created.session);
+    result.diagnostics.insert(result.diagnostics.end(),
+                              std::make_move_iterator(created.diagnostics.begin()),
+                              std::make_move_iterator(created.diagnostics.end()));
+    return result;
+}
+
+ModeLoadResult TaikoMode::CreateSession(const PatternDocument &pattern,
+                                        const EffectDocument &effects) const
+{
+    try
+    {
+        auto resolved = effects;
+        ResolveEffectInterpolations(resolved);
+        ValidateEffectDocument(resolved);
+        return TaikoSessionBuilder::CreateSession(pattern, resolved, options_,
+                                                  ResolveInputLayout(InputLayout(), options_.inputKeys));
+    }
+    catch (const std::exception &error)
+    {
+        ModeLoadResult result;
+        result.diagnostics.push_back({DiagnosticSeverity::Error, {pattern.sourcePath, 1, 1}, error.what()});
+        return result;
+    }
+}

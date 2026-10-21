@@ -5,14 +5,14 @@
 #include <stdexcept>
 namespace
 {
-    void AddPatternNote(finger_drum::chart::PatternDocument &pattern, const std::int64_t measure,
+    void AddPatternNote(PatternDocument &pattern, const std::int64_t measure,
                         const std::int64_t numerator, const std::int64_t denominator,
-                        const finger_drum::mode::TaikoNoteType type, const finger_drum::mode::TaikoPatternAction action,
+                        const TaikoNoteType type, const TaikoPatternAction action,
                         std::vector<std::string> extraData = {})
     {
-        finger_drum::chart::PatternNote note;
+        PatternNote note;
         note.position =
-            finger_drum::chart::MusicalPosition{measure, finger_drum::chart::Rational{numerator, denominator}};
+            MusicalPosition{measure, Rational{numerator, denominator}};
         note.keyType = static_cast<int>(type);
         note.actionType = static_cast<int>(action);
         note.extraData = std::move(extraData);
@@ -22,17 +22,17 @@ namespace
 
 } // namespace
 
-std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::CreateSession()
+std::unique_ptr<PlaySession> GameplaySessionController::CreateSession()
 {
     if (!launchRequest_.IsValid())
     {
         return debugMode_ ? CreateLongNoteDebugSession() : CreateDemoSession();
     }
-    auto mode = finger_drum::mode::CreatePlayGameMode(
+    auto mode = CreatePlayGameMode(
         launchRequest_.mode,
-        {finger_drum::rhythm::RhythmDuration{static_cast<std::int64_t>(launchRequest_.globalOffsetMs) * 1000},
+        {RhythmDuration{static_cast<std::int64_t>(launchRequest_.globalOffsetMs) * 1000},
          launchRequest_.inputKeys});
-    finger_drum::mode::ModeLoadResult loaded = mode->LoadSession(launchRequest_.patternPath, launchRequest_.effectPath);
+    ModeLoadResult loaded = mode->LoadSession(launchRequest_.patternPath, launchRequest_.effectPath);
     if (!loaded.Succeeded())
     {
         const std::string detail =
@@ -42,16 +42,16 @@ std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::Creat
     return std::move(loaded.session);
 }
 
-std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::CreateDemoSession()
+std::unique_ptr<PlaySession> GameplaySessionController::CreateDemoSession()
 {
-    finger_drum::chart::PatternDocument pattern;
+    PatternDocument pattern;
     pattern.name = "Architecture test";
     pattern.mode = "Taiko";
     pattern.baseBpm = 120.0;
     pattern.judgementLevel = 50;
 
-    using NoteType = finger_drum::mode::TaikoNoteType;
-    using Action = finger_drum::mode::TaikoPatternAction;
+    using NoteType = TaikoNoteType;
+    using Action = TaikoPatternAction;
     AddPatternNote(pattern, 0, 0, 1, NoteType::Don, Action::Down);
     AddPatternNote(pattern, 0, 1, 4, NoteType::Kat, Action::Down);
     AddPatternNote(pattern, 0, 2, 4, NoteType::BigDon, Action::Down);
@@ -61,8 +61,8 @@ std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::Creat
     AddPatternNote(pattern, 2, 1, 4, NoteType::TickRoll, Action::LongNoteStart);
     AddPatternNote(pattern, 3, 0, 1, NoteType::TickRoll, Action::LongNoteEnd);
 
-    finger_drum::mode::TaikoMode mode;
-    finger_drum::mode::ModeLoadResult result = mode.CreateSession(pattern);
+    TaikoMode mode;
+    ModeLoadResult result = mode.CreateSession(pattern);
     if (!result.Succeeded())
     {
         throw std::runtime_error("Failed to create the Taiko demo session.");
@@ -70,17 +70,17 @@ std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::Creat
     return std::move(result.session);
 }
 
-std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::CreateLongNoteDebugSession()
+std::unique_ptr<PlaySession> GameplaySessionController::CreateLongNoteDebugSession()
 {
-    finger_drum::chart::PatternDocument pattern;
+    PatternDocument pattern;
     pattern.name = "Long Notes Debug";
     pattern.mode = "Taiko";
     pattern.baseBpm = 180.0;
     pattern.patternOffsetMilliseconds = 104.0;
     pattern.judgementLevel = 50;
 
-    using NoteType = finger_drum::mode::TaikoNoteType;
-    using Action = finger_drum::mode::TaikoPatternAction;
+    using NoteType = TaikoNoteType;
+    using Action = TaikoPatternAction;
     const auto addLong = [&pattern](const std::int64_t measure, const std::int64_t startNumerator, const NoteType type,
                                     std::vector<std::string> extraData = {})
     {
@@ -97,8 +97,8 @@ std::unique_ptr<finger_drum::mode::PlaySession> GameplaySessionController::Creat
     addLong(3, 0, NoteType::Buzz, {"Action=Don", "TickDivision=16"});
     addLong(3, 2, NoteType::Buzz, {"Action=Kat", "TickDivision=16"});
 
-    finger_drum::mode::TaikoMode mode;
-    finger_drum::mode::ModeLoadResult result = mode.CreateSession(pattern);
+    TaikoMode mode;
+    ModeLoadResult result = mode.CreateSession(pattern);
     if (!result.Succeeded())
     {
         throw std::runtime_error("Failed to create the built-in long-note debug session.");
@@ -113,7 +113,7 @@ void GameplaySessionController::PrepareDebugLaunchRequest()
         return;
     }
     const std::filesystem::path songs =
-        launchRequest_.songsRoot.empty() ? mrg_client::asset_paths::UserSongs() : launchRequest_.songsRoot;
+        launchRequest_.songsRoot.empty() ? UserSongs() : launchRequest_.songsRoot;
     const std::filesystem::path patternPath =
         songs / L"Patterns\\angeldream\\Long Notes Debug\\angeldream [long notes test].ymp";
     const std::filesystem::path musicPath = songs / L"Music\\Angeldream\\angel dream hand shaking.mp3";

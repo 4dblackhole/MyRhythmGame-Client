@@ -13,14 +13,14 @@
 | 곡/난이도 이동·검색·정렬 | 같은 폴더 `SongSelectionState.*`, 입력 연결은 SongSelectInput.cpp | SceneStateTests.cpp |
 | 곡 미리듣기 | 같은 폴더 `SongPreviewController.*` | AudioPlayback 공개 계약, lobby smoke |
 | 문구·언어 INI·영어 기본값·글꼴 | `Client/Texts/Languages`, TextCatalog/LanguageFile, 해당 화면의 `*Texts.*` | TextManagement; RunLanguageFileTests, 해당 화면 smoke/표시 회귀 |
-| 게임 표시 이름 | `Client/Texts/GameIdentity.h` | FingerDrumGame의 창 제목, Main의 오류창, EditorInput/EditorTexts의 확인창; TextManagement, 네 smoke |
+| 게임 표시 이름 | `Client/Texts/GameIdentity.props`, `Scripts/GenerateGameIdentity.ps1` | YOUMUGame의 창 제목, Main의 오류창, EditorInput/EditorTexts의 확인창; TextManagement, 네 smoke |
 | 텍스트 배치·clip·아틀라스/업로드·긴 제목 | 엔진 `Graphics.D3D12/Text`, `Graphics.D3D12/Visual2D`, `Core/Visual2D`; `Client/Presentation/MarqueeTextComponent.*` | 엔진 TextRendering 문서/SDK --text-rendering·--text-pixels; MusicSelectViewTests; Client 직접 DrawPacket 생성/검사, 네 smoke |
 | 로고/곡 선택 옵션 패널·ESC 닫기 | `Client/Presentation/OptionsPanel.*` | LogoView/MusicSelectView 입력 소비; OptionsPanelTests; logo/lobby smoke |
 | 공통 UI 색상 | `Client/Presentation/UiColors.h` | LogoStyle / SongSelectLayout / EditorSupport / TaikoResultLayout / GameplayPauseMenu; Options/MusicSelect/Editor/Result/Pause 표시 회귀 |
-| Option.ini·오디오 출력/드라이버·해상도·키·글로벌 오프셋 선택 | `Client/App/OptionSettings.*`, `OptionsPanel.*` / `OptionsPanel/Submodules` | FingerDrumGame 초기화; ModeInputLayout / PlayGameModeFactory / PlaySession; MusicalTimeline / ChartEditor; 엔진 WindowControl; OptionsPanelTests / OptionTimingTests, 네 smoke |
+| Option.ini·오디오 출력/드라이버·해상도·키·글로벌 오프셋 선택 | `Client/App/OptionSettings.*`, `OptionsPanel.*` / `OptionsPanel/Submodules` | YOUMUGame 초기화; ModeInputLayout / PlayGameModeFactory / PlaySession; MusicalTimeline / ChartEditor; 엔진 WindowControl; OptionsPanelTests / OptionTimingTests, 네 smoke |
 | Songs 경로·즉시 catalog 갱신·BG/offset | OptionSettings::SongsRoot / OptionsSongs, MusicSelectScene / SongCatalogLoader, GameplayLaunchRequest | PatternDocument / PatternParser / ChartEditor; GameplayPresenter / GameplayLayout / PrepareAssets; TaikoEditorAudio/Metadata; Options/MusicSelect/Gameplay 표시 회귀; 변환기 전용 세션 |
 | skin.ini·씬 이미지·스킨 선택·내장 기본본 | `Client/App/SkinManifest.*`, `SkinSetSelection.*`, `AssetPaths.h`, `Presentation/SkinVisualComponent.*` | BuiltInAssets; RunSkinTests / 각 화면 표시 회귀, 네 smoke |
-| 배포 빌드·자산 | `Client/MRG.Client.vcxproj`, `Client/App/Main.cpp` | BuiltInAssets; Debug/Release smoke, CheckArchitecture |
+| 배포 빌드·자산 | `Client/YOUMU.Client.vcxproj`, `Client/App/Main.cpp` | BuiltInAssets; Debug/Release smoke, CheckArchitecture |
 | Scene 전환/선택 전달 | Scene 주 파일, `Client/GameFlow/GameplayLaunchStore.h` | SceneStateTests; ExecutionFlow |
 | 플레이 Clock·pause·reset·입력 | `Client/GameFlow/IPlaySessionController.h`, GameplaySessionController / Submodules의 GameplayState·GameplayInput | RhythmCoreTests; gameplay smoke |
 | ESC 메뉴·음악 seek·마디 되감기·Retire·HP/리플레이 마커 | GameFlow/Submodules/GameplayPause / RhythmTestScene/Submodules/GameplayPauseMenu·GameplayPauseLayout, Texts의 PauseTexts; `Mode/Submodules/PlaySessionSeeking.cpp` | PlayControlEvent / IPlayResultCollector / TaikoResultCollector; PlayPauseTests / GameplayPauseTests / ResultPresentationTests; Gameplay/Pause 문서 |
@@ -30,30 +30,30 @@
 | 정확도/특수 노트 표시 | 같은 폴더 `GameplayFeedbackVisuals.cpp` | NoteTypes.h의 이벤트/정확도; AccuracyTests/GameplayJudgementTests |
 | 판정 구간·타이밍 마커·링/문구 | 같은 폴더 `GameplayJudgementView.*`, GameplayFeedbackVisuals.cpp | AccuracyRange, LaneKeyBeam의 색상/입력 응답; GameplayJudgementTests |
 | 점수 정밀도·결과 수집·입력 로그 | `Judgement/AccuracyScore.h`, `Mode/Results`, `Taiko/Results` | NoteAccuracy/PlaySession, TaikoSessionBuilder; PlayResultTests |
-| Result 디자인·전환·리트라이·모드별 통계/그래프 | `Client/GameScene/ResultScene`, `Texts/GameScene/ResultScene`, `Default Skin/Result` | FingerDrumGame/GameplayLaunchRequest/MusicSelectScene; ResultPresentationTests; Noto Sans KR/엔진 fontWeight |
+| Result 디자인·전환·리트라이·모드별 통계/그래프 | `Client/GameScene/ResultScene`, `Texts/GameScene/ResultScene`, `Default Skin/Result` | YOUMUGame/GameplayLaunchRequest/MusicSelectScene; ResultPresentationTests; Noto Sans KR/엔진 fontWeight |
 | 키 불빛 | 같은 폴더 `GameplayKeys.cpp`, `Client/Presentation/LaneKeyBeam.*` | GameplayFeedback.h; gameplay smoke |
-| 에디터 모드 추가/파일 교체 | `Client/EditorScene/Submodules/Modes/IEditorMode.h`, EditorModeFactory; `FingerDrum.Chart/Editing/IEditorDocument.h` | ChartEditor의 교체 경계; EditorModeTests, editor smoke |
+| 에디터 모드 추가/파일 교체 | `Client/EditorScene/Submodules/Modes/IEditorMode.h`, EditorModeFactory; `YOUMU.Chart/Editing/IEditorDocument.h` | ChartEditor의 교체 경계; EditorModeTests, editor smoke |
 | 에디터 상단 메뉴·저장 입력 | `Client/EditorScene/Submodules/EditorMenuBar.*`, EditorView / EditorInput | EditorWorkspace Save, EditorTexts; EditorMenuTests / EditorAudioViewTests, editor smoke |
 | 에디터 도구/배치 취소 | `Modes/Taiko/TaikoEditorMode.*`, TaikoEditorTool.h / TaikoEditorTools.cpp | ChartEditorTests, SceneStateTests, EditorModeTests |
 | 에디터 노트 선택/속성 | `Modes/Taiko/TaikoEditorNoteInspector.*`, TaikoEditorPlacement.h | IEditorContext/Workspace UpdateNote, IEditorDocument FindNote/UpdateNote, ChartEditor 인덱스/ID; ChartEditorTests/EditorModeTests |
 | 구간·행 다중 선택·두 붙여넣기·32 Undo/Redo | EditorSelection / EditorClipboard / TaikoEditorSelection·Layout, EditorTiming/EffectsView | MusicalTimeline AddWholeNotes/WholeNotesBetween; ChartEditorHistory / IEditorDocument; EditorModeTests / ChartEditorTests |
 | 에디터 노트 화면/입력 | `Modes/Taiko/TaikoEditorScore.cpp`, 공통 연결 EditorScoreView / EditorInput | Workspace.h, EditorModeTests, editor smoke |
 | BPM·metadata·effect UI | EditorTimingView / EditorEffectsView / EditorForms, `Modes/Taiko/TaikoEditorMetadata` | Workspace의 수정 경계, IEditorContext, IEditorDocument Replace/ReplaceTiming/ReplaceEffects, 저장 왕복 |
-| 오디오 탭·시간 영역 선택·타임라인/worker | EditorAudioView / EditorAudioSelection / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `FingerDrum.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
+| 오디오 탭·시간 영역 선택·타임라인/worker | EditorAudioView / EditorAudioSelection / EditorTimelineView / EditorAnalysisController | EditorInput / EditorWorkspace; `YOUMU.Editor/Audio`; EditorAudioAnalysisTests / EditorAudioViewTests |
 | 에디터 offset/메트로놈·박자/예상 타격 눈금 | EditorAudioControls / EditorMetronome / EditorWorkspace | MusicalTimeline / EditorPlayback의 DSP 예약; EditorMetronomeTests / EditorAudioViewTests |
 | 에디터 재생·배속·시간축 줌 | EditorPlayback / EditorWorkspace / EditorAudioControls / EditorScoreView | EditorInput / EditorScene / TaikoEditorScore; EditorPlaybackTests / EditorModeTests; 엔진 AudioClip/Voice |
-| JudgeLevel 고정소수점/범위 | `FingerDrum.Rhythm/Judgement/JudgeLevel.h`, AccuracyRange; PatternDocument / PatternParser / ChartEditor | TaikoSessionBuilder / IPlayResult / GameplayLayout; RhythmCoreTests / ChartParserTests / NewDifficultyTests |
-| 노트 판정 규칙 | `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
+| JudgeLevel 고정소수점/범위 | `YOUMU.Rhythm/Judgement/JudgeLevel.h`, AccuracyRange; PatternDocument / PatternParser / ChartEditor | TaikoSessionBuilder / IPlayResult / GameplayLayout; RhythmCoreTests / ChartParserTests / NewDifficultyTests |
+| 노트 판정 규칙 | `YOUMU.Rhythm/Note/Submodules/<규칙명>.*` | INoteRule.h, NoteTypes.h; RhythmCore/AccuracyTests |
 | 만료 노트 입력 전달·복수 물리 키 유지·rewind | Lane / HoldInputRule / PlaySession / GameplayInput | InputOrderingTests; PlayPauseTests / GameplayPauseTests; Raw Input timestamp·전이 전 snapshot |
-| Taiko 종류 추가 | `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
+| Taiko 종류 추가 | `YOUMU.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |
-| 문법 추가 | `FingerDrum.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
-| YME 보간·Whole/Separate | `FingerDrum.Chart/Automation/InterpolationExpression.*`, `ScrollAutomation.*` | MusicalTimeline / PlaySession / GameplayPresenter / TaikoEditorScore; YmeEffectsTests, 실제 -Effects replay |
-| 효과 검증·런타임 실패 복구 | `FingerDrum.Chart/Automation/EffectValidation.*`, `PlaySession.*` | EffectParser / ChartEditor / TaikoMode; GameplaySessionController / Presenter 오류 HUD; YmeEffectsTests |
-| 싱코페이션 판정 범위·Kiai 상태 | `FingerDrum.Rhythm/Judgement/AccuracyRange.*`, `FingerDrum.Modes/Taiko/Submodules/TaikoBuildSupport.h` | TaikoSessionBuilder / RuleBasedNote / PlaySession; YmeEffectsTests |
-| BPM/마디 시간·delay 무효 구간 | `FingerDrum.Chart/Timing/MusicalTimeline.*` | CompiledChart의 유효성 snapshot, TaikoChartNotes의 롱 결합; Formats/Timing; ChartParser/YmeEffects/EditorModeTests |
-| 편집 원본 트리·안정 ID·구간 조회·저장 실패 복구 | `FingerDrum.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests/ChartReviewRegressionTests; TaikoEditorScore, EditorWorkspace |
-| 플레이 자동화 검색·DSP 준비 | `FingerDrum.Modes/Mode/Submodules/PlaySession.*`, `Client/Audio/GameplayAudioRouter.*` | TaikoModeTests; GameplayAudio, 전체 노트 replay |
+| 문법 추가 | `YOUMU.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
+| YME 보간·Whole/Separate | `YOUMU.Chart/Automation/InterpolationExpression.*`, `ScrollAutomation.*` | MusicalTimeline / PlaySession / GameplayPresenter / TaikoEditorScore; YmeEffectsTests, 실제 -Effects replay |
+| 효과 검증·런타임 실패 복구 | `YOUMU.Chart/Automation/EffectValidation.*`, `PlaySession.*` | EffectParser / ChartEditor / TaikoMode; GameplaySessionController / Presenter 오류 HUD; YmeEffectsTests |
+| 싱코페이션 판정 범위·Kiai 상태 | `YOUMU.Rhythm/Judgement/AccuracyRange.*`, `YOUMU.Modes/Taiko/Submodules/TaikoBuildSupport.h` | TaikoSessionBuilder / RuleBasedNote / PlaySession; YmeEffectsTests |
+| BPM/마디 시간·delay 무효 구간 | `YOUMU.Chart/Timing/MusicalTimeline.*` | CompiledChart의 유효성 snapshot, TaikoChartNotes의 롱 결합; Formats/Timing; ChartParser/YmeEffects/EditorModeTests |
+| 편집 원본 트리·안정 ID·구간 조회·저장 실패 복구 | `YOUMU.Chart/Editing/ChartEditor.*`, `IEditorDocument.h` | ChartEditorTests/ChartReviewRegressionTests; TaikoEditorScore, EditorWorkspace |
+| 플레이 자동화 검색·DSP 준비 | `YOUMU.Modes/Mode/Submodules/PlaySession.*`, `Client/Audio/GameplayAudioRouter.*` | TaikoModeTests; GameplayAudio, 전체 노트 replay |
 
 테스트 파일은 `Tests/Rhythm/Submodules/`에 있으며 같은 테스트 실행 파일에 링크됩니다.
 ClientLogic는 곡 선택 상태를 Client와 테스트에 같은 라이브러리로 제공합니다.
@@ -88,7 +88,7 @@ Client/Texts/
   TextCatalog.*                  공유 언어 상태와 언어별 글꼴
   <사용 위치>/                  화면별 한국어·영어 문구 표
   EditorScene/Taiko/              Taiko 편집 도구/사운드 문구
-FingerDrum.Rhythm/Note/
+YOUMU.Rhythm/Note/
   Submodules/
     NoteTypes.*               이벤트/정확도 값
     INote.h / INoteRule.*      계약

@@ -11,51 +11,51 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
+
     void Check(bool value, const char *message)
     {
         if (!value)
             throw std::runtime_error(message);
     }
-    class Renderer final : public mrg::graphics::Visual2DRenderSystem
+    class Renderer final : public Visual2DRenderSystem
     {
       public:
-        v::ImageHandle LoadImage(const std::filesystem::path &) override
+        ImageHandle LoadImage(const std::filesystem::path &) override
         {
             return {++id_};
         }
-        v::Size GetImageSize(v::ImageHandle) const noexcept override
+        Size GetImageSize(ImageHandle) const noexcept override
         {
             return {96, 96};
         }
-        void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, v::Point,
+        void SubmitScreen(const Visual2DCanvas &, const RenderContext &, Point,
                           std::uint32_t) override
         {
         }
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
-                         v::Size, const DirectX::XMFLOAT4X4 &) override
+        void SubmitPlane(const Visual2DCanvas &, const RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         Size, const DirectX::XMFLOAT4X4 &) override
         {
         }
-        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
+        RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
         {
             return {};
         }
-        void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
-                             const mrg::graphics::RenderContext &) override
+        void RenderToTexture(const Visual2DCanvas &, const RenderTargetTextureHandle &,
+                             const RenderContext &) override
         {
         }
 
       private:
         std::uint64_t id_{};
     };
-    std::size_t Cards(const v::Visual2DNode &node)
+    std::size_t Cards(const Visual2DNode &node)
     {
         std::size_t count = node.Name().starts_with("Song.") ? 1 : 0;
         for (const auto &child : node.Children())
             count += Cards(*child);
         return count;
     }
-    bool HasCard(const v::Visual2DNode &node, std::size_t index)
+    bool HasCard(const Visual2DNode &node, std::size_t index)
     {
         if (node.Name() == "Song." + std::to_string(index))
             return true;
@@ -64,7 +64,7 @@ namespace
                 return true;
         return false;
     }
-    v::Visual2DNode *Find(v::Visual2DNode &node, std::string_view name)
+    Visual2DNode *Find(Visual2DNode &node, std::string_view name)
     {
         if (node.Name() == name)
             return &node;
@@ -73,11 +73,11 @@ namespace
                 return found;
         return nullptr;
     }
-    void Click(v::Visual2DCanvas &canvas, const v::Visual2DNode &node)
+    void Click(Visual2DCanvas &canvas, const Visual2DNode &node)
     {
         const auto bounds = node.BoundsInCanvas();
-        v::Visual2DInputRouter router;
-        v::PointerInput pointer{};
+        Visual2DInputRouter router;
+        PointerInput pointer{};
         pointer.available = true;
         pointer.position = {bounds.x + bounds.width * .5F, bounds.y + bounds.height * .5F};
         pointer.leftButtonDown = pointer.leftButtonPressed = true;
@@ -86,7 +86,7 @@ namespace
         pointer.leftButtonReleased = true;
         router.Process(canvas, pointer);
     }
-    finger_drum::chart::SongCatalogLoadResult AwaitCatalog(SongCatalogLoader &loader)
+    SongCatalogLoadResult AwaitCatalog(SongCatalogLoader &loader)
     {
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
         do
@@ -102,7 +102,7 @@ namespace
         namespace fs = std::filesystem;
         const auto directory =
             fs::temp_directory_path() /
-            (L"YOMU-import-test-한글 " + std::to_wstring(std::chrono::steady_clock::now().time_since_epoch().count()));
+            (L"YOUMU-import-test-한글 " + std::to_wstring(std::chrono::steady_clock::now().time_since_epoch().count()));
         fs::create_directory(directory);
         const auto cleanup = [](fs::path *path)
         {
@@ -132,19 +132,19 @@ namespace
         importer.Start(input, root);
         const auto result = await();
         Check(result.success, result.message.c_str());
-        const auto catalog = finger_drum::chart::SongCatalog{}.Load(root);
+        const auto catalog = SongCatalog{}.Load(root);
         Check(catalog.Succeeded() && catalog.songs.size() == 1 && catalog.PatternCount() == 1,
               "The bundled converter process must produce a complete catalog entry.");
         importer.Start(input, root);
         const auto collision = await();
         Check(!collision.success && !collision.message.empty(),
               "Converter collisions must report failure through Poll.");
-        Check(finger_drum::chart::SongCatalog{}.Load(root).PatternCount() == 1,
+        Check(SongCatalog{}.Load(root).PatternCount() == 1,
               "A failed process must preserve the existing pattern.");
     }
-    void TestDifficultyClick(v::ScreenVisual2DManager &visuals, SongSelectionState &selection,
-                             finger_drum::texts::TextCatalog &texts, mrg_client::OptionSettings &options,
-                             const mrg::EngineServices &services)
+    void TestDifficultyClick(ScreenVisual2DManager &visuals, SongSelectionState &selection,
+                             TextCatalog &texts, OptionSettings &options,
+                             const EngineServices &services)
     {
         for (const auto purpose : {SongSelectPurpose::Gameplay, SongSelectPurpose::Editor})
         {
@@ -161,7 +161,7 @@ namespace
                 if (!difficulty)
                     throw std::runtime_error("Clickable difficulty missing.");
                 Click(*canvas, *difficulty);
-                mrg::platform::InputState noKeys;
+                InputState noKeys;
                 Check(clickable.Update(noKeys, 0) == SongSelectCommand::Launch && selection.selectedPatternIndex_ == 1,
                       "A difficulty click must select that pattern and launch, including an already selected pattern.");
                 Check(clickable.Update(noKeys, 0) == SongSelectCommand::None,
@@ -170,13 +170,13 @@ namespace
             clickable.Shutdown();
         }
     }
-    void TestOptionsToggle(MusicSelectView &view, v::Visual2DCanvas &canvas)
+    void TestOptionsToggle(MusicSelectView &view, Visual2DCanvas &canvas)
     {
         auto *button = Find(canvas.Root(), "OptionSelect");
         auto *panel = Find(canvas.Root(), "Options.Panel");
         if (!button || !panel)
             throw std::runtime_error("Options toggle controls missing.");
-        mrg::platform::InputState noKeys;
+        InputState noKeys;
         Click(canvas, *button);
         static_cast<void>(view.Update(noKeys, .2));
         static_cast<void>(view.Update(noKeys, .2));
@@ -194,14 +194,14 @@ int main()
     {
         TestConverterProcess();
         {
-            v::Visual2DCanvas canvas;
-            auto &label = v::CreateLabel(canvas.Root(), {0, 0, 100, 30}, L"");
+            Visual2DCanvas canvas;
+            auto &label = CreateLabel(canvas.Root(), {0, 0, 100, 30}, L"");
             const std::wstring unicode = L"\U0001F600ABCDEFGH";
-            auto &marquee = label.AddComponent<finger_drum::presentation::MarqueeTextComponent>(unicode, 0.28);
+            auto &marquee = label.AddComponent<MarqueeTextComponent>(unicode, 0.28);
             marquee.Update(0);
             const auto initial = canvas.BuildDrawList();
             const auto source = initial.back().text;
-            source->measuredSize = v::Size{180, 20};
+            source->measuredSize = Size{180, 20};
             marquee.Update(1.3);
             const auto moved = canvas.BuildDrawList();
             if (moved.size() != 2 || moved[0].text != source || moved[1].text != source || moved[0].textOffset.x >= 0 ||
@@ -221,42 +221,42 @@ int main()
                 throw std::runtime_error("Marquee content replacement failed.");
         }
         std::string error;
-        Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
+        Check(InitializeBuiltInAssets(error), error.c_str());
         SongCatalogLoader loader;
-        loader.Refresh(mrg_client::asset_paths::UserSongs());
+        loader.Refresh(UserSongs());
         const auto first = AwaitCatalog(loader);
         Check(!first.songs.empty(), "Worker must publish the real catalog.");
-        loader.Refresh(mrg_client::asset_paths::UserSongs());
+        loader.Refresh(UserSongs());
         const auto repeated = AwaitCatalog(loader);
         Check(first.songs.size() == repeated.songs.size() && first.PatternCount() == repeated.PatternCount(),
               "A retained parser cache must preserve catalog results.");
-        loader.Refresh(mrg_client::asset_paths::UserSongs() / "nonexistent-regression-directory");
+        loader.Refresh(UserSongs() / "nonexistent-regression-directory");
         const auto failed = AwaitCatalog(loader);
         Check(failed.songs.empty() && !failed.diagnostics.empty(),
               "Worker I/O errors must be published as diagnostics.");
-        loader.Refresh(mrg_client::asset_paths::UserSongs());
-        loader.Refresh(mrg_client::asset_paths::UserSongs() / "missing-new-root");
+        loader.Refresh(UserSongs());
+        loader.Refresh(UserSongs() / "missing-new-root");
         const auto superseded = AwaitCatalog(loader);
         Check(superseded.songs.empty() && !superseded.diagnostics.empty(),
               "A root change must discard the older pending catalog.");
-        loader.Refresh(mrg_client::asset_paths::UserSongs());
-        loader.Refresh(mrg_client::asset_paths::UserSongs() / "missing-new-root");
-        loader.Refresh(mrg_client::asset_paths::UserSongs());
+        loader.Refresh(UserSongs());
+        loader.Refresh(UserSongs() / "missing-new-root");
+        loader.Refresh(UserSongs());
         Check(!AwaitCatalog(loader).songs.empty(), "Switching back must cancel an obsolete queued root.");
 
         Renderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
-        mrg_client::OptionSettings options("build/performance-view-test-unused.ini");
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
+        OptionSettings options("build/performance-view-test-unused.ini");
         SongSelectionState selection;
         // Synthetic data stays in this test process; no song or settings file is written.
         for (int i = 0; i < 5000; ++i)
         {
-            finger_drum::chart::SongCatalogEntry song;
+            SongCatalogEntry song;
             song.music.names.push_back("Test song " + std::to_string(i));
             song.music.artists.push_back("Test artist");
             song.patterns.resize(2);
@@ -299,7 +299,7 @@ int main()
             throw std::runtime_error("Songs without a chart must offer the plus button.");
         Check(add->IsEnabled(), "Chart creation must be enabled after catalog loading.");
         Click(*canvas, *add);
-        mrg::platform::InputState input;
+        InputState input;
         Check(editor.Update(input, 0) == SongSelectCommand::None && selection.focusedSongPosition_ == 0,
               "Plus must select its song and open the menu without creating files.");
         auto *menu = Find(canvas->Root(), "SongAddition.Menu");

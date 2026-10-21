@@ -4,8 +4,6 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace finger_drum;
-
 void Check(bool condition, const char* message)
 {
     if (!condition) throw std::runtime_error(message);
@@ -20,16 +18,15 @@ int main()
 {
     try
     {
-        using rhythm::JudgementGrade;
-        using rhythm::NoteEventType;
-        presentation::LaneKeyBeam beam;
-        mrg::visual2d::Visual2DCanvas canvas;
-        auto& lane = canvas.CreateNode(mrg::visual2d::Anchor::Center, "Lane");
+
+        LaneKeyBeam beam;
+        Visual2DCanvas canvas;
+        auto& lane = canvas.CreateNode(Anchor::Center, "Lane");
         lane.SetSize({152, 1000});
         beam.Initialize(lane, {}, {50, 250});
         auto& sprite = *lane.Children().front();
         auto tint = [&] { return sprite.GetComponent<
-            mrg::visual2d::SpriteVisualComponent>()->Style().normal; };
+            SpriteVisualComponent>()->Style().normal; };
         Check(sprite.Transform().Parent() == &lane.Transform(), "Lane transform parent");
         Check(!sprite.IsVisible(), "Initially hidden");
         beam.OnKeyPressed({});
@@ -41,13 +38,13 @@ int main()
         beam.Update(0.2);
         Check(!sprite.IsVisible() && Near(tint().alpha, 0), "200ms hidden");
 
-        rhythm::AccuracyRange profile;
+        AccuracyRange profile;
         const auto makeResult = [&](double milliseconds, bool accepted) {
-            rhythm::NoteProcessResult result;
-            rhythm::NoteEvent event;
+            NoteProcessResult result;
+            NoteEvent event;
             event.type = accepted ? NoteEventType::HitAccepted : NoteEventType::InputRejected;
-            event.judgement = profile.Evaluate({}, rhythm::RhythmTime{
-                static_cast<rhythm::RhythmTime::rep>(milliseconds * 1000)});
+            event.judgement = profile.Evaluate({}, RhythmTime{
+                static_cast<RhythmTime::rep>(milliseconds * 1000)});
             result.events.push_back(event);
             return result;
         };
@@ -66,7 +63,7 @@ int main()
         beam.OnKeyPressed(makeResult(500, false));
         Check(Near(tint().red, 1) && Near(tint().green, 1), "Out of range white");
         auto rollover = makeResult(0, true);
-        rhythm::NoteEvent missed;
+        NoteEvent missed;
         missed.type = NoteEventType::Missed;
         rollover.events.insert(rollover.events.begin(), missed);
         beam.OnKeyPressed(rollover);

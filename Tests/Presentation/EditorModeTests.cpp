@@ -15,24 +15,23 @@
 
 namespace
 {
-    const finger_drum::texts::TextCatalog &TestCatalog(finger_drum::texts::Language language)
+    const TextCatalog &TestCatalog(Language language)
     {
         struct Catalogs
         {
-            finger_drum::texts::TextCatalog ko, en;
+            TextCatalog ko, en;
             Catalogs()
             {
-                en.SetLanguage(finger_drum::texts::Language::English);
+                en.SetLanguage(Language::English);
             }
         };
         static const Catalogs catalogs;
-        return language == finger_drum::texts::Language::Korean ? catalogs.ko : catalogs.en;
+        return language == Language::Korean ? catalogs.ko : catalogs.en;
     }
 } // namespace
 namespace
 {
-    namespace chart = finger_drum::chart;
-    namespace v = mrg::visual2d;
+
     void Check(bool value, const char *message)
     {
         if (!value)
@@ -41,27 +40,27 @@ namespace
     class RecordingCanvas final : public IEditorModeCanvas
     {
       public:
-        std::vector<v::Rect> rectangles;
+        std::vector<Rect> rectangles;
         std::vector<std::function<void()>> actions;
         std::vector<std::filesystem::path> images;
-        std::vector<v::Rect> imageRectangles;
+        std::vector<Rect> imageRectangles;
         std::vector<std::wstring> labels;
         std::vector<std::wstring> buttonLabels;
-        void Box(v::Rect r, v::Color, float) override
+        void Box(Rect r, Color, float) override
         {
             rectangles.push_back(r);
         }
-        void Text(v::Rect, std::wstring text, float, v::Color) override
+        void Text(Rect, std::wstring text, float, Color) override
         {
             labels.push_back(std::move(text));
         }
-        void Image(v::Rect rect, const std::filesystem::path &path, v::Color) override
+        void Image(Rect rect, const std::filesystem::path &path, Color) override
         {
             rectangles.push_back(rect);
             images.push_back(path);
             imageRectangles.push_back(rect);
         }
-        void Button(v::Rect, std::wstring text, std::function<void()> action, bool) override
+        void Button(Rect, std::wstring text, std::function<void()> action, bool) override
         {
             actions.push_back(std::move(action));
             buttonLabels.push_back(text);
@@ -71,24 +70,24 @@ namespace
 
     // A test-only format adapter demonstrates that the workspace neither
     // constructs ChartEditor nor forces YMP serialization during Save.
-    class ProbeDocument final : public chart::IEditorDocument
+    class ProbeDocument final : public IEditorDocument
     {
       public:
-        chart::ChartEditor score{chart::PatternDocument{}};
+        ChartEditor score{PatternDocument{}};
         bool saved{};
-        const chart::PatternDocument &Pattern() const noexcept override
+        const PatternDocument &Pattern() const noexcept override
         {
             return score.Pattern();
         }
-        const chart::EffectDocument &Effects() const noexcept override
+        const EffectDocument &Effects() const noexcept override
         {
             return score.Effects();
         }
-        const chart::MusicalTimeline &Timeline() const noexcept override
+        const MusicalTimeline &Timeline() const noexcept override
         {
             return score.Timeline();
         }
-        const std::vector<chart::CompiledPatternNote> &Notes() const noexcept override
+        const std::vector<CompiledPatternNote> &Notes() const noexcept override
         {
             return score.Notes();
         }
@@ -96,12 +95,12 @@ namespace
         {
             return score.Dirty();
         }
-        std::vector<chart::CompiledPatternNote> NotesInMeasures(std::int64_t begin, std::int64_t end) const override
+        std::vector<CompiledPatternNote> NotesInMeasures(std::int64_t begin, std::int64_t end) const override
         {
             return score.NotesInMeasures(begin, end);
         }
-        std::vector<chart::CompiledPatternNote> NotesInTimeRange(finger_drum::rhythm::RhythmTime begin,
-                                                                 finger_drum::rhythm::RhythmTime end) const override
+        std::vector<CompiledPatternNote> NotesInTimeRange(RhythmTime begin,
+                                                                 RhythmTime end) const override
         {
             return score.NotesInTimeRange(begin, end);
         }
@@ -109,28 +108,28 @@ namespace
         {
             return score.Revision();
         }
-        void Replace(chart::PatternDocument p, chart::EffectDocument e) override
+        void Replace(PatternDocument p, EffectDocument e) override
         {
             score.Replace(std::move(p), std::move(e));
         }
-        void AddNote(chart::MusicalPosition p, int key, std::optional<chart::MusicalPosition> end,
+        void AddNote(MusicalPosition p, int key, std::optional<MusicalPosition> end,
                      std::vector<std::string> extra) override
         {
             score.AddNote(p, key, end, std::move(extra));
         }
-        void ReplaceTiming(std::vector<chart::TimingDirective> timing) override
+        void ReplaceTiming(std::vector<TimingDirective> timing) override
         {
             score.ReplaceTiming(std::move(timing));
         }
-        void ReplaceEffects(chart::EffectDocument effects) override
+        void ReplaceEffects(EffectDocument effects) override
         {
             score.ReplaceEffects(std::move(effects));
         }
-        std::optional<chart::EditorNoteSelection> FindNote(std::size_t id) const override
+        std::optional<EditorNoteSelection> FindNote(std::size_t id) const override
         {
             return score.FindNote(id);
         }
-        void UpdateNote(std::size_t id, chart::PatternNote note, std::optional<chart::MusicalPosition> end) override
+        void UpdateNote(std::size_t id, PatternNote note, std::optional<MusicalPosition> end) override
         {
             score.UpdateNote(id, std::move(note), end);
         }
@@ -138,7 +137,7 @@ namespace
         {
             score.DeleteNote(order);
         }
-        void SetMeasureLength(std::int64_t measure, chart::Rational length) override
+        void SetMeasureLength(std::int64_t measure, Rational length) override
         {
             score.SetMeasureLength(measure, length);
         }
@@ -159,7 +158,7 @@ namespace
         {
             return "TestOnly";
         }
-        std::unique_ptr<chart::IEditorDocument> OpenDocument(const finger_drum::GameplayLaunchRequest &) const override
+        std::unique_ptr<IEditorDocument> OpenDocument(const GameplayLaunchRequest &) const override
         {
             return std::make_unique<ProbeDocument>();
         }
@@ -167,7 +166,7 @@ namespace
         {
             selected = id;
         }
-        void PlaceNote(IEditorContext &state, chart::MusicalPosition p) override
+        void PlaceNote(IEditorContext &state, MusicalPosition p) override
         {
             state.AddNote(p, selected);
             state.RequestRebuild();
@@ -183,16 +182,16 @@ namespace
         void CloseToolMenu() noexcept override
         {
         }
-        bool OpenToolMenu(v::Point) override
+        bool OpenToolMenu(Point) override
         {
             return false;
         }
         void DrawTools(IEditorModeCanvas &canvas, IEditorContext &state,
-                       const finger_drum::texts::TextCatalog &) override
+                       const TextCatalog &) override
         {
             canvas.Button({30, 130, 60, 40}, L"PROBE TOOL", [&state] { state.SelectTool(70); });
         }
-        void DrawChart(IEditorModeCanvas &canvas, IEditorContext &, const finger_drum::texts::TextCatalog &) override
+        void DrawChart(IEditorModeCanvas &canvas, IEditorContext &, const TextCatalog &) override
         {
             ++chartCalls;
             if (failDrawing)
@@ -202,10 +201,10 @@ namespace
             canvas.Box({650, 200, 40, 500}, {.2F, .4F, .8F, 1});
             canvas.Text({600, 160, 200, 30}, L"PROBE CHART");
         }
-        void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override
+        void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const TextCatalog &) override
         {
         }
-        void EditScore(IEditorContext &state, v::Point point, bool erase) override
+        void EditScore(IEditorContext &state, Point point, bool erase) override
         {
             if (erase)
                 state.DeleteNote(0);
@@ -216,33 +215,33 @@ namespace
         {
             state.SetFirstMeasure(state.Score().firstMeasure + direction);
         }
-        void DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &, const finger_drum::texts::TextCatalog &) override
+        void DrawMetadata(IEditorModeCanvas &canvas, IEditorContext &, const TextCatalog &) override
         {
             canvas.Text({600, 200, 300, 30}, L"PROBE FORMAT METADATA");
         }
-        std::vector<EditorSoundChoice> SoundChoices(const finger_drum::texts::TextCatalog &) const override
+        std::vector<EditorSoundChoice> SoundChoices(const TextCatalog &) const override
         {
             return {{42, L"Probe key", L"PROBE SOUND"}};
         }
-        std::wstring_view SoundEffectHelp(const finger_drum::texts::TextCatalog &) const override
+        std::wstring_view SoundEffectHelp(const TextCatalog &) const override
         {
             return L"PROBE SOUND HELP";
         }
         std::map<std::string, std::filesystem::path> AudioFiles(
-            const chart::IEditorDocument &, const finger_drum::GameplayLaunchRequest &) const override
+            const IEditorDocument &, const GameplayLaunchRequest &) const override
         {
             return audioFiles;
         }
-        std::vector<AudioMarker> AudioMarkers(const chart::IEditorDocument &) const override
+        std::vector<AudioMarker> AudioMarkers(const IEditorDocument &) const override
         {
             ++markerCalls;
             return {{.5, "ProbeCue"}};
         }
     };
 
-    void TestVorbisAudioView(v::ScreenVisual2DManager &visuals, const mrg::EngineServices &services,
-                             finger_drum::texts::TextCatalog &texts,
-                             const std::function<const std::vector<v::DrawPacket> &()> &packets)
+    void TestVorbisAudioView(ScreenVisual2DManager &visuals, const EngineServices &services,
+                             TextCatalog &texts,
+                             const std::function<const std::vector<DrawPacket> &()> &packets)
     {
         const auto fixture =
             std::filesystem::path(__FILE__).parent_path().parent_path() / "Rhythm/Fixtures/Audio/OppositePhase.ogg";
@@ -283,7 +282,7 @@ namespace
                     const float y = 540 - corner.y;
                     const bool colored = waveform ? packet.color.green > .5F && packet.color.red < .3F
                                                   : packet.color.red > .3F && packet.color.green < .95F;
-                    return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
+                    return packet.type == DrawPacketType::Rectangle && y >= top && y < bottom &&
                            corner.x >= 205 - 960 && corner.x < 1770 - 960 && colored;
                 });
         };
@@ -312,7 +311,7 @@ namespace
         for (const int id : {1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16, 17, 18})
         {
             EditorWorkspace state(CreateEditorMode("Taiko"),
-                                  std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+                                  std::make_unique<ChartEditor>(PatternDocument{}));
             state.SelectTool(id);
             state.PlaceNote({0, {}});
             const bool isLong = id >= 11;
@@ -335,24 +334,24 @@ namespace
                   "Taiko hit-sound mapping changed.");
         }
         EditorWorkspace state(CreateEditorMode("Taiko"),
-                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+                              std::make_unique<ChartEditor>(PatternDocument{}));
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
         state.Mode().EditScore(state, {283.75F, 174}, false);
-        Check(state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
+        Check(state.Document().Notes().front().note.position.fraction == Rational{1, 4},
               "Score click no longer snaps using quarter-note division.");
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
         state.Mode().EditScore(state, {283.75F, 174}, true);
         Check(state.Document().Notes().empty(), "Mode-owned note hit testing did not delete the note.");
         state.SetRealtime(true);
         state.SelectTool(1);
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
-        for (const v::Point outside : {v::Point{120, 465}, {1849, 465}, {230, 350}, {230, 580}})
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
+        for (const Point outside : {Point{120, 465}, {1849, 465}, {230, 350}, {230, 580}})
             state.Mode().EditScore(state, outside, false);
         Check(state.Document().Notes().empty(), "Clicks outside the realtime lane must not place notes.");
         state.Mode().EditScore(state, {230, 465}, false);
         Check(state.Document().Notes().size() == 1, "A realtime lane click must still place a snapped note.");
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
         state.Mode().EditScore(state, {120, 465}, true);
         Check(state.Document().Notes().size() == 1, "Outside-lane deletion must not affect nearby notes.");
         state.Mode().EditScore(state, {230, 465}, true);
@@ -363,7 +362,7 @@ namespace
         Check(state.TimeMilliseconds() == 123 && state.Mode().CancelInteraction() &&
                   !state.Mode().HasPendingPlacement(),
               "Realtime long-note placement must preserve time and support cancellation.");
-        state.Mode().DrawTools(canvas, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawTools(canvas, state, TestCatalog(Language::English));
         canvas.actions.front()();
         state.PlaceNote({0, {}});
         Check(state.Document().Notes().empty(), "Selection tool must not place a note.");
@@ -372,12 +371,12 @@ namespace
     void TestTaikoPlacementConflicts()
     {
         EditorWorkspace state(CreateEditorMode("Taiko"),
-                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+                              std::make_unique<ChartEditor>(PatternDocument{}));
         state.SelectTool(11);
         state.PlaceNote({1, {}});
         state.PlaceNote({3, {}});
         const auto revision = state.Document().Revision();
-        const auto reject = [&state, revision](chart::MusicalPosition position)
+        const auto reject = [&state, revision](MusicalPosition position)
         {
             bool rejected = false;
             try
@@ -420,33 +419,33 @@ namespace
         Check(rejected && state.Document().Notes().size() == 5,
               "New long notes must not swallow already-authored ordinary notes.");
         state.Mode().CancelInteraction();
-        state.SetFirstMeasure(chart::MaximumMeasureCount - 1);
+        state.SetFirstMeasure(MaximumMeasureCount - 1);
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
         state.SetRealtime(true);
-        state.Seek(state.Document().Timeline().Compile({chart::MaximumMeasureCount - 1, {}}).count() / 1000.0);
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Seek(state.Document().Timeline().Compile({MaximumMeasureCount - 1, {}}).count() / 1000.0);
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
     }
 
     void TestDelayViewsAndSnapping()
     {
-        chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 120;
         pattern.notes = {{{0, {3, 4}}, 1}, {{1, {1, 4}}, 2}};
-        pattern.timing = {{{0, {3, 4}}, chart::TimingDirectiveType::Bpm, 120},
-                          {{1, {1, 4}}, chart::TimingDirectiveType::DelayMilliseconds, -1500}};
-        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        pattern.timing = {{{0, {3, 4}}, TimingDirectiveType::Bpm, 120},
+                          {{1, {1, 4}}, TimingDirectiveType::DelayMilliseconds, -1500}};
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<ChartEditor>(pattern));
         state.SelectTool(0);
         RecordingCanvas overview;
-        state.Mode().DrawChart(overview, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(overview, state, TestCatalog(Language::English));
         Check(overview.images.size() == 2 && std::ranges::find(overview.labels, L"1  2/4") != overview.labels.end() &&
                   std::ranges::find(overview.labels, L"2  3/4") != overview.labels.end() &&
                   std::ranges::none_of(overview.labels, [](const auto &label) { return label.starts_with(L"BPM"); }),
               "Overview must show effective bar lengths, exclude overwritten taps/BPM, and retain the new endpoint.");
         state.Mode().EditScore(state, {520, 174}, false);
         RecordingCanvas selected;
-        state.Mode().DrawChart(selected, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(selected, state, TestCatalog(Language::English));
         Check(std::ranges::find(selected.labels, L"1/4") != selected.labels.end(),
               "A note at the shortened measure start must select its unchanged source fraction.");
         state.Mode().CancelInteraction();
@@ -455,12 +454,12 @@ namespace
         Check(state.TimeMilliseconds() == 1000 && state.timingForm.measure == "2" && state.timingForm.fraction == "1/4",
               "Overview snapping must use the visible delayed grid rather than the original uniform source spacing.");
         state.SetRealtime(true);
-        chart::EffectDocument effects;
+        EffectDocument effects;
         effects.commands.push_back(
-            {.position = {0, {}}, .type = chart::EffectCommandType::MeasureLineVisible, .endValue = 1});
+            {.position = {0, {}}, .type = EffectCommandType::MeasureLineVisible, .endValue = 1});
         state.Replace(state.Document().Pattern(), effects);
         RecordingCanvas realtime;
-        state.Mode().DrawChart(realtime, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(realtime, state, TestCatalog(Language::English));
         Check(std::ranges::any_of(realtime.rectangles, [](const auto &rect)
                                   { return std::abs(rect.x - 230) < .01F && rect.y == 361 && rect.width == 3; }),
               "Realtime must draw the clipped measure start at the judgement line.");
@@ -473,13 +472,13 @@ namespace
     {
         for (const double zoom : {.25, .5, 1., 2., 4.})
         {
-            chart::PatternDocument pattern;
+            PatternDocument pattern;
             pattern.baseBpm = 120;
-            EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+            EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<ChartEditor>(pattern));
             state.SetRealtime(true);
             state.SetRealtimeZoom(zoom);
             RecordingCanvas empty;
-            state.Mode().DrawChart(empty, state, TestCatalog(finger_drum::texts::Language::English));
+            state.Mode().DrawChart(empty, state, TestCatalog(Language::English));
             Check(std::ranges::any_of(
                       empty.rectangles, [](const auto &rect)
                       { return rect.x == 164 && rect.y == 351 && rect.width == 1324 && rect.height == 228; }),
@@ -487,10 +486,10 @@ namespace
             const float x = 230 + 244.8F * static_cast<float>(zoom);
             state.Mode().EditScore(state, {x, 465}, false);
             Check(state.Document().Notes().size() == 1 &&
-                      state.Document().Notes().front().note.position.fraction == chart::Rational{1, 4},
+                      state.Document().Notes().front().note.position.fraction == Rational{1, 4},
                   "Realtime snapping must use the same zoomed time coordinates as drawing.");
             RecordingCanvas notes;
-            state.Mode().DrawChart(notes, state, TestCatalog(finger_drum::texts::Language::English));
+            state.Mode().DrawChart(notes, state, TestCatalog(Language::English));
             Check(!notes.imageRectangles.empty() && std::abs(notes.imageRectangles.front().x + 36 - x) < .1F &&
                       notes.imageRectangles.front().width == 72,
                   "Zoom must scale note spacing without scaling the selected skin head.");
@@ -530,47 +529,47 @@ namespace
 
     void TestSelectionClipboardAndHistory()
     {
-        chart::PatternDocument source;
+        PatternDocument source;
         source.baseBpm = 120;
         source.notes = {{{0, {}}, 1}, {{0, {1, 4}}, 2}, {{1, {}}, 2}, {{1, {1, 8}}, 1}, {{1, {1, 4}}, 1}};
-        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(source));
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<ChartEditor>(source));
         state.SelectTool(0);
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::English));
         Check(state.Mode().BeginScoreSelection(state, {205, 174}), "Q must enable beat-range dragging.");
         Check(state.Mode().UpdateScoreSelection(state, {205 + 315 * .25F, 174}, true),
               "Dragging must complete on release.");
         Check(state.SelectedNoteIds().size() == 2 &&
-                  state.NoteSelectionRange()->second.fraction == chart::Rational{1, 4},
+                  state.NoteSelectionRange()->second.fraction == Rational{1, 4},
               "Drag selection must preserve its exact beat interval.");
         state.CopySelection();
         state.Seek(2000);
-        const auto before = chart::ChartEditor::WritePattern(state.Document().Pattern());
+        const auto before = ChartEditor::WritePattern(state.Document().Pattern());
         state.PasteSelection(false);
-        const auto pasted = chart::ChartEditor::WritePattern(state.Document().Pattern());
+        const auto pasted = ChartEditor::WritePattern(state.Document().Pattern());
         const auto &notes = state.Document().Notes();
         Check(notes.size() == 5 &&
                   std::ranges::any_of(
                       notes, [](const auto &n)
-                      { return n.note.position == chart::MusicalPosition{1, {1, 8}} && n.note.keyType == 1; }),
+                      { return n.note.position == MusicalPosition{1, {1, 8}} && n.note.keyType == 1; }),
               "Paste without blanks must preserve an unrelated note in the copied gap.");
         Check(std::ranges::any_of(notes, [](const auto &n)
-                                  { return n.note.position == chart::MusicalPosition{1, {}} && n.note.keyType == 1; }),
+                                  { return n.note.position == MusicalPosition{1, {}} && n.note.keyType == 1; }),
               "Paste must overwrite a destination Kat with the copied Don.");
         state.Undo();
-        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == before,
+        Check(ChartEditor::WritePattern(state.Document().Pattern()) == before,
               "One Undo must restore every overwritten note, including the original Kat.");
         state.Redo();
-        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == pasted,
+        Check(ChartEditor::WritePattern(state.Document().Pattern()) == pasted,
               "One Redo restores the whole paste.");
         state.Undo();
         state.PasteSelection(true);
         Check(state.Document().Notes().size() == 4 &&
                   std::ranges::none_of(state.Document().Notes(), [](const auto &n)
-                                       { return n.note.position == chart::MusicalPosition{1, {1, 8}}; }),
+                                       { return n.note.position == MusicalPosition{1, {1, 8}}; }),
               "Paste with blanks must remove the destination gap's old note.");
         state.Undo();
-        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == before,
+        Check(ChartEditor::WritePattern(state.Document().Pattern()) == before,
               "Undo of paste-with-blanks must restore gap contents and replaced notes together.");
 
         // A copied selection retains blank margins even when it contains no note.
@@ -581,7 +580,7 @@ namespace
         Check(state.Document().Notes().size() == 2,
               "An entirely blank copied interval must erase the destination interval.");
         state.Undo();
-        Check(chart::ChartEditor::WritePattern(state.Document().Pattern()) == before,
+        Check(ChartEditor::WritePattern(state.Document().Pattern()) == before,
               "Blank paste must be fully reversible.");
 
         state.SelectTab(EditorTab::Timing);
@@ -602,12 +601,12 @@ namespace
         state.Undo();
         Check(state.Document().Timing().size() == 2, "Timing multi-paste is one undo action.");
 
-        chart::EffectDocument effects;
-        chart::EffectCommand point;
-        point.type = chart::EffectCommandType::NoteSpeed;
+        EffectDocument effects;
+        EffectCommand point;
+        point.type = EffectCommandType::NoteSpeed;
         point.beginValue = point.endValue = 2;
         effects.commands.push_back(point);
-        point.type = chart::EffectCommandType::BusVolume;
+        point.type = EffectCommandType::BusVolume;
         point.target = "HitSound";
         point.beginValue = point.endValue = .6;
         point.position = {0, {1, 4}};
@@ -632,10 +631,10 @@ namespace
 
     void TestLastNoteSeeking()
     {
-        chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.baseBpm = 120;
         pattern.notes = {{{0, {1, 8}}, 1, 0}, {{0, {1, 4}}, 11, 1}, {{1, {1, 2}}, 11, 2}};
-        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<ChartEditor>(pattern));
         const auto revision = state.Document().Revision();
         state.SeekLastNote();
         Check(state.TimeMilliseconds() == 3000, "First X must include the last long-note tail.");
@@ -661,56 +660,55 @@ namespace
         Check(state.TimeMilliseconds() == 3000 && state.Document().Revision() == revision,
               "Manual seeking must reset X without editing the score.");
         EditorWorkspace empty(CreateEditorMode("Taiko"),
-                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+                              std::make_unique<ChartEditor>(PatternDocument{}));
         empty.SeekLastNote();
         Check(empty.TimeMilliseconds() == 0, "An empty chart must have a zero last-note destination.");
     }
 
     void TestPreviewMatchesPlay()
     {
-        namespace rhythm = finger_drum::rhythm;
-        namespace mode = finger_drum::mode;
-        const auto parsed = chart::ChartParser{}.ParsePattern("Version: 1\nBase BPM: 180\nMode: Taiko\n[Pattern]\n"
+
+        const auto parsed = ChartParser{}.ParsePattern("Version: 1\nBase BPM: 180\nMode: Taiko\n[Pattern]\n"
                                                               "0/1,17,1,,Action = Kat,TickDivision = 64\n1/2,17,2\n");
         Check(parsed.Succeeded(), "Spaced Buzz regression chart failed to parse.");
-        chart::ChartEditor document(parsed.document);
+        ChartEditor document(parsed.document);
         auto editorMode = CreateEditorMode("Taiko");
         const auto markers = editorMode->AudioMarkers(document);
-        auto play = mode::TaikoMode{}.CreateSession(document.Pattern());
+        auto play = TaikoMode{}.CreateSession(document.Pattern());
         Check(play.Succeeded(), "Spaced options failed to load in play.");
-        const auto hit = play.session->ProcessInput('D', rhythm::InputEdge::Pressed, {});
+        const auto hit = play.session->ProcessInput('D', InputEdge::Pressed, {});
         const auto *presentation = play.session->FindNotePresentation(1);
         Check(markers.size() == 33 && markers.size() == presentation->tickTimes.size() + 1 &&
                   markers.front().sound == hit.audioCues.front().sound,
               "Editor/play must share spaced/case-insensitive Action and TickDivision interpretation.");
         for (std::size_t i = 1; i < markers.size(); ++i)
             Check(markers[i].seconds == presentation->tickTimes[i - 1].count() / 1e6 &&
-                      markers[i].sound == mode::taiko_sound::KatHit,
+                      markers[i].sound == KatHit,
                   "Preview Buzz ticks diverged from play times/action.");
-        auto purple = chart::PatternDocument{};
+        auto purple = PatternDocument{};
         purple.mode = "Taiko";
         purple.notes.push_back({{0, {}}, 5, 0});
-        chart::ChartEditor purpleDocument(purple);
+        ChartEditor purpleDocument(purple);
         const auto purpleMarkers = editorMode->AudioMarkers(purpleDocument);
-        auto purplePlay = mode::TaikoMode{}.CreateSession(purple);
+        auto purplePlay = TaikoMode{}.CreateSession(purple);
         Check(purplePlay.Succeeded(), "Explicit Taiko Purple fixture failed to load.");
-        const auto don = purplePlay.session->ProcessInput('F', rhythm::InputEdge::Pressed, {});
-        const auto kat = purplePlay.session->ProcessInput('D', rhythm::InputEdge::Pressed, {});
+        const auto don = purplePlay.session->ProcessInput('F', InputEdge::Pressed, {});
+        const auto kat = purplePlay.session->ProcessInput('D', InputEdge::Pressed, {});
         Check(purpleMarkers.size() == 2 && purpleMarkers[0].sound == don.audioCues.front().sound &&
                   purpleMarkers[1].sound == kat.audioCues.front().sound,
               "Purple preview must include both play sounds.");
 
         // Explicit table assignments beat timed defaults; timed overrides are
         // resolved independently for the two Purple input sounds.
-        chart::EffectDocument effects;
+        EffectDocument effects;
         effects.hitSounds = {{"own", "own.wav"}, {"don", "don.wav"}, {"kat", "kat.wav"}};
         effects.hitSoundChanges = {{{0, {}}, "don", 1}, {{0, {}}, "kat", 2}};
         purpleDocument.Replace(purple, effects);
         const auto changed = editorMode->AudioMarkers(purpleDocument);
-        auto changedPlay = mode::TaikoMode{}.CreateSession(purple, effects);
+        auto changedPlay = TaikoMode{}.CreateSession(purple, effects);
         Check(changedPlay.Succeeded(), "Explicit Taiko sound override fixture failed to load.");
-        const auto changedDon = changedPlay.session->ProcessInput('F', rhythm::InputEdge::Pressed, {});
-        const auto changedKat = changedPlay.session->ProcessInput('D', rhythm::InputEdge::Pressed, {});
+        const auto changedDon = changedPlay.session->ProcessInput('F', InputEdge::Pressed, {});
+        const auto changedKat = changedPlay.session->ProcessInput('D', InputEdge::Pressed, {});
         Check(changed[0].sound == changedDon.audioCues.front().sound &&
                   changed[1].sound == changedKat.audioCues.front().sound,
               "Timed sound overrides diverged between preview/play.");
@@ -732,14 +730,14 @@ namespace
         {
             rejected = true;
         }
-        Check(rejected && !mode::TaikoMode{}.CreateSession(invalid).Succeeded(),
+        Check(rejected && !TaikoMode{}.CreateSession(invalid).Succeeded(),
               "Editor/play must reject the same out-of-range TickDivision.");
     }
 
     void TestSeekAndEffectEdits()
     {
         EditorWorkspace state(CreateEditorMode("Taiko"),
-                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+                              std::make_unique<ChartEditor>(PatternDocument{}));
         state.FinishBuild();
         state.SetDivision(8);
         Check(state.Score().division == 8 && state.NeedsRebuild(), "Grid setting must request its own rebuild.");
@@ -772,16 +770,16 @@ namespace
             }
             Check(rejected && state.TimeMilliseconds() == -1000, "Invalid seek must preserve the previous time.");
         }
-        state.effectForm.selection = chart::EffectCommandType::ScrollSpeed;
+        state.effectForm.selection = EffectCommandType::ScrollSpeed;
         state.effectForm.beginValue = "2";
         state.effectForm.endMeasure = "2";
         state.effectForm.endFraction = "0/4";
         state.effectForm.endValue = "3";
-        state.effectForm.curve = chart::AutomationCurve::Linear;
+        state.effectForm.curve = AutomationCurve::Linear;
         state.ApplyEffect();
         state.effectForm.Load(state.Document().Effects(), 0);
         Check(state.effectForm.endMeasure == "2" && state.effectForm.endFraction == "0/1" &&
-                  state.effectForm.curve == chart::AutomationCurve::Linear,
+                  state.effectForm.curve == AutomationCurve::Linear,
               "Named effect fields lost the region/curve during row selection.");
         const auto revision = state.Document().Revision();
         state.effectForm.beginValue = "0";
@@ -809,8 +807,8 @@ namespace
     void TestInspectorMusicalTiming()
     {
         EditorWorkspace state(CreateEditorMode("Taiko"),
-                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
-        state.AddNote({0, {}}, 12, chart::MusicalPosition{0, {1, 4}});
+                              std::make_unique<ChartEditor>(PatternDocument{}));
+        state.AddNote({0, {}}, 12, MusicalPosition{0, {1, 4}});
         const auto id = state.Document().Notes().front().note.sourceOrder;
         TaikoEditorNoteInspector inspector;
         inspector.Select(state.Document(), id);
@@ -834,17 +832,17 @@ namespace
         inspector.Form().endBeat = "1/4";
         inspector.Apply(state);
         const auto selected = *state.Document().FindNote(id);
-        Check(selected.head.note.position == chart::MusicalPosition{1, {1, 8}} && selected.tail &&
-                  selected.tail->note.position == chart::MusicalPosition{2, {1, 4}} &&
+        Check(selected.head.note.position == MusicalPosition{1, {1, 8}} && selected.tail &&
+                  selected.tail->note.position == MusicalPosition{2, {1, 4}} &&
                   selected.head.note.keyType == 14 && selected.tail->note.keyType == 14 &&
-                  selected.head.timing == finger_drum::rhythm::RhythmTime{2'250'000} &&
-                  selected.tail->timing == finger_drum::rhythm::RhythmTime{4'500'000},
+                  selected.head.timing == RhythmTime{2'250'000} &&
+                  selected.tail->timing == RhythmTime{4'500'000},
               "Musical input must use one-based measures, exact whole-note fractions and preserve the paired end.");
-        for (const auto language : {finger_drum::texts::Language::Korean, finger_drum::texts::Language::English})
+        for (const auto language : {Language::Korean, Language::English})
         {
             RecordingCanvas panel;
             inspector.Draw(panel, state, TestCatalog(language));
-            const auto &text = finger_drum::texts::TaikoEditor(TestCatalog(language));
+            const auto &text = TaikoEditor(TestCatalog(language));
             Check(std::ranges::find(panel.labels, std::wstring(text.beatPosition)) != panel.labels.end() &&
                       std::ranges::find(panel.labels, L"2250.000 ms") != panel.labels.end() &&
                       std::ranges::none_of(panel.buttonLabels,
@@ -857,10 +855,10 @@ namespace
         state.timingForm.bpm = "180";
         state.ApplyBpm();
         RecordingCanvas refreshed;
-        inspector.Draw(refreshed, state, TestCatalog(finger_drum::texts::Language::English));
+        inspector.Draw(refreshed, state, TestCatalog(Language::English));
         Check(inspector.Form().startMeasure == "2" && inspector.Form().startBeat == "1/8" &&
                   state.Document().FindNote(id)->tail->note.sourceOrder == selected.tail->note.sourceOrder &&
-                  state.Document().FindNote(id)->head.timing == finger_drum::rhythm::RhythmTime{2'166'667},
+                  state.Document().FindNote(id)->head.timing == RhythmTime{2'166'667},
               "Timeline changes must refresh derived times while retaining source coordinates and paired IDs.");
         const auto revision = state.Document().Revision();
         for (int invalid = 0; invalid < 5; ++invalid)
@@ -901,7 +899,7 @@ namespace
         inspector.Form().endMeasure = "5";
         inspector.Apply(state);
         Check(state.Document().Notes().size() == 2 && state.Document().FindNote(id)->tail &&
-                  state.Document().FindNote(id)->head.note.position == chart::MusicalPosition{3, {3, 8}} &&
+                  state.Document().FindNote(id)->head.note.position == MusicalPosition{3, {3, 8}} &&
                   state.Document().FindNote(id)->tail->note.sourceOrder == selected.tail->note.sourceOrder &&
                   state.Document().NotesInMeasures(1, 3).empty() && state.Document().NotesInMeasures(3, 5).size() == 2,
               "Changing variants must retain the paired end IDs and update both musical positions in the index.");
@@ -909,21 +907,21 @@ namespace
 
     void TestCustomSeparateRealtimeVisibility()
     {
-        auto pattern = chart::PatternDocument{};
+        auto pattern = PatternDocument{};
         pattern.baseBpm = 120;
         pattern.notes.push_back({{4, {}}, 1});
-        const auto parsed = chart::ChartParser{}.ParseEffect(R"([Interpolation]
+        const auto parsed = ChartParser{}.ParseEffect(R"([Interpolation]
 Dip: 1-3*u*(1-u)
 [Speed]
 1,0/1,Area,9,0/1,#ScrollSpeed Separate,From=1,To=1,Curve=Dip
 )");
         Check(parsed.Succeeded(), "Custom Separate regression fixture must parse.");
         EditorWorkspace state(CreateEditorMode("Taiko"),
-                              std::make_unique<chart::ChartEditor>(pattern, parsed.document));
+                              std::make_unique<ChartEditor>(pattern, parsed.document));
         state.SetRealtime(true);
         state.SelectTool(1);
         RecordingCanvas canvas;
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
         const auto drawn = std::ranges::any_of(
             canvas.rectangles, [](const auto &rect)
             { return std::abs(rect.x + rect.width / 2 - 1209.2F) < .01F && rect.width == 72 && rect.height == 72; });
@@ -933,20 +931,20 @@ Dip: 1-3*u*(1-u)
         // With no authored slow note left, the endpoint bound becomes 1.
         // The same custom curve's visible grid still needs to be selectable.
         canvas.rectangles.clear();
-        state.Mode().DrawChart(canvas, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(canvas, state, TestCatalog(Language::Korean));
         state.Mode().EditScore(state, {1209.2F, 465}, false);
         Check(state.Document().Notes().size() == 1 &&
-                  state.Document().Notes().front().note.position == chart::MusicalPosition{4, {}},
+                  state.Document().Notes().front().note.position == MusicalPosition{4, {}},
               "A custom Separate grid must remain visible/snappable without an authored minimum-speed note.");
     }
-    void TestTaikoToolGroups(finger_drum::texts::TextCatalog &texts)
+    void TestTaikoToolGroups(TextCatalog &texts)
     {
         constexpr std::array keys{'W', 'E', 'R', 'T', 'Y', 'U'};
         const std::array<std::vector<int>, 6> groups{{{1, 2}, {3, 4, 5}, {11, 13}, {12, 14}, {15, 16}, {17, 18}}};
         for (std::size_t group = 0; group < groups.size(); ++group)
         {
             EditorWorkspace state(CreateEditorMode("Taiko"),
-                                  std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
+                                  std::make_unique<ChartEditor>(PatternDocument{}));
             state.SelectTool(0);
             for (std::size_t variant = 0; variant <= groups[group].size(); ++variant)
             {
@@ -1019,16 +1017,16 @@ Dip: 1-3*u*(1-u)
     }
 } // namespace
 
-void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineServices &services,
-                     finger_drum::texts::TextCatalog &texts,
-                     const std::function<const std::vector<v::DrawPacket> &()> &packets)
+void TestEditorModes(ScreenVisual2DManager &visuals, const EngineServices &services,
+                     TextCatalog &texts,
+                     const std::function<const std::vector<DrawPacket> &()> &packets)
 {
     TestVorbisAudioView(visuals, services, texts, packets);
     {
         TestTaikoToolGroups(texts);
         EditorWorkspace state(CreateEditorMode("Taiko"),
-                              std::make_unique<chart::ChartEditor>(chart::PatternDocument{}));
-        state.AddNote({0, {}}, 15, chart::MusicalPosition{0, {1, 2}}, {"HitCount=4", "Custom=keep"});
+                              std::make_unique<ChartEditor>(PatternDocument{}));
+        state.AddNote({0, {}}, 15, MusicalPosition{0, {1, 2}}, {"HitCount=4", "Custom=keep"});
         const auto id = state.Document().Notes().front().note.sourceOrder;
         TaikoEditorNoteInspector inspector;
         inspector.Select(state.Document(), id + 1);
@@ -1042,20 +1040,20 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
               "The inspector must update the paired type/count and preserve unrelated options.");
         state.SelectTool(0);
         RecordingCanvas score;
-        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(score, state, TestCatalog(Language::Korean));
         state.Mode().EditScore(state, {205, 174}, false);
         score.labels.clear();
-        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(score, state, TestCatalog(Language::Korean));
         Check(std::ranges::find(
                   score.labels,
                   std::wstring(
-                      finger_drum::texts::TaikoEditor(TestCatalog(finger_drum::texts::Language::Korean)).noteInfo)) !=
+                      TaikoEditor(TestCatalog(Language::Korean)).noteInfo)) !=
                   score.labels.end(),
               "Selecting a note must expose the note inspector.");
         Check(std::ranges::any_of(score.images, [](const auto &path) { return path.filename() == L"DengDeng.png"; }),
               "Score must draw the focus-note skin sprite.");
         state.SetRealtime(true);
-        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::Korean));
+        state.Mode().DrawChart(score, state, TestCatalog(Language::Korean));
         Check(std::ranges::any_of(score.labels,
                                   [](const auto &label) { return label.find(L"6 연타") != std::wstring::npos; }),
               "A long-note head must show its required hit count in both views.");
@@ -1074,24 +1072,24 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
               "Invalid inspector edits must preserve the document.");
     }
     {
-        chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.notes = {{{0, {}}, 11, 1, {}, {"HitCount=6"}}, {{40, {}}, 11, 2}};
-        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        EditorWorkspace state(CreateEditorMode("Taiko"), std::make_unique<ChartEditor>(pattern));
         state.SelectTool(0);
         state.SetFirstMeasure(4);
         RecordingCanvas score;
-        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(score, state, TestCatalog(Language::English));
         state.Mode().EditScore(state, {800, 174}, false);
         score.labels.clear();
-        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(score, state, TestCatalog(Language::English));
         Check(std::ranges::find(score.labels, L"6") != score.labels.end() && state.TimeMilliseconds() == 0,
               "A long body spanning the viewport must select its source without moving the cursor.");
         state.SetRealtime(true);
         state.Seek(8000);
-        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(score, state, TestCatalog(Language::English));
         state.Mode().EditScore(state, {800, 465}, false);
         score.labels.clear();
-        state.Mode().DrawChart(score, state, TestCatalog(finger_drum::texts::Language::English));
+        state.Mode().DrawChart(score, state, TestCatalog(Language::English));
         Check(std::ranges::find(score.labels, L"6") != score.labels.end() && state.TimeMilliseconds() == 8000,
               "Realtime body selection must preserve the audio cursor and resolve the head.");
     }
@@ -1107,7 +1105,7 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     TestCustomSeparateRealtimeVisibility();
     auto mode = std::make_unique<ProbeMode>();
     auto *probe = mode.get();
-    EditorWorkspace state(finger_drum::GameplayLaunchRequest{}, std::move(mode));
+    EditorWorkspace state(GameplayLaunchRequest{}, std::move(mode));
     state.Initialize();
     state.UpdateAnalysis();
     Check(!state.Analysis().Running(), "A mode without audio sources must not start the worker.");
@@ -1147,8 +1145,8 @@ void TestEditorModes(v::ScreenVisual2DManager &visuals, const mrg::EngineService
     state.SelectTab(EditorTab::Pattern);
     probe->failDrawing = true;
     const auto oldCalls = probe->chartCalls;
-    mrg::platform::InputState input;
-    const mrg::UpdateContext update{0, 0, 1, input, services.audio, {}};
+    InputState input;
+    const UpdateContext update{0, 0, 1, input, services.audio, {}};
     Check(!view.Update(update), "Drawing error must not leave the editor.");
     visuals.Render({});
     Check(state.Status() == "Injected chart drawing failure." && hasText(L"Injected chart drawing failure.") &&

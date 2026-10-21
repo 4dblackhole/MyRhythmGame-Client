@@ -4,37 +4,37 @@
 #include <sstream>
 using namespace editor_ui;
 
-void EditorView::Initialize(const mrg::EngineServices &services)
+void EditorView::Initialize(const EngineServices &services)
 {
     width = services.windowWidth;
     height = services.windowHeight;
-    canvas = visuals.CreateOwnedCanvas({{1920, 1080}, v::CanvasScaleMode::FixedHeight});
+    canvas = visuals.CreateOwnedCanvas({{1920, 1080}, CanvasScaleMode::FixedHeight});
     static_cast<void>(canvas.SetVisible(true));
-    node = &canvas.Get()->CreateNode(v::Anchor::Center, "Editor");
+    node = &canvas.Get()->CreateNode(Anchor::Center, "Editor");
     visual = &node->AddComponent<EditorVisual>();
     divisionSliderNode_ =
-        &v::CreateSlider(*node,
+        &CreateSlider(*node,
                          {DivisionSliderRect.x - 960, 540 - DivisionSliderRect.y - DivisionSliderRect.height,
                           DivisionSliderRect.width, DivisionSliderRect.height},
                          (state_.Score().division - 1) / 15.0F, "Beat division");
-    v::VisualStyle sliderStyle{};
+    VisualStyle sliderStyle{};
     sliderStyle.normal.alpha = 0;
     sliderStyle.hovered.alpha = 0;
     sliderStyle.pressed.alpha = 0;
     sliderStyle.disabled.alpha = 0;
-    divisionSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
+    divisionSliderNode_->GetComponent<SpriteVisualComponent>()->SetStyle(sliderStyle);
     timelineSliderNode_ =
-        &v::CreateSlider(*node,
+        &CreateSlider(*node,
                          {TimelineSliderRect.x - 960, 540 - TimelineSliderRect.y - TimelineSliderRect.height,
                           TimelineSliderRect.width, TimelineSliderRect.height},
                          0, "Editor timeline");
-    timelineSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
-    playbackRateSliderNode_ = &v::CreateSlider(
+    timelineSliderNode_->GetComponent<SpriteVisualComponent>()->SetStyle(sliderStyle);
+    playbackRateSliderNode_ = &CreateSlider(
         *node, {PlaybackRateSliderRect.x - 960, 540 - PlaybackRateSliderRect.y - PlaybackRateSliderRect.height,
                 PlaybackRateSliderRect.width, PlaybackRateSliderRect.height},
         static_cast<float>((state_.PlaybackRate() - EditorPlayback::MinimumRate) /
                            (EditorPlayback::MaximumRate - EditorPlayback::MinimumRate)), "Editor playback rate");
-    playbackRateSliderNode_->GetComponent<v::SpriteVisualComponent>()->SetStyle(sliderStyle);
+    playbackRateSliderNode_->GetComponent<SpriteVisualComponent>()->SetStyle(sliderStyle);
     InitializeAudioSelection();
     menuBar_.Initialize(*canvas.Get(), texts_);
     ReloadSize();
@@ -97,20 +97,20 @@ void EditorView::SyncInputControls()
     }
     SyncDivisionSlider();
     SyncTimelineSlider();
-    playbackRateSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue(
+    playbackRateSliderNode_->GetComponent<SliderBehaviorComponent>()->SetValue(
         static_cast<float>((state_.PlaybackRate() - EditorPlayback::MinimumRate) /
                            (EditorPlayback::MaximumRate - EditorPlayback::MinimumRate)));
 }
 
-void EditorView::Box(v::Rect r, v::Color color, float radius)
+void EditorView::Box(Rect r, Color color, float radius)
 {
     visual->AddRectangle({r.x - 960, 540 - r.y - r.height, r.width, r.height}, color, radius);
 }
 
-void EditorView::Image(v::Rect r, const std::filesystem::path &path, v::Color tint)
+void EditorView::Image(Rect r, const std::filesystem::path &path, Color tint)
 {
-    v::DrawPacket packet{};
-    packet.type = v::DrawPacketType::Image;
+    DrawPacket packet{};
+    packet.type = DrawPacketType::Image;
     packet.bounds = {r.x - 960, 540 - r.y - r.height, r.width, r.height};
     packet.image = visuals.RegisterImage(path);
     if (packet.image.value == 0)
@@ -119,30 +119,30 @@ void EditorView::Image(v::Rect r, const std::filesystem::path &path, v::Color ti
     visual->AddPacket(std::move(packet));
 }
 
-void EditorView::Text(v::Rect r, std::wstring text, float size, v::Color color)
+void EditorView::Text(Rect r, std::wstring text, float size, Color color)
 {
-    v::DrawPacket p{};
-    p.type = v::DrawPacketType::Text;
+    DrawPacket p{};
+    p.type = DrawPacketType::Text;
     p.bounds = {r.x - 960, 540 - r.y - r.height, r.width, r.height};
     p.color = color;
-    p.text = std::make_shared<v::TextContent>(
-        v::TextContent{std::move(text), texts_.CurrentProfile().font, size, v::TextAlignment::Leading, {}});
+    p.text = std::make_shared<TextContent>(
+        TextContent{std::move(text), texts_.CurrentProfile().font, size, TextAlignment::Leading, {}});
     visual->AddPacket(std::move(p));
 }
 
-finger_drum::texts::EditorTextSet EditorView::Texts() const noexcept
+EditorTextSet EditorView::Texts() const noexcept
 {
-    return finger_drum::texts::Editor(texts_);
+    return Editor(texts_);
 }
 
-void EditorView::Button(v::Rect r, std::wstring text, std::function<void()> action, bool selected)
+void EditorView::Button(Rect r, std::wstring text, std::function<void()> action, bool selected)
 {
     Box(r, selected ? Blue : Pale, 5);
     Text({r.x + 10, r.y + 3, r.width - 15, r.height - 4}, std::move(text), 20, selected ? White : Ink);
     controls.push_back({r, std::move(action)});
 }
 
-void EditorView::Field(v::Rect r, const wchar_t *label, std::string &value)
+void EditorView::Field(Rect r, const wchar_t *label, std::string &value)
 {
     Text({r.x, r.y - 28, r.width, 24}, label, 17);
     Button(r, Wide(value), [this, label, &value] {
@@ -165,7 +165,7 @@ void EditorView::ReloadSize()
 
 void EditorView::SyncDivisionSlider() noexcept
 {
-    divisionSliderNode_->GetComponent<v::SliderBehaviorComponent>()->SetValue(
+    divisionSliderNode_->GetComponent<SliderBehaviorComponent>()->SetValue(
         (std::min(state_.Score().division, 16) - 1) / 15.0F);
 }
 

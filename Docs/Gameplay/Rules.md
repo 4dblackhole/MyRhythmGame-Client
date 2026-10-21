@@ -1,7 +1,7 @@
 # 타이머·판정·노트 규칙
 
-코드: `FingerDrum.Rhythm/Note/Submodules/<규칙명>.*`, `Lane`, `Judgement`, `Time`.
-모드 조립: `FingerDrum.Modes/Taiko/Submodules/TaikoSessionBuilder`, `TaikoLongNoteFactory`.
+코드: `YOUMU.Rhythm/Note/Submodules/<규칙명>.*`, `Lane`, `Judgement`, `Time`.
+모드 조립: `YOUMU.Modes/Taiko/Submodules/TaikoSessionBuilder`, `TaikoLongNoteFactory`.
 검증: `RhythmCoreTests`, `AccuracyTests`, `TaikoModeTests`.
 
 Taiko는 한 레인에서 먼저 열린 롱노트 head를 유지합니다. 열린 동안의 중복 head/일반

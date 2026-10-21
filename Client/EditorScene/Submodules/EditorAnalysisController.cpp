@@ -1,12 +1,11 @@
 #include "EditorAnalysisController.h"
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include <atomic>
 #include <condition_variable>
 #include <deque>
 #include <functional>
 #include <mutex>
 #include <thread>
-namespace chart = finger_drum::chart;
 
 struct EditorAnalysisJob
 {
@@ -86,7 +85,7 @@ namespace
                 return;
             try
             {
-                result->sounds.emplace(id, finger_drum::editor::AnalyzeAudio(path, stop, mrg::audio::DecodeAudioPcm));
+                result->sounds.emplace(id, AnalyzeAudio(path, stop, DecodeAudioPcm));
             }
             catch (const std::exception &error)
             {
@@ -128,8 +127,8 @@ void EditorAnalysisController::Stop() noexcept
     ++analysisRevision_;
 }
 
-bool EditorAnalysisController::Update(const chart::IEditorDocument &document, const IEditorAudioSource &mode,
-                                      const finger_drum::GameplayLaunchRequest &request, std::string &status)
+bool EditorAnalysisController::Update(const IEditorDocument &document, const IEditorAudioSource &mode,
+                                      const GameplayLaunchRequest &request, std::string &status)
 {
     if (analysisDirty)
     {
@@ -187,7 +186,7 @@ std::optional<double> EditorAnalysisController::MusicDurationSeconds() const
     return music == analysis_->sounds.end() ? std::nullopt : std::optional{music->second.durationSeconds};
 }
 
-void EditorAnalysisController::CacheAudioMarkers(const chart::IEditorDocument &document, const IEditorAudioSource &mode)
+void EditorAnalysisController::CacheAudioMarkers(const IEditorDocument &document, const IEditorAudioSource &mode)
 {
     if (audioMarkerDocument == &document && audioMarkerMode == &mode && audioMarkerRevision == document.Revision())
         return;

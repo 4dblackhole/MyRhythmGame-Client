@@ -19,24 +19,24 @@ class IEditorContext
 {
   public:
     virtual ~IEditorContext() = default;
-    virtual const finger_drum::chart::IEditorDocument &Document() const noexcept = 0;
+    virtual const IEditorDocument &Document() const noexcept = 0;
     virtual const EditorScoreState &Score() const noexcept = 0;
     virtual void SetFirstMeasure(std::int64_t) = 0;
     virtual double TimeMilliseconds() const noexcept = 0;
     virtual void Seek(double milliseconds) = 0;
     virtual void SelectTool(int) = 0;
-    virtual void SelectTimingPosition(finger_drum::chart::MusicalPosition) = 0;
+    virtual void SelectTimingPosition(MusicalPosition) = 0;
     virtual void RequestRebuild() noexcept = 0;
-    virtual void Replace(finger_drum::chart::PatternDocument, finger_drum::chart::EffectDocument) = 0;
-    virtual void AddNote(finger_drum::chart::MusicalPosition, int keyType,
-                         std::optional<finger_drum::chart::MusicalPosition> end = {},
+    virtual void Replace(PatternDocument, EffectDocument) = 0;
+    virtual void AddNote(MusicalPosition, int keyType,
+                         std::optional<MusicalPosition> end = {},
                          std::vector<std::string> extra = {}) = 0;
-    virtual void UpdateNote(std::size_t, finger_drum::chart::PatternNote,
-                            std::optional<finger_drum::chart::MusicalPosition>) = 0;
+    virtual void UpdateNote(std::size_t, PatternNote,
+                            std::optional<MusicalPosition>) = 0;
     virtual void DeleteNote(std::size_t sourceOrder) = 0;
     virtual const std::set<std::size_t> &SelectedNoteIds() const noexcept = 0;
     virtual void SelectNotes(std::span<const std::size_t>) = 0;
-    virtual void SelectNoteRange(finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition) = 0;
-    virtual const std::optional<std::pair<finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition>> &
+    virtual void SelectNoteRange(MusicalPosition, MusicalPosition) = 0;
+    virtual const std::optional<std::pair<MusicalPosition, MusicalPosition>> &
     NoteSelectionRange() const noexcept = 0;
 };

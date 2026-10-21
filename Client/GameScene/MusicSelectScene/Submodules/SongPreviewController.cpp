@@ -30,11 +30,11 @@ void SongPreviewController::SyncPreviewToFocusedSong(const SongSelectionState &s
         auto &pending = previewSlots_[*pendingPreviewSlot_];
         std::string error;
         const auto state = pending.clip->LoadState(error);
-        if (state == mrg::audio::AudioClipLoadState::Loading)
+        if (state == AudioClipLoadState::Loading)
             return;
         const auto slot = *pendingPreviewSlot_;
         pendingPreviewSlot_.reset();
-        if (pending.catalogIndex == catalogIndex && state == mrg::audio::AudioClipLoadState::Ready)
+        if (pending.catalogIndex == catalogIndex && state == AudioClipLoadState::Ready)
         {
             PlayPendingPreview(slot);
             return;
@@ -50,7 +50,7 @@ void SongPreviewController::SyncPreviewToFocusedSong(const SongSelectionState &s
     {
         const PreviewSlot &current = previewSlots_[*currentPreviewSlot_];
         if (current.catalogIndex == catalogIndex &&
-            current.playbackId != mrg::audio::InvalidAudioPlaybackId)
+            current.playbackId != InvalidAudioPlaybackId)
         {
             return;
         }
@@ -75,21 +75,21 @@ void SongPreviewController::StartSongPreview(const SongSelectionState &selection
     const std::size_t nextSlotIndex =
         currentPreviewSlot_.has_value()
             ? 1U - *currentPreviewSlot_
-            : (previewSlots_[0].playbackId == mrg::audio::InvalidAudioPlaybackId ? 0U : 1U);
+            : (previewSlots_[0].playbackId == InvalidAudioPlaybackId ? 0U : 1U);
     PreviewSlot &nextSlot = previewSlots_[nextSlotIndex];
     StopPreviewSlot(nextSlot);
 
     std::string errorMessage;
-    std::unique_ptr<mrg::audio::AudioClip> loadedClip =
+    std::unique_ptr<AudioClip> loadedClip =
         audioSystem_->LoadSound(selection.catalog_.songs[catalogIndex].audioPath,
-                                mrg::audio::AudioLoadMode::StreamAsync, errorMessage);
+                                AudioLoadMode::StreamAsync, errorMessage);
     if (loadedClip == nullptr)
     {
         failedPreviewIndex_ = catalogIndex;
         return;
     }
 
-    nextSlot.clip = std::shared_ptr<mrg::audio::AudioClip>(std::move(loadedClip));
+    nextSlot.clip = std::shared_ptr<AudioClip>(std::move(loadedClip));
     nextSlot.catalogIndex = catalogIndex;
     pendingPreviewSlot_ = nextSlotIndex;
 }
@@ -98,11 +98,11 @@ void SongPreviewController::PlayPendingPreview(std::size_t slotIndex)
 {
     auto &nextSlot = previewSlots_[slotIndex];
     std::string errorMessage;
-    mrg::audio::AudioPlaybackSettings settings;
+    AudioPlaybackSettings settings;
     settings.volume = 0.0F;
-    const mrg::audio::AudioPlaybackId playbackId =
+    const AudioPlaybackId playbackId =
         audioPlayback_.Play(nextSlot.clip, settings, nullptr, errorMessage);
-    if (playbackId == mrg::audio::InvalidAudioPlaybackId)
+    if (playbackId == InvalidAudioPlaybackId)
     {
         failedPreviewIndex_ = nextSlot.catalogIndex;
         StopPreviewSlot(nextSlot);
@@ -123,12 +123,12 @@ void SongPreviewController::UpdatePreviewAudio(const double deltaSeconds)
     for (std::size_t index = 0; index < previewSlots_.size(); ++index)
     {
         PreviewSlot &slot = previewSlots_[index];
-        if (slot.playbackId == mrg::audio::InvalidAudioPlaybackId)
+        if (slot.playbackId == InvalidAudioPlaybackId)
         {
             continue;
         }
 
-        mrg::audio::AudioVoice *const voice = audioPlayback_.FindVoice(slot.playbackId);
+        AudioVoice *const voice = audioPlayback_.FindVoice(slot.playbackId);
         if (voice == nullptr)
         {
             StopPreviewSlot(slot);
@@ -184,7 +184,7 @@ void SongPreviewController::StopPreviewAudio() noexcept
 
 void SongPreviewController::StopPreviewSlot(PreviewSlot &slot) noexcept
 {
-    if (slot.playbackId != mrg::audio::InvalidAudioPlaybackId)
+    if (slot.playbackId != InvalidAudioPlaybackId)
     {
         try
         {
@@ -203,7 +203,7 @@ void SongPreviewController::StopPreviewSlot(PreviewSlot &slot) noexcept
         {
             std::string error;
             const auto state = slot.clip->LoadState(error);
-            if (state == mrg::audio::AudioClipLoadState::Loading || state == mrg::audio::AudioClipLoadState::Playing)
+            if (state == AudioClipLoadState::Loading || state == AudioClipLoadState::Playing)
                 retiredClips_.push_back(std::move(slot.clip));
         }
         catch (...) {}
@@ -216,6 +216,6 @@ void SongPreviewController::PollRetiredClips()
     std::erase_if(retiredClips_, [](const auto &clip) {
         std::string error;
         const auto state = clip->LoadState(error);
-        return state == mrg::audio::AudioClipLoadState::Ready || state == mrg::audio::AudioClipLoadState::Failed;
+        return state == AudioClipLoadState::Ready || state == AudioClipLoadState::Failed;
     });
 }

@@ -1,7 +1,7 @@
-# MyRhythmGame-Client working agreement
+# YOUMU working agreement
 
 This file applies to the entire repository except the independently versioned
-`Dependencies/MRG-Engine` submodule.
+`Dependencies/PhantomCore` submodule.
 
 ## Session onboarding
 
@@ -45,16 +45,16 @@ This file applies to the entire repository except the independently versioned
 ## Purpose and boundary
 
 - This private repository contains game-specific code and assets.
-- The reusable engine is pinned as the private `Dependencies/MRG-Engine`
+- The reusable engine is pinned as the private `Dependencies/PhantomCore`
   submodule. Engine changes belong in that repository, not in a detached
   submodule checkout here.
-- Client source may include only `MRG_Core.h` from the engine and may reference
-  only `MRG.Core.vcxproj`.
+- Client source may include only `PhantomCore.h` from the engine and may reference
+  only `PhantomCore.vcxproj`.
 - Do not commit FMOD SDK files, import libraries, or runtime DLLs.
 
 ## Client rules
 
-- Keep FingerDrum Scene IDs in `Client/GameFlow/FingerDrumSceneIds.h`.
+- Keep YOUMU Scene IDs in `Client/GameFlow/YOUMUSceneIds.h`.
 - Register Scene factories through `SceneManager::RegisterScene` with explicit
   `KeepAlive` or `DestroyOnExit` retention and use deferred `ChangeScene` for
   all transitions.
@@ -75,7 +75,7 @@ This file applies to the entire repository except the independently versioned
 - Keep YMP focused on playable score data and YME focused on visual/audio
   automation. New game modes implement `IPlayGameMode` and own parsing-to-note
   construction policy.
-- Build song selection from `FingerDrum.Chart/Catalog/SongCatalog`; preserve
+- Build song selection from `YOUMU.Chart/Catalog/SongCatalog`; preserve
   the YMM/YMP relative-path relationship and keep list rows limited to title
   and artist. Pass selected paths through `GameplayLaunchRequest` rather than
   retaining a gameplay Scene.
@@ -110,9 +110,9 @@ This file applies to the entire repository except the independently versioned
   both repositories, verify the local work branch matches its upstream, and
   report exact commit IDs when handing work back.
 - When the engine commit changes, first make that commit available on the
-  engine remote, then update and commit the `Dependencies/MRG-Engine` gitlink.
-  Verify that `git ls-files -s Dependencies/MRG-Engine` and
-  `git -C Dependencies/MRG-Engine rev-parse HEAD` name the same commit.
+  engine remote, then update and commit the `Dependencies/PhantomCore` gitlink.
+  Verify that `git ls-files -s Dependencies/PhantomCore` and
+  `git -C Dependencies/PhantomCore rev-parse HEAD` name the same commit.
 - After approved PRs are merged, fast-forward the Client `main`, run
   `git submodule sync --recursive` and `git submodule update --init
   --recursive`, and verify that both repositories are on the intended latest

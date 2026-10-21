@@ -3,7 +3,7 @@
 #include "GameScene/MusicSelectScene/Submodules/SongSelectionState.h"
 #include "TestSupport.h"
 
-namespace finger_drum::tests
+namespace tests
 {
     void TestSceneStateBoundaries()
     {
@@ -13,7 +13,7 @@ namespace finger_drum::tests
         state.MoveSongFocus(-1);
         Require(state.visibleSongIndices_.empty(), "Empty catalogs must remain navigable without a selection.");
 
-        chart::SongCatalogEntry first, second;
+        SongCatalogEntry first, second;
         first.music.names = {"Zulu"};
         first.music.artists = {"Artist A"};
         first.patterns.resize(2);
@@ -43,7 +43,7 @@ namespace finger_drum::tests
         Require(state.focusedSongPosition_ == 0, "Song focus clamps to the filtered list.");
 
         GameplayLaunchStore store;
-        auto prepared = std::make_unique<mode::PlaySession>();
+        auto prepared = std::make_unique<PlaySession>();
         auto *identity = prepared.get();
         store.SetValidated({"validated.ymp", {}, "music.mp3", "Taiko"}, std::move(prepared));
         auto transferred = store.TakeValidatedSession();
@@ -66,16 +66,16 @@ namespace finger_drum::tests
                     playing.songArtist.empty(),
                 "Clearing a launch must also clear result display metadata.");
 
-        for (const auto &tool : editor_tools::Tools)
-            Require(mode::FindTaikoNote(static_cast<int>(tool.note)) != nullptr,
+        for (const auto &tool : Tools)
+            Require(FindTaikoNote(static_cast<int>(tool.note)) != nullptr,
                     "Every editor note tool must refer to a known persisted note definition.");
-        const auto *katBuzz = editor_tools::Find(18);
-        Require(katBuzz && katBuzz->note == mode::TaikoNoteType::Buzz &&
-                    editor_tools::ExtraData(*katBuzz) == std::vector<std::string>{"Action=Kat", "TickDivision=16"},
+        const auto *katBuzz = Find(18);
+        Require(katBuzz && katBuzz->note == TaikoNoteType::Buzz &&
+                    ExtraData(*katBuzz) == std::vector<std::string>{"Action=Kat", "TickDivision=16"},
                 "Kat Buzz's editor ID must serialize as Buzz plus its action, not as a new YMP ID.");
-        Require(mode::TaikoVisual(mode::TaikoNoteType::BigTickRoll) == mode::NoteVisualKind::BigRoll &&
-                    mode::TaikoVisual(mode::TaikoNoteType::Buzz, mode::TaikoAction::Kat) ==
-                        mode::NoteVisualKind::KatBuzz,
+        Require(TaikoVisual(TaikoNoteType::BigTickRoll) == NoteVisualKind::BigRoll &&
+                    TaikoVisual(TaikoNoteType::Buzz, TaikoAction::Kat) ==
+                        NoteVisualKind::KatBuzz,
                 "Typed presentation must preserve the large roll and Kat Buzz appearances.");
     }
-} // namespace finger_drum::tests
+} // namespace youmu::tests

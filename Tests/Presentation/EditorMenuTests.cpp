@@ -4,13 +4,13 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
+
     void Check(bool value, const char *message)
     {
         if (!value)
             throw std::runtime_error(message);
     }
-    v::Visual2DNode *Find(v::Visual2DNode &node, std::string_view name)
+    Visual2DNode *Find(Visual2DNode &node, std::string_view name)
     {
         if (node.Name() == name)
             return &node;
@@ -23,8 +23,8 @@ namespace
 
 void TestEditorMenu()
 {
-    v::Visual2DCanvas canvas({1920, 1080});
-    finger_drum::texts::TextCatalog texts;
+    Visual2DCanvas canvas({1920, 1080});
+    TextCatalog texts;
     EditorMenuBar menu;
     menu.Initialize(canvas, texts);
     auto *bar = Find(canvas.Root(), "Editor.MenuBar");
@@ -35,20 +35,20 @@ void TestEditorMenu()
         throw std::runtime_error("Editor menu nodes are missing.");
     Check(popup->Children().size() == 1 && !popup->IsVisible(),
           "File menu must start closed and contain only Save.");
-    Check(file->GetComponent<v::TextVisualComponent>()->Text() == L"파일" &&
-              caption->GetComponent<v::TextVisualComponent>()->Text() == L"저장하기",
+    Check(file->GetComponent<TextVisualComponent>()->Text() == L"파일" &&
+              caption->GetComponent<TextVisualComponent>()->Text() == L"저장하기",
           "Korean menu labels are missing.");
     menu.Refresh(true);
-    Check(caption->GetComponent<v::TextVisualComponent>()->Text() == L"저장하기 *",
+    Check(caption->GetComponent<TextVisualComponent>()->Text() == L"저장하기 *",
           "Dirty state must be reflected in Save.");
-    texts.SetLanguage(finger_drum::texts::Language::English);
+    texts.SetLanguage(Language::English);
     menu.Refresh(false);
-    Check(file->GetComponent<v::TextVisualComponent>()->Text() == L"File" &&
-              caption->GetComponent<v::TextVisualComponent>()->Text() == L"Save",
+    Check(file->GetComponent<TextVisualComponent>()->Text() == L"File" &&
+              caption->GetComponent<TextVisualComponent>()->Text() == L"Save",
           "Menu must refresh language and remove the dirty marker.");
 
     // Exercise the production screen mapping at standard, narrow and wide sizes.
-    for (const v::Size viewport : {v::Size{1920, 1080}, {1280, 720}, {900, 720}, {2560, 1080}})
+    for (const Size viewport : {Size{1920, 1080}, {1280, 720}, {900, 720}, {2560, 1080}})
     {
         canvas.SetViewportSize(viewport);
         menu.Resize();
@@ -56,7 +56,7 @@ void TestEditorMenu()
         Check(bounds.width == canvas.LogicalSize().width && bounds.y + bounds.height == 540,
               "Menu must span the viewport and stay at its top edge.");
         const auto pointer = [&](float y) {
-            return v::MapScreenPointer({20 * canvas.PixelScale(), y * canvas.PixelScale()}, viewport, canvas);
+            return MapScreenPointer({20 * canvas.PixelScale(), y * canvas.PixelScale()}, viewport, canvas);
         };
         const auto opened = menu.Update({.pointer = pointer(10), .leftPressed = true}, false);
         Check(opened.consumePointer && opened.consumeKeyboard && !opened.saveRequested && popup->IsVisible(),
@@ -82,13 +82,13 @@ void TestEditorMenu()
     Check(!menu.Update({.accept = true}, false).saveRequested,
           "Closed menu must leave Ctrl+S to the existing editor handler.");
     static_cast<void>(menu.Update({.toggle = true}, false));
-    const auto outside = menu.Update({.pointer = v::Point{600, -200}, .leftPressed = true}, false);
+    const auto outside = menu.Update({.pointer = Point{600, -200}, .leftPressed = true}, false);
     Check(!outside.saveRequested && outside.consumePointer && outside.consumeKeyboard && !popup->IsVisible(),
           "Outside dismissal must not click through to a note, slider or tab.");
-    const auto resumed = menu.Update({.pointer = v::Point{600, -200}, .leftPressed = true}, false);
+    const auto resumed = menu.Update({.pointer = Point{600, -200}, .leftPressed = true}, false);
     Check(!resumed.consumePointer && !resumed.consumeKeyboard, "Closed menu must release editor input.");
     static_cast<void>(menu.Update({.toggle = true}, false));
-    const auto right = menu.Update({.pointer = v::Point{600, -200}, .rightPressed = true}, false);
+    const auto right = menu.Update({.pointer = Point{600, -200}, .rightPressed = true}, false);
     Check(right.consumePointer && !right.saveRequested && !popup->IsVisible(),
           "Right-click dismissal must not erase a note.");
     menu.Shutdown();

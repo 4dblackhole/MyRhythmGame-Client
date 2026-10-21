@@ -1,13 +1,12 @@
 #include "GameplayPresenter.h"
 #include "GameplaySupport.h"
-using namespace gameplay;
 
 void GameplayPresenter::CreatePresentation()
 {
     auto &root = canvas_->Root();
 
     background_ =
-        &mrg::visual2d::CreatePanel(root,
+        &CreatePanel(root,
                                     {-CanvasReferenceWidth * 0.5F, -CanvasReferenceHeight * 0.5F,
                                      CanvasReferenceWidth, CanvasReferenceHeight},
                                     "Background");
@@ -20,7 +19,7 @@ void GameplayPresenter::CreatePresentation()
             backgroundSize_ = screenVisuals_.GetImageSize(backgroundImage_);
             if (backgroundSize_.width <= 0 || backgroundSize_.height <= 0)
                 throw std::runtime_error("Background image has no size.");
-            RequireComponent<mrg::visual2d::SpriteVisualComponent>(*background_).SetImage(backgroundImage_);
+            RequireComponent<SpriteVisualComponent>(*background_).SetImage(backgroundImage_);
             SetColor(*background_, {1, 1, 1, 1});
         }
         catch (const std::exception &error)
@@ -30,38 +29,38 @@ void GameplayPresenter::CreatePresentation()
         }
     }
 
-    errorLabel_ = &mrg::visual2d::CreateLabel(root, {-500.0F, 320.0F, 1000.0F, 28.0F}, L"", "Hud.Error");
+    errorLabel_ = &CreateLabel(root, {-500.0F, 320.0F, 1000.0F, 28.0F}, L"", "Hud.Error");
     errorLabel_->SetZIndex(20);
     errorLabel_->SetVisible(false);
-    auto &errorText = RequireComponent<mrg::visual2d::TextVisualComponent>(*errorLabel_);
+    auto &errorText = RequireComponent<TextVisualComponent>(*errorLabel_);
     texts_.ApplyFont(errorText);
     errorText.SetFontSize(16.0F);
     errorText.SetTextColor({0.78F, 0.06F, 0.08F, 1.0F});
-    errorText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Center);
+    errorText.SetHorizontalAlignment(TextAlignment::Center);
 
     progressView_.Initialize(screenVisuals_, root, *session_, texts_);
 
     const auto accuracyImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"AccuracyIndicator"));
     const auto accuracySize = ScaledImageSize(screenVisuals_, accuracyImage);
     const float accuracyWidth = std::max(accuracySize.width, 270.0F);
-    accuracyIndicator_ = &mrg::visual2d::CreateLabel(
+    accuracyIndicator_ = &CreateLabel(
         root,
         {CanvasReferenceWidth * 0.5F - GearMargin - accuracyWidth,
          CanvasReferenceHeight * 0.5F - 50.0F - accuracySize.height, accuracyWidth, accuracySize.height},
         std::wstring(texts_.Get("Gameplay.emptyAccuracy")), "Hud.Accuracy");
     accuracyIndicator_->SetZIndex(5);
-    auto &accuracyText = RequireComponent<mrg::visual2d::TextVisualComponent>(*accuracyIndicator_);
+    auto &accuracyText = RequireComponent<TextVisualComponent>(*accuracyIndicator_);
     texts_.ApplyFont(accuracyText);
     accuracyText.SetFontSize(32.0F);
     accuracyText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
-    accuracyText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Trailing);
+    accuracyText.SetHorizontalAlignment(TextAlignment::Trailing);
 
 #if defined(_DEBUG)
-    noteDebugLabel_ = &mrg::visual2d::CreateLabel(
+    noteDebugLabel_ = &CreateLabel(
         root, {-CanvasReferenceWidth * 0.5F + 12.0F, 160.0F, CanvasReferenceWidth - 24.0F, 120.0F},
         L"", "Debug.NoteState");
     noteDebugLabel_->SetZIndex(30);
-    auto &debugText = RequireComponent<mrg::visual2d::TextVisualComponent>(*noteDebugLabel_);
+    auto &debugText = RequireComponent<TextVisualComponent>(*noteDebugLabel_);
     texts_.ApplyFont(debugText);
     debugText.SetFontSize(16.0F);
     debugText.SetTextColor({0.12F, 0.16F, 0.24F, 1.0F});
@@ -69,9 +68,9 @@ void GameplayPresenter::CreatePresentation()
 
     // All gear parts inherit one transform. Final bounds depend on skin sizes.
     scrollGearRoot_ = &root.CreateChild("ScrollGear");
-    scrollGearBorder_ = &mrg::visual2d::CreatePanel(*scrollGearRoot_, {}, "ScrollGear.Border");
+    scrollGearBorder_ = &CreatePanel(*scrollGearRoot_, {}, "ScrollGear.Border");
     SetColor(*scrollGearBorder_, {0.16F, 0.31F, 0.58F, 1.0F});
-    scrollGearSurface_ = &mrg::visual2d::CreatePanel(*scrollGearRoot_, {}, "ScrollGear.Surface");
+    scrollGearSurface_ = &CreatePanel(*scrollGearRoot_, {}, "ScrollGear.Surface");
     SetColor(*scrollGearSurface_, {0.73F, 0.82F, 0.93F, 1.0F});
 
     CreateLaneVisuals(*scrollGearRoot_);
@@ -79,7 +78,7 @@ void GameplayPresenter::CreatePresentation()
     inputPresentationRoot_->SetZIndex(2);
     const auto inputPanelImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"InputPanel"));
     inputPanelSize_ = ScaledImageSize(screenVisuals_, inputPanelImage);
-    inputPanel_ = &mrg::visual2d::CreateSprite(
+    inputPanel_ = &CreateSprite(
         *inputPresentationRoot_, {0.0F, 0.0F, inputPanelSize_.width, inputPanelSize_.height},
         inputPanelImage, "Input.Panel");
     inputPanel_->SetZIndex(0);
@@ -88,7 +87,7 @@ void GameplayPresenter::CreatePresentation()
     UpdatePresentationLayout();
 }
 
-void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &gearRoot)
+void GameplayPresenter::CreateLaneVisuals(Visual2DNode &gearRoot)
 {
     // Author the lane in its reusable default orientation: local +Y is the
     // future-note direction and every lane-owned visual is a descendant.
@@ -116,19 +115,19 @@ void GameplayPresenter::CreateLaneVisuals(mrg::visual2d::Visual2DNode &gearRoot)
 
     const auto judgementImage = screenVisuals_.RegisterImage(InGameSkinAssetPath(L"JudgementCircle"));
     const auto judgementSize = ScaledImageSize(screenVisuals_, judgementImage);
-    auto &judgementLine = mrg::visual2d::CreateSprite(
+    auto &judgementLine = CreateSprite(
         *laneRoot_,
         {(laneWidth_ - judgementSize.width) * 0.5F, judgementLocalY_ - judgementSize.height * 0.5F,
          judgementSize.width, judgementSize.height},
         judgementImage, "Lane.JudgementCircle");
     judgementLine.SetZIndex(3);
-    finger_drum::rhythm::JudgeLevel level;
+    JudgeLevel level;
     const auto &lanes = session_->Gear().Lanes();
     if (!lanes.empty() && !lanes.front()->Notes().empty())
         level = lanes.front()->Notes().front()->Profile().Level();
     // Keep the guide fixed for this play session. In particular, do not use
     // the current note's padded syncopation range to resize the HUD mid-play.
-    const finger_drum::rhythm::AccuracyRange baseRange{"Hud.Default", level};
+    const AccuracyRange baseRange{"Hud.Default", level};
     judgementView_.Initialize(screenVisuals_, *canvas_, judgementLine, baseRange, texts_);
 }
 
@@ -161,13 +160,13 @@ void GameplayPresenter::UpdateLaneSurfaceLayout(const float laneLength)
         static_cast<std::size_t>(std::ceil(laneLength / laneTileLength_));
     while (laneTiles_.size() < requiredTiles)
     {
-        auto &tile = mrg::visual2d::CreateSprite(*laneRoot_, {}, laneImage_, "Lane.SurfaceTile");
+        auto &tile = CreateSprite(*laneRoot_, {}, laneImage_, "Lane.SurfaceTile");
         tile.SetZIndex(0);
         laneTiles_.push_back(&tile);
     }
     for (std::size_t index = 0; index < laneTiles_.size(); ++index)
     {
-        mrg::visual2d::Visual2DNode &tile = *laneTiles_[index];
+        Visual2DNode &tile = *laneTiles_[index];
         const float start = static_cast<float>(index) * laneTileLength_;
         const float visibleLength = std::clamp(laneLength - start, 0.0F, laneTileLength_);
         tile.SetVisible(visibleLength > 0.0F);
@@ -176,7 +175,7 @@ void GameplayPresenter::UpdateLaneSurfaceLayout(const float laneLength)
             continue;
         }
         tile.SetBounds({0.0F, start, laneWidth_, visibleLength});
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(tile).SetUvTransform(
+        RequireComponent<SpriteVisualComponent>(tile).SetUvTransform(
             {1.0F, visibleLength / laneTileLength_}, {0.0F, 0.0F});
     }
 }
@@ -216,7 +215,7 @@ void GameplayPresenter::UpdatePresentationLayout()
             width = backgroundSize_.width * scale;
             height = backgroundSize_.height * scale;
         }
-        const auto offset = backgroundImage_.value ? backgroundOffset_ : mrg::visual2d::Point{};
+        const auto offset = backgroundImage_.value ? backgroundOffset_ : Point{};
         background_->SetBounds({-width * .5F + offset.x, -height * .5F + offset.y, width, height});
     }
     progressView_.SetLayout(

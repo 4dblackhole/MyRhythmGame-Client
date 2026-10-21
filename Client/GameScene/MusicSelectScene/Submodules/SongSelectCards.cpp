@@ -9,7 +9,7 @@ namespace
 {
     [[nodiscard]] std::wstring LaunchErrorText(
         const SongSelectionState &selection,
-        const finger_drum::texts::MusicSelectTextSet &text)
+        const MusicSelectTextSet &text)
     {
         using Kind = SongSelectionState::LaunchErrorKind;
         if (selection.launchErrorKind_ == Kind::None)
@@ -67,7 +67,7 @@ void MusicSelectView::UpdateVisibleSongCards()
     if (!songCardsDirty_ && firstIndex == firstVisibleRow_ && lastIndex == lastVisibleRow_)
         return;
     inputRouter_.Reset(*canvas_);
-    std::vector<mrg::visual2d::NodeId> ids;
+    std::vector<NodeId> ids;
     for (const auto &child : songContent_->Children())
         ids.push_back(child->Id());
     for (const auto id : ids)
@@ -79,12 +79,12 @@ void MusicSelectView::UpdateVisibleSongCards()
                        row->visiblePosition == selection_.focusedSongPosition_);
     if (songRows_.empty())
     {
-        const auto &text = finger_drum::texts::MusicSelect(texts_);
+        const auto &text = MusicSelect(texts_);
         AddLabel(*songContent_,
                  {layout::EmptySongMessage.x, layout::EmptySongMessage.y, std::max(songContentWidth_ - 32.0F, 1.0F),
                   layout::EmptySongMessage.height},
                  std::wstring(selection_.catalogLoading_ ? text.loadingSongs : text.noSongsAvailable), 20.0F, DeepBlue,
-                 "NoSongs", mrg::visual2d::TextAlignment::Center);
+                 "NoSongs", TextAlignment::Center);
     }
     firstVisibleRow_ = firstIndex;
     lastVisibleRow_ = lastIndex;
@@ -96,9 +96,9 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
                                      const std::size_t catalogIndex, const float top,
                                      const float height, const bool focused)
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_);
+    const auto &text = MusicSelect(texts_);
     const auto &song = selection_.catalog_.songs[catalogIndex];
-    auto &button = mrg::visual2d::CreateButton(
+    auto &button = CreateButton(
         *songContent_,
         ScaleTopLeftBounds({layout::ContentLeft, top, songContentWidth_, height},
                            songContent_->NodeSize().height),
@@ -107,14 +107,14 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
     SetCornerRadius(button, 14.0F);
     AddPanel(button, {2.0F, 2.0F, std::max(songContentWidth_ - 4.0F, 1.0F), height - 4.0F},
              focused ? FocusBlue : RowBlue, "Surface", 12.0F);
-    finger_drum::presentation::BindSkinImage(button, screenVisuals_, "MusicSelect",
+    BindSkinImage(button, screenVisuals_, "MusicSelect",
                                              focused ? "SongCardFocused" : "SongCard", "Surface");
 
     const float titleWidth = std::max(songContentWidth_ - 28.0F, 1.0F);
     const float headingWidth = IsEditorSongSelect() ? std::max(titleWidth - 48.0F, 1.0F) : titleWidth;
     auto &title = AddLabel(button, {14.0F, focused ? 16.0F : 10.0F, headingWidth, focused ? 32.0F : 30.0F},
                            SongTitle(song), focused ? 20.0F : 16.0F, DeepBlue, "Title");
-    title.AddComponent<finger_drum::presentation::MarqueeTextComponent>(SongTitle(song), 0.24);
+    title.AddComponent<MarqueeTextComponent>(SongTitle(song), 0.24);
     auto &artist = AddLabel(button, {14.0F, focused ? 50.0F : 40.0F, headingWidth, 20.0F}, SongArtist(song),
                             focused ? 12.0F : 11.0F, MutedBlue, "Artist");
 
@@ -125,11 +125,11 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
         {
             AddLabel(button, {14.0F, 92.0F, titleWidth, 24.0F},
                      std::wstring(text.noDifficulties), 12.0F,
-                     MutedBlue, "NoDifficulties", mrg::visual2d::TextAlignment::Center);
+                     MutedBlue, "NoDifficulties", TextAlignment::Center);
         }
         for (std::size_t index = 0; index < song.patterns.size(); ++index)
         {
-            auto &difficulty = mrg::visual2d::CreateButton(
+            auto &difficulty = CreateButton(
                 button,
                 ScaleTopLeftBounds({14.0F,
                                     92.0F + layout::DifficultyRowStep * static_cast<float>(index),
@@ -140,13 +140,13 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
             ApplyButtonStyle(difficulty, selected ? AccentBlue : PureWhite,
                              selected ? AccentHover : PaleBlue, selected ? PureWhite : DeepBlue);
             SetCornerRadius(difficulty, 8.0F);
-            finger_drum::presentation::BindSkinImage(difficulty, screenVisuals_, "MusicSelect",
+            BindSkinImage(difficulty, screenVisuals_, "MusicSelect",
                                                      selected ? "DifficultySelected" : "Difficulty");
             auto &difficultyText =
-                RequireComponent<mrg::visual2d::TextVisualComponent>(difficulty);
+                RequireComponent<TextVisualComponent>(difficulty);
             difficultyText.SetFontSize(CanvasFontSize(12.0F));
             texts_.ApplyFont(difficultyText);
-            difficultyText.SetHorizontalAlignment(mrg::visual2d::TextAlignment::Leading);
+            difficultyText.SetHorizontalAlignment(TextAlignment::Leading);
             difficultyText.SetContentBounds(
                 ScaleTopLeftBounds({12.0F, 0.0F, titleWidth - 24.0F, layout::DifficultyRowHeight},
                                    difficulty.NodeSize().height));
@@ -157,24 +157,24 @@ void MusicSelectView::CreateSongCard(const std::size_t visiblePosition,
     songCards_.push_back({catalogIndex, top, height, &button, &title, &artist, visiblePosition, createId});
 }
 
-mrg::visual2d::NodeId MusicSelectView::CreateDifficultyButton(mrg::visual2d::Visual2DNode &card,
+NodeId MusicSelectView::CreateDifficultyButton(Visual2DNode &card,
                                                               const std::size_t visiblePosition)
 {
     const float size = std::min(36.0F, std::max(songContentWidth_ - 28.0F, 1.0F));
-    auto &button = mrg::visual2d::CreateButton(
+    auto &button = CreateButton(
         card,
         ScaleTopLeftBounds({std::max(songContentWidth_ - size - 14.0F, 0.0F), 14.0F, size, size},
                            card.NodeSize().height),
-        std::wstring(finger_drum::texts::MusicSelect(texts_).addDifficulty),
+        std::wstring(MusicSelect(texts_).addDifficulty),
         std::format("AddDifficulty.{}", visiblePosition));
     ApplyButtonStyle(button, PaleBlue, FocusBlue, AccentBlue);
     SetCornerRadius(button, 8.0F);
-    auto &caption = RequireComponent<mrg::visual2d::TextVisualComponent>(button);
+    auto &caption = RequireComponent<TextVisualComponent>(button);
     caption.SetFontSize(CanvasFontSize(28.0F));
     texts_.ApplyFont(caption);
     button.SetZIndex(3);
     button.SetEnabled(!selection_.catalogLoading_);
-    finger_drum::presentation::BindSkinImage(button, screenVisuals_, "MusicSelect", "AddDifficulty");
+    BindSkinImage(button, screenVisuals_, "MusicSelect", "AddDifficulty");
     return button.Id();
 }
 
@@ -188,18 +188,18 @@ void MusicSelectView::RefreshSelectionPresentation()
     }
 
     auto &songMarquee =
-        RequireComponent<finger_drum::presentation::MarqueeTextComponent>(*selectedSongLabel_);
+        RequireComponent<MarqueeTextComponent>(*selectedSongLabel_);
     auto &artistMarquee =
-        RequireComponent<finger_drum::presentation::MarqueeTextComponent>(*selectedArtistLabel_);
-    const auto &text = finger_drum::texts::MusicSelect(texts_);
+        RequireComponent<MarqueeTextComponent>(*selectedArtistLabel_);
+    const auto &text = MusicSelect(texts_);
     const std::wstring launchError = LaunchErrorText(selection_, text);
     if (selection_.visibleSongIndices_.empty())
     {
         songMarquee.SetText(std::wstring(text.noSongSelected));
         artistMarquee.SetText(L"");
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedPatternLabel_).SetText(L"—");
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedCreatorLabel_).SetText(L"—");
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedDetailsLabel_)
+        RequireComponent<TextVisualComponent>(*selectedPatternLabel_).SetText(L"—");
+        RequireComponent<TextVisualComponent>(*selectedCreatorLabel_).SetText(L"—");
+        RequireComponent<TextVisualComponent>(*selectedDetailsLabel_)
             .SetText(launchError.empty() ? std::wstring(text.emptyDetails) : launchError);
         return;
     }
@@ -212,10 +212,10 @@ void MusicSelectView::RefreshSelectionPresentation()
     artistMarquee.SetText(SongArtist(song));
     if (song.patterns.empty())
     {
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedPatternLabel_)
+        RequireComponent<TextVisualComponent>(*selectedPatternLabel_)
             .SetText(std::wstring(text.noDifficulty));
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedCreatorLabel_).SetText(L"—");
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedDetailsLabel_)
+        RequireComponent<TextVisualComponent>(*selectedCreatorLabel_).SetText(L"—");
+        RequireComponent<TextVisualComponent>(*selectedDetailsLabel_)
             .SetText(std::wstring(text.emptyDetails));
         return;
     }
@@ -223,9 +223,9 @@ void MusicSelectView::RefreshSelectionPresentation()
     selection_.selectedPatternIndex_ =
         std::min(selection_.selectedPatternIndex_, song.patterns.size() - 1);
     const auto &selected = song.patterns[selection_.selectedPatternIndex_];
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedPatternLabel_)
+    RequireComponent<TextVisualComponent>(*selectedPatternLabel_)
         .SetText(PatternName(selected));
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedCreatorLabel_)
+    RequireComponent<TextVisualComponent>(*selectedCreatorLabel_)
         .SetText(selected.pattern.makers.empty()
                      ? L"—"
                      : DecodeDisplayText(selected.pattern.makers.front()));
@@ -236,20 +236,20 @@ void MusicSelectView::RefreshSelectionPresentation()
     });
     if (!launchError.empty())
     {
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedDetailsLabel_)
+        RequireComponent<TextVisualComponent>(*selectedDetailsLabel_)
             .SetText(launchError);
         return;
     }
     const std::wstring bpm = BpmText(selected.pattern.baseBpm);
     const std::size_t noteCount = selected.pattern.notes.size();
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*selectedDetailsLabel_)
+    RequireComponent<TextVisualComponent>(*selectedDetailsLabel_)
         .SetText(std::vformat(text.detailsFormat,
                               std::make_wformat_args(bpm, noteCount, mode)));
 }
 
 void MusicSelectView::RefreshSearchPresentation()
 {
-    const auto &text = finger_drum::texts::MusicSelect(texts_);
+    const auto &text = MusicSelect(texts_);
     if (searchField_ != nullptr)
     {
         std::wstring display =
@@ -259,13 +259,13 @@ void MusicSelectView::RefreshSearchPresentation()
         {
             display += L"_";
         }
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*searchField_)
+        RequireComponent<TextVisualComponent>(*searchField_)
             .SetText(std::move(display));
     }
     if (searchCountLabel_ != nullptr)
     {
         const std::size_t songCount = selection_.visibleSongIndices_.size();
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*searchCountLabel_)
+        RequireComponent<TextVisualComponent>(*searchCountLabel_)
             .SetText(std::vformat(text.songCountFormat, std::make_wformat_args(songCount)));
     }
 }

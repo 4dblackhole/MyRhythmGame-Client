@@ -3,28 +3,27 @@
 #include "Texts/GameScene/MusicSelectScene/MusicSelectTexts.h"
 
 using namespace song_select;
-namespace v = mrg::visual2d;
 
 void MusicSelectView::CreateAdditionMenu()
 {
     if (!IsEditorSongSelect())
         return;
-    additionMenu_ = &v::CreatePanel(canvas_->Root(), {0, 0, 200, 84}, "SongAddition.Menu");
+    additionMenu_ = &CreatePanel(canvas_->Root(), {0, 0, 200, 84}, "SongAddition.Menu");
     additionMenu_->SetZIndex(80);
     ApplySpriteStyle(*additionMenu_, PanelWhite, BorderBlue);
     SetCornerRadius(*additionMenu_, 6);
-    newDifficultyItem_ = &v::CreateButton(*additionMenu_, {4, 44, 192, 36}, L"", "SongAddition.NewDifficulty");
-    convertOsuItem_ = &v::CreateButton(*additionMenu_, {4, 4, 192, 36}, L"", "SongAddition.ConvertOsu");
+    newDifficultyItem_ = &CreateButton(*additionMenu_, {4, 44, 192, 36}, L"", "SongAddition.NewDifficulty");
+    convertOsuItem_ = &CreateButton(*additionMenu_, {4, 4, 192, 36}, L"", "SongAddition.ConvertOsu");
     for (auto *item : {newDifficultyItem_, convertOsuItem_})
     {
         ApplyButtonStyle(*item, PanelWhite, FocusBlue, AccentBlue);
-        auto &label = RequireComponent<v::TextVisualComponent>(*item);
+        auto &label = RequireComponent<TextVisualComponent>(*item);
         label.SetFontSize(18);
         texts_.ApplyFont(label);
     }
     CloseAdditionMenu();
 }
-void MusicSelectView::OpenAdditionMenu(const v::Rect anchor)
+void MusicSelectView::OpenAdditionMenu(const Rect anchor)
 {
     if (!additionMenu_)
         return;
@@ -42,23 +41,23 @@ void MusicSelectView::CloseAdditionMenu()
     if (canvas_)
         inputRouter_.Reset(*canvas_);
 }
-bool MusicSelectView::ProcessAdditionMenu(const mrg::platform::InputState &input)
+bool MusicSelectView::ProcessAdditionMenu(const InputState &input)
 {
     if (!additionMenu_ || !additionMenu_->IsVisible())
         return false;
     for (const auto &action : canvas_->TakeActions())
     {
-        if (action.type != v::ActionType::Clicked)
+        if (action.type != ActionType::Clicked)
             continue;
         if (action.source == newDifficultyItem_->Id())
             command_ = SongSelectCommand::CreateDifficulty;
         else if (action.source == convertOsuItem_->Id())
             command_ = SongSelectCommand::ConvertOsu;
     }
-    const bool outside = input.WasMouseButtonPressed(mrg::platform::MouseButton::Left) &&
+    const bool outside = input.WasMouseButtonPressed(MouseButton::Left) &&
                          (!canvasPointer_ || !additionMenu_->BoundsInCanvas().Contains(*canvasPointer_));
     if (command_ != SongSelectCommand::None || outside || input.WasKeyPressed(VK_ESCAPE) ||
-        input.WasMouseButtonPressed(mrg::platform::MouseButton::Right))
+        input.WasMouseButtonPressed(MouseButton::Right))
         CloseAdditionMenu();
     return true; // An open menu consumes input, including clicks which dismiss it.
 }

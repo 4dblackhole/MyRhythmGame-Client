@@ -7,10 +7,10 @@
 #include <map>
 namespace taiko_result_ui
 {
-    namespace v = mrg::visual2d;
+
     namespace
     {
-        constexpr std::size_t GradeCount = finger_drum::rhythm::AccuracyRange::BandCount;
+        constexpr std::size_t GradeCount = AccuracyRange::BandCount;
         struct HistogramBin
         {
             std::array<std::size_t, GradeCount + 1> grades{};
@@ -18,18 +18,18 @@ namespace taiko_result_ui
         };
         using HistogramBins = std::map<std::int64_t, HistogramBin>;
 
-        std::size_t GraphColorIndex(finger_drum::rhythm::JudgementGrade grade) noexcept
+        std::size_t GraphColorIndex(JudgementGrade grade) noexcept
         {
             const auto index = static_cast<std::size_t>(grade);
             return index < GradeCount ? index : GradeCount;
         }
 
-        v::Color GraphColor(std::size_t index) noexcept
+        Color GraphColor(std::size_t index) noexcept
         {
             return index < GradeCount ? layout::Markers[index] : layout::Markers[6];
         }
 
-        std::int64_t HistogramMillisecond(finger_drum::rhythm::RhythmDuration error) noexcept
+        std::int64_t HistogramMillisecond(RhythmDuration error) noexcept
         {
             // Round symmetrically around zero without overflowing the us value
             // or losing its sub-millisecond precision in a floating conversion.
@@ -37,7 +37,7 @@ namespace taiko_result_ui
             return error.count() / 1000 + (remainder >= 500 ? 1 : remainder <= -500 ? -1 : 0);
         }
 
-        void AppendHistogram(GraphData &data, const HistogramBins &bins, v::Rect histogram, float minimumBarWidth)
+        void AppendHistogram(GraphData &data, const HistogramBins &bins, Rect histogram, float minimumBarWidth)
         {
             if (data.maximumBinCount == 0)
                 return;
@@ -72,7 +72,7 @@ namespace taiko_result_ui
             }
         }
     } // namespace
-    GraphData BuildGraphs(const finger_drum::mode::TaikoPlayResult &result, v::Rect scatter, v::Rect histogram,
+    GraphData BuildGraphs(const TaikoPlayResult &result, Rect scatter, Rect histogram,
                           float minimumBarWidth)
     {
         GraphData data;
@@ -88,7 +88,7 @@ namespace taiko_result_ui
         data.halfRangeMilliseconds = std::ceil(data.halfRangeMilliseconds / 10) * 10;
         data.startSeconds = static_cast<double>(first.count()) / 1'000'000;
         data.endSeconds = std::max(data.startSeconds + .001, static_cast<double>(last.count()) / 1'000'000);
-        const v::Color grid = layout::Color(0x4F9FDF, .65F);
+        const Color grid = layout::ResultColor(0x4F9FDF, .65F);
         data.rectangles.reserve(result.timingErrors.size() + 50);
         // The view owns decorative backgrounds/grid. These zero references
         // are part of interpreting the data range, followed by points/bins.

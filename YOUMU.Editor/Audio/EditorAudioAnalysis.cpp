@@ -1,0 +1,165 @@
+#include "Audio/EditorAudioAnalysis.h"
+#include "Audio/Submodules/AudioDecode.h"
+#include <algorithm>
+#include <cmath>
+#include <complex>
+#include <cstdint>
+#include <memory>
+#include <numbers>
+#include <stdexcept>
+
+namespace
+{
+
+    constexpr std::size_t Window = 2048;
+    void FFT(std::array<std::complex<float>, Window> &values)
+    {
+        for (std::size_t i = 1, j = 0; i < Window; ++i)
+        {
+            std::size_t bit = Window >> 1;
+            for (; j & bit; bit >>= 1)
+                j ^= bit;
+            j ^= bit;
+            if (i < j)
+                std::swap(values[i], values[j]);
+        }
+        for (std::size_t length = 2; length <= Window; length <<= 1)
+        {
+            const auto root = std::polar(1.0F, -2 * std::numbers::pi_v<float> / static_cast<float>(length));
+            for (std::size_t i = 0; i < Window; i += length)
+            {
+                std::complex<float> w{1, 0};
+                for (std::size_t j = 0; j < length / 2; ++j)
+                {
+                    const auto a = values[i + j], b = values[i + j + length / 2] * w;
+                    values[i + j] = a + b;
+                    values[i + j + length / 2] = a - b;
+                    w *= root;
+                }
+            }
+        }
+    }
+    SpectrumFrame AnalyzeFrame(const DecodedAudio &audio, const std::size_t start, const std::size_t hop,
+                               const std::array<float, Window> &hann, const float windowSum,
+                               const std::array<std::size_t, SpectrumBandCount + 1> &bins,
+                               std::array<std::complex<float>, Window> &values)
+    {
+        SpectrumFrame frame;
+        const auto sampleCount = audio.samples.size() / audio.channels;
+        frame.minimum = 1;
+        frame.maximum = -1;
+        for (std::size_t sample = start; sample < std::min(start + hop, sampleCount); ++sample)
+            for (std::uint32_t channel = 0; channel < audio.channels; ++channel)
+            {
+                const float value = audio.samples[sample * audio.channels + channel];
+                frame.minimum = std::min(frame.minimum, value);
+                frame.maximum = std::max(frame.maximum, value);
+                frame.peak = std::max(frame.peak, std::abs(value));
+            }
+
+        // Average channel power, rather than summing their amplitudes:
+        // opposite stereo phases must not cancel the visible spectrum.
+        std::array<float, Window / 2 + 1> power{};
+        for (std::uint32_t channel = 0; channel < audio.channels; ++channel)
+        {
+            values.fill({});
+            for (std::size_t i = 0; i < Window; ++i)
+            {
+                const auto sample = static_cast<std::int64_t>(start) + static_cast<std::int64_t>(i) -
+                                    static_cast<std::int64_t>(Window / 2);
+                if (sample >= 0 && static_cast<std::size_t>(sample) < sampleCount)
+                    values[i] =
+                        audio.samples[static_cast<std::size_t>(sample) * audio.channels + channel] * hann[i];
+            }
+            FFT(values);
+            for (std::size_t bin = 1; bin < power.size(); ++bin)
+                power[bin] += std::norm(values[bin]);
+        }
+        const float normalization = 4.0F / (windowSum * windowSum * static_cast<float>(audio.channels));
+        for (std::size_t band = 0; band < frame.bands.size(); ++band)
+        {
+            float maximumPower = 0;
+            const auto last = std::min(power.size(), std::max(bins[band] + 1, bins[band + 1]));
+            for (auto bin = bins[band]; bin < last; ++bin)
+                maximumPower = std::max(maximumPower, power[bin]);
+            const float db = 10 * std::log10(std::max(maximumPower * normalization, 1e-12F));
+            frame.bands[band] = std::clamp((db - SpectrumFloorDb) / -SpectrumFloorDb, 0.0F, 1.0F);
+        }
+        return frame;
+    }
+} // namespace
+
+AudioAnalysis AnalyzeAudio(const std::filesystem::path &path, const std::stop_token stop, const PcmReader &read)
+{
+    if (stop.stop_requested())
+        return {};
+    AudioAnalysis result;
+    // Allocate FFT scratch once per source; reuse it across frames/channels
+    // instead of growing the worker stack or allocating on every FFT.
+    const auto spectrumScratch = std::make_unique<std::array<std::complex<float>, Window>>();
+    std::array<float, Window> hann{};
+    float windowSum = 0;
+    for (std::size_t i = 0; i < Window; ++i)
+    {
+        hann[i] = .5F - .5F * std::cos(2 * std::numbers::pi_v<float> * static_cast<float>(i) /
+                                       static_cast<float>(Window - 1));
+        windowSum += hann[i];
+    }
+    std::array<std::size_t, SpectrumBandCount + 1> bins{};
+    std::size_t nextFrame = 0, hop = 1;
+    const auto initialize = [&](const DecodedAudio &audio)
+    {
+        // Metadata follows each source's rate; only the FFT window is retained.
+        result.sampleRate = audio.rate;
+        result.maximumFrequencyHz = std::min(20'000.0, audio.rate * .5);
+        result.minimumFrequencyHz = std::min(20.0, result.maximumFrequencyHz * .5);
+        hop = std::max<std::size_t>(1, audio.rate / 100);
+        result.secondsPerFrame = static_cast<double>(hop) / audio.rate;
+        for (std::size_t band = 0; band < bins.size(); ++band)
+        {
+            const double frequency =
+                result.minimumFrequencyHz * std::pow(result.maximumFrequencyHz / result.minimumFrequencyHz,
+                                                     static_cast<double>(band) / SpectrumBandCount);
+            bins[band] =
+                std::clamp(static_cast<std::size_t>(frequency * Window / audio.rate), std::size_t{1}, Window / 2);
+        }
+    };
+    const auto consume = [&](DecodedAudio &audio, bool end)
+    {
+        if (!result.sampleRate)
+            initialize(audio);
+        while (nextFrame < audio.totalFrames && !stop.stop_requested() &&
+               (end || nextFrame + std::max(Window / 2, hop) <= audio.totalFrames))
+        {
+            result.frames.push_back(AnalyzeFrame(audio, nextFrame - audio.firstFrame, hop, hann, windowSum, bins,
+                                                *spectrumScratch));
+            nextFrame += hop;
+        }
+        // Keep the preceding half-window for the next centered FFT.
+        const auto keepFrom = std::min(audio.totalFrames, nextFrame > Window / 2 ? nextFrame - Window / 2 : 0);
+        if (keepFrom > audio.firstFrame)
+        {
+            audio.samples.erase(audio.samples.begin(),
+                                audio.samples.begin() +
+                                    static_cast<std::ptrdiff_t>((keepFrom - audio.firstFrame) * audio.channels));
+            audio.firstFrame = keepFrom;
+        }
+    };
+    DecodedAudio audio;
+    read(path, stop, [&](std::uint32_t channels, std::uint32_t rate, std::span<const float> samples)
+    {
+        if (channels == 0 || rate == 0 ||
+            (audio.rate != 0 && (audio.channels != channels || audio.rate != rate)))
+            throw std::runtime_error("Analysis source returned an invalid or changing PCM format.");
+        audio.channels = channels;
+        audio.rate = rate;
+        AppendPcm(audio, samples, [&](DecodedAudio &decoded) { consume(decoded, false); });
+    });
+    if (stop.stop_requested())
+        return {};
+    if (audio.rate == 0)
+        throw std::runtime_error("Analysis source returned no PCM format.");
+    consume(audio, true);
+    result.durationSeconds = static_cast<double>(audio.totalFrames) / audio.rate;
+    return result;
+}

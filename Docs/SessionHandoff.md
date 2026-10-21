@@ -7,6 +7,30 @@
 3. [변경 영향 지도](ChangeImpactMap.md)로 소유 파일·호출부·테스트를 찾습니다.
 4. 요구가 불명확하거나 해석에 따라 동작/설계가 크게 달라지면 구현을 멈추고 질문합니다.
 
+## 최신 완료: PhantomCore / YOUMU 개명·검증 책임 이동 (2026-10-22)
+
+- 실제 작업 폴더는 `D:\Projects\c++\asdf\YOUMU`, 독립 엔진은
+  `D:\Projects\c++\asdf\PhantomCore`입니다. GitHub 저장소명도 각각 YOUMU/PhantomCore입니다.
+  같은 main을 사용하며 새 솔루션은 YOUMU.sln / PhantomCore.sln입니다.
+  예전 Client 작업 폴더는 Codex 프로세스가 점유한 빈 폴더만 남아 있으며 실제 소스·Git·
+  사용자 파일은 새 YOUMU 폴더에 있습니다. 이후 명령의 workdir와 프로젝트 열기는 새 경로를 사용합니다.
+- GameIdentity.props가 표시 이름과 EXE 이름의 유일한 원본입니다. 표시 이름은
+  `Y's Orchestral Unison: Melodic Ultimatum`, 빌드 출력은
+  `Y's Orchestral Unison - Melodic Ultimatum.exe`입니다. 공개 엔진 SDK는 PhantomCore.h/lib입니다.
+- 제품/도메인 namespace를 제거하고 실제 충돌을 명확한 이름으로 해소했습니다.
+  UI 색상/배치의 충돌 방지 범위와 익명/테스트 범위는 유지합니다. 이전 이름의 별칭이나
+  전달 헤더는 없습니다. 자세한 책임과 경계는
+  [제품 이름과 검증 책임](Reviews/IdentityMigration-2026-10-22.md)을 봅니다.
+- 변환기는 공통 Chart/Rhythm과 태고 노트 규약만 사용합니다. 실제 모드 세션 구성·노트 수
+  검증은 Client의 OsuImportValidation이 변환 JSON/저장 파일을 받아 수행합니다.
+  EditorOsuImport가 worker에서 검증한 뒤 Scene이 성공 결과의 카탈로그만 갱신합니다.
+- 빌드·정적 분석·로직·smoke·관련 회귀와 실제 변환 결과 검증은
+  [Verification의 같은 날짜 제품 개명 절](Verification.md)에 기록했습니다. 수동 화면/물리 입력/
+  청취는 확인하지 않았습니다. 추적 자산과 ignored 사용자 데이터는 보존했습니다.
+- 이전 생성물은 실행 정책상 삭제 대신 ignored build/retired-outputs-20261022에 보관했고,
+  실제 빌드/SDK 출력 폴더에는 이전 제품 이름의 실행 파일·라이브러리·헤더가 없습니다.
+  Chat On Steroids 도구는 사용하지 않습니다. 변환기는 계속 기존 전용 세션에서 담당합니다.
+
 ## MRG3 세션으로 이어갈 상태 (2026-10-22)
 
 - 같은 작업 폴더의 `main`을 이어서 사용합니다. 새 브랜치나 worktree는 만들지 않습니다.
@@ -19,7 +43,7 @@
   없었습니다. 파일 내용을 보존하며, 이번 이관에서 C++ 소스를 수정하지 않았습니다.
 - 직전 요청은 AngelDream Handshake의 기본 `Dream/angeldream.ymp` 오프셋을 51ms
   빼는 작업이었습니다. `Pattern Offset: 104` → `Pattern Offset: 53`으로 변경했으며,
-  `FingerDrum.Assets/Assets/Songs/Patterns/angeldream/Dream/angeldream.ymp`와
+  `YOUMU.Assets/Assets/Songs/Patterns/angeldream/Dream/angeldream.ymp`와
   ignored 개발용 `Client/Assets/Songs/Patterns/angeldream/Dream/angeldream.ymp`에
   동일하게 반영했습니다. 다른 난이도의 오프셋은 변경하지 않았습니다.
   개발용 Songs는 ignored 사용자 데이터이므로 로컬에 유지하며 Git에는 추가하지 않습니다.
@@ -50,7 +74,7 @@ rewind 기록을 소유합니다. ChartEditor는 여섯 저장/복구 경로의 
 
 공통 PCM(2026-10-20): [플레이 오디오](Gameplay/Audio.md), [에디터 분석](ChartEditor.md).
 재생/분석이 엔진 DecodeAudioPcm의 같은 시간축을 사용합니다. MP3는 dr_mp3로 Info/LAME
-패딩을 제거하고 Vorbis/Windows 코덱은 기존 경로를 공유합니다. FingerDrum.Editor는
+패딩을 제거하고 Vorbis/Windows 코덱은 기존 경로를 공유합니다. YOUMU.Editor는
 호스트가 주입한 PCM reader로 FFT만 수행하며 엔진 의존성이 없습니다. FMOD 출력/버스/DSP는
 유지합니다. Stream도 전체 float PCM을 준비하므로 메모리 비용과 취소/수명 계약은 엔진 문서를
 참고합니다. 개발용 Omoiyoshino YMP의 Pattern Offset은 사용자 요청으로 752ms입니다.
@@ -72,7 +96,7 @@ ChartEditorHistory는 편집 원본의 최대 32개 동작을 기록합니다. �
 같은 한 동작으로 복원하며 저장한 상태로 돌아가면 dirty가 해제됩니다. 노트 단독 이력은
 추가/수정/삭제와 같은 트리 갱신 경로를 사용합니다. Space는 재생/정지, 실시간 휠은 격자 탐색입니다.
 첫 저장의 자동 YME 참조는 저장 성공 시에만 이력에도 확정하므로 메타데이터 Undo/Redo와
-저장된 파일이 일치합니다. Release의 기존 FingerDrum.Editor PDB LNK4020 경고는 별도 제한으로
+저장된 파일이 일치합니다. Release의 기존 YOUMU.Editor PDB LNK4020 경고는 별도 제한으로
 Verification에 기록했습니다. 소스 진단 억제나 범위 밖 빌드 설정 변경은 하지 않았습니다.
 
 판정 인디케이터는 최근 32개 타격을 고정 원형 큐로 유지하고 밀려난 최대 8개를 0.2초 동안
@@ -88,7 +112,7 @@ Verification에 기록했습니다. 소스 진단 억제나 범위 밖 빌드 �
 에디터 OGG 분석(2026-10-17): [오디오 분석 경로](ChartEditor.md).
 게임 재생은 FMOD를 유지하며 분석에만 정적 stb_vorbis를 추가했습니다. Ogg Vorbis는
 Windows 코덱 없이 파형/FFT를 생성합니다. 다른 형식은 기존 Media Foundation을 사용합니다.
-디코더/PCM 전달은 FingerDrum.Editor/Audio/Submodules, FFT는 EditorAudioAnalysis가 소유합니다.
+디코더/PCM 전달은 YOUMU.Editor/Audio/Submodules, FFT는 EditorAudioAnalysis가 소유합니다.
 출처·한계·외부 경고 정책은 ThirdParty/stb/README.md, 검증은 Verification을 참고합니다.
 
 에디터 osu 가져오기(2026-10-17): [곡 카드 + 메뉴·가져오기](EditorSongSelect.md#osutaiko-가져오기).
@@ -138,7 +162,7 @@ UI 언어파일(2026-10-16): [TextManagement의 경로·문법·소유권](TextM
 
 게임 표시 이름(2026-10-16): `Client/Texts/GameIdentity.h`의 `GameName` 한 곳에서 변경합니다.
 게임 창·시작/자산 오류창과 에디터 확인창이 참조하며 언어 표에는 에디터 접미사만 둡니다.
-기존 FingerDrum 클래스/Scene ID·캐시와 MyRhythmGame.exe는 내부 식별자로 유지합니다.
+기존 YOUMU 클래스/Scene ID·캐시와 Y's Orchestral Unison - Melodic Ultimatum.exe는 내부 식별자로 유지합니다.
 범위와 변경 방법은 [TextManagement](TextManagement.md#게임-이름-변경)를 참고합니다.
 
 옵션 패널 선행 변경(2026-10-15): [TextManagement](TextManagement.md).
@@ -179,12 +203,12 @@ TextContent payload와 준비된 글리프 배치를 재사용하며 clip 밖 �
 회색조 출력·프레임 upload arena·16MiB 기본 아틀라스 확대/회수·합성 순서 보존을 적용했습니다.
 Marquee는 원본 Unicode를 유지하고 측정 폭으로 픽셀 이동합니다.
 
-- 작업 폴더: `D:\Projects\c++\asdf\MyRhythmGame-Client`. 별도 지시 없으면 `main`에서 작업합니다.
-- Client: `4dblackhole/MyRhythmGame-Client`, 엔진: private `Dependencies/MRG-Engine` submodule.
+- 작업 폴더: `D:\Projects\c++\asdf\YOUMU`. 별도 지시 없으면 `main`에서 작업합니다.
+- Client: `4dblackhole/YOUMU`, 엔진: private `Dependencies/PhantomCore` submodule.
 - 전체 솔루션 빌드는 같은 부모 폴더의 독립 저장소 `OsuTaikoConverter`도 필요합니다.
   osu!taiko 전용 EXE의 인자·변환 규칙·제한은 [변환기](OsuTaikoConverter.md)를 참고합니다.
 - 커밋과 동기화 상태는 Git이 기준입니다. 문서에 고정 SHA를 복제하지 않습니다.
-- C++20 / MSVC v143 / Windows / D3D12. Client의 엔진 경계는 `MRG_Core.h` 하나입니다.
+- C++20 / MSVC v143 / Windows / D3D12. Client의 엔진 경계는 `PhantomCore.h` 하나입니다.
 - 판정/차트/모드/편집 분석은 엔진 비종속 프로젝트입니다. Scene은 수명주기와 조립을 맡습니다.
 - 기본 스킨/글꼴은 RCDATA fallback, AngelDream MP3 1개·YMM 1개·YMP/YME 5쌍과
   효과 테스트 WAV 2개는 외부 Songs입니다.
@@ -255,7 +279,7 @@ Result는 Retry로 같은 채보의 새 시도를 시작하고 Replay는 비활�
 
 ## 최근 구현: 개발/배포 자산 경로·난이도별 파일 쌍 (2026-10-12)
 
-외부 자산 경로는 FingerDrum.Assets의 UserAssetRoot에서 한 번 결정합니다.
+외부 자산 경로는 YOUMU.Assets의 UserAssetRoot에서 한 번 결정합니다.
 EXE 기준 `../../../Client/Assets`가 있으면 개발용 폴더, 없으면 EXE 옆 `Asset`을
 사용합니다. 작업 폴더와 Debug/Release 구성에 의존하지 않습니다.
 Songs와 Skins는 이 루트를 공유하고 Option.ini는 ExecutableDirectory를 사용합니다.

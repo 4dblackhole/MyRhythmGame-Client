@@ -1,15 +1,15 @@
 #include "TestSupport.h"
 
-namespace finger_drum::tests
+namespace tests
 {
     void TestSongCatalog(const std::filesystem::path &songsRoot)
     {
-        const chart::SongCatalogLoadResult catalog = chart::SongCatalog{}.Load(songsRoot);
+        const SongCatalogLoadResult catalog = SongCatalog{}.Load(songsRoot);
         if (!catalog.Succeeded())
         {
-            for (const chart::Diagnostic &diagnostic : catalog.diagnostics)
+            for (const Diagnostic &diagnostic : catalog.diagnostics)
             {
-                if (diagnostic.severity == chart::DiagnosticSeverity::Error)
+                if (diagnostic.severity == DiagnosticSeverity::Error)
                 {
                     const auto file = diagnostic.location.file.u8string();
                     std::cerr << std::string(reinterpret_cast<const char *>(file.data()), file.size()) << ':'
@@ -24,9 +24,9 @@ namespace finger_drum::tests
         Require(catalog.discoveredPatternFiles >= 4 &&
                     catalog.PatternCount() == catalog.discoveredPatternFiles,
                 "All bundled and optional local YMP patterns must be associated with their songs.");
-        mode::TaikoMode taiko;
+        TaikoMode taiko;
         bool checkedAngelDream = false;
-        for (const chart::SongCatalogEntry &song : catalog.songs)
+        for (const SongCatalogEntry &song : catalog.songs)
         {
             Require(std::filesystem::is_regular_file(song.audioPath),
                     "Every YMM entry must resolve its music file.");
@@ -39,14 +39,14 @@ namespace finger_drum::tests
                 {
                     Require(
                         std::ranges::any_of(song.patterns,
-                                            [required](const chart::SongCatalogPattern &pattern) {
+                                            [required](const SongCatalogPattern &pattern) {
                                                 return pattern.patternPath.filename() == required;
                                             }),
                         "The bundled AngelDream catalog must include every test pattern.");
                 }
                 checkedAngelDream = true;
             }
-            for (const chart::SongCatalogPattern &pattern : song.patterns)
+            for (const SongCatalogPattern &pattern : song.patterns)
             {
                 if (song.metadataPath.filename() == "angel dream hand shaking.ymm")
                 {
@@ -59,34 +59,34 @@ namespace finger_drum::tests
                 TemporaryDirectory saved("finger-drum-catalog-save");
                 auto copy = pattern.pattern;
                 copy.sourcePath = saved.Path() / pattern.patternPath.filename();
-                chart::EffectDocument effect;
+                EffectDocument effect;
                 if (pattern.effectPath)
-                    effect = chart::ChartParser{}.ParseEffectFile(*pattern.effectPath).document;
-                chart::ChartEditor editing(copy, effect);
+                    effect = ChartParser{}.ParseEffectFile(*pattern.effectPath).document;
+                ChartEditor editing(copy, effect);
                 editing.Save();
-                const auto reloaded = chart::ChartParser{}.ParsePatternFile(copy.sourcePath);
+                const auto reloaded = ChartParser{}.ParsePatternFile(copy.sourcePath);
                 Require(reloaded.Succeeded() &&
-                            chart::ChartEditor::WritePattern(reloaded.document) ==
-                                chart::ChartEditor::WritePattern(editing.Pattern()),
+                            ChartEditor::WritePattern(reloaded.document) ==
+                                ChartEditor::WritePattern(editing.Pattern()),
                         "Every provided chart must save/reload without source-data loss (using a "
                         "temporary copy).");
                 if (pattern.patternPath.filename() == "Rapbit - Saika [test].ymp")
                 {
-                    const chart::MusicalTimeline timeline(pattern.pattern);
-                    const rhythm::RhythmTime firstChange =
-                        timeline.Compile({1, chart::Rational{1, 8}});
-                    const rhythm::RhythmTime secondChange =
-                        timeline.Compile({1, chart::Rational{2, 8}});
-                    const rhythm::RhythmTime finalChange =
-                        timeline.Compile({1, chart::Rational{18, 8}});
-                    const rhythm::RhythmTime nextBarline =
-                        timeline.Compile({2, chart::Rational{0, 1}});
-                    Require(secondChange - firstChange == rhythm::RhythmDuration{166'667} &&
+                    const MusicalTimeline timeline(pattern.pattern);
+                    const RhythmTime firstChange =
+                        timeline.Compile({1, Rational{1, 8}});
+                    const RhythmTime secondChange =
+                        timeline.Compile({1, Rational{2, 8}});
+                    const RhythmTime finalChange =
+                        timeline.Compile({1, Rational{18, 8}});
+                    const RhythmTime nextBarline =
+                        timeline.Compile({2, Rational{0, 1}});
+                    Require(secondChange - firstChange == RhythmDuration{166'667} &&
                                 finalChange < nextBarline,
                             "Saika's 20/8 measure must keep every BPM anchor at its absolute N/D "
                             "position.");
                 }
-                mode::ModeLoadResult loaded =
+                ModeLoadResult loaded =
                     taiko.LoadSession(pattern.patternPath, pattern.effectPath);
                 Require(loaded.Succeeded() && loaded.session->Gear().LaneCount() == 1,
                         "Every copied Taiko pattern must create one playable Lane.");
@@ -99,7 +99,7 @@ namespace finger_drum::tests
 
     void TestSongCatalogIsolatesInvalidFiles()
     {
-        TemporaryDirectory fixture("FingerDrumCatalogValidation");
+        TemporaryDirectory fixture("YOUMUCatalogValidation");
         const std::filesystem::path music = fixture.Path() / "Music";
         const std::filesystem::path patterns = fixture.Path() / "Pattern";
         WriteTextFile(music / "valid.ymm", "Version: 1\nFile: valid.mp3\nMusic Name 1: Valid\n");
@@ -113,7 +113,7 @@ namespace finger_drum::tests
                       "Pattern Name: Invalid\nMode: Taiko\nBase BPM: 120\n"
                       "[Pattern]\n0/1,1,0\n");
 
-        const chart::SongCatalogLoadResult catalog = chart::SongCatalog{}.Load(fixture.Path());
+        const SongCatalogLoadResult catalog = SongCatalog{}.Load(fixture.Path());
         Require(!catalog.Succeeded() && catalog.discoveredMusicFiles == 2 &&
                     catalog.discoveredPatternFiles == 2,
                 "Catalog discovery must retain diagnostics and source counts for invalid files.");
@@ -123,4 +123,4 @@ namespace finger_drum::tests
                     std::to_string(catalog.songs.size()) +
                     ", patterns=" + std::to_string(catalog.PatternCount()) + ").");
     }
-} // namespace finger_drum::tests
+} // namespace youmu::tests

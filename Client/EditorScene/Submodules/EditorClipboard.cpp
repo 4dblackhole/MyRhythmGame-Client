@@ -2,22 +2,21 @@
 #include "Utility/IntervalIndex.h"
 #include <limits>
 
-namespace chart = finger_drum::chart;
 namespace
 {
-    bool Intersects(chart::MusicalPosition a, chart::MusicalPosition b, chart::MusicalPosition c,
-                    chart::MusicalPosition d)
+    bool Intersects(MusicalPosition a, MusicalPosition b, MusicalPosition c,
+                    MusicalPosition d)
     {
         return a <= d && c <= b;
     }
 } // namespace
 
-void EditorWorkspace::PasteNotes(const Clipboard &copied, chart::MusicalPosition anchor, bool includeBlanks)
+void EditorWorkspace::PasteNotes(const Clipboard &copied, MusicalPosition anchor, bool includeBlanks)
 {
     const auto &timeline = Document().Timeline();
     const auto pasteEnd = timeline.AddWholeNotes(anchor, copied.length);
-    std::vector<chart::PatternNote> added;
-    std::vector<std::pair<chart::MusicalPosition, chart::MusicalPosition>> intervals;
+    std::vector<PatternNote> added;
+    std::vector<std::pair<MusicalPosition, MusicalPosition>> intervals;
     auto pattern = Document().Pattern();
     std::size_t nextId = 0;
     for (const auto &note : pattern.notes)
@@ -46,7 +45,7 @@ void EditorWorkspace::PasteNotes(const Clipboard &copied, chart::MusicalPosition
     }
     std::set<std::size_t> removed, visited;
     std::ranges::sort(intervals);
-    std::vector<chart::MusicalPosition> maximumEnds;
+    std::vector<MusicalPosition> maximumEnds;
     for (const auto &interval : intervals)
         maximumEnds.push_back(maximumEnds.empty() ? interval.second : std::max(maximumEnds.back(), interval.second));
     for (const auto &source : pattern.notes)
@@ -74,18 +73,18 @@ void EditorWorkspace::PasteNotes(const Clipboard &copied, chart::MusicalPosition
     Replace(std::move(pattern), Document().Effects());
 }
 
-void EditorWorkspace::PasteTiming(const Clipboard &copied, chart::MusicalPosition anchor, bool includeBlanks)
+void EditorWorkspace::PasteTiming(const Clipboard &copied, MusicalPosition anchor, bool includeBlanks)
 {
     const auto &timeline = Document().Timeline();
     auto timing = Document().Timing();
     const auto end = timeline.AddWholeNotes(anchor, copied.length);
-    std::set<std::pair<chart::MusicalPosition, chart::TimingDirectiveType>> replaced;
-    std::vector<chart::TimingDirective> added;
+    std::set<std::pair<MusicalPosition, TimingDirectiveType>> replaced;
+    std::vector<TimingDirective> added;
     for (const auto &item : copied.timing)
     {
         auto event = item.value;
         event.position = timeline.AddWholeNotes(anchor, item.offset);
-        if (event.type == chart::TimingDirectiveType::MeasureLength && event.position.fraction != chart::Rational{})
+        if (event.type == TimingDirectiveType::MeasureLength && event.position.fraction != Rational{})
             throw std::invalid_argument("A measure-length change must be pasted at a measure start.");
         replaced.emplace(event.position, event.type);
         added.push_back(std::move(event));
@@ -101,18 +100,18 @@ void EditorWorkspace::PasteTiming(const Clipboard &copied, chart::MusicalPositio
     DocumentChanged();
 }
 
-void EditorWorkspace::PasteEffects(const Clipboard &copied, chart::MusicalPosition anchor, bool includeBlanks)
+void EditorWorkspace::PasteEffects(const Clipboard &copied, MusicalPosition anchor, bool includeBlanks)
 {
     const auto &timeline = Document().Timeline();
     auto effects = Document().Effects();
     const auto end = timeline.AddWholeNotes(anchor, copied.length);
-    using Index = chart::IntervalIndex<chart::MusicalPosition, bool>;
-    using Track = std::pair<chart::EffectCommandType, std::string>;
+    using Index = IntervalIndex<MusicalPosition, bool>;
+    using Track = std::pair<EffectCommandType, std::string>;
     std::map<Track, std::vector<Index::Entry>> intervals;
     std::map<Track, Index> indices;
-    std::vector<chart::EffectCommand> addedCommands;
-    std::vector<chart::HitSoundChange> addedSounds;
-    std::set<std::pair<int, chart::MusicalPosition>> replacedSounds;
+    std::vector<EffectCommand> addedCommands;
+    std::vector<HitSoundChange> addedSounds;
+    std::set<std::pair<int, MusicalPosition>> replacedSounds;
     for (const auto &item : copied.effects)
     {
         auto event = item.value;

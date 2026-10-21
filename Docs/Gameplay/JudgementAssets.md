@@ -4,7 +4,7 @@
 CLI/API fallback은 사용하지 않았습니다. 모든 호출에 transparent_background=true를 지정했고,
 선택한 원본 PNG를 변경 없이 프로젝트에 복사했습니다.
 
-저장 위치는 `FingerDrum.Assets/Assets/Skins/Default Skin/InGame/Judgements/`이며
+저장 위치는 `YOUMU.Assets/Assets/Skins/Default Skin/InGame/Judgements/`이며
 파일명은 MAX.png, PERFECT.png, GREAT.png, GOOD.png, BAD.png, MISS.png, POOR.png입니다.
 실제 결과는 모두 1254×1254 RGBA이며 중심과 모서리 알파가 0입니다.
 아래 프롬프트의 요청 크기와 실제 도구 출력 크기는 다릅니다. 런타임은 이미지 크기를 읽고

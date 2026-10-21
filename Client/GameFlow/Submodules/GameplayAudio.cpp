@@ -5,10 +5,10 @@
 #include <map>
 namespace
 {
-    void RegisterTaikoSounds(finger_drum::audio::GameplayAudioRouter &router, std::string &errorMessage);
+    void RegisterTaikoSounds(GameplayAudioRouter &router, std::string &errorMessage);
 }
 
-void GameplaySessionController::InitializeAudio(mrg::audio::AudioSystem &audio)
+void GameplaySessionController::InitializeAudio(AudioSystem &audio)
 {
     initializationError_.clear();
     std::string initializationError;
@@ -25,7 +25,7 @@ void GameplaySessionController::InitializeAudio(mrg::audio::AudioSystem &audio)
 
     // Decode chart resources once on session entry, never on a key press.
     // Indices resolving to the same file share one sample/channel.
-    std::map<std::filesystem::path, std::vector<finger_drum::rhythm::SoundId>> chartSounds;
+    std::map<std::filesystem::path, std::vector<SoundId>> chartSounds;
     for (const auto &[id, path] : session_->HitSoundFiles())
     {
         chartSounds[path].push_back(id);
@@ -33,7 +33,7 @@ void GameplaySessionController::InitializeAudio(mrg::audio::AudioSystem &audio)
     for (const auto &[path, ids] : chartSounds)
     {
         std::string error;
-        if (!audioRouter_.RegisterSoundAliases(ids, path, error, mrg::audio::AudioLoadMode::SampleAsync) &&
+        if (!audioRouter_.RegisterSoundAliases(ids, path, error, AudioLoadMode::SampleAsync) &&
             hitSoundError.empty())
         {
             hitSoundError = ids.front() + ": " + error;
@@ -44,7 +44,7 @@ void GameplaySessionController::InitializeAudio(mrg::audio::AudioSystem &audio)
     if (launchRequest_.IsValid())
     {
         musicRegistered_ = audioRouter_.RegisterSound("Music.Track", launchRequest_.musicPath,
-                                                      mrg::audio::AudioLoadMode::StreamAsyncAccurate, musicError);
+                                                      AudioLoadMode::StreamAsyncAccurate, musicError);
     }
 
     if (!hitSoundError.empty() || !musicError.empty())
@@ -55,22 +55,22 @@ void GameplaySessionController::InitializeAudio(mrg::audio::AudioSystem &audio)
 
 namespace
 {
-    void RegisterTaikoSounds(finger_drum::audio::GameplayAudioRouter &router, std::string &errorMessage)
+    void RegisterTaikoSounds(GameplayAudioRouter &router, std::string &errorMessage)
     {
         struct SoundRegistration final
         {
-            std::span<const finger_drum::rhythm::SoundId> ids;
+            std::span<const SoundId> ids;
             std::wstring_view file;
         };
-        static const std::array<finger_drum::rhythm::SoundId, 3> DonIds{finger_drum::mode::taiko_sound::DonHit,
-                                                                        finger_drum::mode::taiko_sound::LongNoteTick,
-                                                                        finger_drum::mode::taiko_sound::DonFreeInput};
-        static const std::array<finger_drum::rhythm::SoundId, 2> KatIds{finger_drum::mode::taiko_sound::KatHit,
-                                                                        finger_drum::mode::taiko_sound::KatFreeInput};
-        static const std::array<finger_drum::rhythm::SoundId, 1> BigDonIds{
-            finger_drum::mode::taiko_sound::BigDonFirstHit};
-        static const std::array<finger_drum::rhythm::SoundId, 1> BigKatIds{
-            finger_drum::mode::taiko_sound::BigKatFirstHit};
+        static const std::array<SoundId, 3> DonIds{DonHit,
+                                                                        LongNoteTick,
+                                                                        DonFreeInput};
+        static const std::array<SoundId, 2> KatIds{KatHit,
+                                                                        KatFreeInput};
+        static const std::array<SoundId, 1> BigDonIds{
+            BigDonFirstHit};
+        static const std::array<SoundId, 1> BigKatIds{
+            BigKatFirstHit};
         const std::array<SoundRegistration, 4> registrations{{
             {DonIds, L"don.wav"},
             {KatIds, L"kat.wav"},
@@ -82,17 +82,17 @@ namespace
         {
             std::string registrationError;
             if (!router.RegisterSoundAliases(registration.ids,
-                                             mrg_client::asset_paths::skin::TaikoHitSound(registration.file),
-                                             registrationError, mrg::audio::AudioLoadMode::SampleAsync) &&
+                                             TaikoHitSound(registration.file),
+                                             registrationError, AudioLoadMode::SampleAsync) &&
                 firstError.empty())
             {
                 firstError = registration.ids.front() + ": " + registrationError;
             }
         }
         std::string balloonError;
-        if (!router.RegisterSound(finger_drum::mode::taiko_sound::BalloonPop,
-                                  mrg_client::asset_paths::skin::TaikoHitSound(L"pop.wav"),
-                                  mrg::audio::AudioLoadMode::SampleAsync, balloonError) &&
+        if (!router.RegisterSound(BalloonPop,
+                                  TaikoHitSound(L"pop.wav"),
+                                  AudioLoadMode::SampleAsync, balloonError) &&
             firstError.empty())
         {
             firstError = "Taiko.Balloon.Pop: " + balloonError;

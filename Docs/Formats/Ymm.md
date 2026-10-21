@@ -1,6 +1,6 @@
 # YMM 음악 정보
 
-코드: `FingerDrum.Chart/Parsing/Submodules/MusicParser.cpp`, `Model/Submodules/MusicDocument.h`.
+코드: `YOUMU.Chart/Parsing/Submodules/MusicParser.cpp`, `Model/Submodules/MusicDocument.h`.
 검증: `Tests/Rhythm/Submodules/SongCatalogTests.cpp`.
 
 UTF-8 텍스트이며 빈 줄과 `//`로 시작하는 줄을 무시합니다. 경로에는 `\\`와 `/`를 사용할 수 있습니다.

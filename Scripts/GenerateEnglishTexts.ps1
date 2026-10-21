@@ -4,8 +4,8 @@ $ErrorActionPreference = 'Stop'
 # external files, and no generated copy is written unless its content changed.
 $encoding = [Text.UTF8Encoding]::new($false, $true)
 $text = [IO.File]::ReadAllText([IO.Path]::GetFullPath($Source), $encoding)
-if ($text.Contains(')MRG_ENGLISH"')) { throw 'English INI contains the reserved C++ raw-string delimiter.' }
-$header = "#pragma once`n#include <string_view>`nnamespace finger_drum::texts {`ninline constexpr std::string_view EnglishDefaultIni = R`"MRG_ENGLISH($text)MRG_ENGLISH`";`n}`n"
+if ($text.Contains(')YOUMU_ENGLISH"')) { throw 'English INI contains the reserved C++ raw-string delimiter.' }
+$header = "#pragma once`n#include <string_view>`ninline constexpr std::string_view EnglishDefaultIni = R`"YOUMU_ENGLISH($text)YOUMU_ENGLISH`";`n"
 $destination = [IO.Path]::GetFullPath($Output)
 [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
 if (-not [IO.File]::Exists($destination) -or [IO.File]::ReadAllText($destination) -ne $header) {

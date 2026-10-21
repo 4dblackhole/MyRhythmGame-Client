@@ -1,5 +1,5 @@
 #pragma once
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "Modes/IEditorAudioSource.h"
 #include "Time/RhythmTimer.h"
 #include <optional>
@@ -19,26 +19,26 @@ class EditorPlayback final
     {
         Shutdown();
     }
-    void Initialize(mrg::audio::AudioSystem &audio) noexcept
+    void Initialize(AudioSystem &audio) noexcept
     {
         audio_ = &audio;
     }
     void Toggle();
     void Pause() noexcept;
-    void Seek(finger_drum::rhythm::RhythmTime time);
+    void Seek(RhythmTime time);
     void Update(const std::map<std::string, std::filesystem::path> &files, std::uint64_t filesRevision,
                 const std::vector<AudioMarker> &markers, std::uint64_t documentRevision,
-                finger_drum::rhythm::RhythmTime chartEnd);
+                RhythmTime chartEnd);
     void Shutdown() noexcept;
     [[nodiscard]] bool Active() const noexcept
     {
         return wanted_;
     }
-    [[nodiscard]] finger_drum::rhythm::RhythmTime Position() const noexcept
+    [[nodiscard]] RhythmTime Position() const noexcept
     {
         return position_;
     }
-    [[nodiscard]] std::optional<finger_drum::rhythm::RhythmTime> MusicDuration() const noexcept
+    [[nodiscard]] std::optional<RhythmTime> MusicDuration() const noexcept
     {
         return musicDuration_;
     }
@@ -50,10 +50,10 @@ class EditorPlayback final
   private:
     struct SoundTrack
     {
-        std::shared_ptr<mrg::audio::AudioClip> clip;
-        std::vector<finger_drum::rhythm::RhythmTime> times;
+        std::shared_ptr<AudioClip> clip;
+        std::vector<RhythmTime> times;
         std::size_t cursor{};
-        mrg::audio::AudioPlaybackId voice{};
+        AudioPlaybackId voice{};
         std::optional<std::uint64_t> scheduledDspClock;
     };
     void LoadSources(const std::map<std::string, std::filesystem::path> &files, std::uint64_t revision);
@@ -61,24 +61,24 @@ class EditorPlayback final
     void PrimeMusic();
     bool BeginPreparedPlayback();
     void UpdatePosition();
-    [[nodiscard]] finger_drum::rhythm::RhythmTime PositionAtDsp(std::uint64_t dspClock) const noexcept;
-    [[nodiscard]] std::uint64_t DspClockAt(finger_drum::rhythm::RhythmTime time) const noexcept;
+    [[nodiscard]] RhythmTime PositionAtDsp(std::uint64_t dspClock) const noexcept;
+    [[nodiscard]] std::uint64_t DspClockAt(RhythmTime time) const noexcept;
     void AdjustTrackRates(double rate, std::uint64_t dspClock, std::string &error);
     void ScheduleHitSounds();
     void StopVoices() noexcept;
     void PauseVoices();
     void ClearSources() noexcept;
 
-    mrg::audio::AudioSystem *audio_{};
-    mrg::audio::AudioPlaybackManager voices_;
-    std::shared_ptr<mrg::audio::AudioClip> music_;
-    mrg::audio::AudioPlaybackId musicVoice_{};
+    AudioSystem *audio_{};
+    AudioPlaybackManager voices_;
+    std::shared_ptr<AudioClip> music_;
+    AudioPlaybackId musicVoice_{};
     std::map<std::filesystem::path, SoundTrack> tracks_;
     std::map<std::string, std::filesystem::path> soundPaths_;
     std::optional<std::uint64_t> filesRevision_, cueRevision_;
-    std::optional<finger_drum::rhythm::RhythmTime> musicDuration_;
-    finger_drum::rhythm::RhythmTimer clock_;
-    finger_drum::rhythm::RhythmTime position_{}, startPosition_{}, end_{};
+    std::optional<RhythmTime> musicDuration_;
+    RhythmTimer clock_;
+    RhythmTime position_{}, startPosition_{}, end_{};
     std::uint64_t dspAnchorClock_{};
     double rate_{1};
     bool wanted_{}, running_{}, primed_{}, musicPositioned_{};

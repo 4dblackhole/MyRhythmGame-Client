@@ -1,7 +1,7 @@
 #pragma once
 #include "App/AssetPaths.h"
 #include "Catalog/SongCatalog.h"
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "Presentation/MarqueeTextComponent.h"
 #include "Presentation/SkinVisualComponent.h"
 #include "Presentation/UiColors.h"
@@ -42,49 +42,49 @@ namespace song_select
     {
         return penpotFontSize * DesignToCanvasScale * ReadableFontScale(penpotFontSize);
     }
-    namespace palette = finger_drum::presentation::ui_colors;
-    constexpr auto CanvasBlue = palette::sky::Background, PanelWhite = palette::sky::Surface;
-    constexpr auto PureWhite = palette::White, AccentBlue = palette::sky::Accent;
-    constexpr auto AccentHover = palette::sky::AccentHover, BorderBlue = palette::sky::Accent;
-    constexpr auto SubtleBorder = palette::sky::Border, PaleBorder = palette::sky::PaleBorder;
-    constexpr auto PaleBlue = palette::sky::Pale, ViewportBlue = palette::sky::Viewport;
-    constexpr auto FocusBlue = palette::sky::Focus, RowBlue = palette::sky::Row;
-    constexpr auto DeepBlue = palette::sky::Ink, MutedBlue = palette::sky::Muted;
-    constexpr auto SoftTextBlue = palette::sky::SoftText, DisabledBlue = palette::sky::Disabled;
+
+    constexpr auto CanvasBlue = ui_colors::sky::Background, PanelWhite = ui_colors::sky::Surface;
+    constexpr auto PureWhite = ui_colors::White, AccentBlue = ui_colors::sky::Accent;
+    constexpr auto AccentHover = ui_colors::sky::AccentHover, BorderBlue = ui_colors::sky::Accent;
+    constexpr auto SubtleBorder = ui_colors::sky::Border, PaleBorder = ui_colors::sky::PaleBorder;
+    constexpr auto PaleBlue = ui_colors::sky::Pale, ViewportBlue = ui_colors::sky::Viewport;
+    constexpr auto FocusBlue = ui_colors::sky::Focus, RowBlue = ui_colors::sky::Row;
+    constexpr auto DeepBlue = ui_colors::sky::Ink, MutedBlue = ui_colors::sky::Muted;
+    constexpr auto SoftTextBlue = ui_colors::sky::SoftText, DisabledBlue = ui_colors::sky::Disabled;
 
     namespace layout
     {
-        constexpr mrg::visual2d::Size CanvasSize{1280.0F, 720.0F};
-        constexpr mrg::visual2d::Rect DesignBoard{0.0F, 0.0F, 1920.0F, 1080.0F};
+        constexpr Size CanvasSize{1280.0F, 720.0F};
+        constexpr Rect DesignBoard{0.0F, 0.0F, 1920.0F, 1080.0F};
 
-        constexpr mrg::visual2d::Rect CategoryBar{54.0F, 20.0F, 1285.71F, 56.0F};
-        constexpr mrg::visual2d::Rect AllCategory{16.0F, 9.0F, 86.0F, 38.0F};
+        constexpr Rect CategoryBar{54.0F, 20.0F, 1285.71F, 56.0F};
+        constexpr Rect AllCategory{16.0F, 9.0F, 86.0F, 38.0F};
 
-        constexpr mrg::visual2d::Rect RecordPanel{54.0F, 94.0F, 506.29F, 852.0F};
-        constexpr mrg::visual2d::Rect RecordSelector{22.0F, 22.0F, 462.29F, 44.0F};
-        constexpr mrg::visual2d::Rect EmptyRecordMessage{22.0F, 400.0F, 462.29F, 54.0F};
+        constexpr Rect RecordPanel{54.0F, 94.0F, 506.29F, 852.0F};
+        constexpr Rect RecordSelector{22.0F, 22.0F, 462.29F, 44.0F};
+        constexpr Rect EmptyRecordMessage{22.0F, 400.0F, 462.29F, 54.0F};
 
-        constexpr mrg::visual2d::Rect InformationPanel{580.29F, 94.0F, 759.43F, 852.0F};
-        constexpr mrg::visual2d::Rect Preview{24.0F, 24.0F, 360.0F, 360.0F};
-        constexpr mrg::visual2d::Rect PreviewTitle{54.0F, 190.0F, 300.0F, 28.0F};
-        constexpr mrg::visual2d::Rect PreviewEmpty{54.0F, 224.0F, 300.0F, 20.0F};
-        constexpr mrg::visual2d::Rect SelectedSong{404.0F, 38.0F, 331.43F, 38.0F};
-        constexpr mrg::visual2d::Rect SelectedArtist{404.0F, 80.0F, 331.43F, 24.0F};
-        constexpr mrg::visual2d::Rect DifficultyInformation{404.0F, 136.0F, 331.43F, 126.0F};
-        constexpr mrg::visual2d::Rect DifficultyHeading{16.0F, 14.0F, 145.0F, 16.0F};
-        constexpr mrg::visual2d::Rect CreatorHeading{169.71F, 14.0F, 145.0F, 16.0F};
-        constexpr mrg::visual2d::Rect SelectedDifficulty{16.0F, 32.0F, 145.0F, 28.0F};
-        constexpr mrg::visual2d::Rect SelectedCreator{169.71F, 32.0F, 145.0F, 28.0F};
-        constexpr mrg::visual2d::Rect InformationDivider{16.0F, 70.0F, 299.43F, 1.0F};
-        constexpr mrg::visual2d::Rect SelectedDetails{16.0F, 86.0F, 299.43F, 22.0F};
+        constexpr Rect InformationPanel{580.29F, 94.0F, 759.43F, 852.0F};
+        constexpr Rect Preview{24.0F, 24.0F, 360.0F, 360.0F};
+        constexpr Rect PreviewTitle{54.0F, 190.0F, 300.0F, 28.0F};
+        constexpr Rect PreviewEmpty{54.0F, 224.0F, 300.0F, 20.0F};
+        constexpr Rect SelectedSong{404.0F, 38.0F, 331.43F, 38.0F};
+        constexpr Rect SelectedArtist{404.0F, 80.0F, 331.43F, 24.0F};
+        constexpr Rect DifficultyInformation{404.0F, 136.0F, 331.43F, 126.0F};
+        constexpr Rect DifficultyHeading{16.0F, 14.0F, 145.0F, 16.0F};
+        constexpr Rect CreatorHeading{169.71F, 14.0F, 145.0F, 16.0F};
+        constexpr Rect SelectedDifficulty{16.0F, 32.0F, 145.0F, 28.0F};
+        constexpr Rect SelectedCreator{169.71F, 32.0F, 145.0F, 28.0F};
+        constexpr Rect InformationDivider{16.0F, 70.0F, 299.43F, 1.0F};
+        constexpr Rect SelectedDetails{16.0F, 86.0F, 299.43F, 22.0F};
 
-        constexpr mrg::visual2d::Rect BrowserPanel{1359.71F, 20.0F, 506.29F, 926.0F};
-        constexpr mrg::visual2d::Rect SearchField{14.0F, 22.0F, 478.29F, 54.0F};
-        constexpr mrg::visual2d::Rect SearchCount{365.0F, 0.0F, 96.0F, 54.0F};
-        constexpr mrg::visual2d::Rect SortSelector{14.0F, 88.0F, 478.29F, 42.0F};
-        constexpr mrg::visual2d::Rect SongViewport{14.0F, 142.0F, 478.29F, 734.0F};
-        constexpr mrg::visual2d::Rect EmptySongMessage{28.0F, 320.0F, 422.29F, 46.0F};
-        constexpr mrg::visual2d::Rect BrowserHint{18.0F, 884.0F, 470.29F, 22.0F};
+        constexpr Rect BrowserPanel{1359.71F, 20.0F, 506.29F, 926.0F};
+        constexpr Rect SearchField{14.0F, 22.0F, 478.29F, 54.0F};
+        constexpr Rect SearchCount{365.0F, 0.0F, 96.0F, 54.0F};
+        constexpr Rect SortSelector{14.0F, 88.0F, 478.29F, 42.0F};
+        constexpr Rect SongViewport{14.0F, 142.0F, 478.29F, 734.0F};
+        constexpr Rect EmptySongMessage{28.0F, 320.0F, 422.29F, 46.0F};
+        constexpr Rect BrowserHint{18.0F, 884.0F, 470.29F, 22.0F};
 
         constexpr float ContentLeft = 8.0F;
         constexpr float ContentTop = 14.0F;
@@ -96,28 +96,28 @@ namespace song_select
         constexpr float DifficultyRowHeight = 34.0F;
         constexpr float DifficultyRowStep = 42.0F;
         constexpr float ScrollStep = 84.0F;
-        constexpr mrg::visual2d::Rect ScrollbarTrack{469.29F, 14.0F, 5.0F, 706.0F};
+        constexpr Rect ScrollbarTrack{469.29F, 14.0F, 5.0F, 706.0F};
 
-        constexpr mrg::visual2d::Rect OptionButton{612.0F, 972.0F, 696.0F, 60.0F};
-        constexpr mrg::visual2d::Rect BackButton{-24.0F, 1006.0F, 280.0F, 82.0F};
-        constexpr mrg::visual2d::Rect BackLabel{34.0F, 10.0F, 210.0F, 44.0F};
-        constexpr mrg::visual2d::Rect GoButton{1664.0F, 1006.0F, 280.0F, 82.0F};
-        constexpr mrg::visual2d::Rect GoLabel{36.0F, 10.0F, 208.0F, 44.0F};
+        constexpr Rect OptionButton{612.0F, 972.0F, 696.0F, 60.0F};
+        constexpr Rect BackButton{-24.0F, 1006.0F, 280.0F, 82.0F};
+        constexpr Rect BackLabel{34.0F, 10.0F, 210.0F, 44.0F};
+        constexpr Rect GoButton{1664.0F, 1006.0F, 280.0F, 82.0F};
+        constexpr Rect GoLabel{36.0F, 10.0F, 208.0F, 44.0F};
     } // namespace layout
 
     struct ResponsiveSongSelectLayout
     {
-        mrg::visual2d::Rect background;
-        mrg::visual2d::Rect category;
-        mrg::visual2d::Rect record;
-        mrg::visual2d::Rect information;
-        mrg::visual2d::Rect browser;
-        mrg::visual2d::Rect option;
-        mrg::visual2d::Rect back;
-        mrg::visual2d::Rect go;
+        Rect background;
+        Rect category;
+        Rect record;
+        Rect information;
+        Rect browser;
+        Rect option;
+        Rect back;
+        Rect go;
     };
 
-    [[nodiscard]] constexpr mrg::visual2d::Rect CanvasTopLeftBounds(const float x, const float top,
+    [[nodiscard]] constexpr Rect CanvasTopLeftBounds(const float x, const float top,
                                                                     const float width,
                                                                     const float height) noexcept
     {
@@ -209,7 +209,7 @@ namespace song_select
     static_assert(EditorReferenceLayout.information.x + EditorReferenceLayout.information.width <
                   EditorReferenceLayout.browser.x);
 
-    [[nodiscard]] inline mrg::visual2d::Rect ScaleTopLeftBounds(const mrg::visual2d::Rect bounds,
+    [[nodiscard]] inline Rect ScaleTopLeftBounds(const Rect bounds,
                                                                 const float parentHeight) noexcept
     {
         const float scaledHeight = bounds.height * DesignToCanvasScale;
@@ -233,7 +233,7 @@ namespace song_select
     }
 
     template <typename ComponentType>
-    [[nodiscard]] inline ComponentType &RequireComponent(mrg::visual2d::Visual2DNode &node)
+    [[nodiscard]] inline ComponentType &RequireComponent(Visual2DNode &node)
     {
         ComponentType *const component = node.GetComponent<ComponentType>();
         if (component == nullptr)
@@ -244,52 +244,52 @@ namespace song_select
         return *component;
     }
 
-    inline void ApplyFlatStyle(mrg::visual2d::Visual2DNode &node, const mrg::visual2d::Color color)
+    inline void ApplyFlatStyle(Visual2DNode &node, const Color color)
     {
-        mrg::visual2d::VisualStyle style{};
+        VisualStyle style{};
         style.normal = color;
         style.hovered = color;
         style.pressed = color;
         style.disabled = {color.red, color.green, color.blue, 0.45F};
-        finger_drum::presentation::SetSkinBaseStyle(node, style);
+        SetSkinBaseStyle(node, style);
     }
 
-    inline void ApplySpriteStyle(mrg::visual2d::Visual2DNode &node,
-                                 const mrg::visual2d::Color normal,
-                                 const mrg::visual2d::Color hovered)
+    inline void ApplySpriteStyle(Visual2DNode &node,
+                                 const Color normal,
+                                 const Color hovered)
     {
-        mrg::visual2d::VisualStyle style{};
+        VisualStyle style{};
         style.normal = normal;
         style.hovered = hovered;
         style.pressed = AccentBlue;
         style.disabled = DisabledBlue;
-        finger_drum::presentation::SetSkinBaseStyle(node, style);
+        SetSkinBaseStyle(node, style);
     }
 
-    inline void ApplyButtonStyle(mrg::visual2d::Visual2DNode &node,
-                                 const mrg::visual2d::Color normal,
-                                 const mrg::visual2d::Color hovered,
-                                 const mrg::visual2d::Color textColor)
+    inline void ApplyButtonStyle(Visual2DNode &node,
+                                 const Color normal,
+                                 const Color hovered,
+                                 const Color textColor)
     {
         ApplySpriteStyle(node, normal, hovered);
-        RequireComponent<mrg::visual2d::TextVisualComponent>(node).SetTextColor(textColor);
+        RequireComponent<TextVisualComponent>(node).SetTextColor(textColor);
     }
 
-    inline void SetCornerRadius(mrg::visual2d::Visual2DNode &node, const float penpotRadius)
+    inline void SetCornerRadius(Visual2DNode &node, const float penpotRadius)
     {
-        RequireComponent<mrg::visual2d::SpriteVisualComponent>(node).SetCornerRadius(
+        RequireComponent<SpriteVisualComponent>(node).SetCornerRadius(
             penpotRadius * DesignToCanvasScale);
     }
 
     [[nodiscard]] inline std::int64_t LatestPointerTimestamp(
-        const mrg::platform::InputState &input) noexcept
+        const InputState &input) noexcept
     {
         std::int64_t result{};
-        for (const mrg::platform::InputEvent &event : input.Events())
+        for (const InputEvent &event : input.Events())
         {
-            if (event.type == mrg::platform::InputEventType::MouseMoved ||
-                event.type == mrg::platform::InputEventType::MouseButtonPressed ||
-                event.type == mrg::platform::InputEventType::MouseButtonReleased)
+            if (event.type == InputEventType::MouseMoved ||
+                event.type == InputEventType::MouseButtonPressed ||
+                event.type == InputEventType::MouseButtonReleased)
             {
                 result = event.performanceCounterTicks;
             }

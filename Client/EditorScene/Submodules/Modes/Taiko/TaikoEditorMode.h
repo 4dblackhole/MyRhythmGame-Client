@@ -14,12 +14,12 @@ class TaikoEditorMode final : public IEditorMode
     {
         return "Taiko";
     }
-    std::unique_ptr<finger_drum::chart::IEditorDocument> OpenDocument(
-        const finger_drum::GameplayLaunchRequest &) const override;
+    std::unique_ptr<IEditorDocument> OpenDocument(
+        const GameplayLaunchRequest &) const override;
     void SelectTool(int) override;
-    void HandleToolKeys(IEditorContext &, const mrg::platform::InputState &) override;
+    void HandleToolKeys(IEditorContext &, const InputState &) override;
     bool HandleToolKey(IEditorContext &, std::uint16_t);
-    void PlaceNote(IEditorContext &, finger_drum::chart::MusicalPosition) override;
+    void PlaceNote(IEditorContext &, MusicalPosition) override;
     bool HasPendingPlacement() const noexcept override
     {
         return pending_.has_value();
@@ -31,52 +31,52 @@ class TaikoEditorMode final : public IEditorMode
         selectionAnchor_.reset();
         selecting_ = false;
     }
-    bool OpenToolMenu(mrg::visual2d::Point) override;
-    void DrawTools(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
-    void DrawChart(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
-    void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
-    void EditScore(IEditorContext &, mrg::visual2d::Point, bool erase) override;
+    bool OpenToolMenu(Point) override;
+    void DrawTools(IEditorModeCanvas &, IEditorContext &, const TextCatalog &) override;
+    void DrawChart(IEditorModeCanvas &, IEditorContext &, const TextCatalog &) override;
+    void DrawToolMenu(IEditorModeCanvas &, IEditorContext &, const TextCatalog &) override;
+    void EditScore(IEditorContext &, Point, bool erase) override;
     void ScrollScore(IEditorContext &, int direction) override;
-    bool BeginScoreSelection(IEditorContext &, mrg::visual2d::Point) override;
-    bool UpdateScoreSelection(IEditorContext &, mrg::visual2d::Point, bool released) override;
-    void DrawMetadata(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &) override;
-    std::vector<EditorSoundChoice> SoundChoices(const finger_drum::texts::TextCatalog &) const override;
-    std::wstring_view SoundEffectHelp(const finger_drum::texts::TextCatalog &) const override;
-    std::map<std::string, std::filesystem::path> AudioFiles(const finger_drum::chart::IEditorDocument &,
-                                                            const finger_drum::GameplayLaunchRequest &) const override;
-    std::vector<AudioMarker> AudioMarkers(const finger_drum::chart::IEditorDocument &) const override;
+    bool BeginScoreSelection(IEditorContext &, Point) override;
+    bool UpdateScoreSelection(IEditorContext &, Point, bool released) override;
+    void DrawMetadata(IEditorModeCanvas &, IEditorContext &, const TextCatalog &) override;
+    std::vector<EditorSoundChoice> SoundChoices(const TextCatalog &) const override;
+    std::wstring_view SoundEffectHelp(const TextCatalog &) const override;
+    std::map<std::string, std::filesystem::path> AudioFiles(const IEditorDocument &,
+                                                            const GameplayLaunchRequest &) const override;
+    std::vector<AudioMarker> AudioMarkers(const IEditorDocument &) const override;
 
   private:
-    std::optional<finger_drum::chart::MusicalPosition> SnapPosition(IEditorContext &, mrg::visual2d::Point) const;
-    std::optional<finger_drum::chart::MusicalPosition> selectionAnchor_;
-    mrg::visual2d::Point selectionStart_{};
+    std::optional<MusicalPosition> SnapPosition(IEditorContext &, Point) const;
+    std::optional<MusicalPosition> selectionAnchor_;
+    Point selectionStart_{};
     bool selecting_{};
-    void DrawOverview(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &);
-    void DrawRealtime(IEditorModeCanvas &, IEditorContext &, const finger_drum::texts::TextCatalog &);
+    void DrawOverview(IEditorModeCanvas &, IEditorContext &, const TextCatalog &);
+    void DrawRealtime(IEditorModeCanvas &, IEditorContext &, const TextCatalog &);
     void Circle(IEditorModeCanvas &, float x, float y, int type, float radius);
     const std::filesystem::path &SkinImage(std::wstring_view);
     std::uint64_t skinRevision_{};
     std::map<std::wstring, std::filesystem::path, std::less<>> skinImagePaths_;
-    static int VisualTool(const finger_drum::chart::PatternNote &);
-    std::wstring LongNoteCaption(const finger_drum::chart::IEditorDocument &, const finger_drum::chart::PatternNote &,
-                                 const finger_drum::chart::PatternNote &,
-                                 const finger_drum::texts::TaikoEditorTextSet &) const;
+    static int VisualTool(const PatternNote &);
+    std::wstring LongNoteCaption(const IEditorDocument &, const PatternNote &,
+                                 const PatternNote &,
+                                 const TaikoEditorTextSet &) const;
     struct NoteHit
     {
-        mrg::visual2d::Point point;
+        Point point;
         std::size_t order;
     };
     struct NoteBodyHit
     {
-        mrg::visual2d::Rect bounds;
+        Rect bounds;
         std::size_t order;
     };
     std::vector<NoteBodyHit> bodyHits_;
     TaikoEditorNoteInspector inspector_;
     std::vector<NoteHit> noteHits_;
-    std::vector<std::pair<mrg::visual2d::Point, finger_drum::chart::MusicalPosition>> overviewGrid_;
-    std::vector<std::pair<float, finger_drum::chart::MusicalPosition>> realtimeGrid_;
-    std::optional<finger_drum::chart::MusicalPosition> pending_;
+    std::vector<std::pair<Point, MusicalPosition>> overviewGrid_;
+    std::vector<std::pair<float, MusicalPosition>> realtimeGrid_;
+    std::optional<MusicalPosition> pending_;
     int tool_{1}, popup_{-1};
     void ActivateGroup(IEditorContext &, std::size_t);
     std::array<int, 6> groupTools_{1, 3, 11, 12, 15, 17};

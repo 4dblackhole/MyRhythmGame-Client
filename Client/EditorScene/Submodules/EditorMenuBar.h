@@ -1,5 +1,5 @@
 #pragma once
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "Texts/TextCatalog.h"
 #include <cstdint>
 #include <optional>
@@ -7,7 +7,7 @@
 // EditorInput translates physical keys/screen coordinates into menu intent.
 struct EditorMenuInput
 {
-    std::optional<mrg::visual2d::Point> pointer;
+    std::optional<Point> pointer;
     bool leftPressed{};
     bool rightPressed{};
     bool toggle{};
@@ -29,7 +29,7 @@ class EditorMenuBar final
 {
   public:
     static constexpr float Height = 28.0F;
-    void Initialize(mrg::visual2d::Visual2DCanvas &canvas, finger_drum::texts::TextCatalog &texts);
+    void Initialize(Visual2DCanvas &canvas, TextCatalog &texts);
     void Resize();
     void Refresh(bool dirty);
     EditorMenuInputResult Update(const EditorMenuInput &input, bool dirty);
@@ -41,14 +41,14 @@ class EditorMenuBar final
     void SetOpen(bool open, bool keyboardSelection);
     void RefreshHighlight();
 
-    mrg::visual2d::Visual2DCanvas *canvas_{};
-    finger_drum::texts::TextCatalog *texts_{};
-    mrg::visual2d::Visual2DNode *bar_{};
-    mrg::visual2d::Visual2DNode *file_{};
-    mrg::visual2d::Visual2DNode *popup_{};
-    mrg::visual2d::Visual2DNode *save_{};
-    mrg::visual2d::Visual2DNode *saveCaption_{};
-    mrg::visual2d::Visual2DNode *shortcut_{};
+    Visual2DCanvas *canvas_{};
+    TextCatalog *texts_{};
+    Visual2DNode *bar_{};
+    Visual2DNode *file_{};
+    Visual2DNode *popup_{};
+    Visual2DNode *save_{};
+    Visual2DNode *saveCaption_{};
+    Visual2DNode *shortcut_{};
     bool open_{};
     bool keyboardSelection_{};
     bool hoverFile_{};

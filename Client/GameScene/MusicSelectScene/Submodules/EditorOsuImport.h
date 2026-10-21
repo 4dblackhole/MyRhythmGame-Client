@@ -4,18 +4,16 @@
 #include <optional>
 #include <string>
 
-namespace finger_drum::texts
-{
-    class TextCatalog;
-}
-std::optional<std::filesystem::path> SelectOsuFile(const finger_drum::texts::TextCatalog &texts);
+class TextCatalog;
+
+std::optional<std::filesystem::path> SelectOsuFile(const TextCatalog &texts);
 
 struct EditorOsuImportResult
 {
     bool success{};
     std::string message;
 };
-void ShowOsuImportCompletion(const EditorOsuImportResult &result, const finger_drum::texts::TextCatalog &texts);
+void ShowOsuImportCompletion(const EditorOsuImportResult &result, const TextCatalog &texts);
 // Worker owns only copied paths and its child process, never Scene/audio/UI objects.
 class EditorOsuImport final
 {

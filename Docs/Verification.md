@@ -5,18 +5,18 @@ vswhere로 찾고 FMOD SDK 경로는 Directory.Build.props의 설정을 사용�
 
 ```powershell
 git submodule update --init --recursive
-msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
-msbuild MyRhythmGame-Client.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
+msbuild YOUMU.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
+msbuild YOUMU.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 ```
 
 각 구성(Debug/Release)에서 아래 명령을 실행합니다.
 
 ```powershell
-.\bin\x64\Debug\FingerDrum.Rhythm.Tests.exe --catalog-root FingerDrum.Assets/Assets/Songs
-.\bin\x64\Debug\MyRhythmGame.exe --smoke-test
-.\bin\x64\Debug\MyRhythmGame.exe --smoke-lobby
-.\bin\x64\Debug\MyRhythmGame.exe --smoke-gameplay
-.\bin\x64\Debug\MyRhythmGame.exe --smoke-editor
+.\bin\x64\Debug\YOUMU.Rhythm.Tests.exe --catalog-root YOUMU.Assets/Assets/Songs
+& ".\bin\x64\Debug\Y's Orchestral Unison - Melodic Ultimatum.exe" --smoke-test
+& ".\bin\x64\Debug\Y's Orchestral Unison - Melodic Ultimatum.exe" --smoke-lobby
+& ".\bin\x64\Debug\Y's Orchestral Unison - Melodic Ultimatum.exe" --smoke-gameplay
+& ".\bin\x64\Debug\Y's Orchestral Unison - Melodic Ultimatum.exe" --smoke-editor
 ```
 
 osu!taiko 변환기 변경은 같은 부모 폴더의 독립 저장소에서 아래 검사도 두 구성으로 실행합니다.
@@ -34,7 +34,7 @@ PowerShell에서 Windows GUI 실행 파일을 직접 호출하면 `$LASTEXITCODE
 `Release`로 바꿔 같은 경로를 반복합니다.
 
 ```powershell
-$exe = (Resolve-Path .\bin\x64\Debug\MyRhythmGame.exe).Path
+$exe = (Resolve-Path ".\bin\x64\Debug\Y's Orchestral Unison - Melodic Ultimatum.exe").Path
 foreach ($route in '--smoke-test', '--smoke-lobby', '--smoke-gameplay', '--smoke-editor') {
     $process = Start-Process -FilePath $exe -ArgumentList $route -WorkingDirectory (Split-Path $exe) -WindowStyle Hidden -Wait -PassThru
     if ($process.ExitCode -ne 0) { throw "$route failed: $($process.ExitCode)" }
@@ -71,6 +71,49 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-22 PhantomCore·YOUMU 이름 변경과 Client 변환 결과 검증
+
+- 변경 책임과 코드 검토는 [제품 이름과 검증 책임](Reviews/IdentityMigration-2026-10-22.md)에
+  기록했습니다. 공개 선언·직접 호출부의 이름 충돌, SDK 생성/링크, Scene·worker·순수 세션의
+  수명, JSON 수치/문자열/깊이 경계, 파일 참조·오류 처리와 기존 파일 보존을 검토했습니다.
+- 새 YOUMU 경로에서 Debug/Release x64 솔루션 빌드 성공. 이동 전 절대 경로가 남았던
+  Debug 생성 RC는 GenerateAssetPack.ps1로 재생성한 뒤 빌드를 완료했습니다.
+  최종 엔진 핀도 두 구성에서 빌드하고 Client 전체를 다시 링크했습니다. 최종 빌드의
+  컴파일/링크 오류·경고는 없습니다. Release의 /LTCG 재시작 안내는 경고가 아닙니다.
+- **MSVC 14.44/v143 Code Analysis**, 실제 include/define/PCH/C++20과 Debug/Release x64로
+  Client 소유 8개 프로젝트를 분석했습니다. 구성별 Rhythm 15, Chart 13, Modes 11,
+  Editor 2, Assets 1, ClientLogic 1, Rhythm.Tests 18, Client 90개, 총 **151개 TU**입니다.
+  CL tlog의 /analyze와 각 TU의 nativecodeanalysis.xml을 확인했습니다. 최종 파싱/컴파일
+  오류·분석 진단은 없습니다. 초기 Debug Chart PDB 경합(C1041)은 /FS를 사용한 재실행으로
+  해소했으며 실패한 실행을 성공으로 계산하지 않았습니다. 엔진/변환기는 별도 소유 범위로
+  분석했습니다. 실제 구성의 테스트 C++ 단위도 각 회귀 실행기의 /analyze로 검사했습니다.
+- 로직·카탈로그 **각 구성 66개, 실패 0**. smoke-test/lobby/gameplay/editor **총 8개 exit 0**.
+  두 구성 Option.ini 해시가 smoke 전후 동일합니다.
+- OsuImportValidation, MusicSelectView, EditorPresentation, ResultPresentation, OptionsPanel,
+  Skin, AssetPath, NewDifficulty, LanguageFile 회귀 **9개 묶음 × 두 구성 모두 성공**.
+  새 검증 객체를 사용하는 Skin 테스트의 링크 목록도 갱신했습니다. 최종 테스트 컴파일/
+  링크 경고·오류는 없습니다. 한글 경로, 롱노트의 두 행/한 객체, 겹침·지원하지 않는 모드와
+  노트, 잘못된 JSON/수치·중복 필드, 경로 경계와 기존 파일 보존을 포함합니다.
+- 실제 Pandora **1,233 객체/1,236행**, Omoiyoshino **861 객체/864행**을 두 구성의 새 변환기로
+  저장한 뒤 Client 검증기로 확인했습니다. **실제 결과 4건 성공**, 같은 결과의 sourceObjects를
+  변경한 **4건은 Client가 실제 플레이 노트 수 불일치로 거부**했습니다.
+- 엔진 독립 저장소는 Debug/Release x64 빌드·MSVC 분석과 기본 SDK, --input-state,
+  --texture-lifetime, --text-rendering, --text-pixels, --headless-error **총 12개**가 성공했습니다.
+  기존 엔진 분석 진단 5개(ScreenVisual2DManager C26478, Visual2DSurface C26498/C6011,
+  CollisionTests C26800, WindowControlTests C6011)는 [EngineOverview](../Dependencies/PhantomCore/Docs/EngineOverview.md)에
+  별도 기록하며 이번 이름 변경에서 억제하거나 수정하지 않았습니다.
+- 변환기 전용 세션은 Core/EXE/Tests의 Debug/Release 빌드·회귀·CLI·구조·diff 검사와
+  구성별 12개 소스의 MSVC 분석(경고/오류 0)을 완료했습니다. 배포된 변환기 EXE 해시는
+  두 구성 모두 독립 변환기 출력과 일치합니다.
+- 추적 자산 **112개 blob**이 기존 원본과 동일함을 확인했습니다. 사용자 곡·스킨·설정과
+  재배포 글꼴 라이선스는 보존합니다. 이전 이름의 활성 EXE/SDK 출력은 없습니다.
+  삭제 명령이 실행 정책에 차단되어 이전 생성물 102개 파일과 중간 생성물 18개 폴더는
+  ignored `build/retired-outputs-20261022`에 안전하게 보관했습니다.
+- CheckArchitecture(11개 프로젝트)와 git diff --check 성공. 자동 검사와 숨김 창/Win32 UI
+  회귀이며 실제 화면·물리 입력·청취의 수동 확인은 수행하지 않았습니다.
+- 원시 로그는 ignored build의 youmu-*-final, final-*, analysis-*, regression-final-*,
+  smoke-final-*, logic-final-*, phantomcore-final-* 및 actual-client-validation.log에 있습니다.
+
 ## 2026-10-22 엔진·변환기·클라이언트 리뷰 8건 수정
 
 - 변경 클래스의 책임·동작과 항목별 회귀는
@@ -84,7 +127,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   진단 코드가 있는 경고가 아니라 링크 안내입니다.
 - 실제 프로젝트의 include/define/PCH/C++20 및 Debug/Release x64 구성으로
   **MSVC 14.44/v143 Code Analysis**를 실행했습니다. CL tlog에서 구성별
-  Rhythm 15개, Chart 13개, Modes 11개, Rhythm.Tests 18개, MRG.Client 89개의
+  Rhythm 15개, Chart 13개, Modes 11개, Rhythm.Tests 18개, YOUMU.Client 89개의
   `/analyze` 명령을 확인했습니다. 파싱 오류와 변경 코드의 새 분석 진단은 없습니다.
   Client 분석에 엔진/제3자 코드를 포함하지 않았습니다.
 - 두 구성의 로직·카탈로그 각각 **66개, 실패 0**입니다. 마지막 테스트 보완은
@@ -114,7 +157,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   같습니다. 사용자 곡·스킨은 수정하지 않았습니다.
 - 별도 개발용 `Client/Assets/Songs/Patterns/Rapbit - Saika` 일부 채보에는 기존 YMP
   미지원 `#measurelinevisible` 명령이 있어 그 루트를 대상으로 한 카탈로그 검사가
-  실패했습니다. 원본을 보존했고 규정된 `FingerDrum.Assets/Assets/Songs`의 최종
+  실패했습니다. 원본을 보존했고 규정된 `YOUMU.Assets/Assets/Songs`의 최종
   로직·카탈로그는 위와 같이 성공했습니다. 기존 사용자 파일 오류를 숨기지 않습니다.
 - 엔진 `ebe5726136506763236317f42955d30a2fd75e6e`를 먼저 원격 main에 게시한 뒤
   Client gitlink를 갱신했습니다. 변환기 main은 `e670d636360e598f36266ac1ed58f7f17bebbf9a`입니다.
@@ -152,8 +195,8 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   사용자 보간식과 YME/노트 판정 규칙 자체는 변경하지 않았습니다.
 - Debug/Release x64 전체 솔루션 Build 성공. 실제 프로젝트의 x64/C++20/include/define/PCH로
   MSVC 14.44.35207 Code Analysis를 실행했습니다. 구성별 Chart 13개/Rhythm.Tests 17개/
-  MRG.Client 89개의 /analyze 명령을 CL tlog로 확인했습니다. 파싱 오류와 새 C++/분석 진단은 없습니다.
-  Release 링크에서는 변경하지 않은 FingerDrum.Editor의 기존 **LNK4020 PDB 형식 경고**가
+  YOUMU.Client 89개의 /analyze 명령을 CL tlog로 확인했습니다. 파싱 오류와 새 C++/분석 진단은 없습니다.
+  Release 링크에서는 변경하지 않은 YOUMU.Editor의 기존 **LNK4020 PDB 형식 경고**가
   다시 발생합니다. PDB 삭제 후 해당 라이브러리의 직렬 Rebuild/Client 재링크에도 남았으며,
   진단 억제나 범위 밖 빌드 설정 변경을 적용하지 않았습니다.
 - 마지막 저장 경계 회귀는 수정 전 실제 실패를 확인했습니다. 자동 YME 경로는 저장 전에
@@ -199,7 +242,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   예약 시각을 지나친 경우에도 같은 타격을 다시 넣지 않습니다. 이미 울리는 샘플은 주파수만
   바꾸며 Pause/Seek 뒤에도 선택 배속을 유지합니다. 시간 변환/예약 범위의 정수 경계, 실패 시
   정지·상태 메시지, borrowed Voice 수명, Canvas/콜백 해제와 단일 UI 스레드 사용을 검토했습니다.
-- Debug/Release x64 전체 solution Build 성공. MRG.Client 전체를 실제 프로젝트의
+- Debug/Release x64 전체 solution Build 성공. YOUMU.Client 전체를 실제 프로젝트의
   x64/C++20/include/define/PCH 설정으로 MSVC Code Analysis Build했습니다. 각 구성의
   실제 CL tlog에서 /analyze 명령 85개를 확인했습니다. 소유 코드의 경고 억제는 없습니다.
   테스트의 C6011 두 건은 lookup 결과의 명시적 null/throw 분기로 해결했습니다.
@@ -233,8 +276,8 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - stb_vorbis v1.22는 출처 revision과 SHA-256을 고정한 무수정 원본입니다. 라이선스 원본과
   기본 자산 pack의 Licenses/stb-vorbis.txt가 바이트까지 같습니다. 정적 링크로 추가 배포
   DLL은 없습니다. Ogg Vorbis 지원이며 Opus/연결형/오래된 floor-0 Vorbis는 제외합니다.
-  자세한 [출처·제약·외부 코드 정책](../FingerDrum.Editor/ThirdParty/stb/README.md)을 참고합니다.
-- Debug/Release x64 전체 solution Build 성공. FingerDrum.Editor의 소유 C++ 3개와
+  자세한 [출처·제약·외부 코드 정책](../YOUMU.Editor/ThirdParty/stb/README.md)을 참고합니다.
+- Debug/Release x64 전체 solution Build 성공. YOUMU.Editor의 소유 C++ 3개와
   Rhythm.Tests 전체 17개 TU에 실제 프로젝트 x64/C++20/include/define으로 MSVC Code
   Analysis Rebuild를 실행했습니다. 원본 외부 구현 TU 하나는 분석에서 제외하고 외부
   include 경고만 W0로 처리했습니다. 해당 TU의 C4701은 초기화 후 probe 증가라는 상위
@@ -268,7 +311,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 변경 코드와 직접 호출부의 정수 비교/곱셈 범위, 이미지 크기와 비율, literal view 수명,
   결과의 비소유 참조·Canvas 소유권/해제, 실패 시 예외와 단일 스레드 UI 사용,
   중복 상태·프레임별 이미지 로딩이 없는 점과 함수 책임을 검토했습니다.
-- Debug/Release x64 전체 solution Build 및 MRG.Client 전체 MSVC Code Analysis를
+- Debug/Release x64 전체 solution Build 및 YOUMU.Client 전체 MSVC Code Analysis를
   실제 x64/C++20/include/define/PCH 설정으로 실행했습니다(RunCodeAnalysis=true,
   BuildProjectReferences=false). 두 구성 모두 컴파일 경고·분석 진단·파싱 오류가 없습니다.
 - ResultPresentationTests도 두 구성에서 /analyze로 빌드·실행했습니다. 테스트 렌더러는
@@ -299,8 +342,8 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 변경 코드와 직접 호출부의 Progress 전달/Reset, Canvas 노드 수명/제거, 동시 입력과
   표시의 단일 스레드 사용, 동일 시각의 순서, Z 정수 변환 상한, 카운터 차감 범위와
   표시 함수 책임을 검토했습니다. 별도 카운트 상태나 엔진 변경은 없습니다.
-- 최종 소스로 Debug/Release x64 전체 solution Build를 통과했습니다. MRG.Client와
-  FingerDrum.Rhythm 전체에 실제 x64/C++20/include/define/PCH 설정의 MSVC Code Analysis를
+- 최종 소스로 Debug/Release x64 전체 solution Build를 통과했습니다. YOUMU.Client와
+  YOUMU.Rhythm 전체에 실제 x64/C++20/include/define/PCH 설정의 MSVC Code Analysis를
   두 구성으로 실행했습니다. 추가된 판정원 순서는 실제 CL.command.1.tlog 인수와
   /analyze:only로 GameplayLayout을 두 구성에서 다시 분석했습니다. 컴파일 경고,
   분석 진단, 파싱 오류는 없습니다. 테스트 링크의 /LTCG 재시작 안내는 진단 경고가 아닙니다.
@@ -325,7 +368,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   기존 패키지 CLI와 파싱/플레이 규칙은 유지합니다. 원본 음악/채보는 변경하지 않습니다.
   변경 코드와 직접 호출부의 문자열/노드/future/HANDLE 소유권, 오류/취소, 파일 경계,
   인용/변환, 단일 가져오기와 worker의 Scene/엔진 비참조, 함수 책임을 검토했습니다.
-- Debug/Release x64 전체 solution Build 성공. MRG.Client와 변환기 Core/EXE/Tests에
+- Debug/Release x64 전체 solution Build 성공. YOUMU.Client와 변환기 Core/EXE/Tests에
   실제 프로젝트 x64/C++20/include/define/PCH 설정으로 MSVC Code Analysis를 실행했습니다.
   초기 C6387은 프로세스 속성 목록의 크기/포인터 검증으로 해결했고 억제는 사용하지 않았습니다.
   최종 Debug Client 전체 분석과 Release 전체 분석/최종 메뉴 TU 분석에 진단이 없습니다.
@@ -352,7 +395,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   효과 목록은 endPosition이 있는 Area만 시작값 → 끝값으로 표시하고 지점형은 변경값
   하나만 표시합니다. 효과 파싱·적용·편집 가능 유형·저장 정책은 유지합니다.
 - 변경 코드와 직접 호출부의 enum 매핑, 언어표 인덱스 범위, 문자열 수명, 지점/구간
-  구분을 검토했습니다. Debug/Release x64 전체 solution Build와 MRG.Client의
+  구분을 검토했습니다. Debug/Release x64 전체 solution Build와 YOUMU.Client의
   MSVC Code Analysis Build를 실제 프로젝트 x64/C++20/include/define/PCH 설정으로
   실행했습니다(RunCodeAnalysis=true, BuildProjectReferences=false). 두 구성 모두
   컴파일 경고·분석 진단·파싱 오류가 없습니다.
@@ -380,7 +423,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 각 구성에서 로직/카탈로그 63개, 실패 0개이며 --smoke-test/--smoke-lobby/--smoke-gameplay/
   --smoke-editor 모두 종료 코드 0입니다. CheckArchitecture는 11개 프로젝트를 통과했습니다.
   git diff --check와 사용자 파일 SHA-256 보존을 확인했습니다.
-- 엔진은 Debug/Release 전체 Rebuild와 MRG.Collision.Tests(SDK)를 통과했습니다.
+- 엔진은 Debug/Release 전체 Rebuild와 PhantomCore.Collision.Tests(SDK)를 통과했습니다.
   회귀는 Restart 중 자연 종료/교체, 활성 채널 오류 보존을 검사합니다. 실제 FMOD NoSound 진단은
   MP3 재사용, 같은 Voice의 0/1/5초 탐색, 종료 샘플 교체, 유효한 끝 1us 전/범위 밖 거부를 검사했습니다.
 - 에디터의 100ms PCM 샘플과 약 260ms UI 갱신 지연 재현을 두 구성에서 다시 실행해 오류30 없이
@@ -432,7 +475,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   3종을 확인했고 표시 텍스트 넘침/부모 영역 이탈 0건을 보고했습니다.
   보드 ID는 DesignReferences에 기록했습니다. 이번 세 탭 작업은 Penpot 시안 갱신이며
   게임 안의 탭 배치 적용은 포함하지 않습니다.
-- Debug/Release x64 전체 solution Build 및 MRG.Client MSVC Code Analysis Build
+- Debug/Release x64 전체 solution Build 및 YOUMU.Client MSVC Code Analysis Build
   (실제 프로젝트의 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
   EditorPresentation/GameplayPause/MusicSelectView 회귀도 두 구성에서 MSVC /analyze로
   빌드·실행했습니다. 추가 검사에서 생긴 테스트 함수의 C6262는 역할별 함수 분리로 해결했고,
@@ -460,7 +503,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 기존 단일 worker·FIFO 대기열·stop_token·완료 결과의 release/acquire 공개와
   Scene 종료 시 취소/프로세스 종료 시 join 수명은 유지했습니다. 변경 함수와 직접 호출부의
   잠금 범위, 예외, 결과 소유권, Scene/renderer 비참조, 멤버 파괴 순서를 검토했습니다.
-- Debug/Release x64 전체 solution Build 및 MRG.Client MSVC 14.44 Code Analysis Build
+- Debug/Release x64 전체 solution Build 및 YOUMU.Client MSVC 14.44 Code Analysis Build
   (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
   변경된 EditorAnalysisController도 각 구성의 CL.command.1.tlog 인수로 /analyze:only를
   실행했습니다. 두 구성 모두 C26115가 사라졌으며 신규 경고·분석 진단·파싱 오류가 없습니다.
@@ -489,7 +532,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   skin.ini의 PauseBackdrop을 사용합니다. 화면 단색 Panel의 불투명 경로 대신 이미지 Sprite의
   알파 합성을 사용하여 배경을 38% 덮습니다. 버튼·화살표는 기존 Sprite 도형으로 조합하며
   엔진 소스/API/포인터는 변경하지 않았습니다.
-- Debug/Release x64 전체 solution Build 및 MRG.Client MSVC 14.44 Code Analysis Build
+- Debug/Release x64 전체 solution Build 및 YOUMU.Client MSVC 14.44 Code Analysis Build
   (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
   최종 GameplayPauseLayout도 두 구성의 CL.command.1.tlog 인수로 /analyze:only를 실행했습니다.
   초기 C4834와 테스트 C6011을 수정했고 최종 빌드/분석/테스트에 신규 경고·파싱 오류가 없습니다.
@@ -517,7 +560,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   노드 소유권은 기존 Canvas에 유지합니다. 화면 배경·상하단 HUD·중앙 풍선/뎅뎅 처리 UI와
   별도 일시정지 Canvas는 기어 밖에 유지합니다. 전체 실제 노드 계층은 Gameplay/Presentation에
   정리했습니다. 생성 순서·부모/자식 좌표·직접 호출부·정리 경로를 검토했습니다.
-- Debug/Release x64 전체 solution Build, MRG.Client의 MSVC 14.44 Code Analysis Build
+- Debug/Release x64 전체 solution Build, YOUMU.Client의 MSVC 14.44 Code Analysis Build
   (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
   신규 컴파일 경고·분석 진단·파싱 오류는 없으며 기존 EditorAnalysisController.cpp:51 C26115는 남았습니다.
 - GameplayJudgementTests를 두 구성에서 /W4 /analyze로 빌드·실행했습니다. 부모 하나를
@@ -543,7 +586,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - TaikoResultGraphView는 화면 배율에 맞춰 막대의 그리기 폭만 최소 한 픽셀로 유지합니다.
   축소 화면에서도 1ms 집계와 색상별 개수를 합치지 않습니다. 판정·점수·입력 로그의
   수집이나 소유권은 변경하지 않았으며 변경 함수와 직접 호출부의 범위·변환·수명을 검토했습니다.
-- Debug/Release x64 전체 solution Build 성공. MRG.Client를 실제 프로젝트 설정으로
+- Debug/Release x64 전체 solution Build 성공. YOUMU.Client를 실제 프로젝트 설정으로
   MSVC 14.44 Code Analysis Build(RunCodeAnalysis=true/BuildProjectReferences=false)했습니다.
   최종 변경된 두 구현 파일은 각 구성의 CL.command.1.tlog에서 얻은 실제 C++20/include/define/
   PCH/CRT 인수를 사용하여 별도 출력 경로에서 /analyze:only도 성공했습니다.
@@ -566,7 +609,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - TaikoResultView::BuildBackground에서 하단 구름 ZIndex를 1에서 -9로 변경했습니다.
   같은 Center anchor의 하늘(-10) 위, 결과 콘텐츠(0) 뒤에 배치합니다. 화면 재구성/resize에서도
   같은 순서를 사용하며 버튼·통계의 배치, 입력 처리와 소유권은 변경하지 않았습니다.
-- Debug/Release x64 전체 solution Build, MRG.Client의 MSVC 14.44 Code Analysis Build
+- Debug/Release x64 전체 solution Build, YOUMU.Client의 MSVC 14.44 Code Analysis Build
   (실제 x64/C++20/include/define/PCH, RunCodeAnalysis=true/BuildProjectReferences=false) 성공.
   변경 파일과 직접 호출부를 검토했으며 신규 경고·분석 진단·파싱 오류는 없습니다.
   범위 밖의 기존 EditorAnalysisController.cpp:51 C26115는 두 구성에 남았습니다.
@@ -591,7 +634,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   준비 완료 후 새 snapshot의 QPC/DSP에 동일한 20ms 준비 시간을 예약합니다. 준비 중 입력은 판정하지
   않고 예약 시작 이후 입력은 전환 프레임에서도 보존합니다. 기존 히트사운드 Voice는 정지하며 복구하지 않습니다.
   Retry는 자산을 재사용하며 새 시도를 초기화하고, Ending은 모드별 결과를 한 번 확정·이동합니다.
-- Debug/Release x64 전체 solution Build 성공. 영향 프로젝트 MRG.Client는 두 구성 모두 실제
+- Debug/Release x64 전체 solution Build 성공. 영향 프로젝트 YOUMU.Client는 두 구성 모두 실제
   include/define/PCH/C++20/x64 설정의 MSVC 14.44 Code Analysis Rebuild와 최종 변경분 분석 Build 성공.
   신규 경고·분석 진단·파싱 오류 0. 기존 EditorAnalysisController.cpp:51 C26115는 두 구성에 남았습니다.
   Debug 전체 solution 분석에서 범위 밖 EditorAudioAnalysis.cpp:134의 기존 C6262도 관찰했습니다.
@@ -611,7 +654,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   사용자 LaneKeyBeam.cpp, Debug/Release Option.ini, Client/Assets의 외부 en/ko.ini 해시 일치로 보존을 확인했습니다.
 - **수동 확인:** 물리 키·마우스 조작, 실제 청음, 화면 육안 확인은 미실시입니다.
   위 결과는 자동 입력 의도/Canvas·실제 D3D12 실행과 FMOD NoSound 검증이며 수동 확인과 구분합니다.
-  로그는 ignored build/pause-state-2026-10-17에 있습니다. 최신 실행 파일은 bin/x64/Release/MyRhythmGame.exe입니다.
+  로그는 ignored build/pause-state-2026-10-17에 있습니다. 최신 실행 파일은 bin/x64/Release/Y's Orchestral Unison - Melodic Ultimatum.exe입니다.
 
 ## 2026-10-16 새 난이도·offset 도구·JudgeLevel·Release 기본 배포본
 
@@ -624,7 +667,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   EditorMetronome은 문서/음원 길이 revision별 박자·재생 cue를 캐시하고 기존 EditorPlayback의 DSP 예약에 전달합니다.
   분석용 히트사운드 FFT에는 섞지 않으며 토글은 음악 재로딩/seek를 하지 않습니다. 기본 클릭 WAV 두 개는 Default Skin/Editor에 내장합니다.
 - Debug/Release x64 전체 solution Build 성공, 일반 빌드 새 경고/오류 0.
-  두 구성 MSVC 14.44 Code Analysis(/analyze) Rebuild를 Rhythm, Chart, Modes, MRG.Client,
+  두 구성 MSVC 14.44 Code Analysis(/analyze) Rebuild를 Rhythm, Chart, Modes, YOUMU.Client,
   Rhythm.Tests의 실제 include/define/C++20/x64 구성으로 실행했습니다. 파싱 오류·신규 진단 0.
   기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지했습니다.
 - 두 구성 전체 로직·기본곡 카탈로그 각각 63개/실패 0, 네 Client smoke씩 총 8개 성공했습니다.
@@ -685,7 +728,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   외부 파일이 전혀 없는 영어 기본값, 부분 번역/영어 파일 우선순위, 잘못된 타입·인수/오버플로와
   유효한 서식 인수 재배치, 언어 전환 후 string_view 수명, 파일 변경을 다음 생성 시에만 읽는 것을 검사합니다.
   실행 스크립트는 소스의 UI 키에 영어 기본 정의가 있는지도 검사합니다. 모든 fixture는 ignored build 폴더에 둡니다.
-- MSVC Code Analysis(`/analyze`)를 MRG.Client의 실제 Debug/Release x64 include/define/PCH/C++20
+- MSVC Code Analysis(`/analyze`)를 YOUMU.Client의 실제 Debug/Release x64 include/define/PCH/C++20
   설정으로 실행했습니다. 두 구성의 분석 Rebuild와 마지막 변경 범위의 분석 Build를 사용했습니다.
   신규 진단/파싱 오류 0. 기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지합니다.
   새 언어파일 검사는 `/W4 /analyze`, 기존 화면 회귀도 각 스크립트의 `/analyze`로 검사했습니다.
@@ -702,9 +745,9 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 ## 2026-10-16 게임 표시 이름 중앙화·변경
 
 - 기존 창 제목, 시작/내장 자산 오류창 제목과 에디터 확인창의 한국어/영어 표에
-  FingerDrum이 각각 하드코딩되어 있었습니다. 먼저 공통 GameIdentity.h의 GameName으로
+  YOUMU이 각각 하드코딩되어 있었습니다. 먼저 공통 GameIdentity.h의 GameName으로
   참조를 모은 뒤 요청한 새 표시 이름으로 변경했습니다. 이름의 코드 정의는 한 곳입니다.
-  FingerDrumGame은 창 제목, Main의 ReportStartupError는 UTF-8 진단의 Unicode 오류창을 담당합니다.
+  YOUMUGame은 창 제목, Main의 ReportStartupError는 UTF-8 진단의 Unicode 오류창을 담당합니다.
   EditorTexts는 언어별 접미사만 보관하고 EditorInput에서 공통 이름과 조합합니다.
   내부 Scene 오류/데모 제목에서 불필요한 제품 이름도 제거했습니다.
   프로젝트/필터에 헤더를 등록했고 변경 방법은 [TextManagement](TextManagement.md#게임-이름-변경)에 기록했습니다.
@@ -713,7 +756,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   EditorPresentation 회귀(오디오/모드/메뉴/재생)도 두 구성 성공했습니다.
   소스 감사에서 이전 표시 이름 리터럴/제목 필드 잔여가 없음을 확인하고,
   두 구성 EXE의 UTF-16 데이터에 새 이름이 반영되었는지 확인했습니다.
-- MSVC Code Analysis(`/analyze`)를 영향 프로젝트 MRG.Client의 실제 Debug/Release x64
+- MSVC Code Analysis(`/analyze`)를 영향 프로젝트 YOUMU.Client의 실제 Debug/Release x64
   include/define/PCH/C++20 설정으로 실행했습니다.
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했으며 신규 진단·파싱 오류 0.
   기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지합니다.
@@ -745,7 +788,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   언어·portrait/wide resize·Canvas 정리·실제 deferred Result/Retry 전환을 검사했습니다.
   SceneStateTests는 선택 snapshot의 아티스트 독립 소유와 Clear를 검사합니다.
   MusicSelectView 회귀도 두 구성 성공했습니다. 그래프는 샘플 수와 무관하게 한 batch를 유지합니다.
-- MSVC 14.44.35207 Code Analysis(`/analyze`)를 MRG.Client, ClientLogic, Rhythm.Tests의 실제
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 YOUMU.Client, ClientLogic, Rhythm.Tests의 실제
   Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했으며 신규 진단·파싱 오류 0.
   기존 C26115(EditorAnalysisController:51), Release C6236(GameplayInput:66)은 유지합니다.
@@ -782,7 +825,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 두 구성 MusicSelectView, EditorPresentation, GameplayJudgement, GameplayPause,
   ResultPresentation 회귀 성공. 실제 D3D12/FMOD 전체 종류/효과 자동 플레이도 각각
   19노트/85.1837%, 15노트/97.8897%를 유지했습니다.
-- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Chart, Modes, MRG.Client,
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Chart, Modes, YOUMU.Client,
   ClientLogic, Rhythm.Tests의 실제 Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`와 최종 테스트의 분석 Build를 사용했습니다.
   새 진단·파싱 오류 0. 새 테스트의 C26817은 const reference로 수정 후 두 구성 분석/회귀를 통과했습니다.
@@ -813,7 +856,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   animation progress 0에서 즉시 닫기, 닫는 동안 stale selection 거부와 재개방을 검사했습니다.
   기존 UTF-8 INI/실패 복구·음원 소유권·실제 FMOD Automatic→WASAPI/driver 전환 검사도 성공했습니다.
   두 구성 MusicSelectView, EditorPresentation, ResultPresentation, GameplayPause 회귀 성공.
-- MSVC 14.44.35207 Code Analysis(`/analyze`)를 영향 프로젝트 MRG.Client의 실제
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 영향 프로젝트 YOUMU.Client의 실제
   Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했습니다.
   신규 진단/파싱 오류 0. 기존 C26115(EditorAnalysisController:51),
@@ -847,7 +890,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 두 구성 ResultPresentation(기존 3초 완료→deferred Result→새 Retry/소유권), GameplayJudgement,
   EditorPresentation 회귀 성공. 실제 D3D12/FMOD 전체 노트/효과 자동 플레이는 각각
   19노트/85.1837%, 15노트/97.8897%를 유지했습니다.
-- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Modes, MRG.Client, Rhythm.Tests의 실제
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Modes, YOUMU.Client, Rhythm.Tests의 실제
   Debug/Release x64 include/define/PCH/C++20 설정으로 실행했습니다.
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`와 마지막 영향 영역의
   분석 Build를 사용했습니다. 신규 진단·파싱 오류 0. 기존 C26115(EditorAnalysisController:51),
@@ -880,7 +923,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - 엔진 기본 SDK·`--text-rendering`·`--text-pixels` 두 구성 성공. 기본 굵기 400,
   1..999 경계와 잘못된 값 거절, payload/측정 무효화, 400/800 layout·글리프 분리를 검사했습니다.
   Debug 텍스트 검사의 D3D12 ERROR/CORRUPTION 0.
-- MSVC 14.44.35207 Code Analysis를 MRG.Client와 Rhythm.Tests의 실제 Debug/Release x64
+- MSVC 14.44.35207 Code Analysis를 YOUMU.Client와 Rhythm.Tests의 실제 Debug/Release x64
   include/define/PCH/C++20 설정으로 `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`
   실행했습니다. Presentation 소스도 각 스크립트의 `/analyze`로 검사했습니다. 신규 진단/파싱 오류 0.
   기존 C26115(EditorAnalysisController:51), C28020(GameplaySessionController:112),
@@ -908,7 +951,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   layout/rasterization 0, clip 문구 4,096글자 중 실제 제출 5개, 새 한글 512개의
   upload arena 1개, 아틀라스 22→16페이지 회수와 회수 글리프 재생성을 검사했습니다.
   Debug D3D12 validation의 ERROR/CORRUPTION 0. 다중 페이지 합성 readback도 성공했습니다.
-- MSVC 14.44.35207 Code Analysis를 변경된 Client 소유 `MRG.Client.vcxproj`의 실제
+- MSVC 14.44.35207 Code Analysis를 변경된 Client 소유 `YOUMU.Client.vcxproj`의 실제
   Debug/Release x64 include/define/C++20 설정으로
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행했습니다.
   표시 회귀 테스트 소스도 실행 스크립트의 `/analyze`로 분석했습니다. 신규 진단/파싱 오류 0.
@@ -942,7 +985,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   밀집 Buzz/처리된 tick/OK/MISS/진행바/뒤로 이동을 확인했습니다.
   Result 그래프·소수점 6자리·소유권과 실제 deferred Scene 전환도 두 구성 성공했습니다.
 - 엔진 SDK 검사와 `--headless-error`의 숨김 치명 오류 정리도 두 구성 성공했습니다.
-- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Chart, Modes, ClientLogic, MRG.Client,
+- MSVC 14.44.35207 Code Analysis(`/analyze`)를 Chart, Modes, ClientLogic, YOUMU.Client,
   Rhythm.Tests의 실제 Debug/Release x64 include/define/C++20 설정으로 실행했습니다.
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`를 사용했고,
   마지막 router 수정은 같은 구성의 분석 Build로 재검사했습니다. 신규 진단/파싱 오류 0.
@@ -960,7 +1003,7 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
 ## 선택 실행·서식·도메인 CI
 
-`FingerDrum.Rhythm.Tests.exe --list`는 테스트 이름을 나열하고 `--filter Chart`는
+`YOUMU.Rhythm.Tests.exe --list`는 테스트 이름을 나열하고 `--filter Chart`는
 이름에 Chart가 있는 검사만 실행합니다. `--catalog-root`와 함께 사용할 수 있습니다.
 실패한 검사가 있어도 나머지를 실행하며 실패가 하나라도 있거나 선택 결과가 없으면
 종료 코드는 1입니다. 전체 필수 검증에서는 filter를 지정하지 않습니다.
@@ -972,7 +1015,7 @@ include/define/C++20을 사용해야 합니다. MSVC Code Analysis를 사용하�
 이미 빌드한 분석 실행에서는 `/p:BuildProjectReferences=false`로 엔진/SDK 재분석을 피합니다.
 
 `.github/workflows/domain-tests.yml`은 Windows의 Debug/Release에서
-`Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj`를 직접 빌드하고 로직·기본곡 카탈로그를
+`Tests/Rhythm/YOUMU.Rhythm.Tests.vcxproj`를 직접 빌드하고 로직·기본곡 카탈로그를
 검사합니다. 엔진 submodule과 FMOD SDK를 가져오지 않습니다. 이 CI는 Client 전체 빌드,
 presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대신하지 않습니다.
 
@@ -1029,7 +1072,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   효과 채보 15개 노트(97.8897%) 완료. 밀집 Buzz의 기존 GOOD 입력/미스 기대값도 유지합니다.
   두 구성의 Result 회귀는 그래프·소수점 6자리·결과 소유권·실제 deferred Scene 전환을 확인합니다.
 - MSVC Code Analysis(`/analyze`, 실제 C++20/include/define/x64 설정)는 Rhythm, Chart, Modes,
-  Rhythm.Tests, MRG.Client를 Debug/Release로 Rebuild했습니다. 새 경고/오류 0.
+  Rhythm.Tests, YOUMU.Client를 Debug/Release로 Rebuild했습니다. 새 경고/오류 0.
   기존 C26115(AudioAnalysisWorker의 scoped lock), C28020(GameplaySessionController의 tm),
   Release C6236(GameplayInput)는 남아 있으며 이번 동작 변경으로 추가된 진단은 없습니다.
   표시 회귀 테스트 소스도 각 스크립트의 MSVC `/analyze`로 컴파일했습니다.
@@ -1059,7 +1102,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - OptionsPanelTests, 실제 D3D12/FMOD AllNotesGameplayTests와 ResultPresentationTests도
   두 구성 성공. 기존 일반 재생·예약·설정/결과 전환 경로를 유지합니다.
 - MSVC 14.44.35207 Code Analysis: 실제 include/define/C++20 및 Debug·Release x64로
-  `MRG.Client.vcxproj /t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행.
+  `YOUMU.Client.vcxproj /t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행.
   Seek 검증 순서/한국어·영어 안내 문구의 최종 수정도 분석 Build로 확인했습니다.
   파싱/컴파일 오류 및 새 분석 경고 0. 기존 C26115(EditorAnalysisController:51),
   C28020(GameplaySessionController:98), Release C6236(GameplayInput:60)은 그대로 보고합니다.
@@ -1089,7 +1132,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   테스트 소스도 분석합니다. 기존 Require(song != nullptr)가 분석기에 전달되지 않아 나온
   C6011은 같은 테스트 안의 명시적인 null 검사로 정리했습니다.
 - MSVC 14.44.35207 Code Analysis: 실제 Client 프로젝트의 include/define/C++20과 Debug/Release x64로
-  `Client/MRG.Client.vcxproj /t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행.
+  `Client/YOUMU.Client.vcxproj /t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false` 실행.
   파싱/컴파일 오류 및 변경 코드의 새 분석 경고 0. 기존 C26115(EditorAnalysisController:51),
   C28020(GameplaySessionController:98), Release C6236(GameplayInput:60)은 별도 기존 항목입니다.
   억제하거나 진행바 범위 밖으로 수정하지 않았습니다. 진행바/판정 테스트 소스의 분석도 경고 0입니다.
@@ -1111,7 +1154,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   네 smoke 경로씩 총 8개 exit 0. 마지막 서식 정리 후 영향 프로젝트의 분석 Build 및
   52개 로직/카탈로그도 다시 실행했습니다.
 - 실제 프로젝트 include/define/C++20 설정의 MSVC 14.44.35207 Code Analysis를
-  FingerDrum.Rhythm/FingerDrum.Modes/FingerDrum.Rhythm.Tests/MRG.Client 각각 Debug/Release에
+  YOUMU.Rhythm/YOUMU.Modes/YOUMU.Rhythm.Tests/YOUMU.Client 각각 Debug/Release에
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`로 실행했습니다.
   파싱/컴파일 오류와 새 분석 경고 0. 기존 C26115(EditorAnalysisController),
   C28020(GameplaySessionController의 heldStorage), Release C6236(GameplayInput)는 유지되며
@@ -1136,7 +1179,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 
 ## 2026-10-12 개발/배포 자산 경로·난이도별 파일 쌍
 
-- FingerDrum.Assets의 ExecutableDirectory는 EXE 위치를, UserAssetRoot는 개발용
+- YOUMU.Assets의 ExecutableDirectory는 EXE 위치를, UserAssetRoot는 개발용
   `../../../Client/Assets` 또는 배포용 `Asset`을 프로세스마다 한 번 결정합니다.
   Songs/기본 외부 스킨/SkinSetSelection이 같은 루트를 사용하고, OptionSettings는
   자산 폴더와 관계없이 EXE 옆 INI를 사용합니다. Scene/엔진/내장 팩의 범위는 유지합니다.
@@ -1155,7 +1198,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   Release의 첫 시도는 ClientLogic CL.exe 종료 코드 1(MSB6006, 추가 컴파일 진단 없음)로
   실패했으며 빌드 병렬도를 4로 제한한 전체 Rebuild에서 성공했습니다.
 - 실제 include/define/C++20 구성의 MSVC 14.44.35207 Code Analysis를
-  FingerDrum.Assets/MRG.Client/FingerDrum.Rhythm.Tests에 Debug/Release 각각
+  YOUMU.Assets/YOUMU.Client/YOUMU.Rhythm.Tests에 Debug/Release 각각
   `/t:Rebuild /p:RunCodeAnalysis=true /p:BuildProjectReferences=false`로 실행했습니다.
   파싱/컴파일 오류와 새 분석 경고 0. 기존 C26115(EditorAnalysisController),
   C28020(GameplaySessionController), Release C6236(GameplayInput)는 그대로이며 억제를
@@ -1263,7 +1306,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   2/9/38개로 유지하며, 정렬된 테일을 포함한 몸통은 32/128/512개입니다.
   테일이 정렬되지 않은 효과 채보의 몸통 37틱/실패 2개 결과는 유지됐습니다.
 - MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 Chart, Modes, Rhythm.Tests,
-  MRG.Client의 실제 x64 Debug/Release include/define/C++20/PCH 설정으로 실행했습니다.
+  YOUMU.Client의 실제 x64 Debug/Release include/define/C++20/PCH 설정으로 실행했습니다.
   BuildProjectReferences=false로 엔진/SDK 재분석을 제외했고 Editor 표시 3개 번역 단위와
   GameplayJudgementTests도 두 구성 /analyze 성공했습니다. 파싱/컴파일 오류와 새 경고 0.
   기존 C26115(EditorAnalysisController.cpp:51), C28020(GameplaySessionController.cpp:64),
@@ -1300,7 +1343,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   효과 채보 15개 완료/97.8897%/1302프레임. 밀집 Buzz의 +50ms GOOD 헤드 입력과
   기존 missed-tick 기대값도 유지했습니다.
 - MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 Chart, Modes, Rhythm.Tests,
-  MRG.Client의 실제 x64 Debug/Release include/define/C++20/PCH 설정으로 실행했습니다.
+  YOUMU.Client의 실제 x64 Debug/Release include/define/C++20/PCH 설정으로 실행했습니다.
   BuildProjectReferences=false로 엔진/SDK 재분석을 제외했습니다. Editor 회귀 테스트의
   3개 번역 단위도 두 구성 /analyze 성공. 파싱/컴파일 오류와 최종 새 경고 0.
   초기 C26820 시간 기준점 복사는 참조로 수정하고 최종 분석을 재실행했습니다.
@@ -1328,7 +1371,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   안정 ID/구간 인덱스, 빈 끝점·0/100,001 마디·마디 밖 분수·ms 입력·동일 끝점의
   원본/revision 보존, BPM 수정 후 위치/ID 보존과 시간 갱신, 한국어/영어 필드와
   ms 버튼이 없는 것을 검사했습니다.
-- MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 MRG.Client의 실제 x64
+- MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 YOUMU.Client의 실제 x64
   Debug/Release include/define/C++20/PCH로 실행했습니다. BuildProjectReferences=false로
   엔진/SDK 재분석을 제외했습니다. 세 Editor 회귀 테스트 단위도 두 구성 /analyze 통과.
   파싱/컴파일 오류와 새 경고 0. 기존 C26115(EditorAnalysisController.cpp:51),
@@ -1367,7 +1410,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - 실제 D3D12/FMOD 자동 전체 노트 replay 두 구성 성공: 19개 완료, 정확도 85.1694%,
   각각 1,557 렌더 프레임. 기존 점수/틱 성공·실패 결과와 같고 오디오 오류가 없습니다.
 - MSVC 14.44.35207 Code Analysis/NativeRecommendedRules를 실제 x64 Debug/Release의
-  include/define/C++20/PCH로 Rhythm, Chart, Modes, Rhythm.Tests, MRG.Client에 실행했습니다.
+  include/define/C++20/PCH로 Rhythm, Chart, Modes, Rhythm.Tests, YOUMU.Client에 실행했습니다.
   마지막 Modes/Client 수정도 재분석했고 테스트 C++ 단위도 /analyze를 통과했습니다.
   파싱/컴파일 오류와 새 경고 0. 새 C4244/C26829는 키 코드 타입/명시적 끝점 검증으로 수정했고
   억제하지 않았습니다. 기존 C26115(EditorAnalysisController.cpp:51), C28020
@@ -1399,7 +1442,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - 실제 D3D12/FMOD 자동 플레이도 두 구성에서 전체 종류 19개/85.1694%/1,557프레임과
   효과 채보 15개/97.8897%/1,302프레임을 완료했습니다. 기존 결과와 같고 오디오 오류가 없습니다.
 - MSVC 14.44 Code Analysis/NativeRecommendedRules를 실제 include/define/PCH/C++20과
-  x64 Debug/Release 설정으로 Chart, Modes, Rhythm.Tests, MRG.Client 네 프로젝트에 실행했습니다.
+  x64 Debug/Release 설정으로 Chart, Modes, Rhythm.Tests, YOUMU.Client 네 프로젝트에 실행했습니다.
   BuildProjectReferences=false로 엔진/SDK 재분석을 제외했고 파싱/컴파일 오류 및 새 경고가 없습니다.
   Editor 회귀 3개 및 GameplayJudgementTests의 테스트 단위도 두 구성 `/analyze`를 통과했습니다.
   기존 경고는 EditorAnalysisController.cpp:51 C26115, GameplaySessionController.cpp:64
@@ -1453,7 +1496,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - 실제 D3D12/FMOD 자동 플레이도 두 구성 전체 노트 19개/85.1694%/1,557프레임,
   효과 채보 15개/97.8897%/1,302프레임을 완료했습니다.
   자동 replay의 실제 입력 결과도 판정 표시 경로로 전달하며 오디오 오류 없습니다.
-- MSVC 14.44 Code Analysis/NativeRecommendedRules를 실제 MRG.Client 프로젝트의
+- MSVC 14.44 Code Analysis/NativeRecommendedRules를 실제 YOUMU.Client 프로젝트의
   include/define/PCH/C++20과 x64 Debug/Release 설정으로 실행했습니다.
   각각 62/56개 분석 컴파일 호출 및 최종 변경 단위 재분석이 성공했습니다.
   새 코드 경고/오류/분석 파싱 오류는 없습니다. 기존 경고는 Debug 2개/Release 3개:
@@ -1711,7 +1754,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - 8개 프로젝트의 소스/필터/의존성/엔진 경계와 `git diff --check` 통과.
   엔진 및 사용자 곡/스킨은 변경하지 않았습니다. FMOD/엔진을 체크아웃하지 않는
   GitHub Windows 도메인 CI도 `e36fda2`에서 Debug/Release 빌드·테스트에 성공했습니다
-  ([실행 38140842315](https://github.com/4dblackhole/MyRhythmGame-Client/actions/runs/38140842315)).
+  ([실행 38140842315](https://github.com/4dblackhole/YOUMU/actions/runs/38140842315)).
 - 로컬 원시 로그: `build/review-rebuild-{debug,release}.log`, `build/review-quality/`
   (구성별 분석 로그와 Summary.csv), `build/review-final-*.log`, `build/review-startup-results.log`.
 - **수동 확인:** 실제 화면 배치·마우스/물리 키 입력·청취는 수행하지 않았습니다.
@@ -1726,7 +1769,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - Client와 엔진의 Debug/Release x64 솔루션 전체 Rebuild 성공.
   최종 곡 선택 진입 검사도 Debug에서 증분 분석 빌드 후 smoke로 확인했고,
   Release 전체 재빌드에는 해당 수정이 포함됩니다. 일반 빌드의 새 경고/오류는 없습니다.
-  엔진 공개 API/구현 변경은 없으며 두 구성의 MRG.Collision.Tests는
+  엔진 공개 API/구현 변경은 없으며 두 구성의 PhantomCore.Collision.Tests는
   audio/Camera/collision/Visual2D SDK 검사를 모두 통과했습니다.
 - 두 구성의 로직·카탈로그 각각 **41개, 실패 0**(실제 1곡/5패턴).
   빈/미지원 모드의 세션 생성과 에디터 factory 거부, 구형 YMP 효과 명령의
@@ -1776,7 +1819,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - 기존 로직·카탈로그 테스트 두 구성 각각 44개, 실패 0.
   smoke-test/lobby/gameplay/editor 두 구성 총 8개 종료 코드 0.
 - MSVC 14.44 Code Analysis, 실제 include/define/C++20 및 Debug/Release x64로
-  변환기 Core/EXE/Tests(구성별 새 C++ 번역 단위 6개)와 MRG.Client를 분석했습니다.
+  변환기 Core/EXE/Tests(구성별 새 C++ 번역 단위 6개)와 YOUMU.Client를 분석했습니다.
   변환기 경고·오류와 Client 새 경고는 없습니다. 기존 Client 진단은
   EditorAnalysisController.cpp:51 C26115 및 GameplaySessionController.cpp:64 C28020
   (두 구성), GameplayInput.cpp:60 C6236(Release)이며 범위 밖 수정을 하지 않았습니다.
@@ -1794,7 +1837,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   PCM reader를 소유합니다. MP3는 dr_mp3의 Info/LAME 패딩 처리를 사용하고, 기존
   Vorbis/Windows 코덱도 같은 경로에서 읽습니다. FmodPcmClip은 비동기 PCM 준비와
   raw-memory source 수명을 소유하며 기존 Voice/DSP/버스/탐색 계약을 재사용합니다.
-- Client EditorAnalysisController는 이 reader를 주입합니다. FingerDrum.Editor는
+- Client EditorAnalysisController는 이 reader를 주입합니다. YOUMU.Editor는
   rolling PCM과 FFT만 소유하여 엔진 의존성을 추가하지 않았습니다. 중복된 Client
   Vorbis 구현은 엔진으로 이동했고 고수준 reader의 취소/오류를 기존 worker가 전달합니다.
 - 실제 개발용 `Client/Assets/Songs/Patterns/Omoiyoshino/Inner Oni/Omoiyoshino [Inner Oni].ymp`
@@ -1809,8 +1852,8 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - Client Debug/Release x64 전체 solution Rebuild, 구성별 로직/카탈로그 **63개 실패 0**,
   smoke-test/lobby/gameplay/editor 네 경로씩 exit 0입니다.
 - MSVC 14.44/v143/C++20의 실제 프로젝트 include/define/configuration으로 분석했습니다.
-  MRG.Audio는 구성별 소유 TU **11개**, Client는 구성별 MRG.Client **89개**,
-  FingerDrum.Editor **2개**, Rhythm.Tests **17개**의 /analyze 명령을 CL tlog로 확인했습니다.
+  PhantomCore.Audio는 구성별 소유 TU **11개**, Client는 구성별 YOUMU.Client **89개**,
+  YOUMU.Editor **2개**, Rhythm.Tests **17개**의 /analyze 명령을 CL tlog로 확인했습니다.
   소유한 변경 코드의 컴파일/분석 진단과 파싱 오류는 없습니다. 외부 codec 구현은
   외부 header 경고 정책과 vendor-only 분석 제외를 적용합니다.
 - 초기에 전체 엔진 SDK를 분석했을 때 수정하지 않은 ScreenVisual2DManager의 C26478,
@@ -1847,7 +1890,7 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
   Code Analysis를 통과했습니다. 실제 프로젝트 include/define으로 구성별 10개 TU의
   `/analyze` 명령을 확인했고 컴파일·분석 경고/오류와 파싱 오류는 없습니다.
 - Client Debug x64 solution Build와 Release x64 직렬 전체 Rebuild는 경고/오류 0입니다.
-  초기 Release 증분 빌드의 FingerDrum.Rhythm.pdb 관련 LNK4020은 소스 변경이나 경고 억제 없이
+  초기 Release 증분 빌드의 YOUMU.Rhythm.pdb 관련 LNK4020은 소스 변경이나 경고 억제 없이
   전체 Rebuild 후 사라졌습니다. 중간 OBJ/LIB/PDB 불일치가 의심되지만 발생 원인은 확정하지 않았습니다.
 - 두 구성의 변환기 단위/CLI 회귀, Client 로직·카탈로그 각 63개(실패 0),
   smoke-test/lobby/gameplay/editor 각 4개(exit 0)를 통과했습니다.

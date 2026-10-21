@@ -16,12 +16,12 @@ void EditorView::DrawTiming()
         const auto &t = timing[i];
         const float y = 250 + static_cast<float>(i - state_.listOffset) * 46;
         const auto value =
-            t.type == chart::TimingDirectiveType::MeasureLength ? Fraction(t.ratio) : std::to_string(t.value);
+            t.type == TimingDirectiveType::MeasureLength ? Fraction(t.ratio) : std::to_string(t.value);
         Button(
             {156, y, 715, 40},
             std::to_wstring(t.position.measure + 1) + L"    " + Wide(Fraction(t.position.fraction)) + L"    " +
-                (t.type == chart::TimingDirectiveType::Bpm             ? texts_.Get("Editor.bpm").data()
-                 : t.type == chart::TimingDirectiveType::MeasureLength ? std::wstring(text.measureType)
+                (t.type == TimingDirectiveType::Bpm             ? texts_.Get("Editor.bpm").data()
+                 : t.type == TimingDirectiveType::MeasureLength ? std::wstring(text.measureType)
                                                                        : std::wstring(text.delayType)) +
                 L"    " + Wide(value),
             [this, t, i]
@@ -29,9 +29,9 @@ void EditorView::DrawTiming()
                 state_.SelectListRow(i, toggleSelection_, rangeSelection_);
                 state_.timingForm.measure = std::to_string(t.position.measure + 1);
                 state_.timingForm.fraction = Fraction(t.position.fraction);
-                if (t.type == chart::TimingDirectiveType::Bpm)
+                if (t.type == TimingDirectiveType::Bpm)
                     state_.timingForm.bpm = std::to_string(t.value);
-                if (t.type == chart::TimingDirectiveType::MeasureLength)
+                if (t.type == TimingDirectiveType::MeasureLength)
                     state_.timingForm.measureLength = Fraction(t.ratio);
                 state_.RequestRebuild();
             },

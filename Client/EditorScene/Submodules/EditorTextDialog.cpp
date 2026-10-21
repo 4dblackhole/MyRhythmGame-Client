@@ -54,7 +54,7 @@ namespace editor_ui
     }
     std::optional<std::string> EditText(
         const std::wstring &title, const std::string &value,
-        const finger_drum::texts::EditorTextSet &texts)
+        const EditorTextSet &texts)
     {
         struct Template
         {

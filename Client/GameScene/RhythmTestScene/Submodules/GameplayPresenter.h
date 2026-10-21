@@ -2,7 +2,7 @@
 #include "GameFlow/GameplayFeedback.h"
 #include "GameplayJudgementView.h"
 #include "GameplayProgressView.h"
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "Mode/PlayGameMode.h"
 #include "Presentation/LaneKeyBeam.h"
 #include "Texts/TextCatalog.h"
@@ -13,14 +13,14 @@
 class GameplayPresenter final
 {
   public:
-    GameplayPresenter(mrg::visual2d::ScreenVisual2DManager &visuals,
-                      finger_drum::texts::TextCatalog &texts)
+    GameplayPresenter(ScreenVisual2DManager &visuals,
+                      TextCatalog &texts)
         : screenVisuals_(visuals), texts_(texts)
     {
     }
-    void Initialize(const mrg::EngineServices &services,
-                    const finger_drum::mode::PlaySession &session);
-    bool PrepareAssets(const mrg::EngineServices &services);
+    void Initialize(const EngineServices &services,
+                    const PlaySession &session);
+    bool PrepareAssets(const EngineServices &services);
     void ConfigureBackground(std::filesystem::path path, double x, double y)
     {
         backgroundPath_ = std::move(path);
@@ -39,14 +39,14 @@ class GameplayPresenter final
     void Shutdown() noexcept;
     void ApplyFeedback(const GameplayFeedback &feedback);
     void PresentErrorMessage(const std::string_view message);
-    void UpdatePresentation(const finger_drum::rhythm::RhythmTime time);
-    [[nodiscard]] finger_drum::rhythm::RhythmTime InitialTimelineTime() const;
-    void UpdateInputPresentation(const mrg::platform::InputState &input, const double deltaSeconds);
+    void UpdatePresentation(const RhythmTime time);
+    [[nodiscard]] RhythmTime InitialTimelineTime() const;
+    void UpdateInputPresentation(const InputState &input, const double deltaSeconds);
 
   private:
-    mrg::visual2d::ImageHandle backgroundImage_{};
-    mrg::visual2d::Size backgroundSize_{};
-    mrg::visual2d::Point backgroundOffset_{};
+    ImageHandle backgroundImage_{};
+    Size backgroundSize_{};
+    Point backgroundOffset_{};
     std::filesystem::path backgroundPath_;
     std::string backgroundWarning_;
     enum class FocusNoteType : std::uint8_t
@@ -58,31 +58,31 @@ class GameplayPresenter final
 
     struct TimedVisual
     {
-        finger_drum::rhythm::RhythmTime timing{};
-        mrg::visual2d::Visual2DNode *node{};
+        RhythmTime timing{};
+        Visual2DNode *node{};
     };
 
     struct NoteVisualLayers
     {
-        mrg::visual2d::Visual2DNode *root{};
-        mrg::visual2d::Visual2DNode *ambient{};
-        mrg::visual2d::Visual2DNode *overlay{};
-        mrg::visual2d::Visual2DNode *body{};
-        mrg::visual2d::Visual2DNode *bodyOverlay{};
-        mrg::visual2d::Visual2DNode *tail{};
-        mrg::visual2d::Visual2DNode *tailOverlay{};
-        mrg::visual2d::Visual2DNode *processing{};
-        mrg::visual2d::Visual2DNode *success{};
-        mrg::visual2d::Visual2DNode *counter{};
-        mrg::visual2d::Visual2DNode *counterText{};
+        Visual2DNode *root{};
+        Visual2DNode *ambient{};
+        Visual2DNode *overlay{};
+        Visual2DNode *body{};
+        Visual2DNode *bodyOverlay{};
+        Visual2DNode *tail{};
+        Visual2DNode *tailOverlay{};
+        Visual2DNode *processing{};
+        Visual2DNode *success{};
+        Visual2DNode *counter{};
+        Visual2DNode *counterText{};
         std::vector<TimedVisual> ticks;
-        mrg::visual2d::ImageHandle tickImage{};
-        mrg::visual2d::Size tickSize{};
-        finger_drum::rhythm::RhythmTime timing{};
-        finger_drum::rhythm::RhythmTime endTime{};
+        ImageHandle tickImage{};
+        Size tickSize{};
+        RhythmTime timing{};
+        RhythmTime endTime{};
         FocusNoteType focusType{FocusNoteType::None};
-        mrg::visual2d::Size processingSize{};
-        mrg::visual2d::Size successSize{};
+        Size processingSize{};
+        Size successSize{};
         float diameter{};
         float bodyWidth{};
         float tailWidth{};
@@ -91,88 +91,88 @@ class GameplayPresenter final
     };
 
     void CreatePresentation();
-    void CreateLaneVisuals(mrg::visual2d::Visual2DNode &gearRoot);
+    void CreateLaneVisuals(Visual2DNode &gearRoot);
     void CreateLaneSurface();
     void UpdateLaneSurfaceLayout(const float laneLength);
-    void CreateKeyIndicators(mrg::visual2d::Visual2DNode &inputPanel);
+    void CreateKeyIndicators(Visual2DNode &inputPanel);
     void CreateNoteVisuals();
-    void CreateNoteVisual(const finger_drum::rhythm::INote &);
-    mrg::visual2d::ImageHandle NoteImage(std::wstring_view);
-    void UpdateMeasureLines(finger_drum::rhythm::RhythmTime, bool);
-    void UpdateTickVisuals(NoteVisualLayers &, const finger_drum::mode::NotePresentationInfo &,
-                           finger_drum::rhythm::RhythmTime, finger_drum::rhythm::RhythmTime, std::size_t);
+    void CreateNoteVisual(const INote &);
+    ImageHandle NoteImage(std::wstring_view);
+    void UpdateMeasureLines(RhythmTime, bool);
+    void UpdateTickVisuals(NoteVisualLayers &, const NotePresentationInfo &,
+                           RhythmTime, RhythmTime, std::size_t);
     void UpdatePresentationLayout();
     void UpdateNoteTravelLayout();
-    [[nodiscard]] float TravelPixels(finger_drum::rhythm::RhythmDuration duration,
+    [[nodiscard]] float TravelPixels(RhythmDuration duration,
                                      float multiplier = 1.0F) const noexcept;
-    float TravelPixelsAt(finger_drum::rhythm::RhythmTime target, finger_drum::rhythm::RhythmTime current,
+    float TravelPixelsAt(RhythmTime target, RhythmTime current,
                          float multiplier = 1) const;
-    [[nodiscard]] mrg::visual2d::Point LaneObjectPosition(finger_drum::rhythm::RhythmTime target,
-                                                          finger_drum::rhythm::RhythmTime current,
+    [[nodiscard]] Point LaneObjectPosition(RhythmTime target,
+                                                          RhythmTime current,
                                                           float multiplier) const;
     void HideTransientNoteVisuals();
     void RemoveUnusedNoteVisuals();
     void RebuildVisibilityIndices();
     void PresentHitCounter(NoteVisualLayers &layers,
-                             const finger_drum::rhythm::NoteProgress &progress,
+                             const NoteProgress &progress,
                              const float visualHeight);
     void PresentFocusNoteProcessing(NoteVisualLayers &layers,
-                                    const finger_drum::rhythm::NoteProgress &progress,
-                                    const finger_drum::rhythm::RhythmTime time);
-    void PresentCompletionEffect(const finger_drum::rhythm::RhythmTime time);
+                                    const NoteProgress &progress,
+                                    const RhythmTime time);
+    void PresentCompletionEffect(const RhythmTime time);
     void UpdateAccuracyPresentation();
     void PresentJudgementFeedback(const GameplayFeedback &feedback);
     std::uint32_t width_{1280};
     std::uint32_t height_{720};
-    mrg::visual2d::ScreenVisual2DManager &screenVisuals_;
-    finger_drum::texts::TextCatalog &texts_;
-    mrg::visual2d::ScreenCanvasHandle canvasHandle_;
-    mrg::visual2d::Visual2DCanvas *canvas_{};
-    const finger_drum::mode::PlaySession *session_{};
-    finger_drum::presentation::LaneKeyBeam keyBeam_;
+    ScreenVisual2DManager &screenVisuals_;
+    TextCatalog &texts_;
+    ScreenCanvasHandle canvasHandle_;
+    Visual2DCanvas *canvas_{};
+    const PlaySession *session_{};
+    LaneKeyBeam keyBeam_;
     GameplayJudgementView judgementView_;
     GameplayProgressView progressView_;
-    std::unordered_map<finger_drum::rhythm::NoteId, NoteVisualLayers> noteVisuals_;
-    std::unordered_map<finger_drum::rhythm::NoteId, const finger_drum::rhythm::INote *> noteModels_;
-    std::map<std::wstring, mrg::visual2d::ImageHandle, std::less<>> noteImages_;
+    std::unordered_map<NoteId, NoteVisualLayers> noteVisuals_;
+    std::unordered_map<NoteId, const INote *> noteModels_;
+    std::map<std::wstring, ImageHandle, std::less<>> noteImages_;
     std::vector<std::filesystem::path> preparingImages_;
     float largestHeadRadius_{};
-    std::vector<finger_drum::rhythm::NoteId> presentedNoteIds_;
-    finger_drum::chart::IntervalIndex<long double, finger_drum::rhythm::NoteId> noteVisibility_;
-    finger_drum::chart::IntervalIndex<long double, std::size_t> measureVisibility_;
-    std::vector<const finger_drum::rhythm::INote *> visibleNoteModels_;
+    std::vector<NoteId> presentedNoteIds_;
+    IntervalIndex<long double, NoteId> noteVisibility_;
+    IntervalIndex<long double, std::size_t> measureVisibility_;
+    std::vector<const INote *> visibleNoteModels_;
     std::uint64_t visibilityRevision_{};
     std::uint64_t presentationGeneration_{};
     long double firstVisibilityDistance_{};
-    std::unordered_map<finger_drum::rhythm::NoteId, finger_drum::rhythm::RhythmTime>
+    std::unordered_map<NoteId, RhythmTime>
         completionEffects_;
     std::vector<TimedVisual> measureLineVisuals_;
-    std::array<mrg::visual2d::Visual2DNode *, 4> keyIndicators_{};
-    std::array<mrg::visual2d::Visual2DNode *, 4> keyGlows_{};
-    std::array<mrg::visual2d::Visual2DNode *, 4> keyPressFlashes_{};
+    std::array<Visual2DNode *, 4> keyIndicators_{};
+    std::array<Visual2DNode *, 4> keyGlows_{};
+    std::array<Visual2DNode *, 4> keyPressFlashes_{};
     std::array<double, 4> keyPressFlashRemainingSeconds_{};
-    mrg::visual2d::Visual2DNode *background_{};
-    mrg::visual2d::Visual2DNode *scrollGearRoot_{};
-    mrg::visual2d::Visual2DNode *scrollGearBorder_{};
-    mrg::visual2d::Visual2DNode *scrollGearSurface_{};
-    mrg::visual2d::Visual2DNode *inputPresentationRoot_{};
-    mrg::visual2d::Visual2DNode *inputPanel_{};
-    mrg::visual2d::Visual2DNode *laneRoot_{};
-    mrg::visual2d::Visual2DNode *noteRoot_{};
-    std::vector<mrg::visual2d::Visual2DNode *> laneTiles_;
-    mrg::visual2d::ImageHandle laneImage_{};
-    mrg::visual2d::ImageHandle strongKeyLightImage_{};
-    mrg::visual2d::ImageHandle weakKeyLightImage_{};
-    mrg::visual2d::ImageHandle keyPressFlashImage_{};
-    mrg::visual2d::Visual2DNode *accuracyIndicator_{};
+    Visual2DNode *background_{};
+    Visual2DNode *scrollGearRoot_{};
+    Visual2DNode *scrollGearBorder_{};
+    Visual2DNode *scrollGearSurface_{};
+    Visual2DNode *inputPresentationRoot_{};
+    Visual2DNode *inputPanel_{};
+    Visual2DNode *laneRoot_{};
+    Visual2DNode *noteRoot_{};
+    std::vector<Visual2DNode *> laneTiles_;
+    ImageHandle laneImage_{};
+    ImageHandle strongKeyLightImage_{};
+    ImageHandle weakKeyLightImage_{};
+    ImageHandle keyPressFlashImage_{};
+    Visual2DNode *accuracyIndicator_{};
 #if defined(_DEBUG)
-    mrg::visual2d::Visual2DNode *noteDebugLabel_{};
+    Visual2DNode *noteDebugLabel_{};
 #endif
-    mrg::visual2d::Visual2DNode *errorLabel_{};
+    Visual2DNode *errorLabel_{};
     float laneWidth_{152.0F};
     float laneTileLength_{42.0F};
     float judgementLocalY_{76.0F};
     float noteTravelDistance_{1.0F};
     float pixelsPerWholeNote_{1.0F};
-    mrg::visual2d::Size inputPanelSize_{152.0F, 152.0F};
+    Size inputPanelSize_{152.0F, 152.0F};
 };

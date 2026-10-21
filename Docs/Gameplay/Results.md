@@ -81,7 +81,7 @@ RANK는 아래 정확도 기준의 스킨 이미지를 표시합니다.
 시안의 빈 자리를 채우기 위한 임의 점수·기록·HP 데이터는 생성하지 않습니다.
 
 - ResultScene은 결과의 소유권·화면 수명·전환만 담당합니다. View는 Back/Retry 액션을 반환합니다.
-- FingerDrumGame은 선택 snapshot을 캡처한 retry callback을 조립합니다. 이전 세션의
+- YOUMUGame은 선택 snapshot을 캡처한 retry callback을 조립합니다. 이전 세션의
   노트·타이머·음성을 재사용하지 않고 DestroyOnExit route에서 새 플레이 객체를 생성합니다.
 - TaikoResultView는 Canvas·입력·스킨/글꼴을 소유합니다. Panels는 통계/메타데이터/버튼,
   GraphView는 그래프 장식/축/범례, Graphs는 실제 입력에서 범위/빈/점 좌표를 도출합니다.
@@ -151,7 +151,7 @@ Scene, 결과 수집기, 정확도 산식과 저장 데이터는 바꾸지 않�
 ### 랭크 PNG 제작
 
 11개 모두 built-in image_gen으로 제작한 1774×887 투명 PNG입니다. 원본은
-`FingerDrum.Assets/Assets/Skins/Default Skin/Result/Rank`에 보관하고 기존 내장 자산
+`YOUMU.Assets/Assets/Skins/Default Skin/Result/Rank`에 보관하고 기존 내장 자산
 wildcard와 같은 Result/Rank 프로젝트 필터를 사용합니다. Y를 먼저 생성한 뒤 각 문구를
 Y의 스타일을 유지하는 개별 편집으로 제작했습니다. 이미지의 문구/투명 배경은 직접 확인했고,
 PNG 크기·알파와 실제 결과 화면의 자동 검증은 Verification에 별도로 기록합니다.

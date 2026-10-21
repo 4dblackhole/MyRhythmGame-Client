@@ -21,7 +21,7 @@ class SongCatalogLoader final
         const auto cache = cache_;
         job_ = std::async(std::launch::async, [cache, root] { return cache->Load(root); });
     }
-    std::optional<finger_drum::chart::SongCatalogLoadResult> Poll()
+    std::optional<SongCatalogLoadResult> Poll()
     {
         if (!job_.valid() || job_.wait_for(std::chrono::seconds{0}) != std::future_status::ready)
             return {};
@@ -44,15 +44,15 @@ class SongCatalogLoader final
                 Refresh(next);
                 return {};
             }
-            finger_drum::chart::SongCatalogLoadResult result;
-            result.diagnostics.push_back({finger_drum::chart::DiagnosticSeverity::Error, {}, error.what()});
+            SongCatalogLoadResult result;
+            result.diagnostics.push_back({DiagnosticSeverity::Error, {}, error.what()});
             return result;
         }
     }
 
   private:
-    std::shared_ptr<finger_drum::chart::SongCatalog> cache_{std::make_shared<finger_drum::chart::SongCatalog>()};
-    std::future<finger_drum::chart::SongCatalogLoadResult> job_;
+    std::shared_ptr<SongCatalog> cache_{std::make_shared<SongCatalog>()};
+    std::future<SongCatalogLoadResult> job_;
     std::filesystem::path loadingRoot_;
     std::optional<std::filesystem::path> pendingRoot_;
 };

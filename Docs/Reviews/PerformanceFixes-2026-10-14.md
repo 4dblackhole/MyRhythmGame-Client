@@ -1,6 +1,6 @@
 # 프레임 비용·로딩 병목 수정 (2026-10-14)
 
-이전 조사 보고서의 8개 항목을 Client·Chart·Modes와 MRG-Engine에서 수정했습니다.
+이전 조사 보고서의 8개 항목을 Client·Chart·Modes와 PhantomCore에서 수정했습니다.
 입력 판정은 계속 timestamped Raw Input과 정수 us를 사용합니다. 무제한 Update,
 Base BPM 속도, Whole 적분, 노트별 Separate 배율과 저장 형식은 유지합니다.
 

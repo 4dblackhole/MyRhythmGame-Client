@@ -5,19 +5,19 @@ $testRoot = Join-Path $repoRoot ('build/skin-tests/' + [guid]::NewGuid().ToStrin
 New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/MD', '/DNDEBUG') }
 $units = @('Pch', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent', 'LogoView', 'LogoLayout', 'LogoInput', 'LogoTexts',
-    'MusicSelectView', 'SongSelectLayout', 'SongSelectPanels', 'SongSelectCards', 'SongSelectInput', 'SongSelectCreateMenu', 'EditorOsuImport', 'MusicSelectTexts',
+    'MusicSelectView', 'SongSelectLayout', 'SongSelectPanels', 'SongSelectCards', 'SongSelectInput', 'SongSelectCreateMenu', 'EditorOsuImport', 'OsuImportValidation', 'MusicSelectTexts',
     'MarqueeTextComponent', 'OptionsPanel', 'OptionsDisplay', 'OptionsKeys', 'OptionsOffset', 'OptionsSongs', 'OptionSettings',
     'OptionTexts', 'TextCatalog', 'LanguageFile')
-$objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
-$libraries = @('Assets', 'Modes', 'Chart', 'Rhythm', 'ClientLogic') | ForEach-Object { "bin/x64/$Configuration/FingerDrum.$_.lib" }
+$objects = $units | ForEach-Object { "build/obj/YOUMU.Client/x64/$Configuration/$_.obj" }
+$libraries = @('Assets', 'Modes', 'Chart', 'Rhythm', 'ClientLogic') | ForEach-Object { "bin/x64/$Configuration/YOUMU.$_.lib" }
 $testExe = Join-Path $testRoot 'SkinTests.exe'
 Push-Location $repoRoot
 try {
-    & cl /nologo /analyze /W4 /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Assets/Public `
-        /IFingerDrum.Modes /IFingerDrum.Chart /IFingerDrum.Rhythm /IDependencies/MRG-Engine/Engine/SDK `
-        Tests/Presentation/SkinTests.cpp @objects @libraries "Dependencies/MRG-Engine/bin/x64/$Configuration/MRG.Core.lib" `
+    & cl /nologo /analyze /W4 /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IYOUMU.Assets/Public `
+        /IYOUMU.Modes /IYOUMU.Chart /IYOUMU.Rhythm /IDependencies/PhantomCore/Engine/SDK `
+        Tests/Presentation/SkinTests.cpp @objects @libraries "Dependencies/PhantomCore/bin/x64/$Configuration/PhantomCore.lib" `
         "/Fo$testRoot/SkinTests.obj" "/Fe$testExe" /link /OPT:NOICF /OPT:NOREF `
-        "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" "build/obj/FingerDrum.Assets/x64/$Configuration/FingerDrum.Assets.res" `
+        "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" "build/obj/YOUMU.Assets/x64/$Configuration/YOUMU.Assets.res" `
         user32.lib gdi32.lib ole32.lib comdlg32.lib
     if ($LASTEXITCODE -ne 0) { throw 'Skin test compilation failed.' }
     $fmod = if ($Configuration -eq 'Debug') { 'fmodL.dll' } else { 'fmod.dll' }

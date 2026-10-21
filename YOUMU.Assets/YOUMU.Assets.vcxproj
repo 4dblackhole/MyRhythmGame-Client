@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{B6666666-6666-4666-8666-666666666666}</ProjectGuid>
+    <RootNamespace>YOUMUAssets</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(BaseOutputPath)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(BaseIntermediateOutputPath)$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>YOUMU.Assets</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Public\YOUMUAssets.h" />
+    <ClCompile Include="Source\YOUMUAssets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <BuiltInAsset Include="Assets\Fonts\*.*" />
+    <BuiltInAsset Include="Assets\Licenses\*.*" />
+    <BuiltInAsset Include="Assets\Skins\Default Skin\**\*.*" />
+    <None Include="Assets\Fonts\*.*" />
+    <None Include="Assets\Licenses\*.*" />
+    <None Include="Assets\Skins\Default Skin\*.*" />
+    <None Include="Assets\Skins\Default Skin\HitSounds\TaikoMode\*.*" />
+    <None Include="Assets\Skins\Default Skin\InGame\*.*" />
+    <None Include="Assets\Skins\Default Skin\InGame\Judgements\*.*" />
+    <None Include="Assets\Skins\Default Skin\InGame\Progress\*.*" />
+    <None Include="Assets\Skins\Default Skin\Logo\*.*" />
+    <None Include="Assets\Skins\Default Skin\Logo\Menu\*.*" />
+    <None Include="Assets\Skins\Default Skin\MusicSelect\*.*" />
+    <None Include="Assets\Skins\Default Skin\NumberImage\*.*" />
+    <None Include="Assets\Skins\Default Skin\Result\Background\*.*" />
+    <None Include="Assets\Skins\Default Skin\Result\Mode\*.*" />
+    <None Include="Assets\Skins\Default Skin\Result\Rank\*.*" />
+    <None Include="Assets\Skins\Default Skin\TitleImage\Widget\*.*" />
+    <None Include="Assets\Songs\Music\Angeldream\*.*" />
+    <None Include="Assets\Songs\Patterns\angeldream\**\*.*" />
+    <None Include="Scripts\GenerateAssetPack.ps1" />
+    <ResourceCompile Include="$(IntDir)YOUMU.Assets.rc" />
+  </ItemGroup>
+  <Target Name="GenerateBuiltInAssetPack"
+          BeforeTargets="ResourceCompile"
+          Inputs="$(ProjectDir)Scripts\GenerateAssetPack.ps1;@(BuiltInAsset)"
+          Outputs="$(IntDir)BuiltInAssets.fdpak;$(IntDir)BuiltInAssets.hash;$(IntDir)YOUMU.Assets.rc">
+    <MakeDir Directories="$(IntDir)" />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)Scripts\GenerateAssetPack.ps1&quot; -ProjectDirectory &quot;$(ProjectDir).&quot; -OutputDirectory &quot;$(IntDir).&quot;" />
+    <ItemGroup>
+      <FileWrites Include="$(IntDir)BuiltInAssets.fdpak" />
+      <FileWrites Include="$(IntDir)BuiltInAssets.hash" />
+      <FileWrites Include="$(IntDir)YOUMU.Assets.rc" />
+    </ItemGroup>
+  </Target>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup>
+    <None Include="Assets\Skins\Default Skin\Editor\*.*" />
+  </ItemGroup>
+</Project>

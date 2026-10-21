@@ -12,26 +12,26 @@ class EditorWorkspace final : public IEditorContext
   public:
     struct AudioSelection
     {
-        finger_drum::rhythm::RhythmTime begin{}, end{};
+        RhythmTime begin{}, end{};
     };
-    explicit EditorWorkspace(finger_drum::GameplayLaunchRequest selected, std::unique_ptr<IEditorMode> mode = {})
+    explicit EditorWorkspace(GameplayLaunchRequest selected, std::unique_ptr<IEditorMode> mode = {})
         : request_(std::move(selected)), mode_(std::move(mode))
     {
     }
     // Injected modes/documents use the same owner and editing boundary.
-    EditorWorkspace(std::unique_ptr<IEditorMode> mode, std::unique_ptr<finger_drum::chart::IEditorDocument> document)
+    EditorWorkspace(std::unique_ptr<IEditorMode> mode, std::unique_ptr<IEditorDocument> document)
         : editor_(std::move(document)), mode_(std::move(mode))
     {
     }
     void Initialize();
     void UpdateAnalysis();
-    void InitializePlayback(mrg::audio::AudioSystem &audio) noexcept { playback_.Initialize(audio); }
+    void InitializePlayback(AudioSystem &audio) noexcept { playback_.Initialize(audio); }
     void ShutdownPlayback() noexcept { playback_.Shutdown(); }
     void UpdatePlayback();
     void TogglePlayback();
     void SetPlaybackRate(double rate);
     double PlaybackRate() const noexcept { return playback_.Rate(); }
-    void SelectAudioRange(finger_drum::rhythm::RhythmTime anchor, finger_drum::rhythm::RhythmTime end)
+    void SelectAudioRange(RhythmTime anchor, RhythmTime end)
     {
         audioSelection_ = AudioSelection{std::min(anchor, end), std::max(anchor, end)};
         RequestRebuild();
@@ -53,14 +53,14 @@ class EditorWorkspace final : public IEditorContext
     void SetRealtimeZoom(double factor);
     void SelectTool(int value) override;
     void Save();
-    void PlaceNote(finger_drum::chart::MusicalPosition position);
+    void PlaceNote(MusicalPosition position);
     [[nodiscard]] std::pair<double, double> TimelineRangeMilliseconds() const;
     void Seek(double milliseconds) override;
     double TimeMilliseconds() const noexcept override
     {
         return timeMs_;
     }
-    const finger_drum::chart::IEditorDocument &Document() const noexcept override
+    const IEditorDocument &Document() const noexcept override
     {
         return *editor_;
     }
@@ -110,21 +110,21 @@ class EditorWorkspace final : public IEditorContext
         RequestRebuild();
     }
     void SelectTab(EditorTab value);
-    void SelectTimingPosition(finger_drum::chart::MusicalPosition) override;
-    void Replace(finger_drum::chart::PatternDocument, finger_drum::chart::EffectDocument) override;
-    void AddNote(finger_drum::chart::MusicalPosition, int keyType,
-                 std::optional<finger_drum::chart::MusicalPosition> end = {},
+    void SelectTimingPosition(MusicalPosition) override;
+    void Replace(PatternDocument, EffectDocument) override;
+    void AddNote(MusicalPosition, int keyType,
+                 std::optional<MusicalPosition> end = {},
                  std::vector<std::string> extra = {}) override;
-    void UpdateNote(std::size_t, finger_drum::chart::PatternNote,
-                    std::optional<finger_drum::chart::MusicalPosition>) override;
+    void UpdateNote(std::size_t, PatternNote,
+                    std::optional<MusicalPosition>) override;
     void DeleteNote(std::size_t sourceOrder) override;
     const std::set<std::size_t> &SelectedNoteIds() const noexcept override
     {
         return selectedNotes_;
     }
     void SelectNotes(std::span<const std::size_t>) override;
-    void SelectNoteRange(finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition) override;
-    const std::optional<std::pair<finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition>> &
+    void SelectNoteRange(MusicalPosition, MusicalPosition) override;
+    const std::optional<std::pair<MusicalPosition, MusicalPosition>> &
     NoteSelectionRange() const noexcept override
     {
         return noteSelectionRange_;
@@ -136,7 +136,7 @@ class EditorWorkspace final : public IEditorContext
     void DeleteSelection();
     void Undo();
     void Redo();
-    void SetMeasureLength(std::int64_t, finger_drum::chart::Rational);
+    void SetMeasureLength(std::int64_t, Rational);
     void RemoveTiming(std::size_t);
     void ApplyBpm();
     void ApplyMeasureLength();
@@ -151,30 +151,30 @@ class EditorWorkspace final : public IEditorContext
     template <class Event> struct ClipboardEvent
     {
         Event value;
-        finger_drum::chart::Rational offset;
-        std::optional<finger_drum::chart::Rational> endOffset;
+        Rational offset;
+        std::optional<Rational> endOffset;
     };
     struct ClipboardNote
     {
-        finger_drum::chart::PatternNote head;
-        std::optional<finger_drum::chart::PatternNote> tail;
-        finger_drum::chart::Rational headOffset, tailOffset;
+        PatternNote head;
+        std::optional<PatternNote> tail;
+        Rational headOffset, tailOffset;
     };
     struct Clipboard
     {
         EditorTab tab{EditorTab::Pattern};
-        finger_drum::chart::Rational length;
+        Rational length;
         std::vector<ClipboardNote> notes;
-        std::vector<ClipboardEvent<finger_drum::chart::TimingDirective>> timing;
-        std::vector<ClipboardEvent<finger_drum::chart::EffectCommand>> effects;
-        std::vector<ClipboardEvent<finger_drum::chart::HitSoundChange>> sounds;
+        std::vector<ClipboardEvent<TimingDirective>> timing;
+        std::vector<ClipboardEvent<EffectCommand>> effects;
+        std::vector<ClipboardEvent<HitSoundChange>> sounds;
     };
-    void PasteNotes(const Clipboard &, finger_drum::chart::MusicalPosition, bool);
-    void PasteTiming(const Clipboard &, finger_drum::chart::MusicalPosition, bool);
-    void PasteEffects(const Clipboard &, finger_drum::chart::MusicalPosition, bool);
+    void PasteNotes(const Clipboard &, MusicalPosition, bool);
+    void PasteTiming(const Clipboard &, MusicalPosition, bool);
+    void PasteEffects(const Clipboard &, MusicalPosition, bool);
     void ClearEditSelection();
     std::set<std::size_t> selectedNotes_, selectedTiming_, selectedEffects_;
-    std::optional<std::pair<finger_drum::chart::MusicalPosition, finger_drum::chart::MusicalPosition>>
+    std::optional<std::pair<MusicalPosition, MusicalPosition>>
         noteSelectionRange_;
     std::optional<std::size_t> timingSelectionAnchor_, effectSelectionAnchor_;
     std::optional<Clipboard> clipboard_;
@@ -183,8 +183,8 @@ class EditorWorkspace final : public IEditorContext
     bool rebuild_{true};
     std::string status_;
     std::filesystem::path savedPath_;
-    finger_drum::GameplayLaunchRequest request_;
-    std::unique_ptr<finger_drum::chart::IEditorDocument> editor_;
+    GameplayLaunchRequest request_;
+    std::unique_ptr<IEditorDocument> editor_;
     std::unique_ptr<IEditorMode> mode_;
     EditorAnalysisController analysis_;
     EditorPlayback playback_;
@@ -192,7 +192,7 @@ class EditorWorkspace final : public IEditorContext
     EditorMetronome metronome_;
     EditorScoreState score_;
     double timeMs_{};
-    finger_drum::rhythm::RhythmTime lastPlaybackPresentation_{};
+    RhythmTime lastPlaybackPresentation_{};
     bool nextZToZero_{};
     bool nextXToMusicEnd_{};
     std::uint64_t audioSourceRevision_{};

@@ -2,7 +2,7 @@
 #include <algorithm>
 namespace
 {
-    bool IsKeyDownBeforeExit(const mrg::platform::InputState &input, std::uint16_t key, bool beforeExit)
+    bool IsKeyDownBeforeExit(const InputState &input, std::uint16_t key, bool beforeExit)
     {
         bool down = input.IsKeyDown(key);
         if (!beforeExit)
@@ -12,13 +12,13 @@ namespace
         const auto events = input.Events();
         for (auto event = events.rbegin(); event != events.rend(); ++event)
         {
-            if (event->type == mrg::platform::InputEventType::KeyPressed && event->code == VK_ESCAPE)
+            if (event->type == InputEventType::KeyPressed && event->code == VK_ESCAPE)
                 break;
             if (event->code != key)
                 continue;
-            if (event->type == mrg::platform::InputEventType::KeyPressed)
+            if (event->type == InputEventType::KeyPressed)
                 down = false;
-            else if (event->type == mrg::platform::InputEventType::KeyReleased)
+            else if (event->type == InputEventType::KeyReleased)
                 down = true;
         }
         return down;
@@ -33,8 +33,8 @@ void GameplaySessionController::InitializeSession()
     heldKeys_.reserve(session_->InputMapping().size());
     time_ = initialTime_;
 }
-void GameplaySessionController::Start(const mrg::EngineServices &services,
-                                      const finger_drum::rhythm::RhythmTime initialTime)
+void GameplaySessionController::Start(const EngineServices &services,
+                                      const RhythmTime initialTime)
 {
     initialTime_ = initialTime;
     session_->SetResultInitialTime(initialTime);
@@ -48,7 +48,7 @@ void GameplaySessionController::Start(const mrg::EngineServices &services,
     playbackRequested_ = state_ == PlayState::Loading;
     nextAudioPreparationPoll_ = 0;
 }
-void GameplaySessionController::Update(const mrg::UpdateContext &context)
+void GameplaySessionController::Update(const UpdateContext &context)
 {
     feedback_.clear();
     const auto previousState = state_;
@@ -72,7 +72,7 @@ void GameplaySessionController::Update(const mrg::UpdateContext &context)
         UpdateGameplay(context);
     audioRouter_.Update();
 }
-void GameplaySessionController::UpdateGameplay(const mrg::UpdateContext &context)
+void GameplaySessionController::UpdateGameplay(const UpdateContext &context)
 {
     const auto clock = context.audio.CaptureClockSnapshot();
     ProcessControlKeys(context, clock);
@@ -84,14 +84,14 @@ void GameplaySessionController::UpdateGameplay(const mrg::UpdateContext &context
     // clock. Inputs after ESC must not turn unfinished notes into hits/misses.
     std::optional<std::int64_t> exitTicks;
     for (const auto &event : context.input.Events())
-        if (event.type == mrg::platform::InputEventType::KeyPressed && event.code == VK_ESCAPE &&
+        if (event.type == InputEventType::KeyPressed && event.code == VK_ESCAPE &&
             event.performanceCounterTicks >= gameplayStartTicks_)
         {
             exitTicks = event.performanceCounterTicks;
             break;
         }
     time_ = timer_.Now(exitTicks.value_or(clock.performanceCounterTicks));
-    if (debugMode_ || timer_.CurrentState() == finger_drum::rhythm::RhythmTimer::State::Running)
+    if (debugMode_ || timer_.CurrentState() == RhythmTimer::State::Running)
     {
         ProcessRhythmInput(context.input, exitTicks);
         UpdateSession(context.input, time_, exitTicks.has_value());
@@ -99,12 +99,12 @@ void GameplaySessionController::UpdateGameplay(const mrg::UpdateContext &context
     }
     if (exitTicks)
         PauseAt(*exitTicks, true);
-    if (!debugMode_ && !pauseMenuOpen_ && timer_.CurrentState() == finger_drum::rhythm::RhythmTimer::State::Running &&
+    if (!debugMode_ && !pauseMenuOpen_ && timer_.CurrentState() == RhythmTimer::State::Running &&
         IsPatternComplete())
     {
         completedElapsedSeconds_ += context.deltaSeconds;
         if (completedElapsedSeconds_ >= 3.0)
-            EnterEnding(finger_drum::mode::PlayEndReason::Completed);
+            EnterEnding(PlayEndReason::Completed);
     }
 }
 std::string_view GameplaySessionController::ErrorMessage() const noexcept
@@ -128,13 +128,13 @@ void GameplaySessionController::Shutdown() noexcept
     pauseMenuOpen_ = false;
     completedElapsedSeconds_ = 0;
 }
-std::unique_ptr<finger_drum::mode::IPlayResult> GameplaySessionController::TakeResult()
+std::unique_ptr<IPlayResult> GameplaySessionController::TakeResult()
 {
     return std::move(result_);
 }
 
-void GameplaySessionController::UpdateSession(const mrg::platform::InputState &input,
-                                              const finger_drum::rhythm::RhythmTime time, bool beforeExit)
+void GameplaySessionController::UpdateSession(const InputState &input,
+                                              const RhythmTime time, bool beforeExit)
 {
     heldKeys_.clear();
     // Capacity was reserved when the session was initialized.
@@ -150,11 +150,11 @@ bool GameplaySessionController::IsPatternComplete() const noexcept
     {
         return false;
     }
-    return std::ranges::all_of(session_->Gear().Lanes(), [](const std::unique_ptr<finger_drum::rhythm::Lane> &lane)
+    return std::ranges::all_of(session_->Gear().Lanes(), [](const std::unique_ptr<Lane> &lane)
                                { return lane != nullptr && lane->CurrentNote() == nullptr; });
 }
 
-void GameplaySessionController::ConsumeResult(finger_drum::rhythm::NoteProcessResult result, bool pressed)
+void GameplaySessionController::ConsumeResult(NoteProcessResult result, bool pressed)
 {
     audioRouter_.PlayNow(result.audioCues);
     feedback_.push_back({false, pressed, std::move(result)});

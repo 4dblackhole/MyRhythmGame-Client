@@ -15,7 +15,7 @@ YMP의 타이밍 명령은 `#measure`, `#bpm`, `#delay`만 허용합니다.
 | 히트사운드 표/볼륨·Whole/Separate·보간·싱코페이션/Kiai | [YME](Formats/Yme.md) | EffectParser.cpp / Automation |
 | 디버그 채보·1ms 이동 | [Debugging](Gameplay/Debugging.md) | GameplayInput.cpp |
 
-파서 경로는 `FingerDrum.Chart/Parsing/Submodules`입니다.
+파서 경로는 `YOUMU.Chart/Parsing/Submodules`입니다.
 `ChartParser.h/.cpp`는 파일 입출력 facade, `ParserSupport.h`는 공통 토큰/숫자 처리입니다.
 모델도 `Model/Submodules` 아래 YMM/YMP/YME별로 나뉩니다.
 세 형식 모두 UTF-8 BOM을 허용합니다. YMM/YMP의 알 수 없는 metadata 항목은

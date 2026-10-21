@@ -1,33 +1,33 @@
 #include "TestSupport.h"
 
-namespace finger_drum::tests
+namespace tests
 {
     namespace
     {
         void CheckSavedMetadataHistory()
         {
             TemporaryDirectory saved("finger-drum-metadata-history-save");
-            chart::PatternDocument pattern;
+            PatternDocument pattern;
             pattern.sourcePath = saved.Path() / "metadata.ymp";
             pattern.name = "Before";
-            chart::ChartEditor document(pattern);
+            ChartEditor document(pattern);
             pattern.name = "After";
             document.Replace(pattern, document.Effects());
             document.Save();
-            const auto savedText = chart::ChartEditor::WritePattern(document.Pattern());
+            const auto savedText = ChartEditor::WritePattern(document.Pattern());
             document.Undo();
             Require(document.Dirty() && document.Pattern().name == "Before" &&
                         document.Pattern().effectFile == "metadata.yme",
                     "Metadata undo must preserve the YME reference established by the first save.");
             document.Redo();
-            Require(!document.Dirty() && chart::ChartEditor::WritePattern(document.Pattern()) == savedText,
+            Require(!document.Dirty() && ChartEditor::WritePattern(document.Pattern()) == savedText,
                     "Redo to a saved state must restore exactly the saved metadata, including automatic YME paths.");
         }
 
         void CheckEditorHistory()
         {
             CheckSavedMetadataHistory();
-            chart::ChartEditor bounded(chart::PatternDocument{});
+            ChartEditor bounded(PatternDocument{});
             for (int i = 0; i < 40; ++i)
                 bounded.AddNote({0, {i, 64}}, 1);
             for (int i = 0; i < 32; ++i)
@@ -38,7 +38,7 @@ namespace finger_drum::tests
                 bounded.Redo();
             Require(!bounded.CanRedo() && bounded.Notes().size() == 40, "Redo must restore all retained actions.");
 
-            chart::ChartEditor notes(chart::PatternDocument{});
+            ChartEditor notes(PatternDocument{});
             notes.AddNote({0, {1, 4}}, 1);
             const auto id = notes.Notes().front().note.sourceOrder;
             notes.Undo();
@@ -57,11 +57,11 @@ namespace finger_drum::tests
             Require(!notes.CanRedo(), "A new edit after Undo must clear the abandoned redo branch.");
 
             auto timing = notes.Timing();
-            timing.push_back({{}, chart::TimingDirectiveType::Bpm, 240});
+            timing.push_back({{}, TimingDirectiveType::Bpm, 240});
             notes.ReplaceTiming(timing);
-            chart::EffectDocument effects;
-            chart::EffectCommand speed;
-            speed.type = chart::EffectCommandType::NoteSpeed;
+            EffectDocument effects;
+            EffectCommand speed;
+            speed.type = EffectCommandType::NoteSpeed;
             speed.beginValue = speed.endValue = 2;
             effects.commands.push_back(speed);
             notes.ReplaceEffects(effects);
@@ -75,7 +75,7 @@ namespace finger_drum::tests
             bool failed = false;
             try
             {
-                notes.ReplaceTiming({{{}, chart::TimingDirectiveType::Bpm, -1}});
+                notes.ReplaceTiming({{{}, TimingDirectiveType::Bpm, -1}});
             }
             catch (const std::invalid_argument &)
             {
@@ -88,14 +88,14 @@ namespace finger_drum::tests
             Require(notes.Notes().front().scrollMultiplier == 2 && notes.Notes().front().timing == compiled,
                     "Timing/effects redo must recompile the original values.");
 
-            chart::ChartEditor longNotes(chart::PatternDocument{});
-            longNotes.AddNote({0, {}}, 11, chart::MusicalPosition{1, {}});
+            ChartEditor longNotes(PatternDocument{});
+            longNotes.AddNote({0, {}}, 11, MusicalPosition{1, {}});
             const auto head = longNotes.Notes().front().note.sourceOrder;
             longNotes.DeleteNote(head);
             longNotes.Undo();
             const auto restored = longNotes.FindNote(head);
             Require(restored && restored->tail.has_value() &&
-                        longNotes.NotesInTimeRange(rhythm::RhythmTime{500'000}, rhythm::RhythmTime{600'000}).size() ==
+                        longNotes.NotesInTimeRange(RhythmTime{500'000}, RhythmTime{600'000}).size() ==
                             2,
                     "Long-note undo must restore both endpoints and interval indices.");
             longNotes.Undo();
@@ -105,9 +105,9 @@ namespace finger_drum::tests
             Require(longNotes.Notes().empty(), "Long-note deletion redo must remove the restored pair.");
 
             TemporaryDirectory saved("finger-drum-history-save");
-            chart::PatternDocument pattern;
+            PatternDocument pattern;
             pattern.sourcePath = saved.Path() / "history.ymp";
-            chart::ChartEditor document(pattern);
+            ChartEditor document(pattern);
             document.AddNote({0, {}}, 1);
             document.Save();
             document.AddNote({0, {1, 4}}, 2);
@@ -121,9 +121,9 @@ namespace finger_drum::tests
     {
         CheckEditorHistory();
         {
-            chart::ChartParser parser;
+            ChartParser parser;
             const auto parsed = parser.ParsePattern("[Metadata]\nBG: abcd/bg1.png\noffset: 25.5, -40.25\n");
-            const auto roundtrip = parser.ParsePattern(chart::ChartEditor::WritePattern(parsed.document));
+            const auto roundtrip = parser.ParsePattern(ChartEditor::WritePattern(parsed.document));
             Require(parsed.Succeeded() && roundtrip.Succeeded() &&
                         roundtrip.document.backgroundFile == "abcd/bg1.png" &&
                         roundtrip.document.backgroundOffsetX == 25.5 && roundtrip.document.backgroundOffsetY == -40.25,
@@ -133,10 +133,10 @@ namespace finger_drum::tests
                 Require(!parser.ParsePattern(std::string("[Metadata]\n") + text).Succeeded(),
                         "Invalid BG paths/offsets must be rejected.");
         }
-        using namespace finger_drum;
+
         {
-            chart::PatternDocument pattern;
-            chart::ChartEditor document(pattern);
+            PatternDocument pattern;
+            ChartEditor document(pattern);
             const auto revision = document.Revision();
             for (const double level : {0.0, 101.0, 50.001})
             {
@@ -159,13 +159,13 @@ namespace finger_drum::tests
                     "Fractional JudgeLevel must be editable.");
         }
         {
-            chart::PatternDocument pattern;
+            PatternDocument pattern;
             pattern.mode = "Taiko";
             pattern.musicMetadataFile = "fixture.ymm";
             pattern.notes = {{{0, {}}, 11, 1, {}, {"HitCount=3", "Custom=keep"}, {}, 10},
                              {{0, {1, 2}}, 11, 2, {}, {}, {}, 11},
                              {{2, {}}, 1, 0, {}, {}, {}, 12}};
-            chart::ChartEditor document(pattern);
+            ChartEditor document(pattern);
             auto selected = document.FindNote(11);
             Require(selected && selected->head.note.sourceOrder == 10 && selected->tail->note.sourceOrder == 11,
                     "Tail selection must resolve a stable head/tail pair.");
@@ -173,7 +173,7 @@ namespace finger_drum::tests
             head.keyType = 17;
             head.position = {1, {1, 4}};
             head.extraData = {"Action=Kat", "TickDivision=64", "Custom=keep"};
-            document.UpdateNote(11, head, chart::MusicalPosition{1, {3, 4}});
+            document.UpdateNote(11, head, MusicalPosition{1, {3, 4}});
             selected = document.FindNote(10);
             Require(selected->head.note.sourceOrder == 10 && selected->tail->note.sourceOrder == 11 &&
                         selected->tail->note.keyType == 17 && document.FindNote(12)->head.note.position.measure == 2 &&
@@ -204,7 +204,7 @@ namespace finger_drum::tests
             }
             Require(rejected && document.Revision() == revision, "A zero-duration property edit must be atomic.");
             const auto reparsed =
-                chart::ChartParser{}.ParsePattern(chart::ChartEditor::WritePattern(document.Pattern()));
+                ChartParser{}.ParsePattern(ChartEditor::WritePattern(document.Pattern()));
             Require(reparsed.Succeeded() && reparsed.document.notes[0].extraData == head.extraData,
                     "Updated note options must survive serialization.");
             head.keyType = 2;
@@ -212,19 +212,19 @@ namespace finger_drum::tests
             Require(!document.FindNote(11) && !document.FindNote(10)->tail && document.FindNote(12),
                     "Converting a long note to a tap must remove only its tail.");
             head.keyType = 11;
-            document.UpdateNote(10, head, chart::MusicalPosition{1, {3, 4}});
+            document.UpdateNote(10, head, MusicalPosition{1, {3, 4}});
             Require(document.FindNote(10)->tail->note.sourceOrder > 12,
                     "Converting a tap back to a long note must not reuse the old tail ID.");
         }
 
         {
-            chart::PatternDocument source;
+            PatternDocument source;
             source.baseBpm = 120;
             source.notes = {{{0, {}}, 11, 1, {}, {}, {}, 90}, {{10, {}}, 11, 2, {}, {}, {}, 2}};
-            chart::ChartEditor indexed(source);
+            ChartEditor indexed(source);
             Require(
                 indexed.NotesInMeasures(4, 5).size() == 2 &&
-                    indexed.NotesInTimeRange(rhythm::RhythmTime{8'000'000}, rhythm::RhythmTime{9'000'000}).size() == 2,
+                    indexed.NotesInTimeRange(RhythmTime{8'000'000}, RhythmTime{9'000'000}).size() == 2,
                 "Viewport queries must retain long notes whose endpoints both lie outside, regardless of ID order.");
             indexed.AddNote({5, {1, 4}}, 1);
             const auto addedId = indexed.NotesInMeasures(5, 6)[1].note.sourceOrder;
@@ -236,8 +236,8 @@ namespace finger_drum::tests
             const auto audioRevision = indexed.AudioSourceRevision();
             const auto oldTime = indexed.NotesInMeasures(5, 6)[1].timing;
             auto changed = indexed.Pattern();
-            changed.timing.push_back({{1, {}}, chart::TimingDirectiveType::Bpm, 240});
-            changed.timing.push_back({{2, {}}, chart::TimingDirectiveType::DelayMilliseconds, -100});
+            changed.timing.push_back({{1, {}}, TimingDirectiveType::Bpm, 240});
+            changed.timing.push_back({{2, {}}, TimingDirectiveType::DelayMilliseconds, -100});
             indexed.Replace(changed, indexed.Effects());
             Require(indexed.NotesInMeasures(5, 6)[1].timing < oldTime && indexed.AudioSourceRevision() == audioRevision,
                     "BPM/delay edits must update time indices without invalidating unchanged audio sources.");
@@ -245,7 +245,7 @@ namespace finger_drum::tests
             bool rejectedEnd = false;
             try
             {
-                indexed.AddNote({1, {}}, 11, chart::MusicalPosition{-1, {}});
+                indexed.AddNote({1, {}}, 11, MusicalPosition{-1, {}});
             }
             catch (const std::invalid_argument &)
             {
@@ -262,37 +262,37 @@ namespace finger_drum::tests
             indexed.Replace(changed, soundEffects);
             Require(indexed.AudioSourceRevision() == audioRevision + 1,
                     "Changing a sound source must invalidate audio file resolution.");
-            chart::EffectDocument effects;
-            chart::EffectCommand speed;
-            speed.type = chart::EffectCommandType::NoteSpeed;
+            EffectDocument effects;
+            EffectCommand speed;
+            speed.type = EffectCommandType::NoteSpeed;
             speed.beginValue = speed.endValue = .5;
             effects.commands.push_back(speed);
             indexed.Replace(indexed.Pattern(), effects);
             auto copied = indexed;
             indexed.Replace(indexed.Pattern(), {});
-            Require(copied.EffectValueAt(chart::EffectCommandType::NoteSpeed, {3, {}}) == .5,
+            Require(copied.EffectValueAt(EffectCommandType::NoteSpeed, {3, {}}) == .5,
                     "Copied event trees must own independent effect lookup pointers.");
         }
     }
 
     void TestChartEditingAndSave()
     {
-        using namespace finger_drum;
-        chart::PatternDocument p;
+
+        PatternDocument p;
         p.baseBpm = 120;
         p.musicMetadataFile = "../Music/test.ymm";
         p.makers = {"테스트"};
         p.tags = {"editor"};
-        chart::ChartEditor editor(p);
+        ChartEditor editor(p);
         editor.AddNote({0, {1, 4}}, 1);
-        editor.AddNote({0, {3, 4}}, 11, chart::MusicalPosition{1, {3, 4}}, {"8"});
+        editor.AddNote({0, {3, 4}}, 11, MusicalPosition{1, {3, 4}}, {"8"});
         editor.SetMeasureLength(0, {2, 4});
-        Require(editor.Pattern().notes[0].position == chart::MusicalPosition{0, {1, 4}} &&
-                    editor.Pattern().notes[1].position == chart::MusicalPosition{1, {1, 4}},
+        Require(editor.Pattern().notes[0].position == MusicalPosition{0, {1, 4}} &&
+                    editor.Pattern().notes[1].position == MusicalPosition{1, {1, 4}},
                 "Only overflowing note positions must carry into later measures with exact "
                 "remainders.");
-        chart::ChartEditor collapsed(p);
-        collapsed.AddNote({0, {3, 4}}, 11, chart::MusicalPosition{1, {1, 4}});
+        ChartEditor collapsed(p);
+        collapsed.AddNote({0, {3, 4}}, 11, MusicalPosition{1, {1, 4}});
         bool rejected = false;
         try
         {
@@ -302,26 +302,26 @@ namespace finger_drum::tests
         {
             rejected = true;
         }
-        Require(rejected && collapsed.Timeline().MeasureLength(0) == chart::Rational{1, 1} &&
-                    collapsed.Pattern().notes.front().position == chart::MusicalPosition{0, {3, 4}},
+        Require(rejected && collapsed.Timeline().MeasureLength(0) == Rational{1, 1} &&
+                    collapsed.Pattern().notes.front().position == MusicalPosition{0, {3, 4}},
                 "A collapsed long-note pair must reject the whole signature edit without altering "
                 "the source.");
         editor.DeleteNote(1);
         Require(editor.Pattern().notes.size() == 1, "Deleting a long-note head must also remove its matching tail.");
         const auto &timeline = editor.Timeline();
-        for (const chart::Rational beat : {chart::Rational{1, 3}, chart::Rational{1, 1}, chart::Rational{1000, 3}})
+        for (const Rational beat : {Rational{1, 3}, Rational{1, 1}, Rational{1000, 3}})
             Require(timeline.PositionToWholeNotes(timeline.PositionAtWholeNotes(beat)) == beat,
                     "Prefix sum inverse must remain exact, including extrapolated measures.");
 
         {
-            chart::PatternDocument variable;
-            variable.timing = {{{1, {}}, chart::TimingDirectiveType::MeasureLength, 0, {3, 4}},
-                               {{1, {1, 4}}, chart::TimingDirectiveType::Bpm, 240},
-                               {{2, {1, 4}}, chart::TimingDirectiveType::DelayMilliseconds, 250}};
-            const chart::MusicalTimeline indexed(variable);
-            const chart::MusicalPosition first{0, {3, 4}}, last{2, {1, 4}};
+            PatternDocument variable;
+            variable.timing = {{{1, {}}, TimingDirectiveType::MeasureLength, 0, {3, 4}},
+                               {{1, {1, 4}}, TimingDirectiveType::Bpm, 240},
+                               {{2, {1, 4}}, TimingDirectiveType::DelayMilliseconds, 250}};
+            const MusicalTimeline indexed(variable);
+            const MusicalPosition first{0, {3, 4}}, last{2, {1, 4}};
             const auto distance = indexed.WholeNotesBetween(first, last);
-            Require(distance == chart::Rational{5, 4} && indexed.AddWholeNotes(first, distance) == last &&
+            Require(distance == Rational{5, 4} && indexed.AddWholeNotes(first, distance) == last &&
                         indexed.AddWholeNotes(last, -distance) == first,
                     "Musical addition/subtraction must cross changing measures exactly without BPM/delay distortion.");
             Require(indexed.Compile(indexed.AddWholeNotes({1, {1, 4}}, {1, 4})).count() -
@@ -342,15 +342,15 @@ namespace finger_drum::tests
 
         auto pattern = editor.Pattern();
 
-        pattern.timing.push_back({{0, {1, 4}}, chart::TimingDirectiveType::Bpm, 240});
-        chart::EffectDocument effects;
+        pattern.timing.push_back({{0, {1, 4}}, TimingDirectiveType::Bpm, 240});
+        EffectDocument effects;
         effects.hitSounds["1"] = "Sounds/pop.wav";
-        chart::EffectCommand speed;
-        speed.type = chart::EffectCommandType::NoteSpeed;
+        EffectCommand speed;
+        speed.type = EffectCommandType::NoteSpeed;
         speed.beginValue = 1;
         speed.endValue = 2;
-        speed.curve = chart::AutomationCurve::Linear;
-        speed.endPosition = chart::MusicalPosition{1, {0, 1}};
+        speed.curve = AutomationCurve::Linear;
+        speed.endPosition = MusicalPosition{1, {0, 1}};
         effects.commands.push_back(speed);
         effects.hitSoundChanges.push_back({{1, {1, 4}}, "1", 2});
         editor.Replace(pattern, effects);
@@ -362,8 +362,8 @@ namespace finger_drum::tests
                 "BPM change.");
         const auto beforeRevision = editor.Revision();
         const auto beforeDirty = editor.Dirty();
-        const auto beforePattern = chart::ChartEditor::WritePattern(editor.Pattern());
-        const auto beforeEffects = chart::ChartEditor::WriteEffects(editor.Effects());
+        const auto beforePattern = ChartEditor::WritePattern(editor.Pattern());
+        const auto beforeEffects = ChartEditor::WriteEffects(editor.Effects());
         const auto beforeTime = editor.Notes().front().timing;
         auto invalidEffects = effects;
         invalidEffects.commands.front().beginValue = 0;
@@ -377,13 +377,13 @@ namespace finger_drum::tests
             invalidRejected = true;
         }
         Require(invalidRejected && editor.Revision() == beforeRevision && editor.Dirty() == beforeDirty &&
-                    chart::ChartEditor::WritePattern(editor.Pattern()) == beforePattern &&
-                    chart::ChartEditor::WriteEffects(editor.Effects()) == beforeEffects &&
+                    ChartEditor::WritePattern(editor.Pattern()) == beforePattern &&
+                    ChartEditor::WriteEffects(editor.Effects()) == beforeEffects &&
                     editor.Notes().front().timing == beforeTime &&
                     std::abs(editor.Notes().front().scrollMultiplier - (5.0 / 3.0)) < 1e-9,
                 "Failed candidate validation must preserve document, revision, dirty state and compiled caches.");
-        auto serialized = chart::ChartEditor::WriteEffects(effects);
-        const auto parsedEffects = chart::ChartParser{}.ParseEffect(serialized);
+        auto serialized = ChartEditor::WriteEffects(effects);
+        const auto parsedEffects = ChartParser{}.ParseEffect(serialized);
         Require(parsedEffects.Succeeded() && parsedEffects.document.commands[0].endPosition == speed.endPosition &&
                     parsedEffects.document.hitSoundChanges.size() == 1,
                 "YME regions and indexed hit sound changes must round-trip.");
@@ -396,11 +396,11 @@ namespace finger_drum::tests
         yme.replace_extension(".yme");
         Require(std::filesystem::exists(yme) && !editor.Dirty(),
                 "Save must produce adjacent YMP/YME and clear dirty state.");
-        const auto parsed = chart::ChartParser{}.ParsePatternFile(pattern.sourcePath);
+        const auto parsed = ChartParser{}.ParsePatternFile(pattern.sourcePath);
         Require(parsed.Succeeded() && parsed.document.notes.size() == pattern.notes.size() &&
                     parsed.document.makers == pattern.makers &&
-                    chart::ChartParser{}.ParseEffectFile(yme).document.hitSounds == effects.hitSounds &&
-                    chart::MusicalTimeline(parsed.document).CompileNotes(parsed.document)[0].timing ==
+                    ChartParser{}.ParseEffectFile(yme).document.hitSounds == effects.hitSounds &&
+                    MusicalTimeline(parsed.document).CompileNotes(parsed.document)[0].timing ==
                         editor.Notes()[0].timing,
                 "Saving must preserve Unicode metadata, hit sound table and exact compiled note "
                 "timing.");
@@ -409,4 +409,4 @@ namespace finger_drum::tests
         backup += L".editor.bak";
         Require(!std::filesystem::exists(backup), "Successful save must clean its own backup.");
     }
-} // namespace finger_drum::tests
+} // namespace youmu::tests

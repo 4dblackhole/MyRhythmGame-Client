@@ -1,0 +1,66 @@
+#pragma once
+
+#include "Common/RhythmTypes.h"
+#include "Judgement/JudgeLevel.h"
+
+#include <array>
+#include <cstddef>
+#include <string>
+#include <string_view>
+
+enum class JudgementGrade : std::uint8_t
+{
+Max,
+Perfect,
+Great,
+Good,
+Bad,
+Miss,
+Unjudged,
+};
+
+struct JudgementBand
+{
+JudgementGrade grade{JudgementGrade::Miss};
+RhythmDuration halfWindow{};
+double boundaryScoreRate{};
+};
+
+struct JudgementResult
+{
+JudgementGrade grade{JudgementGrade::Miss};
+RhythmDuration signedError{};
+double scoreRate{};
+};
+
+class AccuracyRange final
+{
+public:
+static constexpr std::size_t BandCount = 5;
+static constexpr double DefaultLevel = JudgeLevel::Default;
+
+explicit AccuracyRange(std::string id = "default", JudgeLevel level = {});
+AccuracyRange(std::string id, JudgeLevel level, std::array<JudgementBand, BandCount> level50Bands,
+              RhythmDuration extraHalfWindow = RhythmDuration::zero());
+
+[[nodiscard]] std::string_view Id() const noexcept;
+[[nodiscard]] JudgeLevel Level() const noexcept;
+void SetLevel(JudgeLevel level);
+[[nodiscard]] const std::array<JudgementBand, BandCount> &Bands() const noexcept;
+[[nodiscard]] RhythmDuration HalfWindow(JudgementGrade grade) const noexcept;
+[[nodiscard]] JudgementResult Evaluate(RhythmTime noteTime, RhythmTime inputTime) const noexcept;
+[[nodiscard]] bool IsWithin(JudgementGrade outerGrade, RhythmTime noteTime, RhythmTime inputTime) const noexcept;
+
+[[nodiscard]] static std::array<JudgementBand, BandCount> DefaultLevel50Bands() noexcept;
+
+private:
+void RebuildScaledBands();
+
+RhythmDuration extraHalfWindow_{};
+std::string id_;
+JudgeLevel level_;
+std::array<JudgementBand, BandCount> level50Bands_{};
+std::array<JudgementBand, BandCount> scaledBands_{};
+};
+
+[[nodiscard]] bool IsAtLeastAsAccurateAs(JudgementGrade grade, JudgementGrade outerGrade) noexcept;

@@ -1,5 +1,5 @@
 #include "App/AssetPaths.h"
-#include "FingerDrumAssets.h"
+#include "YOUMUAssets.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayJudgementView.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayPresenter.h"
 #include "Parsing/ChartParser.h"
@@ -16,8 +16,7 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
-    namespace r = finger_drum::rhythm;
+
     void Check(const bool condition, const char *message)
     {
         if (!condition)
@@ -27,7 +26,7 @@ namespace
     {
         return std::abs(left - right) < 0.001F;
     }
-    v::Visual2DNode *Find(v::Visual2DNode &root, const std::string_view name)
+    Visual2DNode *Find(Visual2DNode &root, const std::string_view name)
     {
         if (root.Name() == name)
             return &root;
@@ -36,24 +35,24 @@ namespace
                 return found;
         return nullptr;
     }
-    v::Visual2DNode &Node(v::Visual2DNode &root, const std::string_view name)
+    Visual2DNode &Node(Visual2DNode &root, const std::string_view name)
     {
         auto *node = Find(root, name);
         Check(node != nullptr, "Expected judgement node missing.");
         return *node;
     }
-    std::size_t NodeCount(const v::Visual2DNode &root)
+    std::size_t NodeCount(const Visual2DNode &root)
     {
         std::size_t count = 1;
         for (const auto &child : root.Children())
             count += NodeCount(*child);
         return count;
     }
-    class AssetRenderer final : public mrg::graphics::Visual2DRenderSystem
+    class AssetRenderer final : public Visual2DRenderSystem
     {
       public:
         std::size_t loads{};
-        v::ImageHandle LoadImage(const std::filesystem::path &path) override
+        ImageHandle LoadImage(const std::filesystem::path &path) override
         {
             // Read the real embedded/fallback PNG metadata, without a GPU.
             std::ifstream file(path, std::ios::binary);
@@ -72,39 +71,39 @@ namespace
             sizes_[id] = {static_cast<float>(dimension(16)), static_cast<float>(dimension(20))};
             return {id};
         }
-        v::Size GetImageSize(const v::ImageHandle image) const noexcept override
+        Size GetImageSize(const ImageHandle image) const noexcept override
         {
             const auto found = sizes_.find(image.value);
-            return found != sizes_.end() ? found->second : v::Size{};
+            return found != sizes_.end() ? found->second : Size{};
         }
-        void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, v::Point,
+        void SubmitScreen(const Visual2DCanvas &, const RenderContext &, Point,
                           std::uint32_t) override
         {
         }
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
-                         v::Size, const DirectX::XMFLOAT4X4 &) override
+        void SubmitPlane(const Visual2DCanvas &, const RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         Size, const DirectX::XMFLOAT4X4 &) override
         {
         }
-        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
+        RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
         {
             return {};
         }
-        void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
-                             const mrg::graphics::RenderContext &) override
+        void RenderToTexture(const Visual2DCanvas &, const RenderTargetTextureHandle &,
+                             const RenderContext &) override
         {
         }
 
       private:
-        std::map<std::uint64_t, v::Size> sizes_;
+        std::map<std::uint64_t, Size> sizes_;
     };
-    r::NoteEvent Event(const r::NoteEventType type, const r::JudgementGrade grade, const r::RhythmDuration error = {})
+    NoteEvent Event(const NoteEventType type, const JudgementGrade grade, const RhythmDuration error = {})
     {
-        r::NoteEvent event;
+        NoteEvent event;
         event.type = type;
         event.judgement = {grade, error, 1.0};
         return event;
     }
-    void CheckOverlay(v::Visual2DNode &root, const std::string_view word)
+    void CheckOverlay(Visual2DNode &root, const std::string_view word)
     {
         constexpr std::array names{"MAX", "PERFECT", "GREAT", "GOOD", "BAD", "MISS", "POOR", "OK"};
         for (const auto name : names)
@@ -114,15 +113,15 @@ namespace
     void TestGuideAndOverlays()
     {
         AssetRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280.0F, 720.0F});
-        v::Visual2DCanvas canvas;
+        Visual2DCanvas canvas;
         auto &lane = canvas.Root().CreateChild("Lane");
         lane.Transform().SetRotationRollPitchYaw(0.0F, 0.0F, -DirectX::XM_PIDIV2);
-        auto &circle = v::CreateSprite(lane, {30.0F, 40.0F, 96.0F, 96.0F}, {}, "Circle");
+        auto &circle = CreateSprite(lane, {30.0F, 40.0F, 96.0F, 96.0F}, {}, "Circle");
         GameplayJudgementView view;
-        finger_drum::texts::TextCatalog texts;
-        const r::AccuracyRange base;
+        TextCatalog texts;
+        const AccuracyRange base;
         view.Initialize(visuals, canvas, circle, base, texts);
         auto &root = canvas.Root();
         auto &marker = Node(root, "Judgement.Marker");
@@ -133,9 +132,9 @@ namespace
         for (std::size_t index = 0; index < base.Bands().size(); ++index)
         {
             auto &band = Node(root, "Judgement.Band." + std::to_string(index));
-            const auto color = band.GetComponent<v::SpriteVisualComponent>()->Style().normal;
+            const auto color = band.GetComponent<SpriteVisualComponent>()->Style().normal;
             const auto beamColor =
-                finger_drum::presentation::LaneKeyBeam::GradeColor(static_cast<r::JudgementGrade>(index));
+                LaneKeyBeam::GradeColor(static_cast<JudgementGrade>(index));
             Check(Near(color.red, beamColor.red) && Near(color.green, beamColor.green) &&
                       Near(color.blue, beamColor.blue),
                   "Each independent band must match the key-beam grade color.");
@@ -144,8 +143,8 @@ namespace
         for (std::size_t index = 0; index < words.size(); ++index)
         {
             view.Reset();
-            const auto type = index == 4 ? r::NoteEventType::InputRejected : r::NoteEventType::HitAccepted;
-            view.Present(Event(type, static_cast<r::JudgementGrade>(index), -base.Bands()[index].halfWindow));
+            const auto type = index == 4 ? NoteEventType::InputRejected : NoteEventType::HitAccepted;
+            view.Present(Event(type, static_cast<JudgementGrade>(index), -base.Bands()[index].halfWindow));
             CheckOverlay(root, words[index]);
             Check(marker.IsVisible() && marker.Bounds().x < 0.0F, "Early input must place marker to the left.");
             const auto overlay = Node(root, "Lane.Judgement." + std::string(words[index])).BoundsInCanvas();
@@ -160,10 +159,10 @@ namespace
                   "Lettering must remain upright in the rotated lane.");
         }
         view.Reset();
-        view.Present(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Good, r::RhythmDuration{54'500}));
+        view.Present(Event(NoteEventType::HitAccepted, JudgementGrade::Good, RhythmDuration{54'500}));
         Check(marker.Bounds().x > 0.0F, "Late input must place marker to the right.");
         view.Update(0.1);
-        Check(Near(Node(root, "Lane.Judgement.GOOD").GetComponent<v::SpriteVisualComponent>()->Style().normal.alpha,
+        Check(Near(Node(root, "Lane.Judgement.GOOD").GetComponent<SpriteVisualComponent>()->Style().normal.alpha,
                    0.5F),
               "Judgement overlay must fade over 200ms.");
         view.Update(0.1);
@@ -171,29 +170,29 @@ namespace
         Check(marker.IsVisible(), "Recent hits remain visible until displaced from the 32-hit ring.");
 
         view.Reset();
-        view.Present(Event(r::NoteEventType::InputRejected, r::JudgementGrade::Max));
+        view.Present(Event(NoteEventType::InputRejected, JudgementGrade::Max));
         CheckOverlay(root, "POOR");
         Check(Near(marker.Bounds().x, 0.0F), "Zero-error POOR keeps the actual input timing.");
         view.Reset();
-        view.Present(Event(r::NoteEventType::InputRejected, r::JudgementGrade::Miss));
+        view.Present(Event(NoteEventType::InputRejected, JudgementGrade::Miss));
         CheckOverlay(root, "");
         Check(!marker.IsVisible(), "Empty/out-of-range input must not show POOR or a marker.");
-        view.Present(Event(r::NoteEventType::TickAccepted, r::JudgementGrade::Unjudged));
+        view.Present(Event(NoteEventType::TickAccepted, JudgementGrade::Unjudged));
         CheckOverlay(root, "");
-        view.Present(Event(r::NoteEventType::Missed, r::JudgementGrade::Miss, r::RhythmDuration{500'000}));
+        view.Present(Event(NoteEventType::Missed, JudgementGrade::Miss, RhythmDuration{500'000}));
         CheckOverlay(root, "MISS");
         Check(!marker.IsVisible(), "Automatic MISS must not invent an input marker.");
 
         const auto count = NodeCount(root);
         const auto loads = renderer.loads;
-        const r::AccuracyRange sync{"sync", 50, r::AccuracyRange::DefaultLevel50Bands(), r::RhythmDuration{10'000}};
-        auto synced = Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Good);
-        synced.judgement = sync.Evaluate({}, r::RhythmTime{60'000});
+        const AccuracyRange sync{"sync", 50, AccuracyRange::DefaultLevel50Bands(), RhythmDuration{10'000}};
+        auto synced = Event(NoteEventType::HitAccepted, JudgementGrade::Good);
+        synced.judgement = sync.Evaluate({}, RhythmTime{60'000});
         view.Present(synced);
         CheckOverlay(root, "GOOD");
         Check(Near(bad.NodeSize().width, 400.0F), "Syncopation must not resize the base guide.");
         view.Reset();
-        view.Present(Event(r::NoteEventType::InputRejected, r::JudgementGrade::Bad, r::RhythmDuration{500'000}));
+        view.Present(Event(NoteEventType::InputRejected, JudgementGrade::Bad, RhythmDuration{500'000}));
         Check(Near(marker.Bounds().x, margin.NodeSize().width * 0.5F), "Marker must be clamped to the visible guide.");
         view.OnResize(200.0F);
         Check(Near(margin.NodeSize().width, 160.0F), "Wide ranges must fit a narrow viewport.");
@@ -203,19 +202,19 @@ namespace
         Check(NodeCount(root) == count && renderer.loads == loads, "Repeated hits/resize must reuse nodes and images.");
         view.Reset();
         for (int i = 0; i < 32; ++i)
-            view.Present(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Perfect, r::RhythmDuration{i * 1000}));
+            view.Present(Event(NoteEventType::HitAccepted, JudgementGrade::Perfect, RhythmDuration{i * 1000}));
         view.Update(1);
         Check(marker.IsVisible() && !Node(root, "Judgement.RetiringMarker.0").IsVisible(),
               "All 32 retained hits persist without retiring a slot early.");
         for (int i = 32; i < 41; ++i)
-            view.Present(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Great, r::RhythmDuration{i * 1000}));
+            view.Present(Event(NoteEventType::HitAccepted, JudgementGrade::Great, RhythmDuration{i * 1000}));
         Check(Near(marker.Bounds().x, 32 * 1000 * 400.0F / 180'000), "Ring wrap must replace the oldest hit.");
         for (int i = 0; i < 8; ++i)
             Check(Node(root, "Judgement.RetiringMarker." + std::to_string(i)).IsVisible(),
                   "At most eight displaced hits have reusable fade slots.");
         view.Update(.1);
         auto &retiring = Node(root, "Judgement.RetiringMarker.0");
-        Check(Near(retiring.GetComponent<v::SpriteVisualComponent>()->Style().normal.alpha, .5F) && marker.IsVisible(),
+        Check(Near(retiring.GetComponent<SpriteVisualComponent>()->Style().normal.alpha, .5F) && marker.IsVisible(),
               "Only displaced hits fade over 200ms.");
         view.Update(.1);
         Check(!retiring.IsVisible() && marker.IsVisible(), "Retiring hits expire while the recent 32 remain.");
@@ -226,21 +225,21 @@ namespace
         view.Present(synced);
         CheckOverlay(root, "");
 
-        v::Visual2DCanvas strictCanvas;
-        auto &strictCircle = v::CreateSprite(strictCanvas.Root(), {0.0F, 0.0F, 96.0F, 96.0F}, {}, "Circle");
+        Visual2DCanvas strictCanvas;
+        auto &strictCircle = CreateSprite(strictCanvas.Root(), {0.0F, 0.0F, 96.0F, 96.0F}, {}, "Circle");
         GameplayJudgementView strictView;
-        strictView.Initialize(visuals, strictCanvas, strictCircle, r::AccuracyRange{"strict", 100}, texts);
+        strictView.Initialize(visuals, strictCanvas, strictCircle, AccuracyRange{"strict", 100}, texts);
         Check(Near(Node(strictCanvas.Root(), "Judgement.Band.4").NodeSize().width, 200.0F),
               "JudgeLevel 100 must halve the base BAD band length.");
         strictView.Shutdown();
     }
-    void CheckGearTransform(v::Visual2DNode &root)
+    void CheckGearTransform(Visual2DNode &root)
     {
         auto &gear = Node(root, "ScrollGear");
         Check(Near(Node(root, "ScrollGear.Border").BoundsInCanvas().y, 0),
               "The outer gear bottom must touch the screen's horizontal centre.");
-        std::vector<std::pair<v::Visual2DNode *, v::Rect>> descendants;
-        const auto collect = [&](const auto &self, v::Visual2DNode &parent) -> void
+        std::vector<std::pair<Visual2DNode *, Rect>> descendants;
+        const auto collect = [&](const auto &self, Visual2DNode &parent) -> void
         {
             for (const auto &child : parent.Children())
             {
@@ -269,21 +268,21 @@ namespace
     void TestGameplayProgress()
     {
         AssetRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        finger_drum::chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 120;
         // A late normal head must not hide an earlier long note's later tail.
         pattern.notes = {{{1, {1, 4}}, 1}, {{0, {}}, 11, 1}, {{2, {}}, 11, 2}};
-        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        auto loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Progress fixture must load.");
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
         GameplayPresenter presenter(visuals, texts);
-        presenter.ConfigureBackground(mrg_client::asset_paths::skin::title::Center(), 70, -25);
+        presenter.ConfigureBackground(Center(), 70, -25);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
         auto &inputPanel = Node(root, "Input.Panel");
@@ -292,7 +291,7 @@ namespace
         {
             if (child->Name() != "Input.Key.PressFlash")
                 continue;
-            const auto color = child->GetComponent<v::SpriteVisualComponent>()->Style().normal;
+            const auto color = child->GetComponent<SpriteVisualComponent>()->Style().normal;
             const bool kat = keyIndex == 0 || keyIndex == 3;
             Check(kat ? color.blue > color.red : color.red > color.blue,
                   "Both key flash sides must use their Don red / Kat blue ambient color.");
@@ -303,8 +302,8 @@ namespace
         auto &track = Node(root, "Progress.Track");
         auto &fill = Node(root, "Progress.Fill");
         auto &marker = Node(root, "Progress.Marker");
-        auto &currentText = *Node(root, "Progress.CurrentTime").GetComponent<v::TextVisualComponent>();
-        const auto &totalText = *Node(root, "Progress.TotalTime").GetComponent<v::TextVisualComponent>();
+        auto &currentText = *Node(root, "Progress.CurrentTime").GetComponent<TextVisualComponent>();
+        const auto &totalText = *Node(root, "Progress.TotalTime").GetComponent<TextVisualComponent>();
         Check(totalText.Text() == L"0:04", "Total time includes the last long tail, without judgement grace.");
         const auto checkFraction = [&](const float expected)
         {
@@ -312,18 +311,18 @@ namespace
             Check(Near(marker.Bounds().x + marker.Bounds().width * 0.5F,
                        track.Bounds().x + track.Bounds().width * expected),
                   "Marker must follow the fill endpoint.");
-            Check(Near(fill.GetComponent<v::SpriteVisualComponent>()->UvScale().x, expected),
+            Check(Near(fill.GetComponent<SpriteVisualComponent>()->UvScale().x, expected),
                   "Fill texture must be cropped with progress.");
         };
-        presenter.UpdatePresentation(r::RhythmTime{-2'000'000});
+        presenter.UpdatePresentation(RhythmTime{-2'000'000});
         checkFraction(0);
         Check(!fill.IsVisible() && currentText.Text() == L"0:00", "Pre-roll must not show negative elapsed time.");
-        presenter.UpdatePresentation(r::RhythmTime{2'000'000});
+        presenter.UpdatePresentation(RhythmTime{2'000'000});
         checkFraction(.5F);
         CheckGearTransform(root);
         Check(fill.IsVisible() && currentText.Text() == L"0:02", "The current time label must be dynamic.");
 
-        r::RhythmTimer timer;
+        RhythmTimer timer;
         timer.Start(0, 1'000'000);
         timer.Pause(1'000'000);
         presenter.UpdatePresentation(timer.Now(3'000'000));
@@ -331,7 +330,7 @@ namespace
         timer.Resume(3'000'000);
         presenter.UpdatePresentation(timer.Now(4'000'000));
         checkFraction(.5F);
-        for (const auto viewport : std::array<v::Size, 4>{{{1920, 1080}, {2560, 1080}, {800, 900}, {100, 720}}})
+        for (const auto viewport : std::array<Size, 4>{{{1920, 1080}, {2560, 1080}, {800, 900}, {100, 720}}})
         {
             const auto width = static_cast<std::uint32_t>(viewport.width);
             const auto height = static_cast<std::uint32_t>(viewport.height);
@@ -351,25 +350,25 @@ namespace
             Check(marker.Bounds().x >= 0 && marker.Bounds().x + marker.Bounds().width <= progress.NodeSize().width,
                   "Marker must remain inside the bar after resize.");
         }
-        presenter.UpdatePresentation(r::RhythmTime{4'000'000});
+        presenter.UpdatePresentation(RhythmTime{4'000'000});
         checkFraction(1);
-        presenter.UpdatePresentation(r::RhythmTime{9'000'000});
+        presenter.UpdatePresentation(RhythmTime{9'000'000});
         checkFraction(1);
         Check(currentText.Text() == totalText.Text(), "Post-roll must keep the completed time and progress.");
         loaded.session->Reset();
         presenter.ApplyFeedback({.reset = true});
-        presenter.UpdatePresentation(r::RhythmTime{-1});
+        presenter.UpdatePresentation(RhythmTime{-1});
         checkFraction(0);
         presenter.Shutdown();
         Check(visuals.FindCanvas(1) == nullptr, "Shutdown must destroy the progress Canvas.");
 
         // Test the view's constant allocation/resource boundary independently
         // of note/measure visual pools that legitimately change during play.
-        v::Visual2DCanvas canvas;
+        Visual2DCanvas canvas;
         GameplayProgressView view;
-        pattern.timing = {{{1, {}}, finger_drum::chart::TimingDirectiveType::Bpm, 240},
-                          {{1, {}}, finger_drum::chart::TimingDirectiveType::DelayMilliseconds, 500}};
-        loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        pattern.timing = {{{1, {}}, TimingDirectiveType::Bpm, 240},
+                          {{1, {}}, TimingDirectiveType::DelayMilliseconds, 500}};
+        loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Compiled BPM/delay progress fixture must load.");
         view.Initialize(visuals, canvas.Root(), *loaded.session, texts);
         view.SetLayout({0, 0, 1200, view.Height()});
@@ -377,33 +376,33 @@ namespace
         const auto loads = renderer.loads;
         const auto end = loaded.session->Timeline().Compile({2, {}});
         view.Update(end / 2);
-        Check(Near(Node(canvas.Root(), "Progress.Fill").GetComponent<v::SpriteVisualComponent>()->UvScale().x, .5F),
+        Check(Near(Node(canvas.Root(), "Progress.Fill").GetComponent<SpriteVisualComponent>()->UvScale().x, .5F),
               "Progress must use compiled BPM/delay timing rather than authored beat count.");
         for (int index = 0; index < 1000; ++index)
-            view.Update(r::RhythmTime{index * 5000});
+            view.Update(RhythmTime{index * 5000});
         Check(nodes == NodeCount(canvas.Root()) && loads == renderer.loads,
               "Progress updates must not create nodes or reload images.");
         view.Shutdown();
-        view.Update(r::RhythmTime{1});
+        view.Update(RhythmTime{1});
         view.SetLayout({0, 0, 1, 1});
 
         const auto checkZeroDuration = [&](const bool empty, const double offset)
         {
-            v::Visual2DCanvas edgeCanvas;
-            finger_drum::mode::PlaySession emptySession;
+            Visual2DCanvas edgeCanvas;
+            PlaySession emptySession;
             pattern.notes = {{{0, {}}, 1}};
             pattern.timing.clear();
             pattern.patternOffsetMilliseconds = offset;
-            loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+            loaded = TaikoMode{}.CreateSession(pattern);
             Check(loaded.Succeeded(), "Zero/negative note fixture must load.");
             view.Initialize(visuals, edgeCanvas.Root(), empty ? emptySession : *loaded.session, texts);
             view.SetLayout({0, 0, 1200, view.Height()});
             const auto noteTime = loaded.session->Gear().Lanes().front()->Notes().front()->Timing();
-            view.Update(noteTime - r::RhythmDuration{1});
+            view.Update(noteTime - RhythmDuration{1});
             Check(!Node(edgeCanvas.Root(), "Progress.Fill").IsVisible(), "Zero-duration progress starts empty.");
             view.Update(noteTime);
             const auto fraction =
-                Node(edgeCanvas.Root(), "Progress.Fill").GetComponent<v::SpriteVisualComponent>()->UvScale().x;
+                Node(edgeCanvas.Root(), "Progress.Fill").GetComponent<SpriteVisualComponent>()->UvScale().x;
             Check(std::isfinite(fraction) && Near(fraction, empty ? 0.0F : 1.0F),
                   "Empty charts stay empty; nonpositive endpoints finish at the note time without division by zero.");
             view.Shutdown();
@@ -414,21 +413,21 @@ namespace
     }
     void TestSlowNotesDoNotExpandAllVisuals()
     {
-        finger_drum::chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 180;
         for (std::int64_t i = 0; i < 5000; ++i)
             pattern.notes.push_back({{i / 16, {i % 16, 16}}, 1});
-        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        auto loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Large visibility fixture must compile.");
         loaded.session->SetNoteScrollMultiplier(5000, .001);
         AssetRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
         GameplayPresenter presenter(visuals, texts);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
@@ -469,33 +468,33 @@ namespace
     void TestMeasureLinesShareNoteMotion()
     {
         AssetRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        finger_drum::chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 120;
         pattern.notes = {{{1, {}}, 1}};
-        const auto effects = finger_drum::chart::ChartParser{}.ParseEffect(
+        const auto effects = ChartParser{}.ParseEffect(
             "[Speed]\n1,0/1,#ScrollSpeed Separate,Value=0.25\n"
             "1,0/1,Area,3,0/1,#ScrollSpeed Whole,From=1,To=2,Curve=Linear\n",
             "bar-motion.yme");
         Check(effects.Succeeded(), "Bar motion effects must parse.");
-        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern, effects.document);
+        auto loaded = TaikoMode{}.CreateSession(pattern, effects.document);
         Check(loaded.Succeeded(), "Bar motion session must load.");
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
         GameplayPresenter presenter(visuals, texts);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
-        for (const auto viewport : {v::Size{1280, 720}, v::Size{1920, 1080}, v::Size{2560, 1080}})
+        for (const auto viewport : {Size{1280, 720}, Size{1920, 1080}, Size{2560, 1080}})
         {
             visuals.OnResize(static_cast<std::uint32_t>(viewport.width), static_cast<std::uint32_t>(viewport.height));
             presenter.OnResize(static_cast<std::uint32_t>(viewport.width), static_cast<std::uint32_t>(viewport.height));
             for (const auto us : {0, 500'000, 1'500'000, 2'000'000})
             {
-                presenter.UpdatePresentation(r::RhythmTime{us});
+                presenter.UpdatePresentation(RhythmTime{us});
                 const auto &note = Node(root, "Lane.Note.1");
                 const auto centre = note.Position();
                 const auto &lane = Node(root, "ScrollGear.Lane");
@@ -519,39 +518,39 @@ namespace
         for (const int type : {11, 13, 15, 16})
         {
             AssetRenderer renderer;
-            v::ScreenVisual2DManager visuals;
+            ScreenVisual2DManager visuals;
             visuals.Initialize(renderer, {1280, 720});
-            finger_drum::chart::PatternDocument pattern;
+            PatternDocument pattern;
             pattern.mode = "Taiko";
             pattern.baseBpm = 120;
             pattern.patternOffsetMilliseconds = 500;
             pattern.notes = {{{0, {}}, type, 1, {}, {"HitCount=3"}}, {{0, {1, 2}}, type, 2}};
-            auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+            auto loaded = TaikoMode{}.CreateSession(pattern);
             Check(loaded.Succeeded(), "Ungraded head feedback fixture must load.");
-            mrg::graphics::MeshRenderSystem meshes;
-            mrg::graphics::TextRenderSystem textRendering;
-            mrg::audio::AudioSystem audio;
-            finger_drum::texts::TextCatalog texts;
+            MeshRenderSystem meshes;
+            TextRenderSystem textRendering;
+            AudioSystem audio;
+            TextCatalog texts;
             GameplayPresenter presenter(visuals, texts);
             presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
             auto &root = visuals.FindCanvas(1)->Root();
             presenter.UpdatePresentation({});
             auto &counter = Node(root, "Hud.NoteCounter.1");
-            const auto &remaining = *Node(counter, "RemainingHits").GetComponent<v::TextVisualComponent>();
+            const auto &remaining = *Node(counter, "RemainingHits").GetComponent<TextVisualComponent>();
             Check(!counter.IsVisible(), "A hit counter must stay hidden before the first accepted hit.");
             for (int index = 0; index < 3; ++index)
             {
                 const char key = type == 16 && index == 1 ? 'D' : 'F';
                 presenter.ApplyFeedback({.keyPressed = true,
                                          .result = loaded.session->ProcessInput(
-                                             key, r::InputEdge::Pressed, r::RhythmTime{900'000 + index * 100'000})});
+                                             key, InputEdge::Pressed, RhythmTime{900'000 + index * 100'000})});
                 if (index < 2 || type == 11 || type == 13)
                     CheckOverlay(root, "");
                 Check(!Node(root, "Judgement.Marker").IsVisible(), "Count-only hits must not create a timing marker.");
-                const auto beam = Node(root, "Lane.KeyBeam").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+                const auto beam = Node(root, "Lane.KeyBeam").GetComponent<SpriteVisualComponent>()->Style().normal;
                 Check(Near(beam.red, 1) && Near(beam.green, 1) && Near(beam.blue, 1),
                       "Count-only hits must use the ungraded white key beam.");
-                presenter.UpdatePresentation(r::RhythmTime{900'000 + index * 100'000});
+                presenter.UpdatePresentation(RhythmTime{900'000 + index * 100'000});
                 const bool active = index < 2 || type == 11 || type == 13;
                 Check(counter.IsVisible() == active, "Every active counted note must show its remaining hits.");
                 if (active)
@@ -563,22 +562,22 @@ namespace
                 Check(!Find(root, "Hud.NoteProcessing.1"), "Roll counters must not replace the moving roll head.");
                 presenter.ApplyFeedback(
                     {.keyPressed = true,
-                     .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{1'200'000})});
-                presenter.UpdatePresentation(r::RhythmTime{1'200'000});
+                     .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{1'200'000})});
+                presenter.UpdatePresentation(RhythmTime{1'200'000});
                 Check(counter.IsVisible() && remaining.Text() == L"0",
                       "Extra roll hits must not underflow the counter.");
             }
-            presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{1'500'000})});
+            presenter.ApplyFeedback({.result = loaded.session->Update(RhythmTime{1'500'000})});
             CheckOverlay(root, "OK");
-            presenter.UpdatePresentation(r::RhythmTime{1'500'000});
+            presenter.UpdatePresentation(RhythmTime{1'500'000});
             Check(!counter.IsVisible(), "The hit counter must disappear at completion.");
             loaded.session->Reset();
             presenter.ApplyFeedback({.reset = true});
-            presenter.UpdatePresentation(r::RhythmTime{500'000});
+            presenter.UpdatePresentation(RhythmTime{500'000});
             Check(!Node(root, "Hud.NoteCounter.1").IsVisible() &&
-                      loaded.session->Gear().Lanes().front()->Notes().front()->Progress() == r::NoteProgress{0, 3},
+                      loaded.session->Gear().Lanes().front()->Notes().front()->Progress() == NoteProgress{0, 3},
                   "Reset must clear roll/balloon/DengDeng progress and hide its counter.");
-            presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{1'500'000})});
+            presenter.ApplyFeedback({.result = loaded.session->Update(RhythmTime{1'500'000})});
             CheckOverlay(root, "MISS");
             presenter.Shutdown();
         }
@@ -587,18 +586,18 @@ namespace
     void TestDengDengWrongOrderFeedback()
     {
         AssetRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        finger_drum::chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 120;
         pattern.notes = {{{0, {}}, 16, 1, {}, {"HitCount=3"}}, {{0, {1, 2}}, 16, 2}};
-        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        auto loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Wrong-order presentation fixture must load.");
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
         GameplayPresenter presenter(visuals, texts);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
@@ -613,16 +612,16 @@ namespace
             {
                 presenter.ApplyFeedback(
                     {.keyPressed = true,
-                     .result = loaded.session->ProcessInput(keys[index], r::InputEdge::Pressed,
-                                                            r::RhythmTime{10'000 * static_cast<std::int64_t>(index)})});
+                     .result = loaded.session->ProcessInput(keys[index], InputEdge::Pressed,
+                                                            RhythmTime{10'000 * static_cast<std::int64_t>(index)})});
                 CheckOverlay(root, index == 4 ? "OK" : "");
                 Check(!Node(root, "Judgement.Marker").IsVisible(),
                       "Wrong-order presses must not display a timing marker.");
-                const auto beam = Node(root, "Lane.KeyBeam").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+                const auto beam = Node(root, "Lane.KeyBeam").GetComponent<SpriteVisualComponent>()->Style().normal;
                 Check(Near(beam.red, 1) && Near(beam.green, 1) && Near(beam.blue, 1),
                       "Wrong-order DengDeng input must remain white, never POOR/red.");
                 Check(loaded.session->Gear().Lanes().front()->Notes().front()->Progress() ==
-                          r::NoteProgress{counts[index], 3},
+                          NoteProgress{counts[index], 3},
                       "The displayed count must stay unchanged on repeated actions.");
             }
         }
@@ -632,20 +631,20 @@ namespace
     void TestPresenterEventPriority()
     {
         AssetRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280.0F, 720.0F});
-        finger_drum::chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 180;
-        finger_drum::chart::PatternNote note;
+        PatternNote note;
         note.keyType = 1;
         pattern.notes.push_back(note);
-        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        auto loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Presenter fixture must build.");
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
         GameplayPresenter presenter(visuals, texts);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
@@ -654,24 +653,24 @@ namespace
         Check(errorLabel.IsVisible(), "An automation diagnostic must be visible in the gameplay HUD.");
         presenter.PresentErrorMessage({});
         Check(!errorLabel.IsVisible(), "Reset/cleared errors must hide the previous diagnostic.");
-        r::NoteProcessResult rollover;
-        rollover.events.push_back(Event(r::NoteEventType::Missed, r::JudgementGrade::Miss));
-        rollover.events.push_back(Event(r::NoteEventType::HitAccepted, r::JudgementGrade::Max));
-        rollover.events.push_back(Event(r::NoteEventType::Completed, r::JudgementGrade::Max));
+        NoteProcessResult rollover;
+        rollover.events.push_back(Event(NoteEventType::Missed, JudgementGrade::Miss));
+        rollover.events.push_back(Event(NoteEventType::HitAccepted, JudgementGrade::Max));
+        rollover.events.push_back(Event(NoteEventType::Completed, JudgementGrade::Max));
         presenter.ApplyFeedback({.keyPressed = true, .result = rollover});
         CheckOverlay(root, "MAX");
         presenter.ApplyFeedback({.reset = true});
         CheckOverlay(root, "");
-        r::NoteProcessResult empty;
-        empty.events.push_back(Event(r::NoteEventType::InputRejected, r::JudgementGrade::Miss));
-        empty.events.push_back(Event(r::NoteEventType::Missed, r::JudgementGrade::Miss));
+        NoteProcessResult empty;
+        empty.events.push_back(Event(NoteEventType::InputRejected, JudgementGrade::Miss));
+        empty.events.push_back(Event(NoteEventType::Missed, JudgementGrade::Miss));
         presenter.ApplyFeedback({.keyPressed = true, .result = empty});
         CheckOverlay(root, "");
-        const auto beam = Node(root, "Lane.KeyBeam").GetComponent<v::SpriteVisualComponent>()->Style().normal;
+        const auto beam = Node(root, "Lane.KeyBeam").GetComponent<SpriteVisualComponent>()->Style().normal;
         Check(Near(beam.red, 1.0F) && Near(beam.green, 1.0F) && Near(beam.blue, 1.0F),
               "Out-of-range input must only produce the white key beam.");
-        r::NoteProcessResult wrong;
-        wrong.events.push_back(Event(r::NoteEventType::InputRejected, r::JudgementGrade::Perfect));
+        NoteProcessResult wrong;
+        wrong.events.push_back(Event(NoteEventType::InputRejected, JudgementGrade::Perfect));
         presenter.ApplyFeedback({.keyPressed = false, .result = wrong});
         CheckOverlay(root, "");
         presenter.ApplyFeedback({.keyPressed = true, .result = wrong});
@@ -681,25 +680,25 @@ namespace
     void TestRollCompletionAndProcessedTicks()
     {
         AssetRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        finger_drum::chart::PatternDocument pattern;
+        PatternDocument pattern;
         pattern.mode = "Taiko";
         pattern.baseBpm = 120;
         pattern.notes = {{{0, {}}, 12, 1, {}, {"TickDivision=16"}}, {{0, {1, 4}}, 12, 2}};
-        auto loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        auto loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Tick presentation fixture must load.");
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
         GameplayPresenter presenter(visuals, texts);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
         const auto visibleTicks = [&]
         {
             std::size_t count = 0;
-            const auto visit = [&](const auto &self, const v::Visual2DNode &node) -> void
+            const auto visit = [&](const auto &self, const Visual2DNode &node) -> void
             {
                 if (node.Name() == "LongNote.Tick" && node.IsVisible())
                     ++count;
@@ -709,45 +708,45 @@ namespace
             visit(visit, root);
             return count;
         };
-        presenter.UpdatePresentation(r::RhythmTime{});
+        presenter.UpdatePresentation(RhythmTime{});
         Check(visibleTicks() == 4, "All body ticks, including the aligned tail, must start visible.");
         presenter.ApplyFeedback(
-            {.keyPressed = true, .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{})});
+            {.keyPressed = true, .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{})});
         presenter.ApplyFeedback(
             {.keyPressed = true,
-             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{75'000})});
-        presenter.UpdatePresentation(r::RhythmTime{75'000});
+             .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{75'000})});
+        presenter.UpdatePresentation(RhythmTime{75'000});
         Check(visibleTicks() == 3, "An early accepted tick must disappear before its scheduled time.");
         presenter.ApplyFeedback(
             {.keyPressed = true,
-             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{250'000})});
+             .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{250'000})});
         presenter.ApplyFeedback(
             {.keyPressed = true,
-             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{375'000})});
-        presenter.UpdatePresentation(r::RhythmTime{375'000});
+             .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{375'000})});
+        presenter.UpdatePresentation(RhythmTime{375'000});
         Check(visibleTicks() == 1, "The unprocessed tail tick must remain visible after the other ticks.");
         presenter.ApplyFeedback(
             {.keyPressed = true,
-             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{500'000})});
-        presenter.UpdatePresentation(r::RhythmTime{500'000});
+             .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{500'000})});
+        presenter.UpdatePresentation(RhythmTime{500'000});
         Check(visibleTicks() == 0, "An accepted tail tick must disappear immediately.");
-        presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{500'000})});
+        presenter.ApplyFeedback({.result = loaded.session->Update(RhythmTime{500'000})});
         CheckOverlay(root, "OK");
         presenter.AdvanceEffects(.2);
         CheckOverlay(root, "");
         loaded.session->Reset();
         presenter.ApplyFeedback({.reset = true});
-        presenter.UpdatePresentation(r::RhythmTime{});
+        presenter.UpdatePresentation(RhythmTime{});
         Check(visibleTicks() == 4, "Reset must restore consumed tick sprites, including the tail.");
-        presenter.ApplyFeedback({.result = loaded.session->Update(r::RhythmTime{500'000})});
+        presenter.ApplyFeedback({.result = loaded.session->Update(RhythmTime{500'000})});
         CheckOverlay(root, "MISS");
-        presenter.UpdatePresentation(r::RhythmTime{500'000});
+        presenter.UpdatePresentation(RhythmTime{500'000});
         Check(visibleTicks() == 0, "Expired/missed ticks must also be hidden.");
         presenter.Shutdown();
         pattern.notes.back().position = {0, {1, 1}};
         pattern.notes.front().extraData = {"TickDivision=8"};
-        pattern.timing.push_back({{0, {1, 2}}, finger_drum::chart::TimingDirectiveType::DelayMilliseconds, -750});
-        loaded = finger_drum::mode::TaikoMode{}.CreateSession(pattern);
+        pattern.timing.push_back({{0, {1, 2}}, TimingDirectiveType::DelayMilliseconds, -750});
+        loaded = TaikoMode{}.CreateSession(pattern);
         Check(loaded.Succeeded(), "Negative-delay tick fixture must load.");
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &delayedRoot = visuals.FindCanvas(2)->Root();
@@ -765,15 +764,15 @@ namespace
             return minimum;
         };
         presenter.ApplyFeedback(
-            {.keyPressed = true, .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{})});
-        presenter.UpdatePresentation(r::RhythmTime{200'000});
+            {.keyPressed = true, .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{})});
+        presenter.UpdatePresentation(RhythmTime{200'000});
         const auto firstY = minimumTickY();
         Check(visibleDelayedTicks() == 5,
               "Overwritten ticks must not be presented or judged; the active tail remains.");
         presenter.ApplyFeedback(
             {.keyPressed = true,
-             .result = loaded.session->ProcessInput('F', r::InputEdge::Pressed, r::RhythmTime{200'000})});
-        presenter.UpdatePresentation(r::RhythmTime{200'000});
+             .result = loaded.session->ProcessInput('F', InputEdge::Pressed, RhythmTime{200'000})});
+        presenter.UpdatePresentation(RhythmTime{200'000});
         Check(std::isfinite(firstY) && minimumTickY() > firstY && visibleDelayedTicks() == 4,
               "Surviving processed ticks must disappear after overwritten ticks have been excluded.");
         presenter.Shutdown();
@@ -785,7 +784,7 @@ int main()
     try
     {
         std::string error;
-        Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
+        Check(InitializeBuiltInAssets(error), error.c_str());
         TestGuideAndOverlays();
         TestGameplayProgress();
         TestSlowNotesDoNotExpandAllVisuals();

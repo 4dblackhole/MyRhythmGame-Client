@@ -6,7 +6,7 @@
 자르고 Windows System.Drawing의 HighQualityBicubic으로 표시 원본 크기에 맞췄습니다.
 프롬프트에 넣은 HEX는 원본 색상 유지 지침이며 생성본의 모든 픽셀을 강제하는 값은 아닙니다.
 
-최종 저장 경로는 `FingerDrum.Assets/Assets/Skins/Default Skin/InGame/Progress`입니다.
+최종 저장 경로는 `YOUMU.Assets/Assets/Skins/Default Skin/InGame/Progress`입니다.
 파일은 `Background.png` 1820×30, `Track.png` 1704×10, `Fill.png` 1704×10,
 `Marker.png` 14×14이며 시간 텍스트가 없는 RGBA PNG입니다.
 

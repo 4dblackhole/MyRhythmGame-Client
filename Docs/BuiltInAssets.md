@@ -1,7 +1,7 @@
 # 내장·외부 자산과 배포
 
-`FingerDrum.Assets`는 배포에 필요한 기본 자산을 한 팩으로 만들고 RCDATA 101로
-`MyRhythmGame.exe`에 링크하는 전용 프로젝트입니다. 런타임 로더는 기존 PNG,
+`YOUMU.Assets`는 배포에 필요한 기본 자산을 한 팩으로 만들고 RCDATA 101로
+`Y's Orchestral Unison - Melodic Ultimatum.exe`에 링크하는 전용 프로젝트입니다. 런타임 로더는 기존 PNG,
 글꼴, FMOD 파일 로더를 바꾸지 않고 실제 파일 경로를 제공합니다.
 
 ## 포함 범위
@@ -11,7 +11,7 @@
 
 AngelDream Handshaking MP3 1개·YMM 1개·YMP/YME 5쌍과 이펙트 테스트 WAV 2개는
 EXE에 넣지 않습니다. 추가 WAV는 기본 스킨의 Don/Kat 원본을 재사용한 테스트 파일입니다.
-Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 시
+Git에서 추적하는 `YOUMU.Assets/Assets/Songs` 원본을 Client 빌드 시
 개발용 `Client/Assets/Songs`에 복사합니다. 이미 존재하는 파일은 편집본일 수
 있으므로 덮어쓰지 않습니다. 곡은 개발·배포 모두 외부 파일입니다.
 
@@ -32,7 +32,7 @@ Git에서 추적하는 `FingerDrum.Assets/Assets/Songs` 원본을 Client 빌드 
 개발용 폴더의 존재 여부로 구분하므로 배포 폴더는 저장소의 빌드 위치와 분리합니다.
 내장 글꼴과 누락 스킨의 기본본은 기존 RCDATA 캐시에서 읽습니다.
 
-Release 배포 폴더에는 `MyRhythmGame.exe`와 같은 위치의 `fmod.dll`이 필요합니다.
+Release 배포 폴더에는 `Y's Orchestral Unison - Melodic Ultimatum.exe`와 같은 위치의 `fmod.dll`이 필요합니다.
 기본 곡을 제공할 때는 개발용 Songs에서 제공할 곡만 골라 `Asset/Songs`에 넣습니다. 로고·기본 스킨·
 글꼴만 필요하면 Songs 없이도 시작할 수 있으나 곡 목록은 비어 있습니다.
 한국어 문구/외부 편집 기능을 제공하려면 원본 `Client/Texts/Languages`의 INI를
@@ -52,11 +52,11 @@ Visual Studio x64 개발자 PowerShell에서 FMOD SDK 경로를 설정하고 빌
 
 ```powershell
 $env:FMOD_ROOT = 'C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows'
-msbuild MyRhythmGame-Client.sln /m /p:Configuration=Release /p:Platform=x64
+msbuild YOUMU.sln /m /p:Configuration=Release /p:Platform=x64
 ```
 
-게임 실행에 필요한 직접 배포 파일은 bin/x64/Release의 MyRhythmGame.exe와 fmod.dll입니다.
-MRG.Core 등 정적 라이브러리는 이미 EXE에 링크되므로 .lib/.pdb/테스트 EXE/fmodL.dll은 제외합니다.
+게임 실행에 필요한 직접 배포 파일은 bin/x64/Release의 Y's Orchestral Unison - Melodic Ultimatum.exe와 fmod.dll입니다.
+PhantomCore 등 정적 라이브러리는 이미 EXE에 링크되므로 .lib/.pdb/테스트 EXE/fmodL.dll은 제외합니다.
 에디터의 Convert .osu 기능을 제공하려면 같은 빌드의 OsuTaikoConverter.exe도 게임 EXE 옆에
 동봉합니다. 기본 플레이 실행에는 필요하지 않지만 가져오기 버튼은 이 파일을 실행합니다.
 
@@ -64,7 +64,7 @@ MRG.Core 등 정적 라이브러리는 이미 EXE에 링크되므로 .lib/.pdb/�
 
 ```text
 demo/
-  MyRhythmGame.exe
+  Y's Orchestral Unison - Melodic Ultimatum.exe
   OsuTaikoConverter.exe       에디터의 Convert .osu에 필요
   fmod.dll
   Option.ini                 처음 실행 시 기본값으로 자동 생성 가능
@@ -104,12 +104,12 @@ FMOD DLL을 동봉할 수 있는 조건과 크레딧/로고는 [FMOD 라이선�
 
 ## 빌드와 실행 흐름
 
-1. `FingerDrum.Assets/Scripts/GenerateAssetPack.ps1`이 상대 경로, 크기, offset과 원본 bytes를
+1. `YOUMU.Assets/Scripts/GenerateAssetPack.ps1`이 상대 경로, 크기, offset과 원본 bytes를
    결정적인 순서로 `BuiltInAssets.fdpak`에 기록합니다. 기존 캐시와 같은 FNV hash를
    빌드 시 계산해 작은 RCDATA 102로 함께 넣으므로 실행 때 팩 전체를 hash하지 않습니다.
-2. 생성된 RC를 컴파일한 `FingerDrum.Assets.res`를 `MRG.Client`가 링크합니다.
+2. 생성된 RC를 컴파일한 `YOUMU.Assets.res`를 `YOUMU.Client`가 링크합니다.
 3. `wWinMain`이 엔진 초기화 전에 RCDATA를 검사합니다.
-4. 팩은 `%LOCALAPPDATA%/FingerDrum/BuiltInAssets/<pack hash>`에 임시 디렉터리를
+4. 팩은 `%LOCALAPPDATA%/YOUMU/BuiltInAssets/<pack hash>`에 임시 디렉터리를
    거쳐 원자적으로 설치됩니다. 같은 hash의 파일 크기와 완료 marker가 유효하면
    기존 캐시를 재사용합니다.
 5. 설치 실패나 리소스 누락은 시작 오류로 처리해 불완전한 기본 자산으로 게임을
@@ -123,7 +123,7 @@ FMOD DLL을 동봉할 수 있는 조건과 크레딧/로고는 [FMOD 라이선�
 
 스킨 루트에 UTF-8 `skin.ini`를 두고 씬별 폴더를 같은 레벨에 둡니다.
 전체 이미지 키와 기본 경로는
-[`Default Skin/skin.ini`](../FingerDrum.Assets/Assets/Skins/Default%20Skin/skin.ini)가 원본입니다.
+[`Default Skin/skin.ini`](../YOUMU.Assets/Assets/Skins/Default%20Skin/skin.ini)가 원본입니다.
 사용자 스킨은 `<자산 루트>/Skins/<스킨 이름>`에 INI를 복사하고 필요한 PNG를 넣습니다.
 기본 스킨과 INI는 EXE에 포함되므로 외부 파일이 없어도 실행됩니다.
 
@@ -208,7 +208,7 @@ fallback을 사용합니다. 인디케이터는 별도 색 구간 요소로 구�
 
 ## Scene별 PNG
 
-내장 원본은 `FingerDrum.Assets/Assets/Skins/Default Skin` 아래 실제 폴더/VS 필터로 정리합니다.
+내장 원본은 `YOUMU.Assets/Assets/Skins/Default Skin` 아래 실제 폴더/VS 필터로 정리합니다.
 플레이는 `InGame`, 로고는 `Logo`, 곡 선택은 `MusicSelect`, 리절트는 `Result`를 사용합니다.
 각 폴더는 루트의 `skin.ini`와 같은 레벨입니다. 곡 선택의 기본본은 코드의 색상 패널을 유지하므로
 PNG가 필수는 아닙니다.
@@ -263,10 +263,10 @@ YMP의 `Music metadata`는 계속 Songs 기준으로 공유 YMM을 참조합니�
 
 ## 자산 변경
 
-기본 자산은 `FingerDrum.Assets/Assets`에서 수정합니다. 새 배포 자산 종류를
+기본 자산은 `YOUMU.Assets/Assets`에서 수정합니다. 새 배포 자산 종류를
 추가하려면 프로젝트의 `BuiltInAsset` 목록과 `GenerateAssetPack.ps1`의 명시적
 source group을 함께 갱신합니다. Scene에는 물리 경로를 새로 하드코딩하지 않고
-`Client/App/AssetPaths.h` 또는 `FingerDrumAssets.h`의 resolver를 사용합니다.
+`Client/App/AssetPaths.h` 또는 `YOUMUAssets.h`의 resolver를 사용합니다.
 
 현재 캐시는 새 팩마다 새 hash 디렉터리를 만들며 이전 버전 디렉터리를 자동으로
 삭제하지 않습니다. 사용자 곡과 스킨 선택 UI는 Client의 책임입니다.

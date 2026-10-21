@@ -1,5 +1,5 @@
 #pragma once
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "GameFlow/GameplayLaunchStore.h"
 #include "Submodules/SongSelectPurpose.h"
 #include "Texts/TextCatalog.h"
@@ -12,36 +12,36 @@ class SongSelectionState;
 class MusicSelectView;
 class SongPreviewController;
 
-class MusicSelectScene final : public mrg::scene::GameScene
+class MusicSelectScene final : public GameScene
 {
   public:
-    explicit MusicSelectScene(mrg::visual2d::ScreenVisual2DManager &screenVisuals,
-                              mrg::audio::AudioPlaybackManager &audioPlayback,
-                              std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest,
+    explicit MusicSelectScene(ScreenVisual2DManager &screenVisuals,
+                              AudioPlaybackManager &audioPlayback,
+                              std::shared_ptr<GameplayLaunchStore> launchRequest,
                               SongSelectPurpose purpose,
-                              finger_drum::texts::TextCatalog &texts,
-                              mrg_client::OptionSettings &options);
+                              TextCatalog &texts,
+                              OptionSettings &options);
 
     ~MusicSelectScene() override;
 
-    void Initialize(const mrg::EngineServices &services) override;
+    void Initialize(const EngineServices &services) override;
     void BeginScene() override;
     void EndScene() noexcept override;
-    void Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes) override;
-    void Render(const mrg::graphics::RenderContext &context) override;
+    void Update(const UpdateContext &context, SceneManager &scenes) override;
+    void Render(const RenderContext &context) override;
     void OnResize(std::uint32_t width, std::uint32_t height) override;
     void Shutdown() noexcept override;
 
   private:
-    bool StartSelectedPattern(mrg::scene::SceneManager &scenes);
-    void CreateDifficulty(mrg::scene::SceneManager &scenes);
+    bool StartSelectedPattern(SceneManager &scenes);
+    void CreateDifficulty(SceneManager &scenes);
     void ConvertOsu();
     void PollOsuImport();
     void RefreshCatalog();
-    std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest_;
+    std::shared_ptr<GameplayLaunchStore> launchRequest_;
     SongSelectPurpose purpose_;
-    mrg_client::OptionSettings &options_;
-    finger_drum::texts::TextCatalog &texts_;
+    OptionSettings &options_;
+    TextCatalog &texts_;
     std::unique_ptr<SongSelectionState> selection_;
     std::unique_ptr<MusicSelectView> view_;
     std::unique_ptr<SongPreviewController> preview_;

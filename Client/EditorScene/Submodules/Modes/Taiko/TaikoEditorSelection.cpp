@@ -3,11 +3,9 @@
 #include <algorithm>
 #include <cmath>
 
-namespace chart = finger_drum::chart;
-namespace v = mrg::visual2d;
 using namespace taiko_editor_layout;
 
-std::optional<chart::MusicalPosition> TaikoEditorMode::SnapPosition(IEditorContext &state, v::Point point) const
+std::optional<MusicalPosition> TaikoEditorMode::SnapPosition(IEditorContext &state, Point point) const
 {
     if (state.Score().realtime)
     {
@@ -35,7 +33,7 @@ std::optional<chart::MusicalPosition> TaikoEditorMode::SnapPosition(IEditorConte
         ->second;
 }
 
-bool TaikoEditorMode::BeginScoreSelection(IEditorContext &state, v::Point point)
+bool TaikoEditorMode::BeginScoreSelection(IEditorContext &state, Point point)
 {
     if (tool_ != 0 || !(state.Score().realtime ? RealtimeLane : OverviewBounds).Contains(point))
         return false;
@@ -49,7 +47,7 @@ bool TaikoEditorMode::BeginScoreSelection(IEditorContext &state, v::Point point)
     return true;
 }
 
-bool TaikoEditorMode::UpdateScoreSelection(IEditorContext &state, v::Point point, bool released)
+bool TaikoEditorMode::UpdateScoreSelection(IEditorContext &state, Point point, bool released)
 {
     if (!selectionAnchor_)
         return false;

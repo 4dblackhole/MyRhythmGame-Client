@@ -30,9 +30,9 @@
   전체 곡 수만큼 제목을 매 프레임 렌더링하는 상태는 아닙니다.
 
 소스 경계:
-[TextRendering](../../Dependencies/MRG-Engine/Engine/Graphics.D3D12/Text/TextRendering.cpp),
-[Visual2DRendering](../../Dependencies/MRG-Engine/Engine/Graphics.D3D12/Visual2D/Visual2DRendering.cpp),
-[Visual2DComponents](../../Dependencies/MRG-Engine/Engine/Core/Visual2D/Visual2DComponents.cpp),
+[TextRendering](../../Dependencies/PhantomCore/Engine/Graphics.D3D12/Text/TextRendering.cpp),
+[Visual2DRendering](../../Dependencies/PhantomCore/Engine/Graphics.D3D12/Visual2D/Visual2DRendering.cpp),
+[Visual2DComponents](../../Dependencies/PhantomCore/Engine/Core/Visual2D/Visual2DComponents.cpp),
 [SongSelectCards](../../Client/GameScene/MusicSelectScene/Submodules/SongSelectCards.cpp),
 [MarqueeTextComponent](../../Client/Presentation/MarqueeTextComponent.cpp).
 
@@ -40,7 +40,7 @@
 
 PC의 CPU는 Intel Core i5-7600입니다. 장치 목록에는 GTX 1060 3GB와 HD Graphics 630이 있습니다.
 이번 실험에서는 선택된 DXGI adapter를 별도로 기록하지 않았습니다.
-MSVC x64 Release `/O2 /std:c++20 /MD /DNDEBUG`, 실제 `MRG.Core.lib`,
+MSVC x64 Release `/O2 /std:c++20 /MD /DNDEBUG`, 실제 `PhantomCore.lib`,
 숨김 D3D12 창과 NoSound로 측정했습니다.
 
 각 일반 실험은 새 프로세스에서 100프레임을 실행했고, 첫 20프레임을 제외한

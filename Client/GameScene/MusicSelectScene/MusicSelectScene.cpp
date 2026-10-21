@@ -1,6 +1,6 @@
 #include "MusicSelectScene.h"
 #include "App/AssetPaths.h"
-#include "GameFlow/FingerDrumSceneIds.h"
+#include "GameFlow/YOUMUSceneIds.h"
 #include "Mode/PlayGameModeFactory.h"
 #include "Submodules/MusicSelectView.h"
 #include "Submodules/NewDifficultyDialog.h"
@@ -10,10 +10,10 @@
 
 using namespace song_select;
 
-MusicSelectScene::MusicSelectScene(mrg::visual2d::ScreenVisual2DManager &visuals,
-                                   mrg::audio::AudioPlaybackManager &playback,
-                                   std::shared_ptr<finger_drum::GameplayLaunchStore> request, SongSelectPurpose purpose,
-                                   finger_drum::texts::TextCatalog &texts, mrg_client::OptionSettings &options)
+MusicSelectScene::MusicSelectScene(ScreenVisual2DManager &visuals,
+                                   AudioPlaybackManager &playback,
+                                   std::shared_ptr<GameplayLaunchStore> request, SongSelectPurpose purpose,
+                                   TextCatalog &texts, OptionSettings &options)
     : launchRequest_(std::move(request)), purpose_(purpose), options_(options), texts_(texts),
       selection_(std::make_unique<SongSelectionState>()),
       view_(std::make_unique<MusicSelectView>(visuals, *selection_, purpose, texts, options)),
@@ -22,7 +22,7 @@ MusicSelectScene::MusicSelectScene(mrg::visual2d::ScreenVisual2DManager &visuals
 }
 MusicSelectScene::~MusicSelectScene() = default;
 
-void MusicSelectScene::Initialize(const mrg::EngineServices &services)
+void MusicSelectScene::Initialize(const EngineServices &services)
 {
     if (!launchRequest_)
         throw std::invalid_argument("Lobby requires a gameplay launch request.");
@@ -49,7 +49,7 @@ void MusicSelectScene::EndScene() noexcept
     preview_->StopPreviewAudio();
     view_->SetVisible(false);
 }
-void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes)
+void MusicSelectScene::Update(const UpdateContext &context, SceneManager &scenes)
 {
     if (catalogRoot_ != options_.SongsRoot())
         RefreshCatalog();
@@ -70,7 +70,7 @@ void MusicSelectScene::Update(const mrg::UpdateContext &context, mrg::scene::Sce
     preview_->SyncPreviewToFocusedSong(*selection_, active_);
     if (command == SongSelectCommand::Back)
     {
-        if (!scenes.ChangeScene(finger_drum::scene_ids::Logo))
+        if (!scenes.ChangeScene(LogoSceneId))
             throw std::runtime_error("Failed to return to the title Scene.");
     }
     else if (command == SongSelectCommand::Launch)
@@ -116,7 +116,7 @@ void MusicSelectScene::PollOsuImport()
         view_->RebuildVisibleSongs();
     }
 }
-void MusicSelectScene::CreateDifficulty(mrg::scene::SceneManager &scenes)
+void MusicSelectScene::CreateDifficulty(SceneManager &scenes)
 {
     if (purpose_ != SongSelectPurpose::Editor || selection_->catalogLoading_ ||
         selection_->focusedSongPosition_ >= selection_->visibleSongIndices_.size())
@@ -138,7 +138,7 @@ void MusicSelectScene::CreateDifficulty(mrg::scene::SceneManager &scenes)
         view_->RefreshSelectionPresentation();
     }
 }
-void MusicSelectScene::Render(const mrg::graphics::RenderContext &)
+void MusicSelectScene::Render(const RenderContext &)
 {
 }
 void MusicSelectScene::OnResize(std::uint32_t width, std::uint32_t height)
@@ -152,7 +152,7 @@ void MusicSelectScene::Shutdown() noexcept
     *selection_ = {};
 }
 
-bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
+bool MusicSelectScene::StartSelectedPattern(SceneManager &scenes)
 {
     if (selection_->focusedSongPosition_ >= selection_->visibleSongIndices_.size())
     {
@@ -176,7 +176,7 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
         return false;
     }
 
-    finger_drum::GameplayLaunchRequest request{
+    GameplayLaunchRequest request{
         pattern.patternPath, pattern.effectPath,
         song.audioPath,      pattern.pattern.mode,
         SongTitle(song),     pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())};
@@ -193,20 +193,20 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
     {
         selection_->ClearLaunchError();
         launchRequest_->Set(request);
-        if (!scenes.ChangeScene(finger_drum::scene_ids::Editor))
+        if (!scenes.ChangeScene(EditorSceneId))
         {
             throw std::runtime_error("Failed to enter the editor scene.");
         }
         return true;
     }
 
-    std::unique_ptr<finger_drum::mode::PlaySession> prepared;
+    std::unique_ptr<PlaySession> prepared;
     try
     {
-        finger_drum::mode::ModeLoadResult validation =
-            finger_drum::mode::CreatePlayGameMode(
+        ModeLoadResult validation =
+            CreatePlayGameMode(
                 request.mode,
-                {finger_drum::rhythm::RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000},
+                {RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000},
                  request.inputKeys})
                 ->LoadSession(pattern.patternPath, pattern.effectPath);
         if (!validation.Succeeded())
@@ -230,7 +230,7 @@ bool MusicSelectScene::StartSelectedPattern(mrg::scene::SceneManager &scenes)
 
     selection_->ClearLaunchError();
     launchRequest_->SetValidated(request, std::move(prepared));
-    if (!scenes.ChangeScene(finger_drum::scene_ids::RhythmTest))
+    if (!scenes.ChangeScene(RhythmTestSceneId))
     {
         throw std::runtime_error("Failed to enter transient gameplay.");
     }

@@ -10,13 +10,12 @@ using namespace editor_ui;
 
 #include "Editing/ChartEditor.h"
 
-
-std::unique_ptr<chart::IEditorDocument> TaikoEditorMode::OpenDocument(
-    const finger_drum::GameplayLaunchRequest &request) const
+std::unique_ptr<IEditorDocument> TaikoEditorMode::OpenDocument(
+    const GameplayLaunchRequest &request) const
 {
-    chart::ChartParser parser;
+    ChartParser parser;
     auto p = parser.ParsePatternFile(request.patternPath);
-    chart::ParseResult<chart::EffectDocument> e;
+    ParseResult<EffectDocument> e;
     if (request.effectPath)
         e = parser.ParseEffectFile(*request.effectPath);
     else if (!p.document.effectFile.empty())
@@ -25,9 +24,9 @@ std::unique_ptr<chart::IEditorDocument> TaikoEditorMode::OpenDocument(
         throw std::runtime_error("Editor could not parse the selected chart.");
     if (p.document.mode != Id())
         throw std::invalid_argument("Selected chart is not a Taiko chart.");
-    return std::make_unique<chart::ChartEditor>(
+    return std::make_unique<ChartEditor>(
         std::move(p.document), std::move(e.document),
-        finger_drum::rhythm::RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000});
+        RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000});
 }
 
 bool TaikoEditorMode::CancelInteraction() noexcept
@@ -40,7 +39,7 @@ bool TaikoEditorMode::CancelInteraction() noexcept
     popup_ = -1;
     return hadInteraction;
 }
-bool TaikoEditorMode::OpenToolMenu(v::Point point)
+bool TaikoEditorMode::OpenToolMenu(Point point)
 {
     if (point.x < 24 || point.x >= 94 || point.y < 202 || point.y >= 682)
         return false;
@@ -54,7 +53,7 @@ void TaikoEditorMode::SelectTool(int value)
     selectionAnchor_.reset();
     selecting_ = false;
     tool_ = value;
-    if (const auto *selected = editor_tools::Find(value))
+    if (const auto *selected = Find(value))
     {
         groupTools_[static_cast<std::size_t>(selected->group)] = value;
     }
@@ -62,7 +61,7 @@ void TaikoEditorMode::SelectTool(int value)
     popup_ = -1;
 }
 
-void TaikoEditorMode::PlaceNote(IEditorContext &state, chart::MusicalPosition p)
+void TaikoEditorMode::PlaceNote(IEditorContext &state, MusicalPosition p)
 {
     // Placing the first realtime endpoint must not pan the second-click grid.
     if (!state.Score().realtime || tool_ == 0)
@@ -78,24 +77,24 @@ void TaikoEditorMode::PlaceNote(IEditorContext &state, chart::MusicalPosition p)
         state.RequestRebuild();
         return;
     }
-    const auto *selected = editor_tools::Find(tool_);
+    const auto *selected = Find(tool_);
     if (!selected)
         throw std::invalid_argument("Unknown editor note tool.");
     const int noteId = static_cast<int>(selected->note);
-    if (finger_drum::mode::FindTaikoNote(noteId)->longNote)
+    if (FindTaikoNote(noteId)->longNote)
     {
         if (!pending_)
             pending_ = p;
         else
         {
-            taiko_editor::ValidatePlacement(state.Document(), std::min(*pending_, p), noteId, std::max(*pending_, p));
-            state.AddNote(std::min(*pending_, p), noteId, std::max(*pending_, p), editor_tools::ExtraData(*selected));
+            ValidatePlacement(state.Document(), std::min(*pending_, p), noteId, std::max(*pending_, p));
+            state.AddNote(std::min(*pending_, p), noteId, std::max(*pending_, p), ExtraData(*selected));
             pending_.reset();
         }
     }
     else
     {
-        taiko_editor::ValidatePlacement(state.Document(), p, noteId);
+        ValidatePlacement(state.Document(), p, noteId);
         state.AddNote(p, noteId);
     }
     state.RequestRebuild();

@@ -1,5 +1,5 @@
 #pragma once
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "SongSelectionState.h"
 #include <array>
 #include <optional>
@@ -8,15 +8,15 @@ class SongPreviewController final
 {
     struct PreviewSlot
     {
-        std::shared_ptr<mrg::audio::AudioClip> clip;
-        mrg::audio::AudioPlaybackId playbackId{mrg::audio::InvalidAudioPlaybackId};
+        std::shared_ptr<AudioClip> clip;
+        AudioPlaybackId playbackId{InvalidAudioPlaybackId};
         std::optional<std::size_t> catalogIndex;
         float volume{};
         float targetVolume{};
     };
 
   public:
-    explicit SongPreviewController(mrg::audio::AudioPlaybackManager &playback)
+    explicit SongPreviewController(AudioPlaybackManager &playback)
         : audioPlayback_(playback)
     {
     }
@@ -24,7 +24,7 @@ class SongPreviewController final
     {
         StopPreviewAudio();
     }
-    void Initialize(mrg::audio::AudioSystem &audio)
+    void Initialize(AudioSystem &audio)
     {
         audioSystem_ = &audio;
     }
@@ -37,12 +37,12 @@ class SongPreviewController final
   private:
     void PollRetiredClips();
     void PlayPendingPreview(std::size_t slotIndex);
-    mrg::audio::AudioPlaybackManager &audioPlayback_;
-    mrg::audio::AudioSystem *audioSystem_{};
+    AudioPlaybackManager &audioPlayback_;
+    AudioSystem *audioSystem_{};
     std::array<PreviewSlot, 2> previewSlots_{};
     std::optional<std::size_t> currentPreviewSlot_;
     // A failed file is retried on another selection/scene entry, never every Update.
     std::optional<std::size_t> failedPreviewIndex_;
     std::optional<std::size_t> pendingPreviewSlot_;
-    std::vector<std::shared_ptr<mrg::audio::AudioClip>> retiredClips_;
+    std::vector<std::shared_ptr<AudioClip>> retiredClips_;
 };

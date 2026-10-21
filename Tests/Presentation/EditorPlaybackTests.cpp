@@ -9,8 +9,8 @@
 
 namespace
 {
-    namespace a = mrg::audio;
-    using Time = finger_drum::rhythm::RhythmTime;
+
+    using Time = RhythmTime;
     void Check(bool value, const char *message)
     {
         if (!value)
@@ -19,10 +19,10 @@ namespace
     // A controllable DSP clock makes cue deadlines, pre-roll and stalled UI
     // intervals deterministic without depending on a physical audio driver.
     std::uint64_t dspClock{};
-    class ClockBackend final : public a::IAudioBackend
+    class ClockBackend final : public IAudioBackend
     {
       public:
-        bool Initialize(const a::AudioConfig &, std::string &) override
+        bool Initialize(const AudioConfig &, std::string &) override
         {
             return true;
         }
@@ -36,15 +36,15 @@ namespace
         {
             return "Clock probe";
         }
-        a::AudioOutputBackend RequestedOutput() const noexcept override
+        AudioOutputBackend RequestedOutput() const noexcept override
         {
-            return a::AudioOutputBackend::NoSound;
+            return AudioOutputBackend::NoSound;
         }
-        a::AudioOutputBackend ActiveOutput() const noexcept override
+        AudioOutputBackend ActiveOutput() const noexcept override
         {
             return RequestedOutput();
         }
-        bool SetOutputBackend(a::AudioOutputBackend, std::string &) override
+        bool SetOutputBackend(AudioOutputBackend, std::string &) override
         {
             return false;
         }
@@ -52,7 +52,7 @@ namespace
         {
             return 0;
         }
-        const std::vector<a::AudioDeviceInfo> &OutputDrivers() const noexcept override
+        const std::vector<AudioDeviceInfo> &OutputDrivers() const noexcept override
         {
             return devices;
         }
@@ -96,15 +96,15 @@ namespace
         {
             return dspClock;
         }
-        std::unique_ptr<a::IAudioBusBackend> CreateBus(std::string_view, a::IAudioBusBackend *, std::string &) override
+        std::unique_ptr<IAudioBusBackend> CreateBus(std::string_view, IAudioBusBackend *, std::string &) override
         {
             return {};
         }
 
       private:
-        std::vector<a::AudioDeviceInfo> devices;
+        std::vector<AudioDeviceInfo> devices;
     };
-    std::unique_ptr<a::IAudioBackend> CreateClockBackend()
+    std::unique_ptr<IAudioBackend> CreateClockBackend()
     {
         return std::make_unique<ClockBackend>();
     }
@@ -113,7 +113,7 @@ namespace
         bool playing{true};
         bool paused{};
         std::filesystem::path path;
-        a::AudioPlaybackSettings settings;
+        AudioPlaybackSettings settings;
         std::vector<std::uint64_t> deadlines;
         std::size_t restarts{};
     };
@@ -122,8 +122,8 @@ namespace
     bool failDuration{};
     bool failPitch{};
     std::uint64_t clockOnStop{};
-    a::AudioClipLoadState loadState{a::AudioClipLoadState::Ready};
-    class Voice final : public a::IAudioVoiceBackend
+    AudioClipLoadState loadState{AudioClipLoadState::Ready};
+    class Voice final : public IAudioVoiceBackend
     {
       public:
         explicit Voice(std::shared_ptr<Probe> value) : probe(std::move(value))
@@ -133,7 +133,7 @@ namespace
         {
             return probe->playing;
         }
-        bool Restart(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *, std::string &) override
+        bool Restart(const AudioPlaybackSettings &settings, IAudioBusBackend *, std::string &) override
         {
             ++probe->restarts;
             probe->settings = settings;
@@ -175,13 +175,13 @@ namespace
       private:
         std::shared_ptr<Probe> probe;
     };
-    class Clip final : public a::IAudioClipBackend
+    class Clip final : public IAudioClipBackend
     {
       public:
         explicit Clip(std::filesystem::path value) : path(std::move(value))
         {
         }
-        a::AudioClipLoadState LoadState(std::string &) const override
+        AudioClipLoadState LoadState(std::string &) const override
         {
             return loadState;
         }
@@ -192,7 +192,7 @@ namespace
                 error = "duration probe failure";
             return !failDuration;
         }
-        std::unique_ptr<a::IAudioVoiceBackend> Play(const a::AudioPlaybackSettings &settings, a::IAudioBusBackend *,
+        std::unique_ptr<IAudioVoiceBackend> Play(const AudioPlaybackSettings &settings, IAudioBusBackend *,
                                                     std::string &) override
         {
             auto probe = std::make_shared<Probe>();
@@ -207,10 +207,10 @@ namespace
       private:
         std::filesystem::path path;
     };
-    std::unique_ptr<a::IAudioClipBackend> CreateClip(a::IAudioBackend &, const std::filesystem::path &path,
-                                                     a::AudioLoadMode mode, std::string &)
+    std::unique_ptr<IAudioClipBackend> CreateClip(IAudioBackend &, const std::filesystem::path &path,
+                                                     AudioLoadMode mode, std::string &)
     {
-        Check((path == "music") == (mode == a::AudioLoadMode::StreamAsyncAccurate),
+        Check((path == "music") == (mode == AudioLoadMode::StreamAsyncAccurate),
               "Music must use accurate async loading; hit samples must be cached.");
         ++loads;
         return std::make_unique<Clip>(path);
@@ -220,7 +220,7 @@ namespace
         dspClock = 0;
         probes.clear();
         loads = 0;
-        a::AudioSystem audio;
+        AudioSystem audio;
         std::string error;
         Check(audio.Initialize({}, CreateClockBackend, CreateClip, error), "Rate probe audio initialization failed.");
         EditorPlayback playback;
@@ -298,7 +298,7 @@ namespace
     {
         dspClock = 0;
         probes.clear();
-        a::AudioSystem audio;
+        AudioSystem audio;
         std::string error;
         Check(audio.Initialize({}, CreateClockBackend, CreateClip, error), "Deadline probe initialization failed.");
         EditorPlayback playback;
@@ -330,7 +330,7 @@ void TestEditorPlayback()
     dspClock = 0;
     probes.clear();
     loads = 0;
-    a::AudioSystem audio;
+    AudioSystem audio;
     std::string error;
     Check(audio.Initialize({}, CreateClockBackend, CreateClip, error), "Probe audio initialization failed.");
     EditorPlayback playback;
@@ -339,11 +339,11 @@ void TestEditorPlayback()
     const std::vector<AudioMarker> cues{{0, "Don"}, {.005, "Alias"}, {.010, "Don"}, {1, "Don"}};
     const auto update = [&] { playback.Update(files, 1, cues, 1, Time{3'000'000}); };
     playback.Toggle();
-    loadState = a::AudioClipLoadState::Loading;
+    loadState = AudioClipLoadState::Loading;
     update();
     Check(playback.Active() && probes.empty() && loads == 2 && playback.Position() == Time{},
           "Loading must not advance time or allocate a voice; aliases must share a clip.");
-    loadState = a::AudioClipLoadState::Ready;
+    loadState = AudioClipLoadState::Ready;
     update();
     Check(probes.size() == 2 && probes[0]->settings.startDspClock == 960 && !probes[0]->paused &&
               probes[1]->deadlines == std::vector<std::uint64_t>{960},
@@ -374,16 +374,16 @@ void TestEditorPlayback()
           "Resume must seek the same music voice without loading sources again.");
     Check(musicProbe->paused && musicProbe->settings.startDspClock == 0,
           "A requested source seek must remain paused without anchoring a stale DSP deadline.");
-    loadState = a::AudioClipLoadState::Loading;
+    loadState = AudioClipLoadState::Loading;
     dspClock += 48000;
     update();
     Check(playback.Active() && playback.Position() == Time{500'000} && musicProbe->paused,
           "Waiting for an async source seek must freeze the timeline and leave the prepared voice paused.");
-    loadState = a::AudioClipLoadState::Playing;
+    loadState = AudioClipLoadState::Playing;
     update();
     Check(!musicProbe->paused && musicProbe->settings.startDspClock == dspClock + 960,
           "A completed seek must anchor playback to the current DSP clock.");
-    loadState = a::AudioClipLoadState::Ready;
+    loadState = AudioClipLoadState::Ready;
     playback.Seek(Time{-100'000});
     update();
     update();
@@ -426,12 +426,12 @@ void TestEditorPlayback()
 
 void TestEditorPlaybackWithFmod(const std::filesystem::path &musicPath)
 {
-    a::AudioSystem audio;
-    a::AudioConfig config;
-    config.preferredBackend = a::AudioOutputBackend::NoSound;
+    AudioSystem audio;
+    AudioConfig config;
+    config.preferredBackend = AudioOutputBackend::NoSound;
     std::string error;
     Check(audio.Initialize(config, nullptr, nullptr, error), error.c_str());
-    auto clip = audio.LoadSound(musicPath, a::AudioLoadMode::StreamAsyncAccurate, error);
+    auto clip = audio.LoadSound(musicPath, AudioLoadMode::StreamAsyncAccurate, error);
     if (!clip)
         throw std::runtime_error(error);
     const auto waitFor = [&](const auto &ready)
@@ -444,28 +444,28 @@ void TestEditorPlaybackWithFmod(const std::filesystem::path &musicPath)
         }
         Check(ready(), "Actual FMOD playback did not reach the expected state.");
     };
-    waitFor([&] { return clip->LoadState(error) == a::AudioClipLoadState::Ready; });
+    waitFor([&] { return clip->LoadState(error) == AudioClipLoadState::Ready; });
     std::uint64_t duration = 0;
     Check(clip->GetDurationMicroseconds(duration, error) && duration > 1'000'000, "Actual music duration missing.");
-    a::AudioPlaybackSettings settings;
+    AudioPlaybackSettings settings;
     settings.startPaused = true;
     settings.startPositionMicroseconds = duration - 100'000;
     auto voice = clip->Play(settings, nullptr, error);
     if (!voice)
         throw std::runtime_error(error);
-    waitFor([&] { return voice->PreparationState(error) == a::AudioPreparationState::Ready; });
+    waitFor([&] { return voice->PreparationState(error) == AudioPreparationState::Ready; });
     Check(voice->SetDelay(audio.DspClock() + 4800, 0, error) && voice->SetPaused(false, error), error.c_str());
     waitFor([&] { return !voice->IsPlaying(); }); // Near-end seek must end rather than play the entire song.
     voice.reset();
-    waitFor([&] { return clip->LoadState(error) == a::AudioClipLoadState::Ready; });
+    waitFor([&] { return clip->LoadState(error) == AudioClipLoadState::Ready; });
     settings.startPositionMicroseconds = duration - 1;
     voice = clip->Play(settings, nullptr, error);
     Check(voice != nullptr, "A position one microsecond before the source end must be accepted.");
-    waitFor([&] { return voice->PreparationState(error) == a::AudioPreparationState::Ready; });
+    waitFor([&] { return voice->PreparationState(error) == AudioPreparationState::Ready; });
     Check(voice->SetPaused(false, error), error.c_str());
     waitFor([&] { return !voice->IsPlaying(); });
     voice.reset();
-    waitFor([&] { return clip->LoadState(error) == a::AudioClipLoadState::Ready; });
+    waitFor([&] { return clip->LoadState(error) == AudioClipLoadState::Ready; });
     settings.startPositionMicroseconds = duration + 1'000'000;
     Check(!clip->Play(settings, nullptr, error) && !error.empty(), "FMOD must reject a position beyond the source.");
     audio.RetireClip(std::move(clip));

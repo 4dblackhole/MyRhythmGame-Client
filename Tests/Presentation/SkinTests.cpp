@@ -1,6 +1,6 @@
 #include "App/AssetPaths.h"
 #include "App/SkinManifest.h"
-#include "GameScene/FingerDrumLogoScene/Submodules/LogoView.h"
+#include "GameScene/YOUMULogoScene/Submodules/LogoView.h"
 #include "GameScene/MusicSelectScene/Submodules/MusicSelectView.h"
 #include "Presentation/SkinVisualComponent.h"
 #include <fstream>
@@ -10,7 +10,7 @@
 namespace
 {
     namespace fs = std::filesystem;
-    namespace v = mrg::visual2d;
+
     void Check(bool value, const char *message)
     {
         if (!value)
@@ -35,7 +35,7 @@ namespace
         Write(skin / "skin.ini", "\xEF\xBB\xBF[Folders]\r\nLogo=그림 폴더\r\n[Logo]\r\n"
                                  "LogoCenter=\"아이콘 #1.png\"\r\nLogoLeft=missing.png\r\n"
                                  "LogoRight=../escape.png\r\nBackground=\r\n");
-        const auto images = mrg_client::LoadSkinImages(skin, defaults);
+        const auto images = LoadSkinImages(skin, defaults);
         Check(images.paths.at("Logo.LogoCenter") == skin / L"그림 폴더/아이콘 #1.png",
               "Both directory and filename must be relative, with UTF-8/BOM/CRLF support.");
         Check(images.paths.at("Logo.LogoLeft") == defaults / "Logo/LeftFade.png",
@@ -48,53 +48,53 @@ namespace
         Write(skin / "skin.ini", "[Folders]\nLogo=C:\\absolute\n[Logo]\nLogoCenter=/rooted.png\n"
                                  "LogoLeft=../escape.png\nLogoRight=\\\\server\\share.png\n"
                                  "[Broken\nLogoCenter=wrong.png\n[Logo]\nLogoCenter=\"\n");
-        const auto invalid = mrg_client::LoadSkinImages(skin, defaults);
+        const auto invalid = LoadSkinImages(skin, defaults);
         Check(invalid.paths.at("Logo.LogoCenter") == defaults / "Logo/Center.png" && invalid.diagnostics.size() >= 6,
               "Invalid paths and sections must not escape into scene loading.");
         Write(skin / "skin.ini", "[Logo]\nLogoCenter=missing.png\nLogoCenter=other.png\n");
-        Check(mrg_client::LoadSkinImages(skin, defaults).diagnostics.size() == 2,
+        Check(LoadSkinImages(skin, defaults).diagnostics.size() == 2,
               "Duplicate keys and missing files must be diagnosed.");
         Write(skin / "skin.ini", "[Logo]\nLogoCenter=\xFF\n");
-        Check(mrg_client::LoadSkinImages(skin, defaults).paths.at("Logo.LogoCenter") == defaults / "Logo/Center.png",
+        Check(LoadSkinImages(skin, defaults).paths.at("Logo.LogoCenter") == defaults / "Logo/Center.png",
               "Invalid UTF-8 must leave the embedded defaults usable.");
         Write(root / "partial/InGame/note.png", "isolated fixture");
-        Check(mrg_client::LoadSkinImages(root / "partial", defaults).paths.at("InGame.note") ==
+        Check(LoadSkinImages(root / "partial", defaults).paths.at("InGame.note") ==
                   root / "partial/InGame/note.png",
               "Partial skins may inherit the default manifest mappings.");
     }
-    class Renderer final : public mrg::graphics::Visual2DRenderSystem
+    class Renderer final : public Visual2DRenderSystem
     {
       public:
-        v::ImageHandle LoadImage(const fs::path &path) override
+        ImageHandle LoadImage(const fs::path &path) override
         {
             loaded.push_back(path);
             return {loaded.size()};
         }
-        v::Size GetImageSize(v::ImageHandle) const noexcept override
+        Size GetImageSize(ImageHandle) const noexcept override
         {
             return {96, 96};
         }
-        void SubmitScreen(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, v::Point,
+        void SubmitScreen(const Visual2DCanvas &, const RenderContext &, Point,
                           std::uint32_t) override
         {
         }
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
-                         v::Size, const DirectX::XMFLOAT4X4 &) override
+        void SubmitPlane(const Visual2DCanvas &, const RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         Size, const DirectX::XMFLOAT4X4 &) override
         {
         }
-        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
+        RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
         {
             return {};
         }
-        void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
-                             const mrg::graphics::RenderContext &) override
+        void RenderToTexture(const Visual2DCanvas &, const RenderTargetTextureHandle &,
+                             const RenderContext &) override
         {
         }
         std::vector<fs::path> loaded;
     };
-    v::Visual2DNode &Find(v::Visual2DNode &root, std::string_view name)
+    Visual2DNode &Find(Visual2DNode &root, std::string_view name)
     {
-        const auto search = [&](auto &&self, v::Visual2DNode &node) -> v::Visual2DNode *
+        const auto search = [&](auto &&self, Visual2DNode &node) -> Visual2DNode *
         {
             if (node.Name() == name)
                 return &node;
@@ -108,9 +108,9 @@ namespace
             throw std::runtime_error("Skin view node is missing: " + std::string(name));
         return *node;
     }
-    v::ImageHandle Image(v::Visual2DNode &node)
+    ImageHandle Image(Visual2DNode &node)
     {
-        return node.GetComponent<v::SpriteVisualComponent>()->Style().normalImage;
+        return node.GetComponent<SpriteVisualComponent>()->Style().normalImage;
     }
     void ViewChecks(const fs::path &repo, const fs::path &skin, const fs::path &defaults)
     {
@@ -126,38 +126,38 @@ namespace
                                  "StartButton.Hovered=hover.png\n[MusicSelect]\nBackground=background.png\n"
                                  "RecordPanel=panel.png\nBack=panel.png\nSongCardFocused=panel.png\n"
                                  "DifficultySelected=panel.png\n[InGame]\nnote=custom.png\n");
-        auto &selection = mrg_client::SkinSetSelection::Instance();
+        auto &selection = SkinSetSelection::Instance();
         selection.Initialize(L"Test Skin");
         Check(selection.CurrentName() == L"Test Skin", "The isolated custom skin must be selected.");
-        Check(mrg_client::asset_paths::skin::InGame("note") == skin / "Play/custom.png",
+        Check(InGame("note") == skin / "Play/custom.png",
               "Gameplay and editor must use the manifest's shared image mapping.");
         Renderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1280, 720});
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
-        mrg_client::OptionSettings options(skin / "unused.ini");
-        const mrg::EngineServices services{meshes, textRendering, renderer, audio, 1280, 720};
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
+        OptionSettings options(skin / "unused.ini");
+        const EngineServices services{meshes, textRendering, renderer, audio, 1280, 720};
         LogoView logo(visuals, texts, options);
         logo.Initialize(services);
         logo.BeginScene();
         auto &logoRoot = visuals.FindCanvas(1)->Root();
-        auto &start = Find(logoRoot, "FingerDrum.GameStart");
-        const auto &style = start.GetComponent<v::SpriteVisualComponent>()->Style();
+        auto &start = Find(logoRoot, "YOUMU.GameStart");
+        const auto &style = start.GetComponent<SpriteVisualComponent>()->Style();
         Check(style.normalImage && style.hoveredImage && style.normalImage.value != style.hoveredImage.value &&
                   style.pressedImage.value == style.normalImage.value,
               "Buttons must use authored states and normal-image fallback.");
-        Check(Find(logoRoot, "FingerDrum.LogoBackground").IsVisible() &&
-                  !Find(logoRoot, "FingerDrum.LogoStrip").IsVisible(),
+        Check(Find(logoRoot, "YOUMU.LogoBackground").IsVisible() &&
+                  !Find(logoRoot, "YOUMU.LogoStrip").IsVisible(),
               "A full-screen logo background must replace the strip rather than be covered by it.");
-        const auto &backgroundStyle = Find(logoRoot, "FingerDrum.LogoBackground")
-                                          .GetComponent<v::SpriteVisualComponent>()->Style();
+        const auto &backgroundStyle = Find(logoRoot, "YOUMU.LogoBackground")
+                                          .GetComponent<SpriteVisualComponent>()->Style();
         Check(backgroundStyle.normal.red == 1 && backgroundStyle.normal.green == 1 && backgroundStyle.normal.blue == 1,
               "A custom logo background must retain its authored RGB.");
         SongSelectionState songs;
-        songs.catalog_ = finger_drum::chart::SongCatalog{}.Load(repo / "FingerDrum.Assets/Assets/Songs");
+        songs.catalog_ = SongCatalog{}.Load(repo / "YOUMU.Assets/Assets/Songs");
         Check(!songs.catalog_.songs.empty(), "The skin integration test needs the real bundled song catalog.");
         MusicSelectView music(visuals, songs, SongSelectPurpose::Gameplay, texts, options);
         music.Initialize(services);
@@ -181,9 +181,9 @@ namespace
         std::string error;
         Check(selection.Select(L"Default Skin", error), error.c_str());
         visuals.Update(0);
-        static_cast<void>(logo.Update(mrg::platform::InputState{}, 0));
+        static_cast<void>(logo.Update(InputState{}, 0));
         Check(!Image(start) && !Image(record) && Find(record, "Surface").IsVisible() &&
-                  Find(back, "Back.Fill").IsVisible() && Find(logoRoot, "FingerDrum.LogoStrip").IsVisible(),
+                  Find(back, "Back.Fill").IsVisible() && Find(logoRoot, "YOUMU.LogoStrip").IsVisible(),
               "Returning to the default skin must restore all procedural designs and logo panels.");
         Check(selection.Select(L"Test Skin", error), error.c_str());
         Check(selection.Image("InGame", "note") == defaults / "InGame/note.png",
@@ -199,11 +199,11 @@ int wmain(int argc, wchar_t **argv)
     {
         Check(argc == 2, "Expected repository root.");
         std::string error;
-        Check(finger_drum::assets::InitializeBuiltInAssets(error), error.c_str());
-        const auto root = finger_drum::assets::UserAssetRoot();
-        Check(root == finger_drum::assets::ExecutableDirectory() / "Asset",
+        Check(InitializeBuiltInAssets(error), error.c_str());
+        const auto root = UserAssetRoot();
+        Check(root == AssetExecutableDirectory() / "Asset",
               "Skin fixtures must run in an isolated deployment directory.");
-        const auto defaults = finger_drum::assets::BuiltInAssetRoot() / "assets/skins/Default Skin";
+        const auto defaults = BuiltInAssetRoot() / "assets/skins/Default Skin";
         ManifestChecks(root / "fixtures", defaults);
         ViewChecks(fs::path(argv[1]), root / "Skins/Test Skin", defaults);
         std::cout

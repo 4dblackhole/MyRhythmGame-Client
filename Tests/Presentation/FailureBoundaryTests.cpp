@@ -1,4 +1,4 @@
-#include "FingerDrumAssets.h"
+#include "YOUMUAssets.h"
 #include "Parsing/Submodules/ParserSupport.h"
 
 #include <cstdio>
@@ -38,7 +38,7 @@ void TestNumericAllocationFailure()
     bool accepted{};
     {
         FailAllocationsAfter failure{0};
-        accepted = finger_drum::chart::parsing::ParseDouble(number, value);
+        accepted = ParseDouble(number, value);
     }
     Require(!accepted && deniedAllocations != 0,
             "Numeric allocation failure must return false from the noexcept parser.");
@@ -47,7 +47,7 @@ void TestNumericAllocationFailure()
 void TestAssetErrorAllocationFailure()
 {
     std::string error;
-    Require(!finger_drum::assets::InitializeBuiltInAssets(error) && error.size() > 15,
+    Require(!InitializeBuiltInAssets(error) && error.size() > 15,
             "The resource-free test must report missing assets before accessing the user's cache.");
     error.clear();
     error.shrink_to_fit();
@@ -55,11 +55,11 @@ void TestAssetErrorAllocationFailure()
     {
         // Deny C++ allocations while the missing-resource error is reported.
         FailAllocationsAfter failure{0};
-        initialized = finger_drum::assets::InitializeBuiltInAssets(error);
+        initialized = InitializeBuiltInAssets(error);
     }
     Require(!initialized && deniedAllocations != 0 && error.empty(),
             "An allocation failure while storing an asset error must return false with empty text.");
-    Require(!finger_drum::assets::BuiltInAssetsInitialized(), "Failed initialization must not publish an asset root.");
+    Require(!BuiltInAssetsInitialized(), "Failed initialization must not publish an asset root.");
 }
 } // namespace
 

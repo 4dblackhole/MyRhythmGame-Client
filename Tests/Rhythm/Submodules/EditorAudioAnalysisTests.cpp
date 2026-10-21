@@ -1,12 +1,12 @@
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "TestSupport.h"
 #include <numbers>
 
-namespace finger_drum::tests
+namespace tests
 {
     namespace
     {
-        void VerifyToneAnalysis(const editor::AudioAnalysis &analysis)
+        void VerifyToneAnalysis(const AudioAnalysis &analysis)
         {
             Require(analysis.sampleRate == 48'000 && analysis.frames.size() == 100 &&
                         std::abs(analysis.durationSeconds - 1) < 1e-9,
@@ -18,7 +18,7 @@ namespace finger_drum::tests
                 analysis.minimumFrequencyHz *
                 std::pow(analysis.maximumFrequencyHz / analysis.minimumFrequencyHz,
                          (static_cast<double>(band) + .5) / static_cast<double>(frame.bands.size()));
-            const float db = editor::SpectrumFloorDb * (1 - *strongest);
+            const float db = SpectrumFloorDb * (1 - *strongest);
             Require(std::abs(frequency - 1000) < 80 && db > -9 && db < -4 && frame.minimum < -.49F &&
                         frame.maximum > .49F,
                     "A half-scale 1 kHz stereo tone must stay visible at about -6 dBFS, even "
@@ -61,29 +61,29 @@ namespace finger_drum::tests
                 integer(static_cast<std::uint16_t>(-amplitude), 2);
             }
             wav.close();
-            VerifyToneAnalysis(editor::AnalyzeAudio(path, {}, mrg::audio::DecodeAudioPcm));
+            VerifyToneAnalysis(AnalyzeAudio(path, {}, DecodeAudioPcm));
         }
 
         void TestVorbisAnalysis()
         {
             const auto fixture =
                 std::filesystem::path(__FILE__).parent_path().parent_path() / "Fixtures/Audio/OppositePhase.ogg";
-            VerifyToneAnalysis(editor::AnalyzeAudio(fixture, {}, mrg::audio::DecodeAudioPcm));
+            VerifyToneAnalysis(AnalyzeAudio(fixture, {}, DecodeAudioPcm));
             TemporaryDirectory directory("finger-drum-vorbis");
             for (const auto *name : {L"음원 解析.OGG", L"renamed.mp3"})
             {
                 const auto path = directory.Path() / name;
                 std::filesystem::copy_file(fixture, path);
-                VerifyToneAnalysis(editor::AnalyzeAudio(path, {}, mrg::audio::DecodeAudioPcm));
+                VerifyToneAnalysis(AnalyzeAudio(path, {}, DecodeAudioPcm));
             }
 
             std::stop_source cancellation;
             cancellation.request_stop();
-            Require(editor::AnalyzeAudio(fixture, cancellation.get_token(), mrg::audio::DecodeAudioPcm).frames.empty(),
+            Require(AnalyzeAudio(fixture, cancellation.get_token(), DecodeAudioPcm).frames.empty(),
                     "An already-cancelled analysis must not open or decode the file.");
             std::stop_source inFlight;
             std::size_t frames{};
-            mrg::audio::DecodeAudioPcm(fixture, inFlight.get_token(),
+            DecodeAudioPcm(fixture, inFlight.get_token(),
                 [&](std::uint32_t channels, std::uint32_t, std::span<const float> samples)
                 {
                     frames += samples.size() / channels;
@@ -104,7 +104,7 @@ namespace finger_drum::tests
             bool rejected = false;
             try
             {
-                static_cast<void>(editor::AnalyzeAudio(broken, {}, mrg::audio::DecodeAudioPcm));
+                static_cast<void>(AnalyzeAudio(broken, {}, DecodeAudioPcm));
             }
             catch (const std::runtime_error &error)
             {
@@ -118,9 +118,9 @@ namespace finger_drum::tests
     {
         TestStereoSpectrumFrequencyAndLevel();
         TestVorbisAnalysis();
-        const auto catalog = chart::SongCatalog{}.Load(songsRoot);
+        const auto catalog = SongCatalog{}.Load(songsRoot);
         Require(!catalog.songs.empty(), "Audio analysis requires the shipped catalog.");
-        const auto analysis = editor::AnalyzeAudio(catalog.songs.front().audioPath, {}, mrg::audio::DecodeAudioPcm);
+        const auto analysis = AnalyzeAudio(catalog.songs.front().audioPath, {}, DecodeAudioPcm);
         Require(analysis.durationSeconds > 1 && analysis.frames.size() > 100 &&
                     std::ranges::any_of(analysis.frames, [](const auto &f) { return f.peak > 0.01F; }),
                 "The shipped MP3 must decode into real waveform/spectrum data.");
@@ -132,7 +132,7 @@ namespace finger_drum::tests
         if (std::filesystem::is_directory(soundsRoot))
             for (const auto *name : {"don.wav", "kat.wav", "bigdon.wav", "bigkat.wav"})
             {
-                const auto hit = editor::AnalyzeAudio(soundsRoot / name, {}, mrg::audio::DecodeAudioPcm);
+                const auto hit = AnalyzeAudio(soundsRoot / name, {}, DecodeAudioPcm);
                 Require(!hit.frames.empty() &&
                             std::ranges::any_of(
                                 hit.frames, [](const auto &frame)
@@ -141,4 +141,4 @@ namespace finger_drum::tests
                         "spectrum.");
             }
     }
-} // namespace finger_drum::tests
+} // namespace youmu::tests

@@ -20,7 +20,7 @@ class EditorMetronome final
     {
         return enabled_;
     }
-    void Prepare(const finger_drum::chart::IEditorDocument &, double endSeconds,
+    void Prepare(const IEditorDocument &, double endSeconds,
                  const std::map<std::string, std::filesystem::path> &, std::uint64_t filesRevision,
                  const std::vector<AudioMarker> &);
     const auto &Files() const noexcept
@@ -42,7 +42,7 @@ class EditorMetronome final
 
   private:
     bool enabled_{}, preparedEnabled_{};
-    const finger_drum::chart::IEditorDocument *document_{};
+    const IEditorDocument *document_{};
     std::uint64_t documentRevision_{}, cueRevision_{};
     std::optional<std::uint64_t> filesRevision_;
     double endSeconds_{};

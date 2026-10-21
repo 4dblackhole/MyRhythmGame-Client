@@ -1,5 +1,5 @@
 #pragma once
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "GameFlow/GameplayLaunchStore.h"
 #include "Texts/TextCatalog.h"
 #include "Mode/Results/IPlayResult.h"
@@ -8,35 +8,35 @@
 class IPlaySessionController;
 class GameplayPresenter;
 class GameplayPauseMenu;
-class RhythmTestScene final : public mrg::scene::GameScene
+class RhythmTestScene final : public GameScene
 {
   public:
-    explicit RhythmTestScene(std::shared_ptr<finger_drum::GameplayLaunchStore> launchRequest,
-                             mrg::audio::AudioPlaybackManager &playback,
-                             mrg::visual2d::ScreenVisual2DManager &screenVisuals,
+    explicit RhythmTestScene(std::shared_ptr<GameplayLaunchStore> launchRequest,
+                             AudioPlaybackManager &playback,
+                             ScreenVisual2DManager &screenVisuals,
                              bool debugMode,
-                             finger_drum::texts::TextCatalog &texts,
-                             std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult);
+                             TextCatalog &texts,
+                             std::unique_ptr<IPlayResult> &pendingResult);
 
     ~RhythmTestScene() override;
 
-    void Initialize(const mrg::EngineServices &services) override;
+    void Initialize(const EngineServices &services) override;
     void BeginScene() override;
     void EndScene() noexcept override;
-    void Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes) override;
-    void Render(const mrg::graphics::RenderContext &context) override;
+    void Update(const UpdateContext &context, SceneManager &scenes) override;
+    void Render(const RenderContext &context) override;
     void OnResize(std::uint32_t width, std::uint32_t height) override;
     void Shutdown() noexcept override;
 
   private:
-    void ShowResult(mrg::scene::SceneManager &scenes);
-    void UpdatePauseMenu(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes);
+    void ShowResult(SceneManager &scenes);
+    void UpdatePauseMenu(const UpdateContext &context, SceneManager &scenes);
     bool PreparePresentation();
-    std::unique_ptr<finger_drum::mode::IPlayResult> &pendingResult_;
+    std::unique_ptr<IPlayResult> &pendingResult_;
     std::unique_ptr<IPlaySessionController> controller_;
     std::unique_ptr<GameplayPresenter> view_;
     std::unique_ptr<GameplayPauseMenu> pauseMenu_;
-    std::optional<mrg::EngineServices> services_;
+    std::optional<EngineServices> services_;
     bool presentationReady_{};
     double nextPreparationPoll_{};
 };

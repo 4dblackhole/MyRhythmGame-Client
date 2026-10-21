@@ -14,21 +14,21 @@ void EditorView::InitializeAudioSelection()
         auto &track = node->CreateChild("Audio.Selection." + std::to_string(index));
         track.SetBounds({rect.x - 960, 540 - rect.y - rect.height, rect.width, rect.height});
         track.SetZIndex(2);
-        track.AddComponent<v::RectangleCollider2DComponent>();
-        track.AddComponent<v::PointerReceiverComponent>(
-            [this](v::Visual2DNode &target, const v::PointerEvent &event, std::vector<v::Action> &)
+        track.AddComponent<RectangleCollider2DComponent>();
+        track.AddComponent<PointerReceiverComponent>(
+            [this](Visual2DNode &target, const PointerEvent &event, std::vector<Action> &)
             { UpdateAudioSelection(target, event); });
         audioSelectionNodes_[index] = &track;
     }
 }
 
-void EditorView::UpdateAudioSelection(v::Visual2DNode &target, const v::PointerEvent &event)
+void EditorView::UpdateAudioSelection(Visual2DNode &target, const PointerEvent &event)
 {
     if (state_.Tab() != EditorTab::Audio || buildFailed_)
         return;
-    const bool press = event.type == v::PointerEventType::Press && event.button == v::PointerButton::Left;
-    const bool release = event.type == v::PointerEventType::Release && event.button == v::PointerButton::Left;
-    if (!press && !release && (event.type != v::PointerEventType::Move || !target.IsPressed()))
+    const bool press = event.type == PointerEventType::Press && event.button == PointerButton::Left;
+    const bool release = event.type == PointerEventType::Release && event.button == PointerButton::Left;
+    if (!press && !release && (event.type != PointerEventType::Move || !target.IsPressed()))
         return;
     if (press)
     {
@@ -39,7 +39,7 @@ void EditorView::UpdateAudioSelection(v::Visual2DNode &target, const v::PointerE
     }
     const double fraction = std::clamp(static_cast<double>(event.localPosition.x) / Waveform.width, 0.0, 1.0);
     const auto time =
-        editor_time::Microseconds((audioSelectionViewBegin_ + audioSelectionViewWindow_ * fraction) * 1000.0);
+        Microseconds((audioSelectionViewBegin_ + audioSelectionViewWindow_ * fraction) * 1000.0);
     if (press)
         audioSelectionAnchor_ = time;
     if (audioSelectionAnchor_)
@@ -65,7 +65,7 @@ void EditorView::DrawAudioSelection(const double begin)
         return;
     const float left = static_cast<float>(std::clamp(first, 0.0, 1.0)) * Waveform.width;
     const float right = static_cast<float>(std::clamp(last, 0.0, 1.0)) * Waveform.width;
-    const v::Color fill{Blue.red, Blue.green, Blue.blue, .24F};
+    const Color fill{Blue.red, Blue.green, Blue.blue, .24F};
     Box({Waveform.x + left, Waveform.y, right - left, Waveform.height}, fill);
     Box({Waveform.x + std::min(left, Waveform.width - 1), Waveform.y, 1, Waveform.height}, Blue);
     Box({std::min(Waveform.x + right, Waveform.x + Waveform.width - 1), Waveform.y, 1, Waveform.height}, Blue);

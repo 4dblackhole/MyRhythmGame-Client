@@ -1,4 +1,5 @@
 #include "EditorOsuImport.h"
+#include "OsuImportValidation.h"
 #include "SongSelectionText.h"
 #include "Texts/GameScene/MusicSelectScene/MusicSelectTexts.h"
 #include <Windows.h>
@@ -72,7 +73,7 @@ namespace
             const auto nonce = std::chrono::steady_clock::now().time_since_epoch().count();
             for (int retry = 0; retry < 100; ++retry)
             {
-                path = parent / (L"YOMU-osu-" + std::to_wstring(nonce) + L"-" + std::to_wstring(retry));
+                path = parent / (L"YOUMU-osu-" + std::to_wstring(nonce) + L"-" + std::to_wstring(retry));
                 if (fs::create_directory(path))
                     return;
             }
@@ -152,8 +153,8 @@ namespace
             const auto code = Run(exe, command, capture.path);
             const auto output = ReadCapture(capture.path / L"stdout");
             auto diagnostics = ReadCapture(capture.path / L"stderr");
-            // This bundled producer writes one JSON object with a fixed version/success prefix.
-            const bool success = code == 0 && output.starts_with("{\"version\":1,\"success\":true,");
+            const bool success = code == 0;
+            if (success) ValidateConvertedOsuResult(output, root);
             if (!success && diagnostics.empty())
                 diagnostics = "Converter failed (exit " + std::to_string(code) + ").";
             return {success, std::move(diagnostics)};
@@ -164,11 +165,11 @@ namespace
         }
     }
 } // namespace
-std::optional<std::filesystem::path> SelectOsuFile(const finger_drum::texts::TextCatalog &texts)
+std::optional<std::filesystem::path> SelectOsuFile(const TextCatalog &texts)
 {
     std::vector<wchar_t> path(32768);
-    const auto title = std::wstring(finger_drum::texts::MusicSelect(texts).convertOsu);
-    auto filter = std::wstring(finger_drum::texts::MusicSelect(texts).osuFileFilter);
+    const auto title = std::wstring(MusicSelect(texts).convertOsu);
+    auto filter = std::wstring(MusicSelect(texts).osuFileFilter);
     filter.push_back(L'\0');
     filter.append(L"*.osu");
     filter.push_back(L'\0');
@@ -195,9 +196,9 @@ void EditorOsuImport::Start(std::filesystem::path input, std::filesystem::path s
     job_ = std::async(std::launch::async,
                       [input = std::move(input), root = std::move(songsRoot)] { return Import(input, root); });
 }
-void ShowOsuImportCompletion(const EditorOsuImportResult &result, const finger_drum::texts::TextCatalog &texts)
+void ShowOsuImportCompletion(const EditorOsuImportResult &result, const TextCatalog &texts)
 {
-    const auto text = finger_drum::texts::MusicSelect(texts);
+    const auto text = MusicSelect(texts);
     const auto body = std::wstring(text.importComplete) + L"\n\n" + song_select::DecodeDisplayText(result.message);
     MessageBoxW(GetActiveWindow(), body.c_str(), std::wstring(text.importTitle).c_str(), MB_OK | MB_ICONINFORMATION);
 }

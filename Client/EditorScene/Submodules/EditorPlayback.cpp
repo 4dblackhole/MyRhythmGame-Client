@@ -7,8 +7,8 @@
 
 namespace
 {
-    namespace a = mrg::audio;
-    using Time = finger_drum::rhythm::RhythmTime;
+
+    using Time = RhythmTime;
     constexpr Time Lead{20'000};
     void Require(bool success, const std::string &error)
     {
@@ -178,7 +178,7 @@ void EditorPlayback::Seek(const Time time)
 void EditorPlayback::ClearSources() noexcept
 {
     StopVoices();
-    const auto retire = [this](std::shared_ptr<a::AudioClip> clip)
+    const auto retire = [this](std::shared_ptr<AudioClip> clip)
     {
         if (!clip || !audio_)
             return;
@@ -209,7 +209,7 @@ void EditorPlayback::LoadSources(const std::map<std::string, std::filesystem::pa
     if (music == files.end())
         throw std::runtime_error("The editor mode did not provide a music file.");
     std::string error;
-    music_ = audio_->LoadSound(music->second, a::AudioLoadMode::StreamAsyncAccurate, error);
+    music_ = audio_->LoadSound(music->second, AudioLoadMode::StreamAsyncAccurate, error);
     Require(music_ != nullptr, error);
     // Alias IDs for one sample share a clip and a bounded native voice.
     for (const auto &[sound, path] : files)
@@ -220,7 +220,7 @@ void EditorPlayback::LoadSources(const std::map<std::string, std::filesystem::pa
         auto &track = tracks_[path];
         if (!track.clip)
         {
-            track.clip = audio_->LoadSound(path, a::AudioLoadMode::Sample, error);
+            track.clip = audio_->LoadSound(path, AudioLoadMode::Sample, error);
             Require(track.clip != nullptr, error);
         }
     }
@@ -245,7 +245,7 @@ void EditorPlayback::UpdateCues(const std::vector<AudioMarker> &markers, const s
         const auto path = soundPaths_.find(marker.sound);
         if (path == soundPaths_.end())
             throw std::runtime_error("An editor hit sound has no file: " + marker.sound);
-        tracks_.at(path->second).times.push_back(editor_time::Microseconds(marker.seconds * 1000.0));
+        tracks_.at(path->second).times.push_back(Microseconds(marker.seconds * 1000.0));
     }
     for (auto &[path, track] : tracks_)
     {
@@ -260,9 +260,9 @@ void EditorPlayback::PrimeMusic()
 {
     std::string error;
     const auto state = music_->LoadState(error);
-    if (state == a::AudioClipLoadState::Failed)
+    if (state == AudioClipLoadState::Failed)
         throw std::runtime_error(error);
-    if (state != a::AudioClipLoadState::Ready && state != a::AudioClipLoadState::Playing)
+    if (state != AudioClipLoadState::Ready && state != AudioClipLoadState::Playing)
         return;
     std::uint64_t duration = 0;
     Require(music_->GetDurationMicroseconds(duration, error), error);
@@ -276,7 +276,7 @@ void EditorPlayback::PrimeMusic()
         {
             if (voice)
                 Require(voices_.Stop(musicVoice_, error), error);
-            a::AudioPlaybackSettings settings;
+            AudioPlaybackSettings settings;
             settings.pitch = static_cast<float>(rate_);
             settings.startPaused = true;
             settings.startPositionMicroseconds = static_cast<std::uint64_t>(std::max(position_, Time{}).count());
@@ -292,16 +292,16 @@ bool EditorPlayback::BeginPreparedPlayback()
 {
     std::string error;
     const auto state = music_->LoadState(error);
-    if (state == a::AudioClipLoadState::Failed)
+    if (state == AudioClipLoadState::Failed)
         throw std::runtime_error(error);
-    if (state != a::AudioClipLoadState::Ready && state != a::AudioClipLoadState::Playing)
+    if (state != AudioClipLoadState::Ready && state != AudioClipLoadState::Playing)
         return false;
     const bool hasMusic = musicVoice_ && position_ < musicDuration_.value_or(Time{});
     if (hasMusic)
     {
         if (!musicPositioned_)
         {
-            a::AudioPlaybackSettings settings;
+            AudioPlaybackSettings settings;
             settings.pitch = static_cast<float>(rate_);
             settings.startPaused = true;
             settings.startPositionMicroseconds = static_cast<std::uint64_t>(std::max(position_, Time{}).count());
@@ -313,8 +313,8 @@ bool EditorPlayback::BeginPreparedPlayback()
         if (!voice)
             throw std::runtime_error("The prepared music voice has stopped.");
         const auto prepared = voice->PreparationState(error);
-        Require(prepared != a::AudioPreparationState::Failed, error);
-        if (prepared == a::AudioPreparationState::Loading)
+        Require(prepared != AudioPreparationState::Failed, error);
+        if (prepared == AudioPreparationState::Loading)
             return false;
     }
     const auto snapshot = audio_->CaptureClockSnapshot();
@@ -360,7 +360,7 @@ void EditorPlayback::ScheduleHitSounds()
         if (track.cursor == track.times.size() || track.times[track.cursor] > windowEnd)
             continue;
         const auto time = track.times[track.cursor++];
-        a::AudioPlaybackSettings settings;
+        AudioPlaybackSettings settings;
         settings.pitch = static_cast<float>(rate_);
         settings.startDspClock = DspClockAt(time);
         std::string error;

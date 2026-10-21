@@ -14,53 +14,53 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
+
     std::size_t previewLoadCalls{};
-    std::unique_ptr<mrg::audio::IAudioClipBackend> CountClipLoads(mrg::audio::IAudioBackend &backend,
-        const std::filesystem::path &path, mrg::audio::AudioLoadMode mode, std::string &error)
+    std::unique_ptr<IAudioClipBackend> CountClipLoads(IAudioBackend &backend,
+        const std::filesystem::path &path, AudioLoadMode mode, std::string &error)
     {
         ++previewLoadCalls;
-        return mrg::audio::CreateFmodAudioClipBackend(backend, path, mode, error);
+        return CreateFmodAudioClipBackend(backend, path, mode, error);
     }
     void Check(bool condition, const char *message)
     {
         if (!condition)
             throw std::runtime_error(message);
     }
-    class RecordingRenderer final : public mrg::graphics::Visual2DRenderSystem
+    class RecordingRenderer final : public Visual2DRenderSystem
     {
       public:
-        std::vector<v::DrawPacket> packets;
-        v::ImageHandle LoadImage(const std::filesystem::path &) override
+        std::vector<DrawPacket> packets;
+        ImageHandle LoadImage(const std::filesystem::path &) override
         {
             return {++imageId};
         }
         std::uint64_t imageId{};
-        v::Size GetImageSize(v::ImageHandle) const noexcept override
+        Size GetImageSize(ImageHandle) const noexcept override
         {
             return {};
         }
-        void SubmitScreen(const v::Visual2DCanvas &canvas, const mrg::graphics::RenderContext &, v::Point,
+        void SubmitScreen(const Visual2DCanvas &canvas, const RenderContext &, Point,
                           std::uint32_t) override
         {
             packets.clear();
             const auto batches = canvas.BuildDrawList();
-            v::ForEachDrawPrimitive(batches, [this](const v::DrawPacket &packet) { packets.push_back(packet); });
+            ForEachDrawPrimitive(batches, [this](const DrawPacket &packet) { packets.push_back(packet); });
         }
-        void SubmitPlane(const v::Visual2DCanvas &, const mrg::graphics::RenderContext &, const DirectX::XMFLOAT4X4 &,
-                         v::Size, const DirectX::XMFLOAT4X4 &) override
+        void SubmitPlane(const Visual2DCanvas &, const RenderContext &, const DirectX::XMFLOAT4X4 &,
+                         Size, const DirectX::XMFLOAT4X4 &) override
         {
         }
-        mrg::graphics::RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
+        RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t, std::uint32_t) override
         {
             return {};
         }
-        void RenderToTexture(const v::Visual2DCanvas &, const mrg::graphics::RenderTargetTextureHandle &,
-                             const mrg::graphics::RenderContext &) override
+        void RenderToTexture(const Visual2DCanvas &, const RenderTargetTextureHandle &,
+                             const RenderContext &) override
         {
         }
     };
-    v::Visual2DNode *FindNode(v::Visual2DNode &node, const std::string_view name)
+    Visual2DNode *FindNode(Visual2DNode &node, const std::string_view name)
     {
         if (node.Name() == name)
             return &node;
@@ -69,9 +69,9 @@ namespace
                 return found;
         return nullptr;
     }
-    std::vector<v::DrawPacket> SpectrumGeometry(v::Visual2DNode &root)
+    std::vector<DrawPacket> SpectrumGeometry(Visual2DNode &root)
     {
-        std::vector<v::DrawPacket> result;
+        std::vector<DrawPacket> result;
         for (const auto name : {"Audio.MusicSpectrum", "Audio.HitSpectrum"})
             if (auto *track = FindNode(root, name))
                 for (const auto &tile : track->Children())
@@ -80,8 +80,8 @@ namespace
         return result;
     }
 
-    void TestAudioRangeSelection(v::Visual2DCanvas &canvas, EditorView &view, EditorWorkspace &state,
-                                 RecordingRenderer &renderer, const finger_drum::texts::TextCatalog &texts)
+    void TestAudioRangeSelection(Visual2DCanvas &canvas, EditorView &view, EditorWorkspace &state,
+                                 RecordingRenderer &renderer, const TextCatalog &texts)
     {
         auto *track = FindNode(canvas.Root(), "Audio.Selection.0");
         if (!track)
@@ -92,8 +92,8 @@ namespace
         const double firstMs = state.TimeMilliseconds();
         const double lastMs = firstMs + state.audioWindow * 500;
         const auto oldGeometry = SpectrumGeometry(canvas.Root());
-        v::Visual2DInputRouter router;
-        v::PointerInput pointer;
+        Visual2DInputRouter router;
+        PointerInput pointer;
         pointer.position = {bounds.x + bounds.width * .75F, bounds.y + bounds.height * .5F};
         pointer.leftButtonDown = pointer.leftButtonPressed = true;
         router.Process(canvas, pointer);
@@ -112,14 +112,14 @@ namespace
         view.Build();
         renderer.packets.clear();
         // Expand the same draw packets as the recording renderer without a physical window.
-        v::ForEachDrawPrimitive(canvas.BuildDrawList(), [&](const auto &packet) { renderer.packets.push_back(packet); });
+        ForEachDrawPrimitive(canvas.BuildDrawList(), [&](const auto &packet) { renderer.packets.push_back(packet); });
         const double begin = selected->begin.count() / 1000.0, end = selected->end.count() / 1000.0;
         const auto label = texts.Format("Editor.audioSelectionFormat", begin, end, end - begin);
         Check(std::ranges::any_of(renderer.packets, [&](const auto &packet) {
                   return packet.text && packet.text->value == label;
               }), "Selection start/end/duration must be displayed with localized millisecond formatting.");
         Check(std::ranges::count_if(renderer.packets, [](const auto &packet) {
-                  return packet.type == v::DrawPacketType::Rectangle && std::abs(packet.color.alpha - .24F) < .001F;
+                  return packet.type == DrawPacketType::Rectangle && std::abs(packet.color.alpha - .24F) < .001F;
               }) == 3, "The same selected interval must shade all three audio tracks.");
         const auto newGeometry = SpectrumGeometry(canvas.Root());
         Check(std::ranges::all_of(newGeometry, [&](const auto &packet) {
@@ -149,21 +149,21 @@ int main(int argc, char** argv)
     try
     {
         std::string assetError;
-        Check(finger_drum::assets::InitializeBuiltInAssets(assetError), assetError.c_str());
+        Check(InitializeBuiltInAssets(assetError), assetError.c_str());
         TestEditorMenu();
         TestEditorPlayback();
         TestEditorMetronome();
-        namespace chart = finger_drum::chart;
-        chart::PatternDocument pattern;
+
+        PatternDocument pattern;
         pattern.baseBpm = 120;
         pattern.patternOffsetMilliseconds = -500;
-        EditorWorkspace range(CreateEditorMode("Taiko"), std::make_unique<chart::ChartEditor>(pattern));
+        EditorWorkspace range(CreateEditorMode("Taiko"), std::make_unique<ChartEditor>(pattern));
         range.AddNote({0, {}}, 1);
         range.AddNote({1, {}}, 2);
         Check(range.TimelineRangeMilliseconds() == std::pair{-500.0, 1500.0},
               "Timeline must include negative notes and the last note.");
 
-        const auto songs = chart::SongCatalog{}.Load(mrg_client::asset_paths::UserSongs());
+        const auto songs = SongCatalog{}.Load(UserSongs());
         Check(!songs.songs.empty() && !songs.songs.front().patterns.empty(), "Real catalog missing");
         auto songIt = songs.songs.begin();
         if (argc > 1)
@@ -178,29 +178,29 @@ int main(int argc, char** argv)
         TestEditorPlaybackWithFmod(song.audioPath);
         const auto &selected = song.patterns.front();
         {
-            mrg::audio::AudioSystem previewAudio;
-            mrg::audio::AudioConfig config;
-            config.preferredBackend = mrg::audio::AudioOutputBackend::NoSound;
+            AudioSystem previewAudio;
+            AudioConfig config;
+            config.preferredBackend = AudioOutputBackend::NoSound;
             std::string error;
-            Check(previewAudio.Initialize(config, mrg::audio::CreateFmodAudioBackend,
+            Check(previewAudio.Initialize(config, CreateFmodAudioBackend,
                                            CountClipLoads, error), error.c_str());
-            auto clip = previewAudio.LoadSound(song.audioPath, mrg::audio::AudioLoadMode::StreamAsync, error);
+            auto clip = previewAudio.LoadSound(song.audioPath, AudioLoadMode::StreamAsync, error);
             Check(clip != nullptr, error.c_str());
             const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
             auto state = clip->LoadState(error);
-            while (state == mrg::audio::AudioClipLoadState::Loading && std::chrono::steady_clock::now() < deadline)
+            while (state == AudioClipLoadState::Loading && std::chrono::steady_clock::now() < deadline)
             {
                 previewAudio.Update();
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
                 state = clip->LoadState(error);
             }
-            Check(state == mrg::audio::AudioClipLoadState::Ready, "Async MP3 never became ready");
+            Check(state == AudioClipLoadState::Ready, "Async MP3 never became ready");
             auto voice = clip->Play({}, nullptr, error);
             Check(voice != nullptr, "Ready async stream must play");
             voice.reset();
             clip.reset();
 
-            mrg::audio::AudioPlaybackManager playback;
+            AudioPlaybackManager playback;
             SongPreviewController preview(playback);
             preview.Initialize(previewAudio);
             SongSelectionState selection;
@@ -305,12 +305,12 @@ int main(int argc, char** argv)
               "Timeline must include the entire music file.");
 
         RecordingRenderer renderer;
-        v::ScreenVisual2DManager visuals;
+        ScreenVisual2DManager visuals;
         visuals.Initialize(renderer, {1920, 1080});
-        mrg::graphics::MeshRenderSystem meshes;
-        mrg::graphics::TextRenderSystem textRendering;
-        mrg::audio::AudioSystem audio;
-        finger_drum::texts::TextCatalog texts;
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
         EditorView view(visuals, state, texts);
         view.Initialize({meshes, textRendering, renderer, audio, 1920, 1080});
         const auto hasText = [&](const std::wstring_view text)
@@ -320,8 +320,8 @@ int main(int argc, char** argv)
         };
         visuals.Render({});
         Check(hasText(L"파일"), "Editor view must compose the top menu.");
-        Check(hasText(std::wstring(state.Document().Dirty() ? finger_drum::texts::Editor(texts).saveDirty
-                                                            : finger_drum::texts::Editor(texts).save)),
+        Check(hasText(std::wstring(state.Document().Dirty() ? Editor(texts).saveDirty
+                                                            : Editor(texts).save)),
               "Existing footer Save must remain available.");
         Check(hasText(L"타임라인") && !hasText(L"음악 FFT 스펙트로그램"),
               "Pattern tab must show the timeline without the audio analysis "
@@ -346,7 +346,7 @@ int main(int argc, char** argv)
                             DirectX::XMVectorSet(packet.bounds.x, packet.bounds.y + packet.bounds.height, 0, 1),
                             DirectX::XMLoadFloat4x4(&packet.nodeTransform)));
                     const float y = 540 - corner.y;
-                    return packet.type == v::DrawPacketType::Rectangle && y >= top && y < bottom &&
+                    return packet.type == DrawPacketType::Rectangle && y >= top && y < bottom &&
                            corner.x >= 205 - 960 && corner.x < 1770 - 960 && packet.color.red > .3F &&
                            packet.color.green < .95F;
                 });
@@ -389,17 +389,17 @@ int main(int argc, char** argv)
         if (menuBar == nullptr)
             throw std::runtime_error("Editor top menu is missing.");
         Check(menuBar->BoundsInCanvas().height == EditorMenuBar::Height, "Editor top menu geometry is wrong.");
-        auto *slider = FindNode(canvas->AnchorNode(v::Anchor::Center), "Editor timeline");
+        auto *slider = FindNode(canvas->AnchorNode(Anchor::Center), "Editor timeline");
         if (slider == nullptr)
             throw std::runtime_error("Audio timeline slider missing");
         Check(slider->IsVisible(), "Audio timeline slider hidden");
-        v::Visual2DInputRouter pointerRouter;
-        v::PointerInput pointer{};
+        Visual2DInputRouter pointerRouter;
+        PointerInput pointer{};
         pointer.available = true;
         pointer.position = {205 + 8 + (1645 - 16) * .5F - 960, 540 - 937};
         pointer.leftButtonDown = pointer.leftButtonPressed = true;
         pointerRouter.Process(*canvas, pointer);
-        mrg::platform::InputState input;
+        InputState input;
         Check(!view.Update({0, 0, 1, input, audio, {}}), "Unexpected scene exit");
         Check(std::abs(state.TimeMilliseconds() - (begin + end) * .5) <= 1,
               "Slider action must seek the editor time to its track position.");
@@ -416,7 +416,7 @@ int main(int argc, char** argv)
         Check(!hiddenSelection->IsVisible() && !hiddenRate->IsVisible(),
               "Metadata must hide audio selection hit areas and rate controls.");
         state.SelectTab(EditorTab::Audio);
-        texts.SetLanguage(finger_drum::texts::Language::English);
+        texts.SetLanguage(Language::English);
         view.Build();
         visuals.Render({});
         Check(hasText(L"AUDIO") && hasText(L"MUSIC FFT SPECTROGRAM") && hasText(L"File"),
@@ -462,7 +462,7 @@ int main(int argc, char** argv)
         Check(visuals.CanvasCount() == 0, "Editor Canvas survived shutdown");
         visuals.OnResize(1920, 1080);
         TestEditorModes(visuals, {meshes, textRendering, renderer, audio, 1920, 1080}, texts,
-                        [&renderer]() -> const std::vector<v::DrawPacket> & { return renderer.packets; });
+                        [&renderer]() -> const std::vector<DrawPacket> & { return renderer.packets; });
         std::cout << "Editor audio view tests passed.\n";
         return 0;
     }

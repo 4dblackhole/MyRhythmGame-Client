@@ -8,12 +8,12 @@ $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/
 $compiledExe = Join-Path $testRoot 'AssetPathTests.exe'
 Push-Location $repoRoot
 try {
-    & cl /nologo /W4 /analyze /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IFingerDrum.Assets/Public `
-        /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/AssetPathTests.cpp `
-        "build/obj/MRG.Client/x64/$Configuration/OptionSettings.obj" `
-        "build/obj/MRG.Client/x64/$Configuration/Pch.obj" "bin/x64/$Configuration/FingerDrum.Assets.lib" `
-        "bin/x64/$Configuration/FingerDrum.Modes.lib" "bin/x64/$Configuration/FingerDrum.Chart.lib" "bin/x64/$Configuration/FingerDrum.Rhythm.lib" `
-        "Dependencies/MRG-Engine/bin/x64/$Configuration/MRG.Core.lib" `
+    & cl /nologo /W4 /analyze /utf-8 /std:c++20 /EHsc @runtime /DNOMINMAX /IClient /IYOUMU.Assets/Public `
+        /IDependencies/PhantomCore/Engine/SDK Tests/Presentation/AssetPathTests.cpp `
+        "build/obj/YOUMU.Client/x64/$Configuration/OptionSettings.obj" `
+        "build/obj/YOUMU.Client/x64/$Configuration/Pch.obj" "bin/x64/$Configuration/YOUMU.Assets.lib" `
+        "bin/x64/$Configuration/YOUMU.Modes.lib" "bin/x64/$Configuration/YOUMU.Chart.lib" "bin/x64/$Configuration/YOUMU.Rhythm.lib" `
+        "Dependencies/PhantomCore/bin/x64/$Configuration/PhantomCore.lib" `
         "/Fo$objects/" "/Fe$compiledExe" /link /OPT:NOICF /OPT:NOREF `
         "/LIBPATH:$env:FMOD_ROOT/api/core/lib/x64" user32.lib gdi32.lib ole32.lib shell32.lib
     if ($LASTEXITCODE -ne 0) { throw 'Asset path test compilation failed.' }

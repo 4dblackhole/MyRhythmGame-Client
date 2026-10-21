@@ -1,8 +1,0 @@
-#include "LogoTexts.h"
-namespace finger_drum::texts
-{
-    LogoTextSet Logo(const TextCatalog &texts)
-    {
-        return {{texts.Get("Logo.Start"), texts.Get("Logo.Editor"), texts.Get("Logo.Options"), texts.Get("Logo.Exit")}};
-    }
-} // namespace finger_drum::texts

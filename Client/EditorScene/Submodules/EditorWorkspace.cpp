@@ -2,7 +2,6 @@
 #include "EditorTime.h"
 #include "EditorValueParsing.h"
 #include "Modes/EditorModeFactory.h"
-using namespace editor_values;
 
 void EditorWorkspace::Initialize()
 {
@@ -72,7 +71,7 @@ void EditorWorkspace::PrepareAudioPreview()
 }
 void EditorWorkspace::SetPatternOffset(double milliseconds)
 {
-    static_cast<void>(editor_time::Microseconds(milliseconds));
+    static_cast<void>(Microseconds(milliseconds));
     auto pattern = Document().Pattern();
     pattern.patternOffsetMilliseconds = milliseconds;
     Replace(std::move(pattern), Document().Effects());
@@ -119,18 +118,18 @@ void EditorWorkspace::SetRealtimeZoom(const double factor)
     score_.realtimeZoom = factor;
     RequestRebuild();
 }
-void EditorWorkspace::Replace(chart::PatternDocument pattern, chart::EffectDocument effects)
+void EditorWorkspace::Replace(PatternDocument pattern, EffectDocument effects)
 {
     editor_->Replace(std::move(pattern), std::move(effects));
     DocumentChanged();
 }
-void EditorWorkspace::AddNote(chart::MusicalPosition position, int keyType, std::optional<chart::MusicalPosition> end,
+void EditorWorkspace::AddNote(MusicalPosition position, int keyType, std::optional<MusicalPosition> end,
                               std::vector<std::string> extra)
 {
     editor_->AddNote(position, keyType, end, std::move(extra));
     DocumentChanged();
 }
-void EditorWorkspace::UpdateNote(std::size_t id, chart::PatternNote note, std::optional<chart::MusicalPosition> end)
+void EditorWorkspace::UpdateNote(std::size_t id, PatternNote note, std::optional<MusicalPosition> end)
 {
     editor_->UpdateNote(id, std::move(note), end);
     DocumentChanged();
@@ -140,7 +139,7 @@ void EditorWorkspace::DeleteNote(std::size_t order)
     editor_->DeleteNote(order);
     DocumentChanged();
 }
-void EditorWorkspace::SetMeasureLength(std::int64_t measure, chart::Rational length)
+void EditorWorkspace::SetMeasureLength(std::int64_t measure, Rational length)
 {
     editor_->SetMeasureLength(measure, length);
     DocumentChanged();
@@ -148,8 +147,8 @@ void EditorWorkspace::SetMeasureLength(std::int64_t measure, chart::Rational len
 void EditorWorkspace::Seek(double milliseconds)
 {
     // Validate before publishing; preserve grid seeking beyond music and negative pre-roll.
-    static_cast<void>(editor_time::MeasureNearTime(Document().Timeline(), milliseconds));
-    playback_.Seek(editor_time::Microseconds(milliseconds));
+    static_cast<void>(MeasureNearTime(Document().Timeline(), milliseconds));
+    playback_.Seek(Microseconds(milliseconds));
     timeMs_ = milliseconds;
     nextZToZero_ = false;
     nextXToMusicEnd_ = false;
@@ -157,7 +156,7 @@ void EditorWorkspace::Seek(double milliseconds)
 }
 void EditorWorkspace::SetFirstMeasure(std::int64_t measure)
 {
-    if (measure < 0 || measure >= chart::MaximumMeasureCount)
+    if (measure < 0 || measure >= MaximumMeasureCount)
         throw std::invalid_argument("First measure must be in 0..99,999.");
     score_.firstMeasure = measure;
     RequestRebuild();
@@ -181,7 +180,7 @@ void EditorWorkspace::SelectTab(EditorTab value)
     mode_->CloseToolMenu();
     RequestRebuild();
 }
-void EditorWorkspace::SelectTimingPosition(chart::MusicalPosition p)
+void EditorWorkspace::SelectTimingPosition(MusicalPosition p)
 {
     timingForm.measure = std::to_string(p.measure + 1);
     timingForm.fraction = Fraction(p.fraction);
@@ -204,9 +203,9 @@ void EditorWorkspace::ApplyBpm()
     if (bpm <= 0)
         throw std::invalid_argument("BPM must be positive.");
     std::erase_if(timing, [position](const auto &d) {
-        return d.position == position && d.type == chart::TimingDirectiveType::Bpm;
+        return d.position == position && d.type == TimingDirectiveType::Bpm;
     });
-    timing.push_back({position, chart::TimingDirectiveType::Bpm, bpm});
+    timing.push_back({position, TimingDirectiveType::Bpm, bpm});
     editor_->ReplaceTiming(std::move(timing));
     DocumentChanged();
 }
@@ -260,7 +259,7 @@ void EditorWorkspace::Save()
     savedPath_ = Document().SourcePath();
     RequestRebuild();
 }
-void EditorWorkspace::PlaceNote(chart::MusicalPosition position)
+void EditorWorkspace::PlaceNote(MusicalPosition position)
 {
     mode_->PlaceNote(*this, position);
 }

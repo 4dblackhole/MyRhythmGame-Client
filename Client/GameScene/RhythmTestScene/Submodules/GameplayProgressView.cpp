@@ -8,11 +8,11 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
+
     constexpr float AssetScale = 2.0F / 3.0F;
     constexpr float TextInset = 12.0F;
 
-    template <typename Component> Component &RequireComponent(v::Visual2DNode &node)
+    template <typename Component> Component &RequireComponent(Visual2DNode &node)
     {
         auto *component = node.GetComponent<Component>();
         if (!component)
@@ -26,7 +26,7 @@ namespace
     }
 } // namespace
 
-void GameplayProgressView::CacheLastNoteTime(const finger_drum::mode::PlaySession &session)
+void GameplayProgressView::CacheLastNoteTime(const PlaySession &session)
 {
     endTime_ = {};
     hasNotes_ = false;
@@ -43,16 +43,16 @@ void GameplayProgressView::CacheLastNoteTime(const finger_drum::mode::PlaySessio
         }
 }
 
-void GameplayProgressView::Initialize(mrg::visual2d::ScreenVisual2DManager &visuals,
-                                      mrg::visual2d::Visual2DNode &parent,
-                                      const finger_drum::mode::PlaySession &session,
-                                      finger_drum::texts::TextCatalog &texts)
+void GameplayProgressView::Initialize(ScreenVisual2DManager &visuals,
+                                      Visual2DNode &parent,
+                                      const PlaySession &session,
+                                      TextCatalog &texts)
 {
     CacheLastNoteTime(session);
     displayedSeconds_ = -1;
     fraction_ = 0;
     const auto image = [&visuals](const wchar_t *name)
-    { return visuals.RegisterImage(mrg_client::asset_paths::skin::InGame(std::wstring{L"Progress."} + name)); };
+    { return visuals.RegisterImage(InGame(std::wstring{L"Progress."} + name)); };
     const auto background = image(L"Background");
     const auto track = image(L"Track");
     const auto fill = image(L"Fill");
@@ -64,36 +64,36 @@ void GameplayProgressView::Initialize(mrg::visual2d::ScreenVisual2DManager &visu
     if (height_ <= 0 || trackHeight_ <= 0 || markerSize_.width <= 0 || markerSize_.height <= 0)
         throw std::logic_error("Progress skin images must have a non-zero size.");
 
-    root_ = &v::CreateSprite(parent, {}, background, "Hud.GameProgress");
+    root_ = &CreateSprite(parent, {}, background, "Hud.GameProgress");
     root_->SetZIndex(5);
-    track_ = &v::CreateSprite(*root_, {}, track, "Progress.Track");
-    fill_ = &v::CreateSprite(*root_, {}, fill, "Progress.Fill");
+    track_ = &CreateSprite(*root_, {}, track, "Progress.Track");
+    fill_ = &CreateSprite(*root_, {}, fill, "Progress.Fill");
     fill_->SetZIndex(1);
-    marker_ = &v::CreateSprite(*root_, {}, marker, "Progress.Marker");
+    marker_ = &CreateSprite(*root_, {}, marker, "Progress.Marker");
     marker_->SetZIndex(2);
     CreateTimeLabels(texts);
-    Update(finger_drum::rhythm::RhythmTime::min());
+    Update(RhythmTime::min());
 }
 
-void GameplayProgressView::CreateTimeLabels(finger_drum::texts::TextCatalog &texts)
+void GameplayProgressView::CreateTimeLabels(TextCatalog &texts)
 {
     const auto total = FormatSeconds(std::max(endTime_.count(), std::int64_t{}) / 1'000'000);
     labelWidth_ = std::max(40.0F, static_cast<float>(total.size()) * 7.0F);
-    currentLabel_ = &mrg::visual2d::CreateLabel(*root_, {}, L"", "Progress.CurrentTime");
-    totalLabel_ = &mrg::visual2d::CreateLabel(*root_, {}, total, "Progress.TotalTime");
+    currentLabel_ = &CreateLabel(*root_, {}, L"", "Progress.CurrentTime");
+    totalLabel_ = &CreateLabel(*root_, {}, total, "Progress.TotalTime");
     for (auto *label : {currentLabel_, totalLabel_})
     {
         label->SetZIndex(3);
-        auto &text = RequireComponent<mrg::visual2d::TextVisualComponent>(*label);
+        auto &text = RequireComponent<TextVisualComponent>(*label);
         texts.ApplyFont(text);
         text.SetFontSize(16.0F * AssetScale);
         text.SetTextColor({0.94F, 0.97F, 1.0F, 1.0F});
     }
-    RequireComponent<mrg::visual2d::TextVisualComponent>(*totalLabel_)
-        .SetHorizontalAlignment(mrg::visual2d::TextAlignment::Trailing);
+    RequireComponent<TextVisualComponent>(*totalLabel_)
+        .SetHorizontalAlignment(TextAlignment::Trailing);
 }
 
-void GameplayProgressView::SetLayout(const mrg::visual2d::Rect bounds)
+void GameplayProgressView::SetLayout(const Rect bounds)
 {
     if (!root_)
         return;
@@ -119,7 +119,7 @@ void GameplayProgressView::UpdateFillLayout()
     fill_->SetVisible(fraction_ > 0 && track.width > 0);
     fill_->SetBounds({track.x, track.y, track.width * fraction_, track.height});
     // Crop instead of compressing the texture as progress changes.
-    RequireComponent<mrg::visual2d::SpriteVisualComponent>(*fill_).SetUvTransform({fraction_, 1.0F}, {});
+    RequireComponent<SpriteVisualComponent>(*fill_).SetUvTransform({fraction_, 1.0F}, {});
     const auto size = root_->NodeSize();
     const float markerWidth = std::min(markerSize_.width, size.width * 0.1F);
     const float markerHeight = markerSize_.height * markerWidth / markerSize_.width;
@@ -127,12 +127,12 @@ void GameplayProgressView::UpdateFillLayout()
                         markerWidth, markerHeight});
 }
 
-void GameplayProgressView::Update(const finger_drum::rhythm::RhythmTime time)
+void GameplayProgressView::Update(const RhythmTime time)
 {
     if (!root_)
         return;
     const auto elapsed =
-        std::clamp(time, finger_drum::rhythm::RhythmTime{}, std::max(endTime_, finger_drum::rhythm::RhythmTime{}));
+        std::clamp(time, RhythmTime{}, std::max(endTime_, RhythmTime{}));
     if (endTime_.count() > 0)
         fraction_ = static_cast<float>(static_cast<double>(elapsed.count()) / static_cast<double>(endTime_.count()));
     else
@@ -141,7 +141,7 @@ void GameplayProgressView::Update(const finger_drum::rhythm::RhythmTime time)
     const auto seconds = elapsed.count() / 1'000'000;
     if (seconds != displayedSeconds_)
     {
-        RequireComponent<mrg::visual2d::TextVisualComponent>(*currentLabel_).SetText(FormatSeconds(seconds));
+        RequireComponent<TextVisualComponent>(*currentLabel_).SetText(FormatSeconds(seconds));
         displayedSeconds_ = seconds;
     }
 }

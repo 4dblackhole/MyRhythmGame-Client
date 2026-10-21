@@ -1,7 +1,7 @@
 #include "GameFlow/GameplaySessionController.h"
 #include <algorithm>
 
-bool GameplaySessionController::PrepareResources(const mrg::UpdateContext &context)
+bool GameplaySessionController::PrepareResources(const UpdateContext &context)
 {
     if (resourcesReady_)
         return true;
@@ -11,17 +11,17 @@ bool GameplaySessionController::PrepareResources(const mrg::UpdateContext &conte
         return false;
     nextAudioPreparationPoll_ = context.totalSeconds + 0.002;
     const auto prepared = audioRouter_.PrepareResources();
-    if (prepared == mrg::audio::AudioPreparationState::Failed || !initializationError_.empty())
+    if (prepared == AudioPreparationState::Failed || !initializationError_.empty())
     {
         resourceLoadFailed_ = true;
         FailPlaybackPreparation();
         return false;
     }
-    resourcesReady_ = prepared == mrg::audio::AudioPreparationState::Ready;
+    resourcesReady_ = prepared == AudioPreparationState::Ready;
     return resourcesReady_;
 }
 
-void GameplaySessionController::UpdateLoading(const mrg::UpdateContext &context)
+void GameplaySessionController::UpdateLoading(const UpdateContext &context)
 {
     if (context.input.WasKeyPressed(VK_ESCAPE))
     {
@@ -32,7 +32,7 @@ void GameplaySessionController::UpdateLoading(const mrg::UpdateContext &context)
         PrepareGameplay(context);
 }
 
-void GameplaySessionController::UpdatePause(const mrg::UpdateContext &context)
+void GameplaySessionController::UpdatePause(const UpdateContext &context)
 {
     if (!PrepareResources(context))
         return;
@@ -56,9 +56,9 @@ void GameplaySessionController::UpdatePause(const mrg::UpdateContext &context)
     }
 }
 
-void GameplaySessionController::PrepareGameplay(const mrg::UpdateContext &context)
+void GameplaySessionController::PrepareGameplay(const UpdateContext &context)
 {
-    using Preparation = mrg::audio::AudioPreparationState;
+    using Preparation = AudioPreparationState;
     if (!playbackRequested_)
         return;
     if (playbackStart_)
@@ -100,10 +100,10 @@ void GameplaySessionController::FailPlaybackPreparation()
     audioRouter_.StopAllVoices();
     state_ = PlayState::Pause;
     pauseMenuOpen_ = true;
-    session_->RecordControl({finger_drum::mode::PlayControlType::Pause, time_, time_, 0, true});
+    session_->RecordControl({PlayControlType::Pause, time_, time_, 0, true});
 }
 
-void GameplaySessionController::ScheduleGameplay(const mrg::UpdateContext &context)
+void GameplaySessionController::ScheduleGameplay(const UpdateContext &context)
 {
     audioRouter_.ApplyAutomation(session_->EvaluateAutomation(time_));
     auto start = context.audio.CaptureClockSnapshot();
@@ -134,7 +134,7 @@ void GameplaySessionController::ScheduleGameplay(const mrg::UpdateContext &conte
         playbackStart_ = start;
 }
 
-void GameplaySessionController::EnterEnding(finger_drum::mode::PlayEndReason reason)
+void GameplaySessionController::EnterEnding(PlayEndReason reason)
 {
     if (state_ == PlayState::Ending)
         return;

@@ -4,21 +4,21 @@
 
 using namespace song_select;
 
-void MusicSelectView::Initialize(const mrg::EngineServices &services)
+void MusicSelectView::Initialize(const EngineServices &services)
 {
     width_ = services.windowWidth;
     height_ = services.windowHeight;
     canvasHandle_ = screenVisuals_.CreateOwnedCanvas(
-        {layout::CanvasSize, mrg::visual2d::CanvasScaleMode::FixedHeight});
+        {layout::CanvasSize, CanvasScaleMode::FixedHeight});
     canvas_ = canvasHandle_.Get();
     if (canvas_ == nullptr)
     {
         throw std::runtime_error("Failed to create the Lobby screen Canvas.");
     }
 
-    board_ = &canvas_->CreateNode(mrg::visual2d::Anchor::Center,
-                                  IsEditorSongSelect() ? "FingerDrum.EditorSongSelect.Board"
-                                                       : "FingerDrum.SongSelect.Board");
+    board_ = &canvas_->CreateNode(Anchor::Center,
+                                  IsEditorSongSelect() ? "YOUMU.EditorSongSelect.Board"
+                                                       : "YOUMU.SongSelect.Board");
     board_->SetPivot({0.5F, 0.5F});
     board_->SetSize(layout::CanvasSize);
     board_->SetPosition({0.0F, 0.0F});
@@ -39,7 +39,7 @@ void MusicSelectView::Initialize(const mrg::EngineServices &services)
     RebuildVisibleSongs();
 }
 
-SongSelectCommand MusicSelectView::Update(const mrg::platform::InputState &input,
+SongSelectCommand MusicSelectView::Update(const InputState &input,
                                            const double deltaSeconds)
 {
     command_ = SongSelectCommand::None;

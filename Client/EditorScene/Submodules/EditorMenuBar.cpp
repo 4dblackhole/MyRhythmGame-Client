@@ -4,50 +4,50 @@
 
 namespace
 {
-    namespace v = mrg::visual2d;
+
     using namespace editor_ui;
-    template <typename Component> Component &Require(v::Visual2DNode &node)
+    template <typename Component> Component &Require(Visual2DNode &node)
     {
         auto *component = node.GetComponent<Component>();
         if (component == nullptr)
             throw std::logic_error("Editor menu node is missing a component.");
         return *component;
     }
-    void ConfigureText(v::Visual2DNode &node, finger_drum::texts::TextCatalog &texts)
+    void ConfigureText(Visual2DNode &node, TextCatalog &texts)
     {
-        auto &label = Require<v::TextVisualComponent>(node);
+        auto &label = Require<TextVisualComponent>(node);
         texts.ApplyFont(label);
         label.SetFontSize(18.0F);
         label.SetTextColor(Ink);
     }
-    void Tint(v::Visual2DNode &node, const v::Color color)
+    void Tint(Visual2DNode &node, const Color color)
     {
-        Require<v::SpriteVisualComponent>(node).SetTint(color);
+        Require<SpriteVisualComponent>(node).SetTint(color);
     }
 }
 
-void EditorMenuBar::Initialize(v::Visual2DCanvas &canvas, finger_drum::texts::TextCatalog &texts)
+void EditorMenuBar::Initialize(Visual2DCanvas &canvas, TextCatalog &texts)
 {
     if (canvas_ != nullptr)
         throw std::logic_error("Editor menu is already initialized.");
     canvas_ = &canvas;
     texts_ = &texts;
     // Keep this sibling above the editor's batched content and slider nodes.
-    bar_ = &v::CreatePanel(canvas.Root(), {}, "Editor.MenuBar");
+    bar_ = &CreatePanel(canvas.Root(), {}, "Editor.MenuBar");
     bar_->SetZIndex(100);
     Tint(*bar_, Paper);
-    file_ = &v::CreateLabel(*bar_, {8, 0, 92, Height}, L"", "Editor.Menu.File");
+    file_ = &CreateLabel(*bar_, {8, 0, 92, Height}, L"", "Editor.Menu.File");
     ConfigureText(*file_, texts);
-    popup_ = &v::CreatePanel(*bar_, {8, -34, 240, 34}, "Editor.Menu.Popup");
+    popup_ = &CreatePanel(*bar_, {8, -34, 240, 34}, "Editor.Menu.Popup");
     popup_->SetZIndex(10);
     Tint(*popup_, Ink);
-    save_ = &v::CreatePanel(*popup_, {1, 1, 238, 32}, "Editor.Menu.Save");
+    save_ = &CreatePanel(*popup_, {1, 1, 238, 32}, "Editor.Menu.Save");
     Tint(*save_, Paper);
-    saveCaption_ = &v::CreateLabel(*save_, {12, 4, 145, 24}, L"", "Editor.Menu.SaveCaption");
-    shortcut_ = &v::CreateLabel(*save_, {157, 4, 69, 24}, L"", "Editor.Menu.Shortcut");
+    saveCaption_ = &CreateLabel(*save_, {12, 4, 145, 24}, L"", "Editor.Menu.SaveCaption");
+    shortcut_ = &CreateLabel(*save_, {157, 4, 69, 24}, L"", "Editor.Menu.Shortcut");
     ConfigureText(*saveCaption_, texts);
     ConfigureText(*shortcut_, texts);
-    Require<v::TextVisualComponent>(*shortcut_).SetHorizontalAlignment(v::TextAlignment::Trailing);
+    Require<TextVisualComponent>(*shortcut_).SetHorizontalAlignment(TextAlignment::Trailing);
     Resize();
     Refresh(false);
     SetOpen(false, false);
@@ -65,10 +65,10 @@ void EditorMenuBar::Refresh(const bool dirty)
 {
     if (canvas_ == nullptr || (labelsInitialized_ && dirty_ == dirty && textRevision_ == texts_->Revision()))
         return;
-    const auto &text = finger_drum::texts::Editor(*texts_);
-    Require<v::TextVisualComponent>(*shortcut_).SetText(std::wstring(texts_->Get("Editor.shortcutSave")));
-    Require<v::TextVisualComponent>(*file_).SetText(std::wstring(text.fileMenu));
-    Require<v::TextVisualComponent>(*saveCaption_).SetText(std::wstring(text.menuSave) + (dirty ? L" *" : L""));
+    const auto &text = Editor(*texts_);
+    Require<TextVisualComponent>(*shortcut_).SetText(std::wstring(texts_->Get("Editor.shortcutSave")));
+    Require<TextVisualComponent>(*file_).SetText(std::wstring(text.fileMenu));
+    Require<TextVisualComponent>(*saveCaption_).SetText(std::wstring(text.menuSave) + (dirty ? L" *" : L""));
     ConfigureText(*file_, *texts_);
     ConfigureText(*saveCaption_, *texts_);
     ConfigureText(*shortcut_, *texts_);
@@ -162,11 +162,11 @@ void EditorMenuBar::SetOpen(const bool open, const bool keyboardSelection)
 void EditorMenuBar::RefreshHighlight()
 {
     Tint(*file_, open_ ? Blue : hoverFile_ ? Pale : Paper);
-    Require<v::TextVisualComponent>(*file_).SetTextColor(open_ ? White : Ink);
+    Require<TextVisualComponent>(*file_).SetTextColor(open_ ? White : Ink);
     const bool selected = hoverSave_ || keyboardSelection_;
     Tint(*save_, selected ? Blue : Paper);
-    Require<v::TextVisualComponent>(*saveCaption_).SetTextColor(selected ? White : Ink);
-    Require<v::TextVisualComponent>(*shortcut_).SetTextColor(selected ? White : Ink);
+    Require<TextVisualComponent>(*saveCaption_).SetTextColor(selected ? White : Ink);
+    Require<TextVisualComponent>(*shortcut_).SetTextColor(selected ? White : Ink);
 }
 
 void EditorMenuBar::Shutdown() noexcept

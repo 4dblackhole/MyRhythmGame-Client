@@ -2,7 +2,7 @@
 
 `Visual2DNode`는 Sprite와 UI가 공유하는 구체 클래스다. 상속으로 Button 종류를
 늘리지 않고, 필요한 시각·충돌·입력·동작 컴포넌트를 붙여 기능을 구성한다.
-클라이언트는 엔진 공개 헤더 `MRG_Core.h`만 포함한다.
+클라이언트는 엔진 공개 헤더 `PhantomCore.h`만 포함한다.
 
 ## 좌표계와 아홉 앵커
 
@@ -46,10 +46,10 @@ BottomLeft    BottomCenter    BottomRight
 
 ```cpp
 auto& badge = canvas_->CreateNode(
-    mrg::visual2d::Anchor::TopRight,
+    Anchor::TopRight,
     "Badge");
 badge.SetBounds({-20.0F, -20.0F, 100.0F, 50.0F});
-badge.AddComponent<mrg::visual2d::SpriteVisualComponent>();
+badge.AddComponent<SpriteVisualComponent>();
 ```
 
 창 크기가 바뀔 때마다 `SetViewportSize`를 호출한다. 앵커 Transform이 새 논리 폭과
@@ -61,14 +61,14 @@ Canvas가 반드시 전체 화면일 필요는 없다. 독립 패널은 필요�
 유지된다.
 
 ```cpp
-mrg::visual2d::Visual2DCanvas panelCanvas(
+Visual2DCanvas panelCanvas(
     {480.0F, 340.0F},
-    mrg::visual2d::CanvasScaleMode::Fixed);
-mrg::visual2d::Point panelOrigin{panelX, panelY};
+    CanvasScaleMode::Fixed);
+Point panelOrigin{panelX, panelY};
 
 context.visual2DRendering->SubmitScreen(
     panelCanvas, context, panelOrigin, 1);
-const auto localPointer = mrg::visual2d::MapScreenPointer(
+const auto localPointer = MapScreenPointer(
     mousePosition, viewportSize, panelCanvas, panelOrigin);
 ```
 
@@ -77,8 +77,8 @@ const auto localPointer = mrg::visual2d::MapScreenPointer(
 아무 동작이 없는 Sprite는 시각 컴포넌트 하나만 가진다.
 
 ```cpp
-auto& sprite = mrg::visual2d::CreateSprite(
-    canvas_->AnchorNode(mrg::visual2d::Anchor::Center),
+auto& sprite = CreateSprite(
+    canvas_->AnchorNode(Anchor::Center),
     {-90.0F, -90.0F, 180.0F, 180.0F},
     imageHandle,
     "Character");
@@ -90,16 +90,16 @@ sprite.Transform().SetScale(1.0F, 1.0F, 1.0F);
 같은 Sprite를 클릭 가능하게 만들려면 상속하지 않고 컴포넌트를 추가한다.
 
 ```cpp
-sprite.AddComponent<mrg::visual2d::RectangleCollider2DComponent>();
-sprite.AddComponent<mrg::visual2d::PointerReceiverComponent>(
-    [](mrg::visual2d::Visual2DNode& node,
-       const mrg::visual2d::PointerEvent& event,
-       std::vector<mrg::visual2d::Action>& actions)
+sprite.AddComponent<RectangleCollider2DComponent>();
+sprite.AddComponent<PointerReceiverComponent>(
+    [](Visual2DNode& node,
+       const PointerEvent& event,
+       std::vector<Action>& actions)
     {
-        if (event.type == mrg::visual2d::PointerEventType::Click)
+        if (event.type == PointerEventType::Click)
         {
             actions.push_back({
-                mrg::visual2d::ActionType::Clicked,
+                ActionType::Clicked,
                 node.Id(),
                 0.0F,
                 0,
@@ -128,8 +128,8 @@ backend-neutral `TextFont`를 전달합니다. `Default`는 renderer 기본 글�
 게임의 언어별 선택은 `Client/Texts/TextCatalog.*`에서 관리합니다.
 
 ```cpp
-text.SetFont({mrg::visual2d::TextFontSource::System, L"Segoe UI"});
-combo.SetFont({mrg::visual2d::TextFontSource::File,
+text.SetFont({TextFontSource::System, L"Segoe UI"});
+combo.SetFont({TextFontSource::File,
                L"assets/fonts/MyFont-Regular.ttf"});
 ```
 
@@ -139,22 +139,22 @@ Button이나 ComboBox도 별도 Node 파생형이 아니다. 팩토리는 자주
 조합을 만든 뒤 일반 `Visual2DNode&`를 반환한다.
 
 ```cpp
-auto& panel = mrg::visual2d::CreatePanel(
-    canvas_->AnchorNode(mrg::visual2d::Anchor::MiddleLeft),
+auto& panel = CreatePanel(
+    canvas_->AnchorNode(Anchor::MiddleLeft),
     {0.0F, -170.0F, 480.0F, 340.0F});
 
-auto& apply = mrg::visual2d::CreateButton(
+auto& apply = CreateButton(
     panel,
     {16.0F, 236.0F, 200.0F, 40.0F},
     L"APPLY");
-const mrg::visual2d::NodeId applyId = apply.Id();
+const NodeId applyId = apply.Id();
 
-auto& device = mrg::visual2d::CreateComboBox(
+auto& device = CreateComboBox(
     panel,
     {16.0F, 170.0F, 448.0F, 38.0F},
     {L"Driver 0", L"Driver 1"});
 auto* combo = device.GetComponent<
-    mrg::visual2d::ComboBoxBehaviorComponent>();
+    ComboBoxBehaviorComponent>();
 combo->SetItemHeight(36.0F);
 combo->SetMaxVisibleItems(4);
 ```
@@ -169,20 +169,20 @@ combo->SetMaxVisibleItems(4);
 라우터에 전달한다.
 
 ```cpp
-const auto point = mrg::visual2d::MapScreenPointer(
+const auto point = MapScreenPointer(
     mousePosition,
     viewportSize,
     *canvas_);
 
-mrg::visual2d::PointerInput pointer{};
+PointerInput pointer{};
 pointer.available = point.has_value();
-pointer.position = point.value_or(mrg::visual2d::Point{});
+pointer.position = point.value_or(Point{});
 pointer.leftButtonDown = input.IsMouseButtonDown(
-    mrg::platform::MouseButton::Left);
+    MouseButton::Left);
 pointer.leftButtonPressed = input.WasMouseButtonPressed(
-    mrg::platform::MouseButton::Left);
+    MouseButton::Left);
 pointer.leftButtonReleased = input.WasMouseButtonReleased(
-    mrg::platform::MouseButton::Left);
+    MouseButton::Left);
 pointer.wheelDelta = input.MouseWheelDelta();
 inputRouter_.Process(*canvas_, pointer);
 ```
@@ -204,7 +204,7 @@ const auto normal = services.visual2DRendering.LoadImage(
 const auto hover = services.visual2DRendering.LoadImage(
     RuntimeAssetPath(L"Images\\ButtonHover.png"));
 
-mrg::visual2d::VisualStyle style{};
+VisualStyle style{};
 style.normalImage = normal;
 style.hoveredImage = hover;
 style.pressedImage = hover;
@@ -212,7 +212,7 @@ style.disabledImage = normal;
 style.normal = style.hovered = style.pressed =
     {1.0F, 1.0F, 1.0F, 1.0F};
 
-apply.GetComponent<mrg::visual2d::SpriteVisualComponent>()->SetStyle(style);
+apply.GetComponent<SpriteVisualComponent>()->SetStyle(style);
 ```
 
 같은 texture table과 렌더 상태를 쓰는 Sprite/위젯은 함께 인스턴싱된다. 투명 PNG
@@ -225,7 +225,7 @@ apply.GetComponent<mrg::visual2d::SpriteVisualComponent>()->SetStyle(style);
 
 ```cpp
 auto& visual = *panel.GetComponent<
-    mrg::visual2d::SpriteVisualComponent>();
+    SpriteVisualComponent>();
 visual.SetCornerRadius(12.0F);
 ```
 

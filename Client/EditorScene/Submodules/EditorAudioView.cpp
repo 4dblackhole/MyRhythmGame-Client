@@ -6,11 +6,10 @@ using namespace editor_ui;
 
 namespace
 {
-    using finger_drum::editor::AudioAnalysis;
-    using finger_drum::editor::SpectrumFrame;
+
     constexpr std::size_t Columns = 640;
     constexpr std::size_t TileColumns = 128;
-    constexpr std::array<v::Color, 16> SpectrumColors{{{0, 0, 0, 1},
+    constexpr std::array<Color, 16> SpectrumColors{{{0, 0, 0, 1},
                                                        {.08F, 0, .16F, 1},
                                                        {.18F, .01F, .32F, 1},
                                                        {.32F, .02F, .44F, 1},
@@ -34,7 +33,7 @@ namespace
         return text.str();
     }
 
-    using SourceBands = std::array<std::size_t, finger_drum::editor::SpectrumBandCount>;
+    using SourceBands = std::array<std::size_t, SpectrumBandCount>;
     SourceBands MapFrequencyBands(const AudioAnalysis &data, double minimumHz, double maximumHz)
     {
         SourceBands sourceBands{};
@@ -118,11 +117,11 @@ namespace
         return columns;
     }
 
-    void BuildSpectrumGeometry(EditorVisual &geometry, const std::vector<SpectrumFrame> &columns, const v::Rect rect)
+    void BuildSpectrumGeometry(EditorVisual &geometry, const std::vector<SpectrumFrame> &columns, const Rect rect)
     {
         const float columnWidth = rect.width / Columns;
-        const float bandHeight = rect.height / finger_drum::editor::SpectrumBandCount;
-        for (std::size_t band = 0; band < finger_drum::editor::SpectrumBandCount; ++band)
+        const float bandHeight = rect.height / SpectrumBandCount;
+        for (std::size_t band = 0; band < SpectrumBandCount; ++band)
             for (std::size_t column = 0; column < columns.size();)
             {
                 const auto colorAt = [&](std::size_t c)
@@ -142,7 +141,7 @@ namespace
     }
 } // namespace
 
-void EditorView::PrepareAudioTrack(std::size_t track, v::Rect rect, std::int64_t first, std::int64_t last,
+void EditorView::PrepareAudioTrack(std::size_t track, Rect rect, std::int64_t first, std::int64_t last,
                                    bool invalidate)
 {
     if (!audioRoots_[track])
@@ -231,7 +230,7 @@ void EditorView::UpdateAudioTiles(double begin, double minimumHz, double maximum
     audioColumnsDocumentRevision_ = state_.Document().Revision();
 }
 
-void EditorView::DrawAudioSpectrum(const v::Rect rect, const double minimumHz, const double maximumHz)
+void EditorView::DrawAudioSpectrum(const Rect rect, const double minimumHz, const double maximumHz)
 {
     Box(rect, {0, 0, 0, 1});
     for (const double frequency : {20.0, 100.0, 1000.0, 5000.0, maximumHz})

@@ -2,16 +2,15 @@
 #include "GameplaySupport.h"
 #include <limits>
 #include <numeric>
-using namespace gameplay;
 
-void GameplayPresenter::Initialize(const mrg::EngineServices &services,
-                                   const finger_drum::mode::PlaySession &session)
+void GameplayPresenter::Initialize(const EngineServices &services,
+                                   const PlaySession &session)
 {
     session_ = &session;
     width_ = services.windowWidth;
     height_ = services.windowHeight;
     canvasHandle_ = screenVisuals_.CreateOwnedCanvas(
-        {{1280.0F, 720.0F}, mrg::visual2d::CanvasScaleMode::FixedHeight});
+        {{1280.0F, 720.0F}, CanvasScaleMode::FixedHeight});
     canvas_ = canvasHandle_.Get();
     if (!canvas_)
         throw std::runtime_error("Failed to create the gameplay screen Canvas.");
@@ -31,9 +30,9 @@ void GameplayPresenter::OnResize(const std::uint32_t width, const std::uint32_t 
     }
 }
 
-finger_drum::rhythm::RhythmTime GameplayPresenter::InitialTimelineTime() const
+RhythmTime GameplayPresenter::InitialTimelineTime() const
 {
-    using Time = finger_drum::rhythm::RhythmTime;
+    using Time = RhythmTime;
     const Time latest{-2'000'000};
     if (session_->ScrollDistance(latest, {}) <= firstVisibilityDistance_)
         return latest;
@@ -54,7 +53,7 @@ finger_drum::rhythm::RhythmTime GameplayPresenter::InitialTimelineTime() const
     return Time{low};
 }
 
-float GameplayPresenter::TravelPixels(const finger_drum::rhythm::RhythmDuration duration,
+float GameplayPresenter::TravelPixels(const RhythmDuration duration,
                                       const float multiplier) const noexcept
 {
     constexpr long double MicrosecondsPerWholeNoteAtBpmOne = 240'000'000.0L;
@@ -63,14 +62,14 @@ float GameplayPresenter::TravelPixels(const finger_drum::rhythm::RhythmDuration 
                               pixelsPerWholeNote_ * multiplier);
 }
 
-float GameplayPresenter::TravelPixelsAt(finger_drum::rhythm::RhythmTime target, finger_drum::rhythm::RhythmTime current, float multiplier) const
+float GameplayPresenter::TravelPixelsAt(RhythmTime target, RhythmTime current, float multiplier) const
 {
     return static_cast<float>(session_->ScrollDistance(target, current) *
         session_->Timeline().BaseBpm() / 240'000'000.0L * pixelsPerWholeNote_ * multiplier);
 }
 
-mrg::visual2d::Point GameplayPresenter::LaneObjectPosition(const finger_drum::rhythm::RhythmTime target,
-                                                           const finger_drum::rhythm::RhythmTime current,
+Point GameplayPresenter::LaneObjectPosition(const RhythmTime target,
+                                                           const RhythmTime current,
                                                            const float multiplier) const
 {
     // Notes and measure lines are centred lane objects on the same time axis.
@@ -136,9 +135,9 @@ void GameplayPresenter::ApplyFeedback(const GameplayFeedback &feedback)
     if (feedback.keyPressed)
         keyBeam_.OnKeyPressed(feedback.result);
     PresentJudgementFeedback(feedback);
-    for (const finger_drum::rhythm::NoteEvent &event : feedback.result.events)
+    for (const NoteEvent &event : feedback.result.events)
     {
-        if (event.type != finger_drum::rhythm::NoteEventType::Completed)
+        if (event.type != NoteEventType::Completed)
         {
             continue;
         }

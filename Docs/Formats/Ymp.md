@@ -1,7 +1,7 @@
 # YMP 패턴·노트
 
 코드: `Parsing/Submodules/PatternParser.cpp`, `Model/Submodules/PatternDocument.h`.
-노트 ID·표시 계약: `FingerDrum.Modes/Taiko/Submodules/TaikoNoteDefinition.h`.
+노트 ID·표시 계약: `YOUMU.Modes/Taiko/Submodules/TaikoNoteDefinition.h`.
 위치/BPM 변경일 때만 [Timing](Timing.md), 사운드 변경일 때만 [YME](Yme.md)를 읽습니다.
 
 UTF-8 텍스트이며 빈 줄과 `//`로 시작하는 줄을 무시합니다. 경로에는 `\\`와 `/`를 사용할 수 있습니다.

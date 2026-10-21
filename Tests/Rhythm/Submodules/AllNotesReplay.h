@@ -2,61 +2,61 @@
 #include "TestSupport.h"
 #include <set>
 
-namespace finger_drum::tests
+namespace tests
 {
     // Test-only timestamped replay. No autoplay path is added to the game.
     struct ReplayInput
     {
-        rhythm::RhythmTime time;
-        rhythm::PhysicalKey key;
-        rhythm::InputEdge edge;
+        RhythmTime time;
+        PhysicalKey key;
+        InputEdge edge;
     };
 
     class AllNotesReplay final
     {
       public:
-        explicit AllNotesReplay(const mode::PlaySession &session, bool requireAllKinds = true)
+        explicit AllNotesReplay(const PlaySession &session, bool requireAllKinds = true)
         {
             const auto &notes = session.Gear().Lanes().front()->Notes();
             expectedNoteCount_ = notes.size();
             if (requireAllKinds) Require(notes.size() == 19, "All-notes chart must contain 19 logical notes.");
-            std::set<mode::NoteVisualKind> kinds;
+            std::set<NoteVisualKind> kinds;
             for (const auto &note : notes)
             {
                 const auto &view = *session.FindNotePresentation(note->Id());
                 kinds.insert(view.visualKind);
-                const rhythm::PhysicalKey key = view.visualKind == mode::NoteVisualKind::Kat ||
-                                                        view.visualKind == mode::NoteVisualKind::BigKat ||
-                                                        view.visualKind == mode::NoteVisualKind::KatBuzz
-                                                    ? rhythm::PhysicalKey{'D'}
-                                                    : rhythm::PhysicalKey{'F'};
+                const PhysicalKey key = view.visualKind == NoteVisualKind::Kat ||
+                                                        view.visualKind == NoteVisualKind::BigKat ||
+                                                        view.visualKind == NoteVisualKind::KatBuzz
+                                                    ? PhysicalKey{'D'}
+                                                    : PhysicalKey{'F'};
                 const auto &target = note->Accuracy().target;
-                if (target.kind == rhythm::NoteAccuracyKind::Hold)
+                if (target.kind == NoteAccuracyKind::Hold)
                 {
                     const bool dense = view.tickTimes.size() > RegularBuzzBodyTicks;
-                    const auto press = note->Timing() + rhythm::RhythmDuration{dense ? 50'000 : 0};
-                    inputs_.push_back({press, key, rhythm::InputEdge::Pressed});
-                    inputs_.push_back({view.endTime + rhythm::RhythmDuration{1}, key, rhythm::InputEdge::Released});
+                    const auto press = note->Timing() + RhythmDuration{dense ? 50'000 : 0};
+                    inputs_.push_back({press, key, InputEdge::Pressed});
+                    inputs_.push_back({view.endTime + RhythmDuration{1}, key, InputEdge::Released});
                 }
-                else if (target.kind == rhythm::NoteAccuracyKind::Ticks)
+                else if (target.kind == NoteAccuracyKind::Ticks)
                 {
                     for (const auto tick : view.tickTimes)
                         AddTap(tick, key);
                 }
-                else if (target.kind == rhythm::NoteAccuracyKind::HitCount)
+                else if (target.kind == NoteAccuracyKind::HitCount)
                 {
                     for (std::size_t hit = 0; hit < target.hits; ++hit)
                     {
                         const auto action =
-                            view.visualKind == mode::NoteVisualKind::DengDeng && hit % 2 != 0 ? 'D' : 'F';
-                        AddTap(note->Timing() + rhythm::RhythmDuration{static_cast<long long>(hit) * 80'000}, action);
+                            view.visualKind == NoteVisualKind::DengDeng && hit % 2 != 0 ? 'D' : 'F';
+                        AddTap(note->Timing() + RhythmDuration{static_cast<long long>(hit) * 80'000}, action);
                     }
                 }
                 else
                 {
                     AddTap(note->Timing(), key);
                     if (target.hits == 2)
-                        AddTap(note->Timing(), view.visualKind == mode::NoteVisualKind::Purple ? 'D'
+                        AddTap(note->Timing(), view.visualKind == NoteVisualKind::Purple ? 'D'
                                                : key == 'F'                                    ? 'J'
                                                                                                : 'K');
                 }
@@ -68,21 +68,21 @@ namespace finger_drum::tests
                              [](const auto &a, const auto &b) { return a.time < b.time; });
         }
 
-        [[nodiscard]] rhythm::RhythmTime End() const
+        [[nodiscard]] RhythmTime End() const
         {
-            return end_ + rhythm::RhythmDuration{500'000};
+            return end_ + RhythmDuration{500'000};
         }
 
-        rhythm::NoteProcessResult Advance(mode::PlaySession &session, rhythm::RhythmTime now)
+        NoteProcessResult Advance(PlaySession &session, RhythmTime now)
         {
-            rhythm::NoteProcessResult result;
+            NoteProcessResult result;
             while (next_ < inputs_.size() && inputs_[next_].time <= now)
             {
                 const auto &input = inputs_[next_++];
                 // Resolve expiry before an input, without processing its exact-time ticks early.
-                result.Append(session.Update(input.time - rhythm::RhythmDuration{1}, held_));
+                result.Append(session.Update(input.time - RhythmDuration{1}, held_));
                 result.Append(session.ProcessInput(input.key, input.edge, input.time));
-                if (input.edge == rhythm::InputEdge::Pressed)
+                if (input.edge == InputEdge::Pressed)
                     held_.push_back(input.key);
                 else
                     std::erase(held_, input.key);
@@ -92,34 +92,34 @@ namespace finger_drum::tests
             return result;
         }
 
-        void Verify(const mode::PlaySession &session) const
+        void Verify(const PlaySession &session) const
         {
             Require(session.FinalizedNoteCount() == expectedNoteCount_ && log_.finalizedAccuracies.size() == expectedNoteCount_,
                     "Every logical note must finalize exactly once.");
             for (const auto &note : session.Gear().Lanes().front()->Notes())
             {
-                Require(note->State() == rhythm::NoteState::Completed,
+                Require(note->State() == NoteState::Completed,
                         "Scripted inputs must complete every note type.");
                 const auto &accuracy = note->Accuracy();
-                if (accuracy.target.kind != rhythm::NoteAccuracyKind::Hold)
+                if (accuracy.target.kind != NoteAccuracyKind::Hold)
                 {
                     Require(accuracy.ScoreRate() == 1.0, "Normal replay notes must score 100%.");
                     continue;
                 }
                 const auto &view = *session.FindNotePresentation(note->Id());
                 const auto press =
-                    note->Timing() + rhythm::RhythmDuration{view.tickTimes.size() > RegularBuzzBodyTicks ? 50'000 : 0};
+                    note->Timing() + RhythmDuration{view.tickTimes.size() > RegularBuzzBodyTicks ? 50'000 : 0};
                 std::size_t index = 0, missed = 0;
                 for (const auto &event : log_.events)
                 {
-                    if (event.noteId != note->Id() || (event.type != rhythm::NoteEventType::TickAccepted &&
-                                                       event.type != rhythm::NoteEventType::TickMissed))
+                    if (event.noteId != note->Id() || (event.type != NoteEventType::TickAccepted &&
+                                                       event.type != NoteEventType::TickMissed))
                         continue;
                     Require(index < view.tickTimes.size() && event.tickIndex == index &&
                                 event.eventTime == view.tickTimes[index],
                             "Buzz ticks must appear once in compiled order, at their own time.");
                     const bool overdue = view.tickTimes[index++] < press;
-                    Require((event.type == rhythm::NoteEventType::TickMissed) == overdue,
+                    Require((event.type == NoteEventType::TickMissed) == overdue,
                             "Only ticks before the late head press must be missed.");
                     if (overdue)
                         ++missed;
@@ -129,7 +129,7 @@ namespace finger_drum::tests
                         "Late GOOD head must retain all missed and accepted body ticks.");
                 const auto head = note->Profile().Evaluate(note->Timing(), press);
                 const double expected = (head.scoreRate + static_cast<double>(index - missed) / static_cast<double>(index)) * 0.5;
-                Require(std::abs(accuracy.ScoreRate() - rhythm::AccuracyScore::FromRate(expected).Rate()) < 1e-9,
+                Require(std::abs(accuracy.ScoreRate() - AccuracyScore::FromRate(expected).Rate()) < 1e-9,
                         "Buzz score must combine head and complete tick denominator.");
                 std::cout << "Buzz " << note->Id() << ": " << missed << " missed / " << index << " ticks; accepted "
                           << accuracy.acceptedTicks << '\n';
@@ -141,16 +141,16 @@ namespace finger_drum::tests
         // The ordinary fixture has eight body ticks after including its tail.
         static constexpr std::size_t RegularBuzzBodyTicks = 8;
 
-        void AddTap(rhythm::RhythmTime time, rhythm::PhysicalKey key)
+        void AddTap(RhythmTime time, PhysicalKey key)
         {
-            inputs_.push_back({time, key, rhythm::InputEdge::Pressed});
-            inputs_.push_back({time + rhythm::RhythmDuration{1}, key, rhythm::InputEdge::Released});
+            inputs_.push_back({time, key, InputEdge::Pressed});
+            inputs_.push_back({time + RhythmDuration{1}, key, InputEdge::Released});
         }
         std::vector<ReplayInput> inputs_;
-        std::vector<rhythm::PhysicalKey> held_;
+        std::vector<PhysicalKey> held_;
         std::size_t next_{};
         std::size_t expectedNoteCount_{};
-        rhythm::RhythmTime end_{};
-        rhythm::NoteProcessResult log_;
+        RhythmTime end_{};
+        NoteProcessResult log_;
     };
-} // namespace finger_drum::tests
+} // namespace youmu::tests

@@ -29,10 +29,10 @@ jobs:
       - name: Build domain tests
         shell: pwsh
         run: |
-          msbuild Tests/Rhythm/FingerDrum.Rhythm.Tests.vcxproj /m /t:Rebuild /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:minimal
+          msbuild Tests/Rhythm/YOUMU.Rhythm.Tests.vcxproj /m /t:Rebuild /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:minimal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Run logic and catalog tests
         shell: pwsh
         run: |
-          & './bin/x64/${{ matrix.configuration }}/FingerDrum.Rhythm.Tests.exe' --catalog-root FingerDrum.Assets/Assets/Songs
+          & './bin/x64/${{ matrix.configuration }}/YOUMU.Rhythm.Tests.exe' --catalog-root YOUMU.Assets/Assets/Songs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -1,22 +1,22 @@
 #pragma once
 #include "GameFlow/GameplayLaunchStore.h"
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "Texts/TextCatalog.h"
 #include <memory>
 
 class EditorWorkspace;
 class EditorView;
 
-class EditorScene final : public mrg::scene::GameScene
+class EditorScene final : public GameScene
 {
   public:
-    EditorScene(mrg::visual2d::ScreenVisual2DManager &visuals,
-                std::shared_ptr<finger_drum::GameplayLaunchStore> request,
-                finger_drum::texts::TextCatalog &texts);
+    EditorScene(ScreenVisual2DManager &visuals,
+                std::shared_ptr<GameplayLaunchStore> request,
+                TextCatalog &texts);
     ~EditorScene() override;
-    void Initialize(const mrg::EngineServices &services) override;
-    void Update(const mrg::UpdateContext &context, mrg::scene::SceneManager &scenes) override;
-    void Render(const mrg::graphics::RenderContext &) override;
+    void Initialize(const EngineServices &services) override;
+    void Update(const UpdateContext &context, SceneManager &scenes) override;
+    void Render(const RenderContext &) override;
     void OnResize(std::uint32_t width, std::uint32_t height) override;
     void Shutdown() noexcept override;
 

@@ -11,11 +11,11 @@ $units = @('Pch', 'ResultScene', 'ResultViewFactory', 'TaikoResultView', 'TaikoR
     'GameplayState', 'GameplayPause', 'GameplayPauseMenu', 'GameplayPauseLayout', 'PauseTexts',
     'GameplayPresenter', 'GameplayLayout', 'GameplayNoteVisuals', 'GameplayFeedbackVisuals', 'GameplayKeys',
     'GameplayJudgementView', 'GameplayProgressView', 'LaneKeyBeam', 'GameplayTexts', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent', 'GameplayAudioRouter')
-$objects = $units | ForEach-Object { "build/obj/MRG.Client/x64/$Configuration/$_.obj" }
-$libraries = @('Rhythm', 'Chart', 'Modes', 'Assets') | ForEach-Object { "bin/x64/$Configuration/FingerDrum.$_.lib" }
+$objects = $units | ForEach-Object { "build/obj/YOUMU.Client/x64/$Configuration/$_.obj" }
+$libraries = @('Rhythm', 'Chart', 'Modes', 'Assets') | ForEach-Object { "bin/x64/$Configuration/YOUMU.$_.lib" }
 $objectDirectory = "build/obj/ResultPresentationTests/$Configuration"
 New-Item -ItemType Directory -Path $objectDirectory -Force | Out-Null
-& cl /nologo /utf-8 /std:c++20 /EHsc /W4 /analyze @runtime /DNOMINMAX /IClient /IFingerDrum.Rhythm /IFingerDrum.Chart /IFingerDrum.Modes /IFingerDrum.Assets/Public /IDependencies/MRG-Engine/Engine/SDK Tests/Presentation/ResultPresentationTests.cpp @objects @libraries "Dependencies/MRG-Engine/bin/x64/$Configuration/MRG.Core.lib" "/Fo$objectDirectory/" "/Febin/x64/$Configuration/ResultPresentationTests.exe" /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$FmodRoot/api/core/lib/x64" "build/obj/FingerDrum.Assets/x64/$Configuration/FingerDrum.Assets.res" user32.lib gdi32.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib
+& cl /nologo /utf-8 /std:c++20 /EHsc /W4 /analyze @runtime /DNOMINMAX /IClient /IYOUMU.Rhythm /IYOUMU.Chart /IYOUMU.Modes /IYOUMU.Assets/Public /IDependencies/PhantomCore/Engine/SDK Tests/Presentation/ResultPresentationTests.cpp @objects @libraries "Dependencies/PhantomCore/bin/x64/$Configuration/PhantomCore.lib" "/Fo$objectDirectory/" "/Febin/x64/$Configuration/ResultPresentationTests.exe" /link /OPT:NOICF /OPT:NOREF "/LIBPATH:$FmodRoot/api/core/lib/x64" "build/obj/YOUMU.Assets/x64/$Configuration/YOUMU.Assets.res" user32.lib gdi32.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib
 if ($LASTEXITCODE -ne 0) { throw 'Result presentation test build failed.' }
 & "./bin/x64/$Configuration/ResultPresentationTests.exe"
 if ($LASTEXITCODE -ne 0) { throw 'Result presentation test failed.' }

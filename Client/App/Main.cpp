@@ -6,9 +6,9 @@
 #include <crtdbg.h>
 #endif
 
-#include "App/FingerDrumGame.h"
-#include "FingerDrumAssets.h"
-#include "GameFlow/FingerDrumSceneIds.h"
+#include "App/YOUMUGame.h"
+#include "YOUMUAssets.h"
+#include "GameFlow/YOUMUSceneIds.h"
 #include "Texts/GameIdentity.h"
 #include "Texts/TextCatalog.h"
 
@@ -44,10 +44,10 @@ namespace
         if (length > 0)
             MultiByteToWideChar(CP_UTF8, 0, error, -1, message.data(), length);
         else
-            message = finger_drum::texts::TextCatalog{}.Get("Startup.decodeError");
+            message = TextCatalog{}.Get("Startup.decodeError");
         OutputDebugStringW(message.c_str());
         if (showWindow)
-            MessageBoxW(nullptr, message.c_str(), finger_drum::texts::GameName, MB_OK | MB_ICONERROR);
+            MessageBoxW(nullptr, message.c_str(), GameName, MB_OK | MB_ICONERROR);
     }
 }
 
@@ -60,7 +60,7 @@ int WINAPI wWinMain(
     EnableCrtMemoryLeakChecks();
 
     std::string assetError;
-    if (!finger_drum::assets::InitializeBuiltInAssets(assetError))
+    if (!InitializeBuiltInAssets(assetError))
     {
         ReportStartupError(assetError.c_str(), true);
         return EXIT_FAILURE;
@@ -81,29 +81,29 @@ int WINAPI wWinMain(
     const bool rhythmDebugMode =
         commandLine.find(L"--rhythm-debug") != std::wstring_view::npos;
     const bool smokeTest = smokeLobby || smokeGameplay || smokeEditor || basicSmokeTest;
-    std::string initialScene(finger_drum::scene_ids::Logo);
+    std::string initialScene(LogoSceneId);
     if (smokeLobby)
     {
-        initialScene = finger_drum::scene_ids::Lobby;
+        initialScene = LobbySceneId;
     }
     else if (smokeGameplay)
     {
-        initialScene = finger_drum::scene_ids::RhythmTest;
+        initialScene = RhythmTestSceneId;
     }
     else if (smokeEditor)
     {
-        initialScene = finger_drum::scene_ids::Editor;
+        initialScene = EditorSceneId;
     }
     else if (rhythmDebugMode)
     {
-        initialScene = finger_drum::scene_ids::RhythmTest;
+        initialScene = RhythmTestSceneId;
     }
 
     // Specialized hidden routes exercise catalog widgets and layered Taiko
     // assets without changing the normal executable's Logo entry point.
     try
     {
-        return mrg::Run(std::make_unique<FingerDrumGame>(
+        return Run(std::make_unique<YOUMUGame>(
             smokeTest, std::move(initialScene), rhythmDebugMode));
     }
     catch (const std::exception &error)

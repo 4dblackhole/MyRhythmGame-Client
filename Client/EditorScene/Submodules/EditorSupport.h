@@ -1,7 +1,7 @@
 #pragma once
 #include "Editing/IEditorDocument.h"
 #include "EditorValueParsing.h"
-#include "MRG_Core.h"
+#include "PhantomCore.h"
 #include "Presentation/UiColors.h"
 #include "Texts/EditorScene/EditorTexts.h"
 #include <Windows.h>
@@ -10,12 +10,10 @@
 
 namespace editor_ui
 {
-    namespace chart = finger_drum::chart;
-    namespace v = mrg::visual2d;
-    namespace palette = finger_drum::presentation::ui_colors;
-    constexpr auto Background = palette::editor::Background, Paper = palette::editor::Paper;
-    constexpr auto Ink = palette::editor::Ink, Blue = palette::editor::Accent, Pale = palette::editor::Pale;
-    constexpr auto White = palette::White;
+
+    constexpr auto Background = ui_colors::editor::Background, Paper = ui_colors::editor::Paper;
+    constexpr auto Ink = ui_colors::editor::Ink, Blue = ui_colors::editor::Accent, Pale = ui_colors::editor::Pale;
+    constexpr auto White = ui_colors::White;
     inline std::wstring Wide(const std::string &s)
     {
         const int n =
@@ -34,15 +32,11 @@ namespace editor_ui
             WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), s.data(), n, nullptr, nullptr);
         return s;
     }
-    using editor_values::Fraction;
-    using editor_values::Integer;
-    using editor_values::Number;
-    using editor_values::Position;
 
 } // namespace editor_ui
 
 namespace editor_ui
 {
     std::optional<std::string> EditText(const std::wstring &, const std::string &,
-                                        const finger_drum::texts::EditorTextSet &);
+                                        const EditorTextSet &);
 }
