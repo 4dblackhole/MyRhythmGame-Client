@@ -19,8 +19,8 @@ void GameplayPresenter::CreatePresentation()
             backgroundSize_ = screenVisuals_.GetImageSize(backgroundImage_);
             if (backgroundSize_.width <= 0 || backgroundSize_.height <= 0)
                 throw std::runtime_error("Background image has no size.");
-            RequireComponent<SpriteVisualComponent>(*background_).SetImage(backgroundImage_);
             SetColor(*background_, {1, 1, 1, 1});
+            RequireComponent<SpriteVisualComponent>(*background_).SetImage(backgroundImage_);
         }
         catch (const std::exception &error)
         {

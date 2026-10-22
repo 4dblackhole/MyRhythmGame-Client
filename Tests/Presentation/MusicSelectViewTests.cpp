@@ -2,8 +2,11 @@
 #include "GameScene/MusicSelectScene/Submodules/EditorOsuImport.h"
 #include "GameScene/MusicSelectScene/Submodules/MusicSelectView.h"
 #include "GameScene/MusicSelectScene/Submodules/SongCatalogLoader.h"
+#include "Judgement/AccuracyRange.h"
 #include "Presentation/MarqueeTextComponent.h"
 #include <chrono>
+#include <cmath>
+#include <map>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -20,13 +23,26 @@ namespace
     class Renderer final : public Visual2DRenderSystem
     {
       public:
-        ImageHandle LoadImage(const std::filesystem::path &) override
+        std::vector<std::filesystem::path> loaded;
+        ImageHandle LoadImage(const std::filesystem::path &path) override
         {
-            return {++id_};
+            if (path.filename() == "preview-cpu-fail.jpg" || path.filename() == "preview-gpu-fail.jpg")
+            {
+                loaded.push_back(path);
+                throw std::runtime_error("Cannot load image");
+            }
+            const auto id = ++id_;
+            if (path.filename().wstring().starts_with(L"preview-"))
+            {
+                loaded.push_back(path);
+                imageSizes_[id] = path.filename() == "preview-portrait.jpg" ? Size{900, 1600} : Size{1600, 900};
+            }
+            return {id};
         }
-        Size GetImageSize(ImageHandle) const noexcept override
+        Size GetImageSize(ImageHandle image) const noexcept override
         {
-            return {96, 96};
+            const auto found = imageSizes_.find(image.value);
+            return found == imageSizes_.end() ? Size{96, 96} : found->second;
         }
         void SubmitScreen(const Visual2DCanvas &, const RenderContext &, Point,
                           std::uint32_t) override
@@ -47,6 +63,7 @@ namespace
 
       private:
         std::uint64_t id_{};
+        std::map<std::uint64_t, Size> imageSizes_;
     };
     std::size_t Cards(const Visual2DNode &node)
     {
@@ -135,6 +152,15 @@ namespace
         const auto catalog = SongCatalog{}.Load(root);
         Check(catalog.Succeeded() && catalog.songs.size() == 1 && catalog.PatternCount() == 1,
               "The bundled converter process must produce a complete catalog entry.");
+        const auto &convertedPattern = catalog.songs.front().patterns.front().pattern;
+        Check(convertedPattern.judgementLevel == JudgeLevel{34.28},
+              "An OD 5 import must retain hundredth precision and select the nearest GOOD window.");
+        const AccuracyRange convertedRange("Imported.OD5", convertedPattern.judgementLevel);
+        Check(convertedRange.HalfWindow(JudgementGrade::Good) == RhythmDuration{79'492},
+              "The Client must read the imported level as a 79.492 ms GOOD half-window.");
+        Check(convertedRange.Evaluate({}, RhythmTime{79'492}).grade == JudgementGrade::Good &&
+                  convertedRange.Evaluate({}, RhythmTime{79'493}).grade == JudgementGrade::Bad,
+              "The saved level must control the Client's actual GOOD boundary.");
         importer.Start(input, root);
         const auto collision = await();
         Check(!collision.success && !collision.message.empty(),
@@ -169,6 +195,91 @@ namespace
             }
             clickable.Shutdown();
         }
+    }
+    void TestBackgroundPreview()
+    {
+        Renderer renderer;
+        ScreenVisual2DManager visuals;
+        visuals.Initialize(renderer, {1280, 720});
+        MeshRenderSystem meshes;
+        TextRenderSystem textRendering;
+        AudioSystem audio;
+        TextCatalog texts;
+        OptionSettings options("build/background-test-unused.ini");
+        SongSelectionState selection;
+        SongCatalogEntry song;
+        song.music.names.push_back("Background test");
+        for (const auto *file : {"preview-wide.jpg", "preview-portrait.jpg", "", "preview-cpu-fail.jpg", "preview-gpu-fail.jpg"})
+        {
+            SongCatalogPattern pattern;
+            pattern.pattern.backgroundFile = file;
+            song.patterns.push_back(std::move(pattern));
+        }
+        selection.catalog_.songs.push_back(std::move(song));
+        MusicSelectView view(visuals, selection, SongSelectPurpose::Gameplay, texts, options);
+        view.Initialize({meshes, textRendering, renderer, audio, 1280, 720});
+        auto *canvas = visuals.FindCanvas(1);
+        if (!canvas) throw std::runtime_error("Background Canvas missing.");
+        auto *image = Find(canvas->Root(), "PreviewImage");
+        auto *empty = Find(canvas->Root(), "PreviewEmpty");
+        auto *title = Find(canvas->Root(), "PreviewTitle");
+        auto *preview = Find(canvas->Root(), "BackgroundPreview");
+        if (!image || !empty || !title || !preview) throw std::runtime_error("Background nodes missing.");
+        auto *sprite = image->GetComponent<SpriteVisualComponent>();
+        if (!sprite) throw std::runtime_error("Background sprite missing.");
+        InputState input;
+        const auto tick = [&] { static_cast<void>(view.Update(input, 0)); };
+        const auto select = [&](std::size_t index) {
+            selection.selectedPatternIndex_ = index;
+            view.RefreshSelectionPresentation();
+        };
+        Check(renderer.loaded.size() == 1 && renderer.loaded.back() == options.SongsRoot() / L"BG" / L"preview-wide.jpg",
+              "Artwork must load from the selected Songs/BG.");
+        select(1);
+        tick();
+        Check(renderer.loaded.size() == 2 && renderer.loaded.back() == options.SongsRoot() / L"BG" / L"preview-portrait.jpg",
+              "Changing a difficulty must load the selected pattern from Songs/BG.");
+        Check(image->IsVisible() && !empty->IsVisible() && !title->IsVisible() && sprite->Style().normalImage.value,
+              "Ready artwork must replace the placeholder.");
+        Check(std::abs(sprite->UvScale().x - 1) < .001F && std::abs(sprite->UvScale().y - .5625F) < .001F &&
+                  std::abs(sprite->UvOffset().y - .21875F) < .001F,
+              "Portrait artwork must use a centered aspect-preserving crop.");
+        select(0);
+        tick();
+        Check(std::abs(sprite->UvScale().x - .5625F) < .001F && std::abs(sprite->UvScale().y - 1) < .001F,
+              "Landscape artwork must retain its original aspect ratio.");
+        const auto calls = renderer.loaded.size();
+        for (int i = 0; i < 10; ++i) tick();
+        Check(renderer.loaded.size() == calls, "Ready artwork must not be requested every frame.");
+        for (const auto width : {900U, 1920U})
+        {
+            visuals.OnResize(width, 720);
+            view.OnResize(width, 720);
+            Check(image->NodeSize().width == preview->NodeSize().width &&
+                      image->NodeSize().height == preview->NodeSize().height,
+                  "Artwork must follow the existing responsive preview bounds.");
+        }
+        select(2);
+        tick();
+        Check(!image->IsVisible() && empty->IsVisible() && !sprite->Style().normalImage.value,
+              "An unassigned background must clear the previous image.");
+        for (const auto index : {3U, 4U})
+        {
+            select(index);
+            tick();
+            Check(!image->IsVisible() && empty->IsVisible(), "Decode/upload errors must preserve NO IMAGE.");
+            const auto failedCalls = renderer.loaded.size();
+            tick();
+            view.RefreshSelectionPresentation();
+            Check(renderer.loaded.size() == failedCalls, "Failed artwork must not retry every frame.");
+        }
+        select(0);
+        tick();
+        selection.searchText_ = L"no match";
+        view.RebuildVisibleSongs();
+        Check(!image->IsVisible() && empty->IsVisible(), "Empty search results must clear the selected artwork.");
+        view.Shutdown();
+        Check(visuals.CanvasCount() == 0, "Background shutdown must release the Canvas.");
     }
     void TestOptionsToggle(MusicSelectView &view, Visual2DCanvas &canvas)
     {
@@ -222,6 +333,7 @@ int main()
         }
         std::string error;
         Check(InitializeBuiltInAssets(error), error.c_str());
+        TestBackgroundPreview();
         SongCatalogLoader loader;
         loader.Refresh(UserSongs());
         const auto first = AwaitCatalog(loader);

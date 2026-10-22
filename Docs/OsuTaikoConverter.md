@@ -31,7 +31,7 @@ Client 솔루션은 변환기의 Core 정적 라이브러리, 콘솔 EXE, 테스
 포함합니다. `YOUMU.Client`는 변환기 EXE를 빌드 의존성으로 참조하고 같은 구성의
 `OsuTaikoConverter.exe`를 `Y's Orchestral Unison - Melodic Ultimatum.exe` 옆에 복사합니다. EXE를 링크하지 않습니다.
 
-변환기는 Client의 엔진 비종속 Chart/Modes/Rhythm 라이브러리만 재사용합니다.
+변환기는 엔진 비종속 Chart/Rhythm 라이브러리와 Taiko의 저장 노트 ID·동작 계약만 재사용합니다.
 도메인 라이브러리가 변환기나 Client 실행 프로젝트를 역참조하지 않습니다.
 기존 YMM/YMP/YME 문법과 플레이 규칙은 그대로 사용합니다. 에디터 곡 카드 +의
 Convert .osu는 Client의 EditorOsuImport가 EXE를 백그라운드에서 실행합니다.
@@ -40,13 +40,30 @@ Convert .osu는 Client의 EditorOsuImport가 EXE를 백그라운드에서 실행
 - `Core/Submodules/OsuDocument`: 원본 문법, 수치·모드 검증.
 - `Core/Submodules/TimingMap`: BPM 기준점, 최근접 틱, omit 마디 길이.
 - `Core/Submodules/OutputWriting`: BPM·속도 반올림과 소수점 셋째 자리까지의 파일 출력.
-- `Core/Converter`: 노트/효과 대응, 기존 파서 저장 왕복과 실제 Taiko 세션 검증.
+- `Core/Converter`: 노트/효과 대응, 파서 저장 왕복과 선택한 틱의 시간 정밀도 검증.
+  실제 Taiko 세션 생성·노트 수·판정 범위 검증은 Client가 담당합니다.
 - `Core/ConversionFiles`: 음원 복사, 상대 경로, 임시 출력 후 디렉터리 확정.
 - 배경 이미지는 선택한 Songs 루트의 `BG/<로마자 Artist - Title>/<원본 파일명>`에 복사합니다.
   YMP의 `BG:`는 BG 기준 상대경로이며 `offset:`은 osu!의 `(x, y)`를
   1280×720/엔진 2D 좌표의 `(1.5*x, -1.5*y)`로 변환합니다. 같은 대상의 바이트가
   같으면 재사용하고 다르면 기존 파일을 보존한 채 충돌 오류를 반환합니다.
 - `App/Main`: UTF-16 Windows 인자, UTF-8 JSON stdout, stderr/종료 코드.
+
+## OD와 JudgeLevel
+
+osu!taiko의 100/OK 판정 폭에 가장 가까운 YOUMU GOOD 판정 폭을 갖도록 YMP의
+`JudgeLevel`을 설정합니다. 기존 1.00..100.00 범위와 0.01 단위를 유지합니다.
+목표 반폭은 `floor(OD <= 5 ? 120 - 8*OD : 110 - 6*OD) - 0.5` ms이며,
+GOOD 반폭 `54.5 * 50 / JudgeLevel`을 실제 마이크로초로 반올림한 결과를 비교합니다.
+계산은 공식 DifficultyRange의 부동소수 연산 순서를 따릅니다. 오차가 같으면 역산
+JudgeLevel에 가까운 값을, 그것도 같으면 더 작은 값을 선택합니다.
+기존 정밀도 때문에 완전히 같은 값이 없을 수 있습니다. 예를 들어 OD 7은
+`JudgeLevel: 40.37`, GOOD ±67.501ms로 원본 목표 ±67.500ms보다 1µs 넓습니다.
+다른 판정 등급과 점수·롱노트 규칙은 YOUMU의 기존 규칙을 사용합니다.
+OD는 스피너를 DengDeng으로 바꿀 때의 요구 타격 횟수 계산에도 사용합니다.
+
+판정 원본은 [osu! 공식 TaikoHitWindows](https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Taiko/Scoring/TaikoHitWindows.cs)를
+기준으로 하며, 변환 후 저장된 JudgeLevel의 실제 범위 검증은 Client에서 수행합니다.
 
 ## 실행 계약
 

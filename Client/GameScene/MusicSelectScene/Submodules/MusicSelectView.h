@@ -4,6 +4,7 @@
 #include "SongSelectionState.h"
 #include "SongSelectPurpose.h"
 #include "Texts/TextCatalog.h"
+#include <filesystem>
 #include <vector>
 
 enum class SongSelectCommand
@@ -21,7 +22,7 @@ class MusicSelectView final
                     SongSelectPurpose purpose, TextCatalog &texts,
                     OptionSettings &options)
         : selection_(state), purpose_(purpose), screenVisuals_(visuals), texts_(texts),
-          options_(texts, options)
+          settings_(options), options_(texts, options)
     {
     }
     void SetVisible(bool visible)
@@ -53,6 +54,8 @@ class MusicSelectView final
     void CreateCategoryBar();
     void CreateRecordPanel();
     void CreateSongInformationPanel();
+    void SetBackgroundPreview(const std::filesystem::path &path);
+    void UpdateBackgroundPreviewLayout();
     void CreateSongBrowser();
     void CreateFooter();
     void CreateAdditionMenu();
@@ -106,7 +109,10 @@ class MusicSelectView final
     SongSelectCommand command_{};
     ScreenVisual2DManager &screenVisuals_;
     TextCatalog &texts_;
+    OptionSettings &settings_;
     OptionsPanel options_;
+    std::filesystem::path previewPath_;
+    Size previewImageSize_{};
     std::uint64_t textRevision_{};
     std::vector<SongCard> songCards_;
     std::vector<SongCard> songRows_;
@@ -133,6 +139,7 @@ class MusicSelectView final
     Visual2DNode *emptyRecordMessage_{};
     Visual2DNode *informationPanel_{};
     Visual2DNode *preview_{};
+    Visual2DNode *previewImage_{};
     Visual2DNode *previewTitle_{};
     Visual2DNode *previewEmpty_{};
     Visual2DNode *difficultyInformation_{};

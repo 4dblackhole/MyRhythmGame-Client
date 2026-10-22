@@ -195,6 +195,7 @@ void MusicSelectView::RefreshSelectionPresentation()
     const std::wstring launchError = LaunchErrorText(selection_, text);
     if (selection_.visibleSongIndices_.empty())
     {
+        SetBackgroundPreview({});
         songMarquee.SetText(std::wstring(text.noSongSelected));
         artistMarquee.SetText(L"");
         RequireComponent<TextVisualComponent>(*selectedPatternLabel_).SetText(L"—");
@@ -212,6 +213,7 @@ void MusicSelectView::RefreshSelectionPresentation()
     artistMarquee.SetText(SongArtist(song));
     if (song.patterns.empty())
     {
+        SetBackgroundPreview({});
         RequireComponent<TextVisualComponent>(*selectedPatternLabel_)
             .SetText(std::wstring(text.noDifficulty));
         RequireComponent<TextVisualComponent>(*selectedCreatorLabel_).SetText(L"—");
@@ -223,6 +225,9 @@ void MusicSelectView::RefreshSelectionPresentation()
     selection_.selectedPatternIndex_ =
         std::min(selection_.selectedPatternIndex_, song.patterns.size() - 1);
     const auto &selected = song.patterns[selection_.selectedPatternIndex_];
+    SetBackgroundPreview(selected.pattern.backgroundFile.empty()
+                             ? std::filesystem::path{}
+                             : settings_.SongsRoot() / L"BG" / selected.pattern.backgroundFile);
     RequireComponent<TextVisualComponent>(*selectedPatternLabel_)
         .SetText(PatternName(selected));
     RequireComponent<TextVisualComponent>(*selectedCreatorLabel_)

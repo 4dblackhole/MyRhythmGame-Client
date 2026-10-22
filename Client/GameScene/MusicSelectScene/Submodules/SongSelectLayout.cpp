@@ -98,6 +98,7 @@ void MusicSelectView::UpdateSongInformationLayout()
             {20.0F, layout::PreviewEmpty.y * previewWidth / layout::Preview.width,
              std::max(previewWidth - 40.0F, 1.0F), layout::PreviewEmpty.height},
             preview_->NodeSize().height));
+        UpdateBackgroundPreviewLayout();
         detailsX += previewWidth + 20.0F;
     }
 

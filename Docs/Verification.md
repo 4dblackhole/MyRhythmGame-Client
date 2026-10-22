@@ -71,6 +71,37 @@ UI smoke는 초기화·실행·정리 검증이며 실제 모양/사용자 조�
 확인합니다. main 직접 작업은 검증 후 commit/push하며 브랜치 요청 시에만 PR을 사용합니다.
 FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 
+## 2026-10-22 곡 배경 미리보기·osu OD 변환
+
+- MusicSelectView는 현재 Songs/BG의 선택 패턴 이미지를 기존 정사각형에 비율을
+  유지해 표시합니다. SongSelectPanels는 로드·빈 상태·중앙 crop, SongSelectCards는
+  선택 경로, SongSelectLayout은 resize를 담당합니다. 기존 좁은 화면 배치는 유지합니다.
+- GameplayLayout에서 전체 색상 스타일이 이미 지정한 image handle을 지우던
+  순서를 수정했습니다. GameplayJudgement 회귀가 이미지 handle과 실제 DrawList 유지,
+  authored offset을 포함한 viewport cover를 검사합니다.
+- 독립 변환기는 OD의 100/OK 반폭에 가장 가까운 실제 GOOD 반폭의 JudgeLevel을
+  기존 0.01 단위에서 선택합니다. 실제 세션과 판정 범위는 Client에서 확인합니다.
+  MusicSelectView 회귀는 배포 EXE로 OD 5를 가져와 JudgeLevel 34.28 및
+  GOOD 79,492µs 포함/79,493µs 제외를 검사합니다.
+- 실제 `1/6 Practice Pack 1` 20개는 모두 OD 7이며 JudgeLevel 40.37로 반영했습니다.
+  각 출력의 Client 파싱·경로·23,255개 플레이 객체/23,264개 노트 행을 확인했습니다.
+  새 출력과 기존 YMP의 차이가 JudgeLevel 한 줄뿐임을 검사한 뒤 반영했으며,
+  원본 43개·다른 Songs 파일 98개와 음원 20개·배경 2개의 SHA256은 유지됩니다.
+- Debug/Release의 실제 D3D12 실행으로 20개 전체를 다시 읽고 PCM 디코딩,
+  곡 선택·플레이 이미지, 위치 오프셋을 포함한 화면 채우기를 확인했습니다.
+  전체 플레이 노트의 GOOD 반폭은 67,501µs이며 67,502µs는 BAD입니다.
+  목표 67,500µs와의 1µs 차이는 기존 정밀도를 유지하도록 선택한 결과입니다.
+- 두 구성의 solution Build, 로직·카탈로그 각 66개, MusicSelectView/
+  GameplayJudgement/OsuImportValidation 회귀 및 smoke 네 경로가 성공했습니다.
+  smoke 전후 Option.ini는 동일합니다. 변경 Client의 실제 MSVC /analyze 및
+  테스트의 /W4 /analyze에서 새 진단이 없으며 CheckArchitecture와 diff 검사를 통과했습니다.
+  solution 분석에 함께 나타난 엔진 기존 진단 3건(ScreenVisual2DManager C26478,
+  Visual2DSurface C26498/C6011)은 변경 범위 밖으로 유지했습니다.
+- 기존 사용자 곡의 Preview Time/#measurelinevisible 진단은 별도이며 수정하지 않았습니다.
+  위 실행은 숨긴 창의 자동 검사로, 물리 입력·청취 또는 수동 완주/캡처 검증은 아닙니다.
+  사용자 곡과 실행 로그는 Git에 넣지 않습니다. 상세 로컬 로그는
+  `build/practice-pack-20261022`, `build/background-*.log`에 있습니다.
+
 ## 2026-10-22 PhantomCore·YOUMU 이름 변경과 Client 변환 결과 검증
 
 - 변경 책임과 코드 검토는 [제품 이름과 검증 책임](Reviews/IdentityMigration-2026-10-22.md)에

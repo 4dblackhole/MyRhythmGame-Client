@@ -285,6 +285,15 @@ namespace
         presenter.ConfigureBackground(Center(), 70, -25);
         presenter.Initialize({meshes, textRendering, renderer, audio, 1280, 720}, *loaded.session);
         auto &root = visuals.FindCanvas(1)->Root();
+        const auto expectedBackground = visuals.RegisterImage(Center());
+        const auto *backgroundSprite = Node(root, "Background").GetComponent<SpriteVisualComponent>();
+        Check(backgroundSprite && backgroundSprite->Style().normalImage.value == expectedBackground.value,
+              "Applying the background colour must preserve the chart image handle.");
+        visuals.Update(0);
+        const auto backgroundPackets = visuals.FindCanvas(1)->BuildDrawList();
+        Check(std::ranges::any_of(backgroundPackets, [&](const auto &packet) {
+                  return packet.image.value == expectedBackground.value;
+              }), "The chart background must reach the draw list after a visual update.");
         auto &inputPanel = Node(root, "Input.Panel");
         std::size_t keyIndex = 0;
         for (const auto &child : inputPanel.Children())

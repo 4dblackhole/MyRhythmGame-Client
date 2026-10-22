@@ -51,6 +51,10 @@ void MusicSelectView::CreateSongInformationPanel()
     auto &preview = AddPanel(panel, layout::Preview, {0.765F, 0.906F, 0.980F, 1.0F},
                              "BackgroundPreview", 12.0F);
     preview_ = &preview;
+    previewImage_ = &preview.CreateChild("PreviewImage");
+    previewImage_->AddComponent<SpriteVisualComponent>();
+    SetCornerRadius(*previewImage_, 12.0F);
+    previewImage_->SetVisible(false);
     previewTitle_ = &AddLabel(preview, layout::PreviewTitle, std::wstring(text.backgroundPreview), 13.0F,
                               MutedBlue, "PreviewTitle", TextAlignment::Center);
     previewEmpty_ = &AddLabel(preview, layout::PreviewEmpty, std::wstring(text.noImage), 10.0F, SoftTextBlue,
@@ -80,6 +84,55 @@ void MusicSelectView::CreateSongInformationPanel()
     selectedDetailsLabel_ =
         &AddLabel(information, layout::SelectedDetails, std::wstring(text.emptyDetails), 9.0F,
                   MutedBlue, "SelectedDetails", TextAlignment::Center);
+}
+
+void MusicSelectView::SetBackgroundPreview(const std::filesystem::path &path)
+{
+    if (previewPath_ == path)
+        return;
+    previewPath_ = path;
+    previewImageSize_ = {};
+    previewImage_->SetVisible(false);
+    RequireComponent<SpriteVisualComponent>(*previewImage_).SetImage({});
+    previewTitle_->SetVisible(true);
+    previewEmpty_->SetVisible(true);
+    if (path.empty())
+        return;
+    try
+    {
+        const auto image = screenVisuals_.RegisterImage(previewPath_);
+        const auto size = screenVisuals_.GetImageSize(image);
+        if (image.value == 0 || size.width <= 0 || size.height <= 0)
+            return;
+        previewImageSize_ = size;
+        auto &sprite = RequireComponent<SpriteVisualComponent>(*previewImage_);
+        sprite.SetImage(image);
+        sprite.SetTint(PureWhite);
+        UpdateBackgroundPreviewLayout();
+        previewImage_->SetVisible(true);
+        previewTitle_->SetVisible(false);
+        previewEmpty_->SetVisible(false);
+    }
+    catch (const std::exception &)
+    {
+        // Missing/corrupt artwork keeps NO IMAGE until the selected path changes.
+    }
+}
+
+void MusicSelectView::UpdateBackgroundPreviewLayout()
+{
+    if (previewImage_ == nullptr)
+        return;
+    const auto size = preview_->NodeSize();
+    previewImage_->SetBounds({0, 0, size.width, size.height});
+    if (previewImageSize_.width <= 0 || previewImageSize_.height <= 0)
+        return;
+    const auto scale = std::max(size.width / previewImageSize_.width,
+                                size.height / previewImageSize_.height);
+    const DirectX::XMFLOAT2 uvScale{size.width / (previewImageSize_.width * scale),
+                                   size.height / (previewImageSize_.height * scale)};
+    RequireComponent<SpriteVisualComponent>(*previewImage_).SetUvTransform(
+        uvScale, {(1 - uvScale.x) * .5F, (1 - uvScale.y) * .5F});
 }
 
 void MusicSelectView::CreateSongBrowser()

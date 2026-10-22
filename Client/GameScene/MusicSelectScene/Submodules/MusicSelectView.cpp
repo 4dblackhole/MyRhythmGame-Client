@@ -123,6 +123,9 @@ void MusicSelectView::Shutdown() noexcept
     creatorHeading_ = nullptr;
     difficultyHeading_ = nullptr;
     difficultyInformation_ = nullptr;
+    previewPath_.clear();
+    previewImageSize_ = {};
+    previewImage_ = nullptr;
     previewEmpty_ = nullptr;
     previewTitle_ = nullptr;
     preview_ = nullptr;
