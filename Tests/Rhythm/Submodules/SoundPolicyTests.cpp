@@ -129,4 +129,4 @@ Version: 1
             }
         }
     }
-} // namespace youmu::tests
+} // namespace tests

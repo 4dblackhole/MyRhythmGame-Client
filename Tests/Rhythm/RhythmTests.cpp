@@ -97,13 +97,13 @@ int main(const int argumentCount, char *arguments[])
         {"TestChartSavePathCollisions", TestChartSavePathCollisions},
         {"TestChartParserBoundaries", TestChartParserBoundaries},
         {"TestChartPartialEdits", TestChartPartialEdits},
+        {"TestEditorAudioAnalysis", TestEditorAudioAnalysis},
     };
     if (catalogRoot)
     {
         tests.push_back({"TestSongCatalog", [&] { TestSongCatalog(*catalogRoot); }});
         tests.push_back({"TestYmeEffects", [&] { TestYmeEffects(*catalogRoot); }});
         tests.push_back({"TestAngelDreamAllNotesReplay", [&] { TestAngelDreamAllNotesReplay(*catalogRoot); }});
-        tests.push_back({"TestEditorAudioAnalysis", [&] { TestEditorAudioAnalysis(*catalogRoot); }});
     }
     std::size_t selected = 0, failures = 0;
     for (const auto &test : tests)

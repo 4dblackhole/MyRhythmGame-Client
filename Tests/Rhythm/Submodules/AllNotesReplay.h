@@ -153,4 +153,4 @@ namespace tests
         RhythmTime end_{};
         NoteProcessResult log_;
     };
-} // namespace youmu::tests
+} // namespace tests

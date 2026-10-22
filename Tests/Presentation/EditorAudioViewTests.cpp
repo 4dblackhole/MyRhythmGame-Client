@@ -2,6 +2,7 @@
 #include "Catalog/SongCatalog.h"
 #include "Editing/ChartEditor.h"
 #include "EditorMenuTests.h"
+#include "EditorAudioAnalysisIntegrationTests.h"
 #include "EditorMetronomeTests.h"
 #include "EditorModeTests.h"
 #include "EditorPlaybackTests.h"
@@ -163,6 +164,8 @@ int main(int argc, char** argv)
         Check(range.TimelineRangeMilliseconds() == std::pair{-500.0, 1500.0},
               "Timeline must include negative notes and the last note.");
 
+        RunEditorAudioAnalysisIntegrationTests(
+            std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "YOUMU.Assets/Assets/Songs");
         const auto songs = SongCatalog{}.Load(UserSongs());
         Check(!songs.songs.empty() && !songs.songs.front().patterns.empty(), "Real catalog missing");
         auto songIt = songs.songs.begin();

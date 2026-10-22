@@ -68,5 +68,5 @@ namespace tests
     void TestChartSavePathCollisions();
     void TestChartParserBoundaries();
     void TestChartPartialEdits();
-    void TestEditorAudioAnalysis(const std::filesystem::path &songsRoot);
-} // namespace youmu::tests
+    void TestEditorAudioAnalysis();
+} // namespace tests

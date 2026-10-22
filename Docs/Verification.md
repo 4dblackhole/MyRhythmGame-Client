@@ -89,6 +89,13 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
   분석했습니다. 실제 구성의 테스트 C++ 단위도 각 회귀 실행기의 /analyze로 검사했습니다.
 - 로직·카탈로그 **각 구성 66개, 실패 0**. smoke-test/lobby/gameplay/editor **총 8개 exit 0**.
   두 구성 Option.ini 해시가 smoke 전후 동일합니다.
+- GitHub의 엔진 없는 도메인 CI가 실패하던 기존 원인은 테스트의 실제 PCM 디코더/SDK
+  참조였습니다. Rhythm.Tests의 엔진 include·프로젝트 참조·코덱 링크를 제거하고, 주입 PCM의
+  주파수/레벨·반대 위상·무음·취소 검사는 도메인에 유지했습니다. 기존 실제 WAV/Ogg/MP3,
+  Unicode/확장자 변경·취소·손상 스트림·기본 히트사운드 검사는 Client의
+  EditorAudioAnalysisIntegrationTests로 옮겨 두 구성의 EditorPresentation에서 통과했습니다.
+  테스트를 생략하거나 엔진 유무에 따라 비활성화하지 않습니다. 도메인 테스트의 엔진 참조를
+  CheckArchitecture가 거부하도록 추가했습니다.
 - OsuImportValidation, MusicSelectView, EditorPresentation, ResultPresentation, OptionsPanel,
   Skin, AssetPath, NewDifficulty, LanguageFile 회귀 **9개 묶음 × 두 구성 모두 성공**.
   새 검증 객체를 사용하는 Skin 테스트의 링크 목록도 갱신했습니다. 최종 테스트 컴파일/
@@ -112,7 +119,8 @@ FMOD SDK·DLL·import lib는 커밋하지 않습니다.
 - CheckArchitecture(11개 프로젝트)와 git diff --check 성공. 자동 검사와 숨김 창/Win32 UI
   회귀이며 실제 화면·물리 입력·청취의 수동 확인은 수행하지 않았습니다.
 - 원시 로그는 ignored build의 youmu-*-final, final-*, analysis-*, regression-final-*,
-  smoke-final-*, logic-final-*, phantomcore-final-* 및 actual-client-validation.log에 있습니다.
+  smoke-final-*, logic-final-*, phantomcore-final-*, domain-isolated-*, pcm-integration-*
+  및 actual-client-validation.log에 있습니다.
 
 ## 2026-10-22 엔진·변환기·클라이언트 리뷰 8건 수정
 

@@ -78,4 +78,4 @@ namespace tests
                         NoteVisualKind::KatBuzz,
                 "Typed presentation must preserve the large roll and Kat Buzz appearances.");
     }
-} // namespace youmu::tests
+} // namespace tests

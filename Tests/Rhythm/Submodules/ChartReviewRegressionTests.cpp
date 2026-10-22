@@ -290,4 +290,4 @@ namespace tests
                     editor.EffectValueAt(EffectCommandType::NoteSpeed, {2, {}}) == 1,
                 "Effect transactions and copies must not leave dangling lookup pointers.");
     }
-} // namespace youmu::tests
+} // namespace tests

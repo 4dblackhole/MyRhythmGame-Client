@@ -71,4 +71,4 @@ namespace tests
                     loaded.session->HitSoundFiles().contains("Chart.HitSound.2"),
                 "Unused sound table entries must not become gameplay loading work.");
     }
-} // namespace youmu::tests
+} // namespace tests

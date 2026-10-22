@@ -89,4 +89,4 @@ namespace tests
                     "Rewind must reproduce physical snapshots and exactly-once tick decisions.");
         }
     }
-} // namespace youmu::tests
+} // namespace tests

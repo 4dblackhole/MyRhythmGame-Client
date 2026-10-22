@@ -91,4 +91,4 @@ namespace tests
         static_cast<void>(replay.Advance(*loaded.session, replay.End()));
         replay.Verify(*loaded.session);
     }
-} // namespace youmu::tests
+} // namespace tests

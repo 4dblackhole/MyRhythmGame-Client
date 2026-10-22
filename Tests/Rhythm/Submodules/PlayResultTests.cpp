@@ -124,4 +124,4 @@ namespace tests
         Require(result->Summary().unprocessedNotes == 1 && result->Summary().accuracy.Units() == 0,
                 "A partially active long note remains unprocessed with zero score on interruption.");
     }
-} // namespace youmu::tests
+} // namespace tests

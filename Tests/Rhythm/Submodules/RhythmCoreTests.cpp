@@ -179,4 +179,4 @@ namespace tests
                 "An older long-note trail must remain visible when an intervening "
                 "short note has already left the past window.");
     }
-} // namespace youmu::tests
+} // namespace tests

@@ -440,4 +440,4 @@ Version: 1
                     effects.document.commands[1].type == EffectCommandType::ReverbSend,
                 "YME must parse real-time audio automation independently of YMP.");
     }
-} // namespace youmu::tests
+} // namespace tests

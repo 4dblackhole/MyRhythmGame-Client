@@ -24,6 +24,9 @@
 - 변환기는 공통 Chart/Rhythm과 태고 노트 규약만 사용합니다. 실제 모드 세션 구성·노트 수
   검증은 Client의 OsuImportValidation이 변환 JSON/저장 파일을 받아 수행합니다.
   EditorOsuImport가 worker에서 검증한 뒤 Scene이 성공 결과의 카탈로그만 갱신합니다.
+- Rhythm.Tests는 엔진 없는 CI에서 주입 PCM 분석을 검사합니다. 실제 디코딩 회귀는
+  Client의 EditorAudioAnalysisIntegrationTests로 옮겨 기존 EditorPresentation 실행기에
+  포함했습니다. 두 구성에서 기존 WAV/Ogg/MP3·취소·오류 검사를 유지합니다.
 - 빌드·정적 분석·로직·smoke·관련 회귀와 실제 변환 결과 검증은
   [Verification의 같은 날짜 제품 개명 절](Verification.md)에 기록했습니다. 수동 화면/물리 입력/
   청취는 확인하지 않았습니다. 추적 자산과 ignored 사용자 데이터는 보존했습니다.

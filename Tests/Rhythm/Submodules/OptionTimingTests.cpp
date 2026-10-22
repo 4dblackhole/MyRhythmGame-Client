@@ -94,4 +94,4 @@ namespace tests
                     "Saved YMP never contains global offset.");
         }
     }
-} // namespace youmu::tests
+} // namespace tests

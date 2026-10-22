@@ -552,4 +552,4 @@ Mode: Taiko
             }
         }
     }
-} // namespace youmu::tests
+} // namespace tests

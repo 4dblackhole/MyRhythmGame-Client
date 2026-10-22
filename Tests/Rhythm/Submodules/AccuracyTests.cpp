@@ -213,4 +213,4 @@ namespace tests
                     buzz.session->FindNotePresentation(1)->tickTimes.front() == RhythmTime{125'000},
                 "Buzz body ticks must exclude the independently judged head.");
     }
-} // namespace youmu::tests
+} // namespace tests

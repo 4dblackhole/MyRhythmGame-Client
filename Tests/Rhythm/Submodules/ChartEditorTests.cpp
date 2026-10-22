@@ -6,7 +6,7 @@ namespace tests
     {
         void CheckSavedMetadataHistory()
         {
-            TemporaryDirectory saved("finger-drum-metadata-history-save");
+            TemporaryDirectory saved("youmu-metadata-history-save");
             PatternDocument pattern;
             pattern.sourcePath = saved.Path() / "metadata.ymp";
             pattern.name = "Before";
@@ -104,7 +104,7 @@ namespace tests
             longNotes.Redo();
             Require(longNotes.Notes().empty(), "Long-note deletion redo must remove the restored pair.");
 
-            TemporaryDirectory saved("finger-drum-history-save");
+            TemporaryDirectory saved("youmu-history-save");
             PatternDocument pattern;
             pattern.sourcePath = saved.Path() / "history.ymp";
             ChartEditor document(pattern);
@@ -388,7 +388,7 @@ namespace tests
                     parsedEffects.document.hitSoundChanges.size() == 1,
                 "YME regions and indexed hit sound changes must round-trip.");
 
-        TemporaryDirectory directory("finger-drum-editor");
+        TemporaryDirectory directory("youmu-editor");
         pattern.sourcePath = directory.Path() / "edited.ymp";
         editor.Replace(pattern, effects);
         editor.Save();
@@ -409,4 +409,4 @@ namespace tests
         backup += L".editor.bak";
         Require(!std::filesystem::exists(backup), "Successful save must clean its own backup.");
     }
-} // namespace youmu::tests
+} // namespace tests

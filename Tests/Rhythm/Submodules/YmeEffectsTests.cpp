@@ -564,4 +564,4 @@ void TestYmeEffects(const std::filesystem::path &songsRoot)
                  "ranges/exclusions; Whole/Separate; all curves; "
                  "sound/volume; Kiai.\n";
 }
-} // namespace youmu::tests
+} // namespace tests

@@ -56,7 +56,7 @@ namespace tests
                                 pattern.patternPath.parent_path().filename() == pattern.pattern.name,
                             "Each AngelDream difficulty must own a same-directory YMP/YME pair.");
                 }
-                TemporaryDirectory saved("finger-drum-catalog-save");
+                TemporaryDirectory saved("youmu-catalog-save");
                 auto copy = pattern.pattern;
                 copy.sourcePath = saved.Path() / pattern.patternPath.filename();
                 EffectDocument effect;
@@ -123,4 +123,4 @@ namespace tests
                     std::to_string(catalog.songs.size()) +
                     ", patterns=" + std::to_string(catalog.PatternCount()) + ").");
     }
-} // namespace youmu::tests
+} // namespace tests

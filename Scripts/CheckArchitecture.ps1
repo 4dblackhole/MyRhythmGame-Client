@@ -5,6 +5,7 @@ $problems = [System.Collections.Generic.List[string]]::new()
 $projectPaths = @(& rg --files $repoRoot -g '*.vcxproj' -g '!Dependencies/**' -g '!build/**' -g '!bin/**' |
     Where-Object { $_ -notmatch '[\\/]Dependencies[\\/]' })
 $converterRoot = Join-Path (Split-Path -Parent $repoRoot) 'OsuTaikoConverter'
+$domainTestsRoot = Join-Path $repoRoot 'Tests\Rhythm'
 foreach ($name in 'OsuTaikoConverter.Core', 'OsuTaikoConverter', 'OsuTaikoConverter.Tests') {
     $projectPath = Join-Path $converterRoot "$name.vcxproj"
     if (Test-Path -LiteralPath $projectPath) { $projectPaths += $projectPath }
@@ -43,6 +44,9 @@ foreach ($projectPath in $projectPaths) {
         if ($directory -eq $converterRoot -and $reference -match '[\\/](Client|Dependencies)[\\/]') {
             $problems.Add("Converter depends on Client/engine: $projectPath -> $reference")
         }
+        if ($directory -eq $domainTestsRoot -and $reference -match '[\\/]Dependencies[\\/]') {
+            $problems.Add("Domain tests depend on engine: $projectPath -> $reference")
+        }
     }
 }
 function Visit-Project([string]$path, [string[]]$ancestors) {
@@ -72,6 +76,10 @@ foreach ($source in $sources) {
     if ($source.StartsWith($converterRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -and
         $body -match '#include\s*[<"][^">]*(?:PhantomCore\.h|TaikoMode\.h|PlaySession\.h|PlayGameModeFactory\.h)[">]') {
         $problems.Add("Converter includes Client playback verification: $source")
+    }
+    if ($source.StartsWith($domainTestsRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -and
+        $body -match '#include\s*[<"][^">]*(?:PhantomCore\.h|Engine[/\\])') {
+        $problems.Add("Domain tests include engine integration: $source")
     }
     if ($body -match 'class\s+(\w+Scene)\s+final\s*:\s*public\s+GameScene') {
         if ((Split-Path -Leaf (Split-Path -Parent $source)) -ne $Matches[1]) {

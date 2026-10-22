@@ -109,4 +109,4 @@ namespace tests
                     !result->Summary().CanUseHp(),
                 "Finishing every note must not restore clear/HP eligibility after the pause menu.");
     }
-} // namespace youmu::tests
+} // namespace tests

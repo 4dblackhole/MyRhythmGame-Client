@@ -141,9 +141,11 @@ and document adapter to verify different tools/layout/coordinates/metadata/sound
 targets, Save dispatch and marker revision caching through the common editor.
 The committed Ogg Vorbis tone fixture also runs through the real analysis worker
 and audio tab. The test checks visible waveform/music FFT/hit FFT rectangles;
-no installed Vorbis codec or FFmpeg is required. Domain audio tests additionally
-check duration, frequency/level, opposite stereo phase, Unicode/renamed paths,
-bounded cancellation and truncated-stream errors.
+no installed Vorbis codec or FFmpeg is required. EditorAudioAnalysisIntegrationTests
+also checks real WAV/Ogg/MP3 duration, frequency/level, opposite stereo phase,
+Unicode/renamed paths, bounded cancellation, truncated-stream errors and bundled
+hit sounds. The engine-free domain audio test injects PCM to check the analysis
+algorithm; actual decoder coverage belongs to this Client integration runner.
 Audio range tests drag through actual Canvas receivers (including a narrow resized
 viewport), check ordered source times/localized ms labels and all three overlays,
 and verify FFT tile reuse and unchanged chart revision. Rate tests cover the slider's

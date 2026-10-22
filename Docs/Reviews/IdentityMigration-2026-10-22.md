@@ -56,3 +56,13 @@ OsuImportValidationTests는 Unicode 경로, 롱노트의 행/객체 수, 잘못�
 지원하지 않는 모드/노트, 경로 경계와 기존 파일 보존을 검사합니다. 실제 변환 JSON과
 Songs 루트도 같은 실행기에 전달할 수 있습니다. 빌드·분석·회귀 결과는
 [Verification](../Verification.md)의 같은 날짜 제품 이름 변경 절에서 기록합니다.
+
+## 엔진 없는 도메인 CI와 실제 디코딩 검사
+
+Rhythm.Tests는 공통 도메인 프로젝트만 참조합니다. EditorAudioAnalysisTests는
+PCM reader를 주입하여 FFT·파형·취소를 검사하며 엔진 SDK나 코덱 링크를 요구하지 않습니다.
+기존 실제 WAV/Ogg/MP3·Unicode 경로·확장자 변경·취소·손상 파일·기본 히트사운드
+검사는 EditorAudioAnalysisIntegrationTests로 옮겼습니다. 기존 Client의
+RunEditorPresentationTests 실행기가 두 구성에서 이 검사를 함께 빌드·분석·실행합니다.
+디코딩 검사를 제거하거나 CI에서 조건부로 건너뛰지 않으며 제품 동작/API는 바뀌지 않습니다.
+CheckArchitecture는 도메인 테스트의 엔진 프로젝트 참조와 SDK include를 차단합니다.

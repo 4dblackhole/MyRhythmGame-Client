@@ -109,4 +109,4 @@ namespace tests
             .sourceOrder = 1});
         return pattern;
     }
-} // namespace youmu::tests
+} // namespace tests
