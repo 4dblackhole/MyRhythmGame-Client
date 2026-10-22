@@ -246,7 +246,7 @@ void MusicSelectView::RefreshSelectionPresentation()
         return;
     }
     const std::wstring bpm = BpmText(selected.pattern.baseBpm);
-    const std::size_t noteCount = selected.pattern.notes.size();
+    const std::size_t noteCount = selected.noteCount.value_or(selected.pattern.notes.size());
     RequireComponent<TextVisualComponent>(*selectedDetailsLabel_)
         .SetText(std::vformat(text.detailsFormat,
                               std::make_wformat_args(bpm, noteCount, mode)));

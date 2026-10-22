@@ -18,6 +18,9 @@ Clip/Bus의 공유 소유권을 유지합니다. 오디오 장치와 FMOD system
 소유하는 AudioSystem 하나가 관리합니다.
 
 YME 표의 실제 참조 항목만 세션의 HitSoundFiles에 모읍니다. 비동기 Clip을 등록한 뒤
+이미지 준비와 함께 PCM 로딩을 진행하며, cold 샘플과 음악 Voice 준비가 끝나 실제
+Gameplay가 시작한 뒤 플레이 화면을 표시합니다. 화면 표시 직후 입력이 Loading에서
+버려지던 구간의 재현/회귀는 [자원 로딩 기록](../Reviews/ResourceLoading-2026-10-23.md)에 있습니다.
 Controller는 2ms 주기로 Loading/Ready/Failed를 확인하며, 준비가 끝난 시점에 QPC/DSP를 고정하고
 음악을 예약합니다. 종료 Clip은 엔진 RetireClip으로 안전한 해제를 기다립니다.
 히트사운드/음악 로딩 실패는 시작·재개를 막고 오류와 ESC 메뉴를 표시합니다.

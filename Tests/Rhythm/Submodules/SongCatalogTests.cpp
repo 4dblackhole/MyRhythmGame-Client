@@ -1,4 +1,5 @@
 #include "TestSupport.h"
+#include "Catalog/SongCatalogCacheVersion.h"
 
 namespace tests
 {
@@ -122,5 +123,85 @@ namespace tests
                 "(songs=" +
                     std::to_string(catalog.songs.size()) +
                     ", patterns=" + std::to_string(catalog.PatternCount()) + ").");
+    }
+    void TestSongCatalogIndex()
+    {
+        TemporaryDirectory fixture("YOUMUIndex");
+        const auto root = fixture.Path() / L"Songs-한글";
+        const auto cache = fixture.Path() / "Cache" / "index.bin";
+        const auto pattern = root / "valid.ymp", effect = root / "valid.yme";
+        WriteTextFile(root / "valid.ymm", "Version: 1\nFile: valid.mp3\nMusic Name 1: Title\n");
+        WriteTextFile(root / "valid.mp3", "audio-placeholder");
+        WriteTextFile(effect, "Version: 1\n");
+        std::string source = "Version: 1\nMusic metadata: valid.ymm\nEffect file: valid.yme\n"
+            "Pattern Name: Valid\nMode: Taiko\nBase BPM: 120\nJudgeLevel: 40.37\n[Pattern]\n0/1,1,0\n";
+        WriteTextFile(pattern, source);
+        const auto load = [&] { return SongCatalog::MetadataIndex(cache).Load(root); };
+        const auto first = load();
+        Require(first.Succeeded() && first.PatternCount() == 1 &&
+            first.songs.front().patterns.front().pattern.notes.empty() &&
+            first.songs.front().patterns.front().noteCount == 1 &&
+            first.songs.front().patterns.front().pattern.judgementLevel == JudgeLevel{40.37},
+            "The metadata index must preserve list metadata and counts without retaining note bodies.");
+        Require(std::filesystem::file_size(cache) > 24, "The index must be persisted outside source songs.");
+        const auto savedAt = std::filesystem::last_write_time(cache);
+        Require(load().PatternCount() == 1 && std::filesystem::last_write_time(cache) == savedAt,
+            "A new catalog instance must reuse the disk index without rewriting it.");
+        const auto readVersion = [&](std::streamoff offset)
+        {
+            std::ifstream file(cache, std::ios::binary);
+            file.seekg(offset);
+            std::uint32_t value{};
+            file.read(reinterpret_cast<char *>(&value), sizeof(value));
+            return value;
+        };
+
+        const auto beforeEdit = std::filesystem::last_write_time(pattern);
+        source.replace(source.find("Pattern Name: Valid"), 19, "Pattern Name: Other");
+        WriteTextFile(pattern, source);
+        std::filesystem::last_write_time(pattern, beforeEdit + std::chrono::seconds{2});
+        Require(load().songs.front().patterns.front().pattern.name == "Other",
+            "Same-size source edits must invalidate cached metadata by modification time.");
+        {
+            std::fstream file(cache, std::ios::binary | std::ios::in | std::ios::out);
+            file.seekp(12); // Parser revision, independent of the payload checksum.
+            const std::uint32_t obsolete = 0;
+            file.write(reinterpret_cast<const char *>(&obsolete), sizeof(obsolete));
+        }
+        Require(load().PatternCount() == 1 && readVersion(12) == SongCatalogParserRevision,
+            "An obsolete parser revision must rebuild from source and replace the obsolete header.");
+        {
+            std::fstream file(cache, std::ios::binary | std::ios::in | std::ios::out);
+            file.seekp(8);
+            const std::uint32_t obsolete = 0;
+            file.write(reinterpret_cast<const char *>(&obsolete), sizeof(obsolete));
+        }
+        Require(load().PatternCount() == 1 && readVersion(8) == SongCatalogCacheSchema,
+            "An obsolete cache storage schema must be disposable independently of parser revisions.");
+        WriteTextFile(cache, "damaged cache");
+        Require(load().PatternCount() == 1 && std::filesystem::file_size(cache) > 24,
+            "A truncated cache must be rebuilt without losing playable songs.");
+        {
+            std::fstream file(cache, std::ios::binary | std::ios::in | std::ios::out);
+            file.seekp(24);
+            file.put('!');
+        }
+        Require(load().PatternCount() == 1, "A checksum mismatch must rebuild the disk cache.");
+        const auto directoryTarget = fixture.Path() / "CacheDirectory";
+        std::filesystem::create_directory(directoryTarget);
+        Require(SongCatalog::MetadataIndex(directoryTarget).Load(root).PatternCount() == 1 &&
+            std::filesystem::is_directory(directoryTarget),
+            "An unusable cache path must preserve both source loading and an existing directory.");
+        WriteTextFile(effect, "Version: invalid\n");
+        const auto invalid = load();
+        Require(invalid.PatternCount() == 0 && !invalid.Succeeded(),
+            "A changed invalid YME must invalidate the cached pattern's availability.");
+        Require(load().diagnostics.size() == invalid.diagnostics.size(),
+            "Cached parser errors must survive a process-style catalog restart.");
+        std::filesystem::remove(pattern);
+        Require(load().discoveredPatternFiles == 0 && load().PatternCount() == 0,
+            "Deleted patterns must disappear from a persistent index.");
+        Require(SongCatalog{}.Load(root).songs.size() == 1,
+            "The full-document catalog API must remain available independently of the list index.");
     }
 } // namespace tests

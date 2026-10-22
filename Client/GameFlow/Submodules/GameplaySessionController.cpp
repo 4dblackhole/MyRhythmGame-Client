@@ -27,11 +27,48 @@ namespace
 
 void GameplaySessionController::InitializeSession()
 {
+    if (sessionInitialized_)
+        return;
     PrepareDebugLaunchRequest();
     if (!session_)
         session_ = CreateSession();
     heldKeys_.reserve(session_->InputMapping().size());
     time_ = initialTime_;
+    sessionInitialized_ = true;
+}
+
+bool GameplaySessionController::PrepareSession()
+{
+    if (sessionInitialized_)
+        return true;
+    if (session_ || !launchRequest_.IsValid())
+    {
+        InitializeSession();
+        return true;
+    }
+    if (!sessionLoader_.Busy())
+        sessionLoader_.Start(launchRequest_);
+    auto loaded = sessionLoader_.Poll();
+    if (!loaded)
+        return false;
+    if (!loaded->Succeeded())
+        throw std::runtime_error("Failed to load the selected pattern: " +
+            (loaded->diagnostics.empty() ? std::string{"Unknown chart error."} : loaded->diagnostics.front().message));
+    session_ = std::move(loaded->session);
+    InitializeSession();
+    return true;
+}
+
+AudioPreparationState GameplaySessionController::PrepareAudioResources(AudioSystem &audio)
+{
+    if (!audioInitialized_)
+    {
+        InitializeAudio(audio);
+        audioInitialized_ = true;
+    }
+    if (!initializationError_.empty())
+        return AudioPreparationState::Failed;
+    return audioRouter_.PrepareResources();
 }
 void GameplaySessionController::Start(const EngineServices &services,
                                       const RhythmTime initialTime)
@@ -40,7 +77,7 @@ void GameplaySessionController::Start(const EngineServices &services,
     session_->SetResultInitialTime(initialTime);
     if (state_ == PlayState::Ending)
         return;
-    InitializeAudio(services.audio);
+    static_cast<void>(PrepareAudioResources(services.audio));
     time_ = initialTime_;
     audioInitialized_ = true;
     resourcesReady_ = false;
@@ -123,6 +160,7 @@ void GameplaySessionController::Shutdown() noexcept
     nextAudioPreparationPoll_ = 0;
     audioRouter_.Shutdown();
     session_.reset();
+    sessionInitialized_ = false;
     musicRegistered_ = false;
     feedback_.clear();
     pauseMenuOpen_ = false;

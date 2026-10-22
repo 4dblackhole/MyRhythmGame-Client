@@ -6,6 +6,7 @@
 #include "App/OptionSettings.h"
 #include "Submodules/SongCatalogLoader.h"
 #include "Submodules/EditorOsuImport.h"
+#include "GameFlow/PlaySessionLoader.h"
 #include <memory>
 
 class SongSelectionState;
@@ -38,6 +39,7 @@ class MusicSelectScene final : public GameScene
     void ConvertOsu();
     void PollOsuImport();
     void RefreshCatalog();
+    void PollPatternLoad(SceneManager &scenes);
     std::shared_ptr<GameplayLaunchStore> launchRequest_;
     SongSelectPurpose purpose_;
     OptionSettings &options_;
@@ -50,4 +52,6 @@ class MusicSelectScene final : public GameScene
     SongCatalogLoader catalogLoader_;
     std::filesystem::path catalogRoot_;
     EditorOsuImport osuImport_;
+    PlaySessionLoader patternLoader_;
+    std::optional<GameplayLaunchRequest> pendingLaunch_;
 };

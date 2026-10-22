@@ -133,6 +133,7 @@
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseAction.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClInclude Include="GameFlow\IPlaySessionController.h"><Filter>GameFlow</Filter></ClInclude>
     <ClInclude Include="GameFlow\GameplaySessionController.h"><Filter>GameFlow</Filter></ClInclude>
+    <ClInclude Include="GameFlow\PlaySessionLoader.h"><Filter>GameFlow</Filter></ClInclude>
     <ClCompile Include="GameFlow\Submodules\GameplaySessionFactory.cpp"><Filter>GameFlow\Submodules</Filter></ClCompile>
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySupport.h"><Filter>GameScene\RhythmTestScene\Submodules</Filter></ClInclude>
     <ClCompile Include="Pch.cpp"></ClCompile>

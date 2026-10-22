@@ -4,7 +4,8 @@
 게임 설정과 Scene을 소유합니다.
 
 곡 목록은 Scene이 소유한 SongCatalogLoader worker에서 준비하고 완료 결과만 게시합니다.
-플레이 진입에서는 Session을 먼저 받은 뒤 PNG를 비동기 준비하고 Canvas/오디오를 구성합니다.
+플레이 진입에서는 Session을 worker에서 받은 뒤 PNG와 오디오를 함께 비동기 준비합니다.
+Canvas를 구성한 후에도 실제 Gameplay 시작 전에는 플레이 화면을 표시하지 않습니다.
 공통 IPlaySessionController의 Loading→Gameplay→Pause→Ending 상태로 실행합니다.
 Clip/음악 탐색 준비가 끝나면 Controller가 같은 미래 QPC/DSP 시점에 타이머와 음악을 시작합니다.
 Pause는 살아 있는 음악 Voice를 유지하고 복귀 시 위치를 재정렬합니다. transient 샘플은 정지하며
@@ -102,9 +103,11 @@ Scene 전환 자체는 공통 재생을 중단하지 않습니다. Client 갱신
   연결해 표시합니다.
   포커스된 곡 카드만 난이도 목록을 펼치며 좌우키는 곡, 상하키는 난이도를
   이동합니다. 하단 BACK 버튼이나 Escape로 Logo에 돌아갑니다.
-- Lobby의 GO/Enter는 선택 경로와 검증한 세션을 `GameplayLaunchStore::SetValidated`로 기록한 뒤
+- Lobby의 GO/Enter는 선택 경로로 `PlaySessionLoader` worker에 검증/세션 구성을 요청합니다.
+  완료한 세션을 `GameplayLaunchStore::SetValidated`로 기록한 뒤
   RhythmTest 전환을 요청합니다. RhythmTest의 Controller는 검증한 세션을 한 번 인계받고
-  별도 검증 세션이 없는 smoke/debug 진입만 `TaikoMode`로 세션을 만듭니다.
+  별도 검증 세션이 없는 실제 경로의 Result Retry/직접 진입도 Controller가 worker에서
+  세션을 만듭니다. 파일을 쓰지 않는 테스트용 메모리 세션은 직접 구성합니다.
   한 개의 `RhythmTimer`로 입력, 판정, 스크롤, 음악과 히트사운드의 DSP
   예약 시각을 연결합니다.
   플레이/에디터 생성자는 store의 Snapshot을 복사하므로 활성 세션의 경로는

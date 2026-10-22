@@ -6,7 +6,9 @@ $ErrorActionPreference = 'Stop'
 if (-not $FmodRoot) { throw 'Set FMOD_ROOT or pass -FmodRoot.' }
 $runtime = if ($Configuration -eq 'Debug') { @('/MDd', '/D_DEBUG') } else { @('/MD', '/DNDEBUG') }
 $units = @('Pch', 'GameplaySessionController', 'GameplaySessionFactory', 'GameplayInput', 'GameplayAudio',
-    'GameplayState', 'GameplayPause', 'GameplayPauseMenu', 'GameplayPauseLayout', 'PauseTexts', 'GameplayAudioRouter', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent')
+    'GameplayState', 'GameplayPause', 'GameplayPauseMenu', 'GameplayPauseLayout', 'PauseTexts', 'GameplayAudioRouter', 'TextCatalog', 'LanguageFile', 'SkinSetSelection', 'SkinManifest', 'SkinVisualComponent',
+    'RhythmTestScene', 'GameplayPresenter', 'GameplayLayout', 'GameplayNoteVisuals', 'GameplayFeedbackVisuals',
+    'GameplayKeys', 'GameplayJudgementView', 'GameplayProgressView', 'LaneKeyBeam', 'GameplayTexts')
 $objects = $units | ForEach-Object { "build/obj/YOUMU.Client/x64/$Configuration/$_.obj" }
 $libraries = @('Rhythm', 'Chart', 'Modes', 'Assets') | ForEach-Object { "bin/x64/$Configuration/YOUMU.$_.lib" }
 $objectDirectory = "build/obj/GameplayPauseTests/$Configuration"
@@ -15,3 +17,5 @@ New-Item -ItemType Directory -Path $objectDirectory -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Pause test build failed.' }
 & "./bin/x64/$Configuration/GameplayPauseTests.exe"
 if ($LASTEXITCODE -ne 0) { throw 'Pause test failed.' }
+& "./bin/x64/$Configuration/GameplayPauseTests.exe" --cold-start
+if ($LASTEXITCODE -ne 0) { throw 'Cold-start input test failed.' }

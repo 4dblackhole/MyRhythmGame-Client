@@ -2,6 +2,7 @@
 #include "GameScene/MusicSelectScene/Submodules/EditorOsuImport.h"
 #include "GameScene/MusicSelectScene/Submodules/MusicSelectView.h"
 #include "GameScene/MusicSelectScene/Submodules/SongCatalogLoader.h"
+#include "GameFlow/PlaySessionLoader.h"
 #include "Judgement/AccuracyRange.h"
 #include "Presentation/MarqueeTextComponent.h"
 #include <chrono>
@@ -338,6 +339,26 @@ int main()
         loader.Refresh(UserSongs());
         const auto first = AwaitCatalog(loader);
         Check(!first.songs.empty(), "Worker must publish the real catalog.");
+        const auto playable = std::ranges::find_if(first.songs, [](const auto &song) { return !song.patterns.empty(); });
+        Check(playable != first.songs.end(), "The worker regression requires a real playable chart.");
+        const auto &pattern = playable->patterns.front();
+        Check(pattern.pattern.notes.empty() && pattern.noteCount.has_value(),
+              "Runtime catalog loading must publish compact metadata with the original note count.");
+        PlaySessionLoader sessions;
+        sessions.Start({pattern.patternPath, pattern.effectPath, playable->audioPath, pattern.pattern.mode});
+        Check(sessions.Busy(), "A session worker must retain its job until publication.");
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+        std::optional<ModeLoadResult> loaded;
+        while (!(loaded = sessions.Poll()) && std::chrono::steady_clock::now() < deadline)
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        Check(loaded && loaded->Succeeded() && !sessions.Busy() && !loaded->session->Gear().Lanes().empty(),
+              "The worker must create and transfer a real playable session without loading on Poll.");
+        sessions.Start({"missing-regression.ymp", {}, "missing.mp3", "Taiko"});
+        loaded.reset();
+        while (!(loaded = sessions.Poll()) && std::chrono::steady_clock::now() < deadline)
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        Check(loaded && !loaded->Succeeded() && !loaded->diagnostics.empty(),
+              "A failed pattern worker must return diagnostics instead of throwing on the UI thread.");
         loader.Refresh(UserSongs());
         const auto repeated = AwaitCatalog(loader);
         Check(first.songs.size() == repeated.songs.size() && first.PatternCount() == repeated.PatternCount(),

@@ -1,5 +1,25 @@
 # 빌드와 검증
 
+## 2026-10-23 자원·목록·첫 입력음
+
+- Debug/Release x64 솔루션 빌드와 MSVC `/analyze`를 실제 프로젝트 설정으로 실행했습니다.
+  새 Client/Chart/테스트 경고는 없습니다. 기존 엔진의 ScreenVisual2DManager.cpp:225
+  C26478, Visual2DSurface.cpp:260 C26498 및 :437 C6011은 남아 있습니다.
+- 양 구성에서 67개 로직 테스트, 네 smoke 경로씩 총 8개, MusicSelectViewTests,
+  GameplayPauseTests 및 별도 새 프로세스 `--cold-start` 회귀를 통과했습니다.
+  smoke 전후 Option.ini 해시가 같습니다. CheckArchitecture와 `git diff --check`도 통과했습니다.
+- 목록 테스트는 디스크 캐시 재사용/무효화/손상/쓰기 불가, YME 수정·삭제와 노트 수
+  보존, 실제 선택 패턴의 worker 세션 생성, 5,000곡 UI의 화면 인근 카드 생성을 검사합니다.
+  메타데이터 캐시를 실제 플레이 노트로 사용하지 않습니다.
+- cold-start 회귀는 실제 D3D12 Scene과 200ms 지연을 주입한 오디오 backend로 첫
+  화면의 준비 상태와 최초 Don/Kat 재생 요청을 확인합니다. 기존 Scene은 같은 검사에서
+  실패하고 수정 Scene은 통과합니다. 별도 실제 FMOD/WASAPI probe의 준비 완료 직후
+  24회 재생도 mixer에서 확인했습니다. 수동 청음·물리 키보드→스피커 지연은 측정하지 않았습니다.
+- 2,000곡/10,000패턴 측정과 osu! 공식 소스 조사, 포맷 변경 시 parser/schema revision
+  규칙은 [자원 로딩 기록](Reviews/ResourceLoading-2026-10-23.md)에 있습니다.
+  원시 로그/probe와 합성 파일은 ignored `build/loading-20261023`에만 있습니다.
+  기존 로컬 에디터 변경 27개는 해시를 비교해 그대로 보존했습니다.
+
 코드 변경 후 저장소 루트에서 실행합니다. MSBuild는 설치된 Visual Studio의
 vswhere로 찾고 FMOD SDK 경로는 Directory.Build.props의 설정을 사용합니다.
 

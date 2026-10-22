@@ -47,7 +47,7 @@
 | 만료 노트 입력 전달·복수 물리 키 유지·rewind | Lane / HoldInputRule / PlaySession / GameplayInput | InputOrderingTests; PlayPauseTests / GameplayPauseTests; Raw Input timestamp·전이 전 snapshot |
 | Taiko 종류 추가 | `YOUMU.Modes/Taiko/Submodules/TaikoNoteDefinition.h`, TaikoSessionBuilder / TaikoLongNoteFactory | TaikoEditorTool, NoteVisualKind→Client 이미지, TaikoModeTests |
 | 노트 사운드·옵션/예측 | 같은 폴더 TaikoSoundPolicy / TaikoNoteOptions / TaikoChartAudio / TaikoAudioPreview | NoteSoundPolicy, TaikoEditorAudio; SoundPolicyTests / EditorModeTests |
-| 문법 추가 | `YOUMU.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests |
+| 문법 추가 | `YOUMU.Chart/Parsing/Submodules/<형식>Parser.cpp` | 해당 Model/Submodules 문서형, ChartEditor 저장, ChartParserTests; SongCatalogParserRevision 증가·SongCatalogIndex 캐시 재구축 회귀 |
 | YME 보간·Whole/Separate | `YOUMU.Chart/Automation/InterpolationExpression.*`, `ScrollAutomation.*` | MusicalTimeline / PlaySession / GameplayPresenter / TaikoEditorScore; YmeEffectsTests, 실제 -Effects replay |
 | 효과 검증·런타임 실패 복구 | `YOUMU.Chart/Automation/EffectValidation.*`, `PlaySession.*` | EffectParser / ChartEditor / TaikoMode; GameplaySessionController / Presenter 오류 HUD; YmeEffectsTests |
 | 싱코페이션 판정 범위·Kiai 상태 | `YOUMU.Rhythm/Judgement/AccuracyRange.*`, `YOUMU.Modes/Taiko/Submodules/TaikoBuildSupport.h` | TaikoSessionBuilder / RuleBasedNote / PlaySession; YmeEffectsTests |

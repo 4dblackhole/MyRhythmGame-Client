@@ -35,6 +35,7 @@
 | FMOD 오류 수정·음악 채널 Pause 유지·준비 상태/실패·취소 종료 | [FMOD 수정 기록](Reviews/FmodErrorFixes-2026-10-17.md), [검증](Verification.md) | 같은 오디오 소유자; GameplayPause / GameplayState; 엔진 Voice PreparationState / AudioSystem Shutdown |
 | 레거시 제거·예제 폐기 범위 | [레거시 제거 기록](Reviews/LegacyAudit-2026-10-11.md) | Main/OptionSettings, EditorModeFactory, PatternTiming; 직접 계약 헤더 |
 | 프레임 비용·카탈로그/자원 로딩·표시 캐시 | [성능 수정 기록](Reviews/PerformanceFixes-2026-10-14.md) | GameplayPresenter, TaikoSessionBuilder, ChartEditor, SongCatalogLoader; 엔진 Texture/Text/Audio |
+| 첫 입력음·목록 디스크 캐시·패턴 비동기 로딩·문법 변경 시 캐시 무효화 | [자원 로딩 기록](Reviews/ResourceLoading-2026-10-23.md) | SongCatalog / SongCatalogIndex, PlaySessionLoader, GameplaySessionController / RhythmTestScene |
 | 텍스트 캐시·글리프 업로드·긴 제목·아틀라스 성능 조사 | [텍스트 심층 조사](Reviews/TextRenderingAudit-2026-10-14.md) | 엔진 TextRendering / Visual2DRendering; Client MarqueeTextComponent / SongSelectCards |
 | 텍스트 유지 배치·회색조·아틀라스 회수 구현/검증 | [텍스트 개선 기록](Reviews/TextRenderingFixes-2026-10-14.md) | 엔진 TextRendering / Visual2D TextContent; Client MarqueeTextComponent; 엔진 SDK 텍스트 회귀 |
 

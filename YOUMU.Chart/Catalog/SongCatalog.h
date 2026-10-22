@@ -9,12 +9,14 @@
 #include <optional>
 #include <vector>
 #include <map>
+#include <memory>
 
 struct SongCatalogPattern
 {
     std::filesystem::path patternPath;
     std::optional<std::filesystem::path> effectPath;
     PatternDocument pattern;
+    std::optional<std::size_t> noteCount;
 };
 
 struct SongCatalogEntry
@@ -42,15 +44,27 @@ struct SongCatalogLoadResult
 class SongCatalog final
 {
 public:
+    SongCatalog() = default;
+    // List-only projection: validates changed source files in full, then drops
+    // note/timing/effect bodies. Gameplay must still load the selected pattern.
+    [[nodiscard]] static SongCatalog MetadataIndex(std::filesystem::path cacheFile);
     [[nodiscard]] SongCatalogLoadResult Load(
         const std::filesystem::path& songsRoot) const;
 
   private:
+    void ReadIndex(const std::filesystem::path &root) const noexcept;
+    void WriteIndex(const std::filesystem::path &root) const noexcept;
+    bool metadataOnly_{};
+    std::filesystem::path cacheFile_;
+    mutable std::filesystem::path cachedRoot_;
+    mutable bool cacheDirty_{};
     template <class Document> struct CachedDocument
     {
+        using Parsed = ParseResult<Document>;
         std::filesystem::file_time_type modified;
         std::uintmax_t size{};
-        ParseResult<Document> parsed;
+        std::shared_ptr<const ParseResult<Document>> parsed;
+        std::size_t noteCount{};
     };
     mutable std::map<std::filesystem::path, CachedDocument<MusicDocument>> musicCache_;
     mutable std::map<std::filesystem::path, CachedDocument<PatternDocument>> patternCache_;

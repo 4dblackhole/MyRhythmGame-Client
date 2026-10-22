@@ -1,6 +1,7 @@
 #include "YOUMUAssets.h"
 #include "GameFlow/GameplaySessionController.h"
 #include "GameScene/RhythmTestScene/Submodules/GameplayPauseMenu.h"
+#include "GameScene/RhythmTestScene/RhythmTestScene.h"
 #include "Taiko/Results/TaikoPlayResult.h"
 #include "Taiko/TaikoMode.h"
 #include <algorithm>
@@ -11,13 +12,22 @@
 #include <stdexcept>
 #include <thread>
 
+struct InputStateTestAccess
+{
+    static void Begin(InputState &input) { input.BeginUpdate(); }
+    static void Press(InputState &input, std::uint16_t key, std::int64_t ticks) { input.SetKey(key, true, ticks); }
+};
+
 namespace
 {
 
     void Check(bool value, const char *message)
     {
         if (!value)
+        {
+            std::fprintf(stderr, "CHECK FAILED: %s\n", message);
             throw std::runtime_error(message);
+        }
     }
     class NullRenderer final : public Visual2DRenderSystem
     {
@@ -178,6 +188,8 @@ namespace
     std::size_t sampleStarts{}, clipLoads{}, musicResumes{};
     bool failNextMusicStart{};
     bool failSampleLoads{};
+    int sampleDelayMs{};
+    std::chrono::steady_clock::time_point samplesReadyAt{};
     struct ClipState
     {
         bool music{};
@@ -282,6 +294,8 @@ namespace
         explicit Clip(bool music) : state_(std::make_shared<ClipState>())
         {
             state_->music = music;
+            if (!music && sampleDelayMs)
+                samplesReadyAt = state_->readyAt = std::chrono::steady_clock::now() + std::chrono::milliseconds{sampleDelayMs};
             ++clipLoads;
         }
         AudioClipLoadState LoadState(std::string &error) const override
@@ -317,7 +331,11 @@ namespace
                 state_->readyAt = std::chrono::steady_clock::now() + std::chrono::milliseconds{40};
             }
             else
+            {
+                Check(std::chrono::steady_clock::now() >= state_->readyAt,
+                      "Input samples must be ready before their first playback request.");
                 ++sampleStarts;
+            }
             return std::make_unique<Voice>(state_);
         }
 
@@ -428,6 +446,106 @@ namespace
             return {std::move(session), {}};
         }
     };
+    class ColdStartClient final : public IGameClient
+    {
+        class Rendering final : public Visual2DRenderSystem
+        {
+          public:
+            Rendering(Visual2DRenderSystem &inner, bool &shown)
+                : inner_(inner), shown_(shown), resumesBefore_(musicResumes) {}
+            ImageHandle LoadImage(const std::filesystem::path &path) override { return inner_.LoadImage(path); }
+            bool PrepareImages(std::span<const std::filesystem::path> paths, std::string &error) override
+            { return inner_.PrepareImages(paths, error); }
+            Size GetImageSize(ImageHandle image) const noexcept override { return inner_.GetImageSize(image); }
+            void SubmitScreen(const Visual2DCanvas &canvas, const RenderContext &ctx, Point origin, std::uint32_t z) override
+            {
+                Check(std::chrono::steady_clock::now() >= samplesReadyAt && musicResumes > resumesBefore_,
+                      "The first playable screen must wait for cold samples and the scheduled music start.");
+                shown_ = true;
+                inner_.SubmitScreen(canvas, ctx, origin, z);
+            }
+            void SubmitPlane(const Visual2DCanvas &canvas, const RenderContext &ctx, const DirectX::XMFLOAT4X4 &world,
+                             Size size, const DirectX::XMFLOAT4X4 &view) override
+            { inner_.SubmitPlane(canvas, ctx, world, size, view); }
+            RenderTargetTextureHandle CreateCanvasRenderTarget(std::uint32_t w, std::uint32_t h) override
+            { return inner_.CreateCanvasRenderTarget(w, h); }
+            void RenderToTexture(const Visual2DCanvas &canvas, const RenderTargetTextureHandle &target,
+                                 const RenderContext &ctx) override { inner_.RenderToTexture(canvas, target, ctx); }
+          private:
+            Visual2DRenderSystem &inner_;
+            bool &shown_;
+            std::size_t resumesBefore_{};
+        };
+      public:
+        explicit ColdStartClient(bool &verified) : verified_(verified) {}
+        EngineConfig GetEngineConfig() const override
+        {
+            EngineConfig c;
+            c.showWindow = false;
+            c.audio.preferredBackend = AudioOutputBackend::NoSound;
+            c.audioClipBackendFactory = CreateClip;
+            return c;
+        }
+        void Initialize(const EngineServices &services) override
+        {
+            rendering_ = std::make_unique<Rendering>(services.visual2DRendering, shown_);
+            visuals_.Initialize(*rendering_, {1280, 720});
+            auto store = std::make_shared<GameplayLaunchStore>();
+            auto loaded = TaikoMode{}.CreateSession(Pattern());
+            Check(loaded.Succeeded(), "Cold-start fixture must load.");
+            store->SetValidated({"probe.ymp", {}, "probe-music.mp3", "Taiko"}, std::move(loaded.session));
+            scene_ = std::make_unique<RhythmTestScene>(store, playback_, visuals_, false, texts_, result_);
+            sampleDelayMs = 200;
+            const EngineServices wrapped{services.meshRendering, services.textRendering, *rendering_, services.audio,
+                services.windowWidth, services.windowHeight};
+            scene_->Initialize(wrapped);
+            sampleDelayMs = 0;
+            scene_->BeginScene();
+        }
+        bool Update(const UpdateContext &ctx) override
+        {
+            Check(ctx.totalSeconds < 5, "Cold-start gameplay did not become visible.");
+            InputStateTestAccess::Begin(input_);
+            const auto before = sampleStarts;
+            if (shown_ && !sent_)
+            {
+                const auto ticks = ctx.audio.CaptureClockSnapshot().performanceCounterTicks;
+                InputStateTestAccess::Press(input_, 'F', ticks);
+                InputStateTestAccess::Press(input_, 'D', ticks);
+                sent_ = true;
+            }
+            scene_->Update({ctx.deltaSeconds, ctx.totalSeconds, ctx.updateIndex, input_, ctx.audio, ctx.performance}, scenes_);
+            if (sent_)
+            {
+                Check(sampleStarts == before + 2, "The first visible-frame Don and Kat must both request a sample.");
+                verified_ = true;
+                return false;
+            }
+            playback_.Update();
+            visuals_.Update(ctx.deltaSeconds);
+            return true;
+        }
+        void Render(const RenderContext &ctx) override { scene_->Render(ctx); visuals_.Render(ctx); }
+        void OnResize(std::uint32_t width, std::uint32_t height) override
+        { visuals_.OnResize(width, height); if (scene_) scene_->OnResize(width, height); }
+        void Shutdown() noexcept override
+        {
+            sampleDelayMs = 0;
+            if (scene_) scene_->Shutdown();
+            scene_.reset(); playback_.StopAll(); visuals_.Shutdown(); rendering_.reset();
+        }
+      private:
+        bool &verified_;
+        bool shown_{}, sent_{};
+        InputState input_;
+        ScreenVisual2DManager visuals_;
+        AudioPlaybackManager playback_;
+        SceneManager scenes_;
+        TextCatalog texts_;
+        std::unique_ptr<IPlayResult> result_;
+        std::unique_ptr<Rendering> rendering_;
+        std::unique_ptr<RhythmTestScene> scene_;
+    };
     class PauseClient final : public IGameClient
     {
       public:
@@ -453,7 +571,13 @@ namespace
                 GameplayLaunchRequest{"probe.ymp", {}, "probe-music.mp3", "Taiko"}, playback_, false,
                 std::move(loaded.session));
             controller_->InitializeSession();
+            const auto loadsBefore = clipLoads;
+            Check(controller_->PrepareSession(), "A validated session must be immediately reusable.");
+            static_cast<void>(controller_->PrepareAudioResources(services.audio));
+            const auto preparedLoads = clipLoads;
+            Check(preparedLoads > loadsBefore, "Audio loading must start before presentation becomes ready.");
             controller_->Start(services, RhythmTime{12'240'000});
+            Check(clipLoads == preparedLoads, "Starting after presentation must reuse already prepared audio clips.");
             menu_ = std::make_unique<GameplayPauseMenu>(visuals_, texts_);
         }
         bool Update(const UpdateContext &ctx) override
@@ -817,12 +941,20 @@ namespace
         audio.Shutdown();
     }
 } // namespace
-int main()
+int main(int argc, char **argv)
 {
     try
     {
         std::string error;
         Check(InitializeBuiltInAssets(error), error.c_str());
+        if (argc > 1 && std::string_view{argv[1]} == "--cold-start")
+        {
+            bool verified{};
+            Check(Run(std::make_unique<ColdStartClient>(verified)) == 0 && verified,
+                  "Cold-start presentation must deliver the very first visible-frame Don and Kat inputs.");
+            std::puts("Cold-start first-frame Don/Kat input and presentation readiness passed.");
+            return 0;
+        }
         TestMenu();
         TestActualMusicSeek();
         bool verified{};

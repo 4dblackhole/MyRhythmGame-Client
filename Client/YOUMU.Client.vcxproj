@@ -212,6 +212,7 @@
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplayPauseAction.h" />
     <ClInclude Include="GameFlow\IPlaySessionController.h" />
     <ClInclude Include="GameFlow\GameplaySessionController.h" />
+    <ClInclude Include="GameFlow\PlaySessionLoader.h" />
     <ClCompile Include="GameFlow\Submodules\GameplaySessionFactory.cpp" />
     <ClInclude Include="GameScene\RhythmTestScene\Submodules\GameplaySupport.h" />
     <ClCompile Include="Pch.cpp"><PrecompiledHeader>Create</PrecompiledHeader></ClCompile>

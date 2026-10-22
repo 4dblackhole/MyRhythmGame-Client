@@ -20,6 +20,9 @@ class IPlaySessionController
   public:
     virtual ~IPlaySessionController() = default;
     virtual void InitializeSession() = 0;
+    virtual bool PrepareSession() = 0;
+    virtual bool SessionReady() const noexcept = 0;
+    virtual AudioPreparationState PrepareAudioResources(AudioSystem &) = 0;
     virtual void Start(const EngineServices &, RhythmTime initialTime) = 0;
     virtual void Update(const UpdateContext &) = 0;
     virtual PlayState CurrentState() const noexcept = 0;

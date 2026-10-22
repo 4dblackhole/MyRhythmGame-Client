@@ -2,6 +2,7 @@
 #include "Audio/GameplayAudioRouter.h"
 #include "GameFlow/GameplayLaunchRequest.h"
 #include "GameFlow/IPlaySessionController.h"
+#include "GameFlow/PlaySessionLoader.h"
 #include "PhantomCore.h"
 #include "Time/RhythmTimer.h"
 #include <memory>
@@ -21,6 +22,9 @@ class GameplaySessionController final : public IPlaySessionController
         Shutdown();
     }
     void InitializeSession() override;
+    bool PrepareSession() override;
+    bool SessionReady() const noexcept override { return sessionInitialized_; }
+    AudioPreparationState PrepareAudioResources(AudioSystem &audio) override;
     void Start(const EngineServices &services, RhythmTime initialTime) override;
     void Update(const UpdateContext &context) override;
     PlayState CurrentState() const noexcept override
@@ -96,6 +100,8 @@ class GameplaySessionController final : public IPlaySessionController
     void ConsumeResult(NoteProcessResult result, bool pressed = false);
     GameplayLaunchRequest launchRequest_;
     std::unique_ptr<PlaySession> session_;
+    PlaySessionLoader sessionLoader_;
+    bool sessionInitialized_{};
     RhythmTimer timer_;
     GameplayAudioRouter audioRouter_;
     std::vector<GameplayFeedback> feedback_;

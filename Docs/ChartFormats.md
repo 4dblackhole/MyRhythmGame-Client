@@ -1,5 +1,10 @@
 # 차트 문법 진입점
 
+문법·기본값·진단/검증 규칙을 변경하면 `Catalog/SongCatalogCacheVersion.h`의
+`SongCatalogParserRevision`도 올립니다. 캐시 자체의 저장 배치를 변경할 때에는
+`SongCatalogCacheSchema`를 올립니다. 원본 파일의 `Version:`과 독립적이며,
+이전 캐시는 재구축합니다. [캐시 무효화 규칙](Reviews/ResourceLoading-2026-10-23.md)을 참고합니다.
+
 외부 osu!taiko 채보 가져오기는 별도 [변환기 EXE](OsuTaikoConverter.md)를 사용합니다.
 
 YMP의 타이밍 명령은 `#measure`, `#bpm`, `#delay`만 허용합니다.

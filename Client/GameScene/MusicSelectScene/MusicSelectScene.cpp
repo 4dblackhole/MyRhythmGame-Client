@@ -46,6 +46,7 @@ void MusicSelectScene::BeginScene()
 void MusicSelectScene::EndScene() noexcept
 {
     active_ = false;
+    pendingLaunch_.reset();
     preview_->StopPreviewAudio();
     view_->SetVisible(false);
 }
@@ -79,6 +80,8 @@ void MusicSelectScene::Update(const UpdateContext &context, SceneManager &scenes
         CreateDifficulty(scenes);
     else if (command == SongSelectCommand::ConvertOsu)
         ConvertOsu();
+    if (command != SongSelectCommand::Back)
+        PollPatternLoad(scenes);
 }
 void MusicSelectScene::ConvertOsu()
 {
@@ -154,6 +157,8 @@ void MusicSelectScene::Shutdown() noexcept
 
 bool MusicSelectScene::StartSelectedPattern(SceneManager &scenes)
 {
+    if (selection_->catalogLoading_ || patternLoader_.Busy())
+        return false;
     if (selection_->focusedSongPosition_ >= selection_->visibleSongIndices_.size())
     {
         return false;
@@ -200,45 +205,43 @@ bool MusicSelectScene::StartSelectedPattern(SceneManager &scenes)
         return true;
     }
 
-    std::unique_ptr<PlaySession> prepared;
-    try
-    {
-        ModeLoadResult validation =
-            CreatePlayGameMode(
-                request.mode,
-                {RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000},
-                 request.inputKeys})
-                ->LoadSession(pattern.patternPath, pattern.effectPath);
-        if (!validation.Succeeded())
-        {
-            selection_->SetLaunchError(
-                SongSelectionState::LaunchErrorKind::Pattern,
-                validation.diagnostics.empty() ? std::string{}
-                                               : validation.diagnostics.front().message);
-            view_->RefreshSelectionPresentation();
-            return false;
-        }
-        prepared = std::move(validation.session);
-    }
-    catch (const std::exception &exception)
+    selection_->ClearLaunchError();
+    pendingLaunch_ = request;
+    patternLoader_.Start(std::move(request));
+    return true;
+}
+
+void MusicSelectScene::PollPatternLoad(SceneManager &scenes)
+{
+    auto loaded = patternLoader_.Poll();
+    if (!loaded || !pendingLaunch_)
+        return;
+    auto request = std::move(*pendingLaunch_);
+    pendingLaunch_.reset();
+    // Navigation remains responsive. A different selection cancels this launch.
+    if (selection_->focusedSongPosition_ >= selection_->visibleSongIndices_.size())
+        return;
+    const auto &song = selection_->catalog_.songs[selection_->visibleSongIndices_[selection_->focusedSongPosition_]];
+    if (selection_->selectedPatternIndex_ >= song.patterns.size() ||
+        song.patterns[selection_->selectedPatternIndex_].patternPath != request.patternPath)
+        return;
+    if (!loaded->Succeeded())
     {
         selection_->SetLaunchError(SongSelectionState::LaunchErrorKind::Pattern,
-                                   exception.what());
+            loaded->diagnostics.empty() ? std::string{} : loaded->diagnostics.front().message);
         view_->RefreshSelectionPresentation();
-        return false;
+        return;
     }
-
-    selection_->ClearLaunchError();
-    launchRequest_->SetValidated(request, std::move(prepared));
+    launchRequest_->SetValidated(std::move(request), std::move(loaded->session));
     if (!scenes.ChangeScene(RhythmTestSceneId))
     {
         throw std::runtime_error("Failed to enter transient gameplay.");
     }
-    return true;
 }
 
 void MusicSelectScene::RefreshCatalog()
 {
+    pendingLaunch_.reset();
     catalogRoot_ = options_.SongsRoot();
     preview_->StopPreviewAudio();
     selection_->catalogLoading_ = true;

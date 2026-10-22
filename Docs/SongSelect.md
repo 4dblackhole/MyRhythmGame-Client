@@ -102,7 +102,12 @@ PlaySession의 소유권을 gameplay controller로 한 번 넘겨 같은 파일�
 첫 진입의 Initialize에서 카탈로그 worker를 시작하고 재진입에서도 외부 편집을 반영한다.
 SongCatalogLoader는 복사한 경로와 파서 캐시만 worker에 넘기며 Scene/엔진 pointer를
 참조하지 않는다. Scene은 완료 결과만 적용하고 첫 로딩 중에는 로딩 문구를 표시한다.
-SongCatalog는 파일 수정 시각/크기가 같으면 파싱 결과를 재사용하고 삭제 파일 캐시를 제거한다.
+런타임은 `SongCatalog::MetadataIndex`로 목록용 문서와 노트 수·진단만 보관하며,
+수정 시각/크기가 같은 문서는 사용자 캐시 폴더의 디스크 인덱스에서도 재사용한다.
+추가/삭제 파일과 음원·YME 의존성은 매 갱신에서 확인한다. 포맷 변경 시 캐시 무효화
+규칙과 측정은 [자원 로딩 기록](Reviews/ResourceLoading-2026-10-23.md)에 있다.
+GO의 검증·세션 생성도 `PlaySessionLoader` worker에서 실행하고 완료 결과만 게시한다.
+대기 중 다른 패턴으로 이동하거나 화면에서 나가면 이전 진입 결과는 적용하지 않는다.
 MusicSelectView는 행 배치 metadata와 실제 카드를 구분하여 viewport 인근 행만 만든다.
 포커스/검색/정렬/스크롤/resize는 기존 조작 규칙을 유지한다.
 미리듣기는 엔진의 StreamAsync로 열고 준비가 끝난 다음 기존 200ms fade로 재생한다.

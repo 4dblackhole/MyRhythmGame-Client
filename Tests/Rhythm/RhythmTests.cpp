@@ -93,6 +93,7 @@ int main(const int argumentCount, char *arguments[])
         {"TestInvalidNumericFieldsReportDiagnostics", TestInvalidNumericFieldsReportDiagnostics},
         {"TestNumericFieldsRejectEmbeddedNulls", TestNumericFieldsRejectEmbeddedNulls},
         {"TestSongCatalogIsolatesInvalidFiles", TestSongCatalogIsolatesInvalidFiles},
+        {"TestSongCatalogIndex", TestSongCatalogIndex},
         {"TestChartSaveFailureRecovery", TestChartSaveFailureRecovery},
         {"TestChartSavePathCollisions", TestChartSavePathCollisions},
         {"TestChartParserBoundaries", TestChartParserBoundaries},

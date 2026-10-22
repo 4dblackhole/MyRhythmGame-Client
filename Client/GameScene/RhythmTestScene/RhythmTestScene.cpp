@@ -23,7 +23,6 @@ RhythmTestScene::RhythmTestScene(std::shared_ptr<GameplayLaunchStore> request,
 RhythmTestScene::~RhythmTestScene() = default;
 void RhythmTestScene::Initialize(const EngineServices &services)
 {
-    controller_->InitializeSession();
     services_.emplace(services);
     static_cast<void>(PreparePresentation());
 }
@@ -31,18 +30,24 @@ bool RhythmTestScene::PreparePresentation()
 {
     if (presentationReady_)
         return true;
-    if (!view_->PrepareAssets(*services_))
+    if (!controller_->PrepareSession())
+        return false;
+    // Start both preparations before polling either. The playable screen must
+    // never appear while cold hit samples are still being decoded.
+    const auto audio = controller_->PrepareAudioResources(services_->audio);
+    const bool images = view_->PrepareAssets(*services_);
+    if (!images || audio == AudioPreparationState::Loading)
         return false;
     view_->Initialize(*services_, controller_->Session());
     controller_->Start(*services_, view_->InitialTimelineTime());
     view_->PresentErrorMessage(controller_->ErrorMessage());
-    view_->SetVisible(true);
+    view_->SetVisible(false);
     presentationReady_ = true;
     return true;
 }
 void RhythmTestScene::BeginScene()
 {
-    view_->SetVisible(true);
+    view_->SetVisible(presentationReady_ && controller_->CurrentState() != PlayState::Loading);
 }
 void RhythmTestScene::EndScene() noexcept
 {
@@ -54,12 +59,13 @@ void RhythmTestScene::Update(const UpdateContext &context, SceneManager &scenes)
     {
         if (context.totalSeconds >= nextPreparationPoll_)
             nextPreparationPoll_ = context.totalSeconds + 0.002;
-        if (context.input.WasKeyPressed(VK_ESCAPE))
+        if (controller_->SessionReady() && context.input.WasKeyPressed(VK_ESCAPE))
             controller_->OpenPauseMenu(context);
         UpdatePauseMenu(context, scenes);
         return;
     }
     controller_->Update(context);
+    view_->SetVisible(controller_->CurrentState() != PlayState::Loading);
     UpdatePauseMenu(context, scenes);
     if (controller_->CurrentState() == PlayState::Gameplay)
         view_->AdvanceEffects(context.deltaSeconds);

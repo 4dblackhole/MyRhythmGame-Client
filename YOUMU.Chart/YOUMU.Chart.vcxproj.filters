@@ -11,6 +11,8 @@
     <Filter Include="Timing" />
     <Filter Include="Utility" />
     <ClCompile Include="Catalog\SongCatalog.cpp"><Filter>Catalog</Filter></ClCompile>
+    <ClCompile Include="Catalog\SongCatalogIndex.cpp"><Filter>Catalog</Filter></ClCompile>
+    <ClInclude Include="Catalog\SongCatalogCacheVersion.h"><Filter>Catalog</Filter></ClInclude>
     <ClInclude Include="Catalog\SongCatalog.h"><Filter>Catalog</Filter></ClInclude>
     <ClCompile Include="Editing\ChartEditor.cpp"><Filter>Editing</Filter></ClCompile>
     <ClInclude Include="Editing\ChartEditor.h"><Filter>Editing</Filter></ClInclude>

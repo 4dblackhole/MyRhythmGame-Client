@@ -22,21 +22,17 @@ void SongSelectionState::RebuildVisibleSongs()
         }
     }
 
-    const auto compareText = [this](const std::size_t leftIndex, const std::size_t rightIndex) {
-        const auto &left = catalog_.songs[leftIndex];
-        const auto &right = catalog_.songs[rightIndex];
-        if (sortMode_ == SortMode::Artist)
-        {
-            return Lowercase(SongArtist(left)) < Lowercase(SongArtist(right));
-        }
-        return Lowercase(SongTitle(left)) < Lowercase(SongTitle(right));
-    };
     // YMM/YMP currently has no chart LEVEL field. "Difficulty" therefore
     // preserves catalog order instead of inventing a score from note count or
     // judgement timing strictness.
     if (sortMode_ != SortMode::Difficulty)
     {
-        std::stable_sort(visibleSongIndices_.begin(), visibleSongIndices_.end(), compareText);
+        std::vector<std::wstring> keys(catalog_.songs.size());
+        for (const auto index : visibleSongIndices_)
+            keys[index] = Lowercase(sortMode_ == SortMode::Artist ? SongArtist(catalog_.songs[index])
+                                                                : SongTitle(catalog_.songs[index]));
+        std::stable_sort(visibleSongIndices_.begin(), visibleSongIndices_.end(),
+            [&keys](const auto left, const auto right) { return keys[left] < keys[right]; });
     }
 
     focusedSongPosition_ = 0;

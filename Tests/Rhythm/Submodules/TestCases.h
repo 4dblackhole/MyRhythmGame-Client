@@ -57,6 +57,7 @@ namespace tests
     void TestOutOfMeasureEntriesAreIgnored();
     void TestSongCatalog(const std::filesystem::path &songsRoot);
     void TestSongCatalogIsolatesInvalidFiles();
+    void TestSongCatalogIndex();
     void TestInvalidNumericFieldsReportDiagnostics();
     void TestNumericFieldsRejectEmbeddedNulls();
     void TestTimingMicrosecondsAndEffects();

@@ -48,12 +48,11 @@ namespace
 
     void AppendDiagnostics(
         std::vector<Diagnostic>& destination,
-        std::vector<Diagnostic> source)
+        const std::vector<Diagnostic>& source)
     {
         destination.insert(
             destination.end(),
-            std::make_move_iterator(source.begin()),
-            std::make_move_iterator(source.end()));
+            source.begin(), source.end());
     }
 
     void AddCatalogError(
@@ -83,26 +82,50 @@ namespace
 
     struct CatalogFiles final
     {
-        std::vector<std::filesystem::path> music;
-        std::vector<std::filesystem::path> patterns;
+        std::vector<std::filesystem::directory_entry> music;
+        std::vector<std::filesystem::directory_entry> patterns;
+        std::map<std::filesystem::path, std::filesystem::directory_entry> metadata;
     };
 
     template <class Cache, class Parser>
-    auto ParseChangedFile(Cache &cache, const std::filesystem::path &path, Parser parse)
+    auto ParseChangedFile(Cache &cache, const std::filesystem::directory_entry &file, Parser parse,
+                         bool &dirty, bool metadataOnly = false)
     {
+        const auto &path = file.path();
+        using Parsed = typename Cache::mapped_type::Parsed;
+        const auto read = [&](auto modified, auto size)
+        {
+            auto parsed = parse(path);
+            std::size_t noteCount{};
+            if constexpr (requires { parsed.document.notes; })
+            {
+                noteCount = parsed.document.notes.size();
+                if (metadataOnly)
+                {
+                    decltype(parsed.document.notes){}.swap(parsed.document.notes);
+                    decltype(parsed.document.timing){}.swap(parsed.document.timing);
+                    decltype(parsed.document.systemBreakMeasures){}.swap(parsed.document.systemBreakMeasures);
+                }
+            }
+            if constexpr (requires { parsed.document.commands; })
+                if (metadataOnly) parsed.document = {};
+            return typename Cache::mapped_type{modified, size,
+                std::make_shared<const Parsed>(std::move(parsed)), noteCount};
+        };
         std::error_code error;
-        const auto modified = std::filesystem::last_write_time(path, error);
+        const auto modified = file.last_write_time(error);
         if (error)
-            return parse(path);
-        const auto size = std::filesystem::file_size(path, error);
+            return read(std::filesystem::file_time_type{}, std::uintmax_t{});
+        const auto size = file.file_size(error);
         if (error)
-            return parse(path);
+            return read(std::filesystem::file_time_type{}, std::uintmax_t{});
         if (const auto found = cache.find(path);
             found != cache.end() && found->second.modified == modified && found->second.size == size)
-            return found->second.parsed;
-        auto parsed = parse(path);
-        cache.insert_or_assign(path, typename Cache::mapped_type{modified, size, parsed});
-        return parsed;
+            return found->second;
+        auto entry = read(modified, size);
+        cache.insert_or_assign(path, entry);
+        dirty = true;
+        return entry;
     }
 
     [[nodiscard]] CatalogFiles DiscoverCatalogFiles(
@@ -134,12 +157,14 @@ namespace
                 const std::wstring extension = LowercaseExtension(path);
                 if (extension == L".ymm")
                 {
-                    files.music.push_back(path);
+                    files.music.push_back(*iterator);
                 }
                 else if (extension == L".ymp")
                 {
-                    files.patterns.push_back(path);
+                    files.patterns.push_back(*iterator);
                 }
+                if (extension == L".ymm" || extension == L".ymp" || extension == L".yme")
+                    files.metadata.emplace(path, *iterator);
             }
             else if (typeError)
             {
@@ -162,8 +187,9 @@ namespace
             }
         }
 
-        std::ranges::sort(files.music);
-        std::ranges::sort(files.patterns);
+        const auto byPath = [](const auto &entry) -> const std::filesystem::path & { return entry.path(); };
+        std::ranges::sort(files.music, {}, byPath);
+        std::ranges::sort(files.patterns, {}, byPath);
         return files;
     }
 }
@@ -191,16 +217,15 @@ bool SongCatalogLoadResult::Succeeded() const noexcept
 SongCatalogLoadResult SongCatalog::Load(
     const std::filesystem::path& songsRoot) const
 {
-    SongCatalogLoadResult result;
-    const auto deleted = [](const auto &entry)
+    if (metadataOnly_ && cachedRoot_ != songsRoot)
     {
-        std::error_code error;
-        const bool exists = std::filesystem::exists(entry.first, error);
-        return !exists && !error;
-    };
-    std::erase_if(musicCache_, deleted);
-    std::erase_if(patternCache_, deleted);
-    std::erase_if(effectCache_, deleted);
+        musicCache_.clear();
+        patternCache_.clear();
+        effectCache_.clear();
+        cachedRoot_ = songsRoot;
+        ReadIndex(songsRoot);
+    }
+    SongCatalogLoadResult result;
     std::error_code rootError;
     if (!std::filesystem::is_directory(songsRoot, rootError))
     {
@@ -217,25 +242,36 @@ SongCatalogLoadResult SongCatalog::Load(
     ChartParser parser;
     std::map<std::string, std::size_t, std::less<>> songByMetadataPath;
     CatalogFiles files = DiscoverCatalogFiles(songsRoot, result);
+    const auto deleted = [&files](const auto &entry)
+    {
+        if (files.metadata.contains(entry.first)) return false;
+        std::error_code error;
+        const bool exists = std::filesystem::exists(entry.first, error);
+        return !exists && !error;
+    };
+    cacheDirty_ |= std::erase_if(musicCache_, deleted) != 0;
+    cacheDirty_ |= std::erase_if(patternCache_, deleted) != 0;
+    cacheDirty_ |= std::erase_if(effectCache_, deleted) != 0;
     result.discoveredMusicFiles = files.music.size();
     result.discoveredPatternFiles = files.patterns.size();
 
     // Load music first so pattern references can be joined in one pass.
-    for (const std::filesystem::path& path : files.music)
+    for (const auto &file : files.music)
     {
-        ParseResult<MusicDocument> parsed;
+        const auto &path = file.path();
+        std::shared_ptr<const ParseResult<MusicDocument>> parsed;
         try
         {
-            parsed = ParseChangedFile(musicCache_, path,
-                                      [&parser](const auto &file) { return parser.ParseMusicFile(file); });
+            parsed = ParseChangedFile(musicCache_, file,
+                                      [&parser](const auto &file) { return parser.ParseMusicFile(file); }, cacheDirty_).parsed;
         }
         catch (const std::exception& exception)
         {
             AddCatalogError(result, path, exception.what());
             continue;
         }
-        const bool valid = parsed.Succeeded();
-        AppendDiagnostics(result.diagnostics, std::move(parsed.diagnostics));
+        const bool valid = parsed->Succeeded();
+        AppendDiagnostics(result.diagnostics, parsed->diagnostics);
         if (!valid)
         {
             continue;
@@ -244,7 +280,7 @@ SongCatalogLoadResult SongCatalog::Load(
         SongCatalogEntry song;
         song.metadataPath = path;
         song.audioPath = path.parent_path() /
-            parsed.document.audioFile;
+            parsed->document.audioFile;
         std::error_code audioError;
         const bool audioExists =
             std::filesystem::exists(song.audioPath, audioError);
@@ -273,34 +309,38 @@ SongCatalogLoadResult SongCatalog::Load(
                     : "The referenced audio path is not a regular file.");
             continue;
         }
-        song.music = std::move(parsed.document);
+        song.music = parsed->document;
         const std::size_t index = result.songs.size();
         songByMetadataPath.emplace(PathKey(path), index);
         result.songs.push_back(std::move(song));
     }
 
-    for (const std::filesystem::path& path : files.patterns)
+    for (const auto &file : files.patterns)
     {
-        ParseResult<PatternDocument> parsed;
+        const auto &path = file.path();
+        std::shared_ptr<const ParseResult<PatternDocument>> parsed;
+        std::size_t noteCount{};
         try
         {
-            parsed = ParseChangedFile(patternCache_, path,
-                                      [&parser](const auto &file) { return parser.ParsePatternFile(file); });
+            const auto cached = ParseChangedFile(patternCache_, file,
+                [&parser](const auto &file) { return parser.ParsePatternFile(file); }, cacheDirty_, metadataOnly_);
+            parsed = cached.parsed;
+            noteCount = cached.noteCount;
         }
         catch (const std::exception& exception)
         {
             AddCatalogError(result, path, exception.what());
             continue;
         }
-        const bool valid = parsed.Succeeded();
-        AppendDiagnostics(result.diagnostics, std::move(parsed.diagnostics));
+        const bool valid = parsed->Succeeded();
+        AppendDiagnostics(result.diagnostics, parsed->diagnostics);
         if (!valid)
         {
             continue;
         }
 
         const std::filesystem::path referencedMetadata =
-            songsRoot / parsed.document.musicMetadataFile;
+            songsRoot / parsed->document.musicMetadataFile;
         const auto target = songByMetadataPath.find(
             PathKey(referencedMetadata));
         if (target == songByMetadataPath.end())
@@ -315,11 +355,13 @@ SongCatalogLoadResult SongCatalog::Load(
         SongCatalogPattern pattern;
         pattern.patternPath = path;
         const std::filesystem::path effectPath =
-            parsed.document.effectFile.empty() ? std::filesystem::path{} :
-            (path.parent_path() / parsed.document.effectFile).lexically_normal();
+            parsed->document.effectFile.empty() ? std::filesystem::path{} :
+            (path.parent_path() / parsed->document.effectFile).lexically_normal();
         std::error_code effectError;
+        const auto discoveredEffect = files.metadata.find(effectPath);
         const bool effectExists =
-            !effectPath.empty() && std::filesystem::exists(effectPath, effectError);
+            discoveredEffect != files.metadata.end() ||
+            (!effectPath.empty() && std::filesystem::exists(effectPath, effectError));
         if (effectError)
         {
             AddCatalogError(
@@ -337,7 +379,7 @@ SongCatalogLoadResult SongCatalog::Load(
         if (effectExists)
         {
             std::error_code effectTypeError;
-            if (!std::filesystem::is_regular_file(
+            if (discoveredEffect == files.metadata.end() && !std::filesystem::is_regular_file(
                     effectPath,
                     effectTypeError))
             {
@@ -350,28 +392,31 @@ SongCatalogLoadResult SongCatalog::Load(
                         : "The matching effect path is not a regular file.");
                 continue;
             }
-            ParseResult<EffectDocument> effects;
+            std::shared_ptr<const ParseResult<EffectDocument>> effects;
             try
             {
-                effects = ParseChangedFile(effectCache_, effectPath,
-                                           [&parser](const auto &file) { return parser.ParseEffectFile(file); });
+                const auto effectFile = discoveredEffect == files.metadata.end()
+                    ? std::filesystem::directory_entry{effectPath} : discoveredEffect->second;
+                effects = ParseChangedFile(effectCache_, effectFile,
+                    [&parser](const auto &file) { return parser.ParseEffectFile(file); }, cacheDirty_, metadataOnly_).parsed;
             }
             catch (const std::exception& exception)
             {
                 AddCatalogError(result, effectPath, exception.what());
                 continue;
             }
-            const bool effectsValid = effects.Succeeded();
+            const bool effectsValid = effects->Succeeded();
             AppendDiagnostics(
                 result.diagnostics,
-                std::move(effects.diagnostics));
+                effects->diagnostics);
             if (!effectsValid)
             {
                 continue;
             }
             pattern.effectPath = effectPath;
         }
-        pattern.pattern = std::move(parsed.document);
+        pattern.pattern = parsed->document;
+        pattern.noteCount = noteCount;
         result.songs[target->second].patterns.push_back(
             std::move(pattern));
     }
@@ -386,11 +431,18 @@ SongCatalogLoadResult SongCatalog::Load(
                 return left.pattern.name < right.pattern.name;
             });
     }
-    std::ranges::stable_sort(
-        result.songs,
-        [](const SongCatalogEntry& left, const SongCatalogEntry& right)
-        {
-            return DisplaySortKey(left) < DisplaySortKey(right);
-        });
+    // Normalize once per song, rather than allocating strings in every comparison.
+    std::vector<std::pair<std::string, std::size_t>> order;
+    order.reserve(result.songs.size());
+    for (std::size_t i = 0; i < result.songs.size(); ++i)
+        order.emplace_back(DisplaySortKey(result.songs[i]), i);
+    std::ranges::stable_sort(order, {}, &decltype(order)::value_type::first);
+    std::vector<SongCatalogEntry> sorted;
+    sorted.reserve(result.songs.size());
+    for (const auto &[key, index] : order)
+        sorted.push_back(std::move(result.songs[index]));
+    result.songs = std::move(sorted);
+    if (metadataOnly_ && cacheDirty_)
+        WriteIndex(songsRoot);
     return result;
 }
