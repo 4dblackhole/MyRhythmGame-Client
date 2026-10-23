@@ -145,3 +145,5 @@ D3D12 command 기록과 present는 엔진이 담당합니다. 종료 시 활성 
 `YOUMUGame`의 Client hook은 F7을 감지하고 게임용 Rajdhani 글꼴의 FPS와
 UPS를 Scene 렌더 뒤 우측 하단에 제출합니다. 이 표시는 Scene이나 엔진 루프의
 소유물이 아니므로 Scene 전환과 관계없이 유지됩니다.
+
+2026-10-23: 플레이 옵션은 launch/session/result에 값으로 고정합니다. Accelerate는 공통 시계의 QPC/DSP 비율과 BGM/샘플 음정 정책을 함께 적용합니다. 결과의 비동기 기록 저장과 선택 화면의 비동기 조회는 [PlayOptions](Gameplay/PlayOptions.md)을 참고합니다.

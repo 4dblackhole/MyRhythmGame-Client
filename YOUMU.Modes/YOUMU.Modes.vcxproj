@@ -49,4 +49,8 @@
     <ClCompile Include="Taiko\Results\TaikoResultCollector.cpp" />
     <ClInclude Include="Taiko\Results\TaikoResultCollector.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Mode\PlayOptions.h" />
+    <ClInclude Include="Taiko\Submodules\TaikoNoteTransform.h" />
+  </ItemGroup>
 </Project>

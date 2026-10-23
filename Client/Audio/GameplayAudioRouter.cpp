@@ -80,7 +80,7 @@ bool GameplayAudioRouter::RegisterSound(
     SoundId soundId,
     const std::filesystem::path& path,
     const AudioLoadMode loadMode,
-    std::string& errorMessage)
+    std::string& errorMessage, const bool restartWhilePlaying)
 {
     if (audioSystem_ == nullptr)
     {
@@ -101,8 +101,8 @@ bool GameplayAudioRouter::RegisterSound(
     }
     clips_.insert_or_assign(
         std::move(soundId),
-        RegisteredSound{std::move(clip), loadMode == AudioLoadMode::Sample ||
-                                             loadMode == AudioLoadMode::SampleAsync});
+        RegisteredSound{std::move(clip), restartWhilePlaying && (loadMode == AudioLoadMode::Sample ||
+                                             loadMode == AudioLoadMode::SampleAsync)});
     errorMessage.clear();
     return true;
 }
@@ -142,6 +142,18 @@ bool GameplayAudioRouter::RegisterSoundAliases(const std::span<const SoundId> so
                 loadMode == AudioLoadMode::SampleAsync});
     }
     errorMessage.clear();
+    return true;
+}
+
+bool GameplayAudioRouter::ConfigurePlayback(const PlayOptions &options, std::string &error)
+{
+    options.Validate();
+    musicPitch_ = static_cast<float>(options.preserveMusicPitch ? 1.0 : options.accelerate);
+    hitSoundPitch_ = static_cast<float>(options.preserveHitSoundPitch ? 1.0 : options.accelerate);
+    const auto music = clips_.find("Music.Track");
+    if (music != clips_.end() && options.preserveMusicPitch && options.accelerate != 1.0)
+        return music->second.clip->PrepareTimeStretch(options.accelerate, error);
+    error.clear();
     return true;
 }
 
@@ -209,6 +221,7 @@ AudioPreparationState GameplayAudioRouter::PrepareMusicAt(RhythmTime position)
         {
             AudioPlaybackSettings settings;
             settings.startPaused = true;
+            settings.pitch = musicPitch_;
             settings.startPositionMicroseconds = sourcePosition;
             const auto bus = buses_.find("Music");
             if (!playback_.Restart(musicVoice_, settings, bus == buses_.end() ? nullptr : bus->second, error))
@@ -231,6 +244,7 @@ AudioPreparationState GameplayAudioRouter::PrepareMusicAt(RhythmTime position)
     }
     AudioPlaybackSettings settings;
     settings.startPaused = true;
+    settings.pitch = musicPitch_;
     settings.startPositionMicroseconds = sourcePosition;
     const auto bus = buses_.find("Music");
     musicVoice_ = playback_.Play(found->second.clip, settings, bus == buses_.end() ? nullptr : bus->second, error);
@@ -314,7 +328,7 @@ void GameplayAudioRouter::Route(
 
         AudioPlaybackSettings settings;
         settings.volume = std::max(cue.volume, 0.0F);
-        settings.pitch = std::max(cue.pitch, 0.01F);
+        settings.pitch = std::max(cue.pitch * (cue.sound.starts_with("Gameplay.Metronome.") ? 1.0F : hitSoundPitch_), 0.01F);
         if (timer != nullptr)
         {
             const std::uint64_t requestedClock =

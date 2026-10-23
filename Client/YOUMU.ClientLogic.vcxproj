@@ -21,4 +21,10 @@
     <ClInclude Include="GameScene\MusicSelectScene\Submodules\SongSelectionText.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup>
+    <ClInclude Include="Records\PlayRecordStore.h" />
+    <ClCompile Include="Records\PlayRecordStore.cpp" />
+    <ClInclude Include="Records\RecordCondition.h" />
+    <ClCompile Include="Records\RecordCondition.cpp" />
+  </ItemGroup>
 </Project>

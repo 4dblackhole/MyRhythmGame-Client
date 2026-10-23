@@ -113,9 +113,11 @@ void GameplaySessionController::ScheduleGameplay(const UpdateContext &context)
         start.performanceCounterTicks += start.performanceCounterFrequency / 50;
         start.dspClock += static_cast<std::uint64_t>(std::max(start.sampleRate, 0)) / 50;
     }
-    timer_.Start(start.performanceCounterTicks, start.performanceCounterFrequency, time_);
+    timer_.Start(start.performanceCounterTicks, start.performanceCounterFrequency, time_, session_->Options().accelerate);
     timer_.Pause(start.performanceCounterTicks);
     timer_.AnchorDspClock(time_, start.dspClock, start.sampleRate);
+    metronomeCursor_ = static_cast<std::size_t>(std::ranges::lower_bound(session_->metronomeBeats, time_, {}, &MetronomeBeat::time) - session_->metronomeBeats.begin());
+    ScheduleMetronome();
     if (!debugMode_ && musicRegistered_ && !audioRouter_.StartPreparedMusic(time_, timer_))
     {
         FailPlaybackPreparation();

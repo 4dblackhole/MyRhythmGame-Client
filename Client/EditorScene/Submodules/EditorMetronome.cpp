@@ -1,6 +1,7 @@
 #include "EditorMetronome.h"
 #include "App/AssetPaths.h"
 #include "EditorTime.h"
+#include "Timing/MetronomeBeats.h"
 #include <algorithm>
 
 namespace
@@ -14,23 +15,8 @@ namespace
         const auto end = Microseconds(endSeconds * 1000);
         const auto last = MeasureNearTime(timeline, endSeconds * 1000);
         std::vector<EditorMetronome::Beat> beats;
-        for (std::int64_t measure = 0; measure <= last; ++measure)
-        {
-            const auto length = timeline.MeasureLength(measure);
-            const auto origin = timeline.PositionToWholeNotes({measure, {}});
-            // Quarter-note clicks, with an accent at each surviving measure start.
-            for (Rational offset{}; offset < length; offset = offset + Rational{1, 4})
-            {
-                const auto position = timeline.PositionAtWholeNotes(origin + offset);
-                if (!timeline.IsPositionActive(position))
-                    continue;
-                const auto time = timeline.Compile(position);
-                if (time > end)
-                    break;
-                beats.push_back({time.count() / 1'000'000.0, offset == Rational{}});
-            }
-        }
-        std::ranges::stable_sort(beats, {}, &EditorMetronome::Beat::seconds);
+        for (const auto &beat : CompileQuarterBeats(timeline, last, end))
+            beats.push_back({beat.time.count() / 1'000'000.0, beat.accent});
         return beats;
     }
 } // namespace

@@ -28,6 +28,7 @@ class TaikoResultView final : public IResultView
     void BuildJudgements(Visual2DNode &root);
     void BuildGroups(Visual2DNode &root);
     void BuildMetadata(Visual2DNode &root);
+    void BuildOptions(Visual2DNode &root);
     void BuildGraphs(Visual2DNode &root);
     void BuildHistogramLabels(Visual2DNode &root, const taiko_result_ui::GraphData &data);
     void BuildScatterLabels(Visual2DNode &root, const taiko_result_ui::GraphData &data);

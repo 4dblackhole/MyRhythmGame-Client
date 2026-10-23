@@ -19,3 +19,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Pause test build failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Pause test failed.' }
 & "./bin/x64/$Configuration/GameplayPauseTests.exe" --cold-start
 if ($LASTEXITCODE -ne 0) { throw 'Cold-start input test failed.' }
+
+& "./bin/x64/$Configuration/GameplayPauseTests.exe" --cold-start-options
+if ($LASTEXITCODE -ne 0) { throw 'Accelerated cold-start pitch test failed.' }

@@ -12,7 +12,14 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <atomic>
+#include "Presentation/PlayOptionsDialog.h"
 
+struct InputStateTestAccess
+{
+    static void Key(InputState &input, std::uint16_t key, bool down) { input.SetKey(key, down, 1); }
+    static void Begin(InputState &input) { input.BeginUpdate(); }
+};
 namespace
 {
 
@@ -194,6 +201,15 @@ namespace
                 Check(clickable.Update(noKeys, 0) == SongSelectCommand::None,
                       "A difficulty click must emit the launch command only once.");
             }
+            if(purpose==SongSelectPurpose::Editor)
+            {
+                Check(!Find(canvas->Root(),"GameModeSelect"),"Editor selection retains its existing footer scope.");
+                const auto *optionsButton=Find(canvas->Root(),"OptionSelect");
+                if(!optionsButton)throw std::runtime_error("Editor global options button is missing.");
+                Click(*canvas,*optionsButton);InputState input;static_cast<void>(clickable.Update(input,.2));
+                static_cast<void>(clickable.Update(input,.2));
+                Check(Find(canvas->Root(),"Options.Panel")->IsVisible(),"Editor footer still opens its global settings.");
+            }
             clickable.Shutdown();
         }
     }
@@ -282,21 +298,131 @@ namespace
         view.Shutdown();
         Check(visuals.CanvasCount() == 0, "Background shutdown must release the Canvas.");
     }
+    void TestRecordHistoryView()
+    {
+        const auto directory=std::filesystem::temp_directory_path()/
+            ("YOUMU-record-view-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+        std::filesystem::create_directories(directory);
+        struct Cleanup { std::filesystem::path path; ~Cleanup(){std::error_code e;std::filesystem::remove_all(path,e);} } cleanup{directory};
+        const auto database=directory/"plays.sqlite3", patternPath=directory/"fixture.ymp";
+        std::ofstream(patternPath)<<"Mode: Taiko";
+        PlayRecord record;record.patternPath=patternPath;record.mode="Taiko";record.completed=true;record.cleared=true;
+        record.totalNotes=record.processedNotes=1;
+        for(int i=0;i<8;++i)
+        {
+            record.options.random=i%2==0;record.judgeLevel=record.options.random?70:50;
+            record.accuracy=AccuracyScore::FromRate(.90+i*.001);PlayRecordStore(database).Save(record);
+        }
+        Renderer renderer;ScreenVisual2DManager visuals;visuals.Initialize(renderer,{1280,720});
+        MeshRenderSystem meshes;TextRenderSystem textRendering;AudioSystem audio;
+        TextCatalog texts("Client/Texts/Languages");OptionSettings options(directory/"Option.ini");
+        SongSelectionState selection;SongCatalogEntry song;song.music.names.push_back("Record fixture");
+        SongCatalogPattern pattern;pattern.patternPath=patternPath;pattern.pattern.mode="Taiko";pattern.pattern.name="Recorded";
+        song.patterns.push_back(pattern);pattern.patternPath=directory/"other.ymp";song.patterns.push_back(pattern);
+        selection.catalog_.songs.push_back(std::move(song));
+        MusicSelectView view(visuals,selection,SongSelectPurpose::Gameplay,texts,options,database);
+        view.Initialize({meshes,textRendering,renderer,audio,1280,720});auto *canvas=visuals.FindCanvas(1);
+        Check(canvas!=nullptr,"Record history owns its selection canvas.");InputState input;
+        const auto rows=[&]{return Find(canvas->Root(),"RecordRows")->Children().size();};
+        const auto wait=[&](std::size_t expected){
+            const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds{5};
+            do{static_cast<void>(view.Update(input,0));if(rows()==expected)return;std::this_thread::sleep_for(std::chrono::milliseconds{1});}
+            while(std::chrono::steady_clock::now()<deadline);
+            throw std::runtime_error("Record history page did not publish the expected rows.");
+        };
+        wait(6);auto *next=Find(canvas->Root(),"RecordNext");if(!next)throw std::runtime_error("Record next page control is missing.");Check(next->IsEnabled(),"Actual history has an older page.");
+        Click(*canvas,*next);static_cast<void>(view.Update(input,0));wait(2);
+        Click(*canvas,*Find(canvas->Root(),"RecordPrevious"));static_cast<void>(view.Update(input,0));wait(6);
+        const auto thread=GetCurrentThreadId();std::atomic_bool handled{};
+        std::jthread queryInput([&](std::stop_token stop){
+            while(!stop.stop_requested()&&!handled)
+            {
+                EnumThreadWindows(thread,[](HWND window,LPARAM p)->BOOL{
+                    wchar_t name[32]{};GetClassNameW(window,name,32);
+                    if(std::wstring_view(name)!=L"#32770"||!GetDlgItem(window,100))return TRUE;
+                    ShowWindow(window,SW_HIDE);SetDlgItemTextW(window,100,L"JudgeLevel >= 60 AND Random = true");
+                    PostMessageW(window,WM_COMMAND,IDOK,0);*reinterpret_cast<std::atomic_bool *>(p)=true;return FALSE;
+                },reinterpret_cast<LPARAM>(&handled));
+                std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            }
+        });
+        Click(*canvas,*Find(canvas->Root(),"RecordQuery"));static_cast<void>(view.Update(input,0));queryInput.request_stop();queryInput.join();
+        Check(handled,"The history condition is editable through its actual action.");wait(4);
+        for(const auto &row:Find(canvas->Root(),"RecordRows")->Children())
+            Check(row->GetComponent<TextVisualComponent>()->Text().find(L"JL 70.00")!=std::wstring::npos,"Only matching effective JudgeLevel records appear.");
+        selection.selectedPatternIndex_=1;view.RefreshSelectionPresentation();static_cast<void>(view.Update(input,0));wait(0);
+        view.Shutdown();
+    }
+    void TestPlayOptionsForm()
+    {
+        TextCatalog texts("Client/Texts/Languages");
+        PlayOptions options;
+        for (const bool cancel : {false,true})
+        {
+            struct Driver { bool cancel{}; std::atomic_bool handled{}; } driver;
+            driver.cancel=cancel;
+            const auto threadId=GetCurrentThreadId();
+            std::jthread input([&](std::stop_token stop) {
+                while(!stop.stop_requested()&&!driver.handled)
+                {
+                    EnumThreadWindows(threadId,[](HWND window,LPARAM parameter)->BOOL {
+                        auto &d=*reinterpret_cast<Driver *>(parameter);
+                        wchar_t name[32]{};GetClassNameW(window,name,32);
+                        if(std::wstring_view(name)!=L"#32770"||!GetDlgItem(window,112))return TRUE;
+                        ShowWindow(window,SW_HIDE);
+                        if(d.cancel)
+                        {
+                            SetDlgItemTextW(window,108,L"2.0");
+                            PostMessageW(window,WM_COMMAND,IDCANCEL,0);
+                        }
+                        else
+                        {
+                            SendDlgItemMessageW(window,100,CB_SETCURSEL,1,0);
+                            SetDlgItemTextW(window,101,L"240");
+                            for(const auto id:{102,103,104,105,110,111})SendDlgItemMessageW(window,id,BM_SETCHECK,BST_CHECKED,0);
+                            SendDlgItemMessageW(window,109,BM_SETCHECK,BST_UNCHECKED,0);
+                            SetDlgItemTextW(window,106,L"18446744073709551615");
+                            SetDlgItemTextW(window,107,L"35");SetDlgItemTextW(window,108,L"1.5");SetDlgItemTextW(window,112,L"60.00");
+                            PostMessageW(window,WM_COMMAND,IDOK,0);
+                        }
+                        d.handled=true;return FALSE;
+                    },reinterpret_cast<LPARAM>(&driver));
+                    std::this_thread::sleep_for(std::chrono::milliseconds{1});
+                }
+            });
+            const bool accepted=EditPlayOptions(options,texts);
+            input.request_stop();input.join();
+            Check(driver.handled&&accepted!=cancel,"Native form accepts all fields and supports Cancel.");
+            Check(options.scrollUnit==PlayOptions::ScrollUnit::Bpm&&options.scrollSpeed==240&&options.ignoreScrollEffects&&
+                options.metronome&&options.mirror&&options.random&&options.randomSeed==UINT64_MAX&&options.randomAttemptProbability==.35&&
+                options.accelerate==1.5&&!options.preserveMusicPitch&&options.preserveHitSoundPitch&&options.judgeLevel==JudgeLevel{60},
+                "Play form independently captures BPM, seed/probability, pitch flags and hundredth JudgeLevel; Cancel preserves them.");
+        }
+    }
     void TestOptionsToggle(MusicSelectView &view, Visual2DCanvas &canvas)
     {
         auto *button = Find(canvas.Root(), "OptionSelect");
         auto *panel = Find(canvas.Root(), "Options.Panel");
         if (!button || !panel)
             throw std::runtime_error("Options toggle controls missing.");
-        InputState noKeys;
-        Click(canvas, *button);
-        static_cast<void>(view.Update(noKeys, .2));
-        static_cast<void>(view.Update(noKeys, .2));
-        Check(panel->IsVisible(), "Options button must open its panel.");
-        Click(canvas, *button);
-        static_cast<void>(view.Update(noKeys, 0));
-        static_cast<void>(view.Update(noKeys, .2));
-        Check(!panel->IsVisible(), "The same options button must close an open panel.");
+        const auto *mode = Find(canvas.Root(), "GameModeSelect");
+        Check(mode && mode->BoundsInCanvas().x + mode->BoundsInCanvas().width <= button->BoundsInCanvas().x, "Mode and play option controls must have separate footer bounds.");
+        Check(Find(canvas.Root(), "RecordQuery") != nullptr, "History panel exposes its condition query action.");
+        InputState keys;
+        InputStateTestAccess::Key(keys,VK_LCONTROL,true);
+        InputStateTestAccess::Key(keys,'O',true);
+        static_cast<void>(view.Update(keys,.2));
+        InputStateTestAccess::Begin(keys);
+        InputStateTestAccess::Key(keys,'O',false);
+        static_cast<void>(view.Update(keys,.2));
+        Check(panel->IsVisible(), "Ctrl+O opens global settings independently of play options.");
+        InputStateTestAccess::Begin(keys);
+        InputStateTestAccess::Key(keys,'O',true);
+        static_cast<void>(view.Update(keys,.2));
+        InputStateTestAccess::Begin(keys);
+        InputStateTestAccess::Key(keys,'O',false);
+        static_cast<void>(view.Update(keys,.2));
+        Check(!panel->IsVisible(), "Ctrl+O closes global settings.");
     }
 } // namespace
 
@@ -305,6 +431,7 @@ int main()
     try
     {
         TestConverterProcess();
+        TestPlayOptionsForm();
         {
             Visual2DCanvas canvas;
             auto &label = CreateLabel(canvas.Root(), {0, 0, 100, 30}, L"");
@@ -334,6 +461,7 @@ int main()
         }
         std::string error;
         Check(InitializeBuiltInAssets(error), error.c_str());
+        TestRecordHistoryView();
         TestBackgroundPreview();
         SongCatalogLoader loader;
         loader.Refresh(UserSongs());

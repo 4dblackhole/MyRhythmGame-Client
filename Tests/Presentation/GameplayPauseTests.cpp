@@ -182,7 +182,8 @@ namespace
         menu.Shutdown();
         Check(visuals.CanvasCount() == 0, "Pause Canvas must be owned and released.");
     }
-    std::vector<AudioPlaybackSettings> musicStarts;
+    std::vector<AudioPlaybackSettings> musicStarts, sampleSettings;
+    std::vector<double> stretchRequests;
     std::vector<std::uint64_t> musicSchedules;
     std::int64_t musicScheduleTicks{};
     std::size_t sampleStarts{}, clipLoads{}, musicResumes{};
@@ -298,6 +299,11 @@ namespace
                 samplesReadyAt = state_->readyAt = std::chrono::steady_clock::now() + std::chrono::milliseconds{sampleDelayMs};
             ++clipLoads;
         }
+        bool PrepareTimeStretch(double rate, std::string &error) override
+        {
+            Check(state_->music, "Only BGM should be time-stretched for pitch preservation.");
+            stretchRequests.push_back(rate); error.clear(); return true;
+        }
         AudioClipLoadState LoadState(std::string &error) const override
         {
             if (!state_->music && failSampleLoads)
@@ -335,6 +341,7 @@ namespace
                 Check(std::chrono::steady_clock::now() >= state_->readyAt,
                       "Input samples must be ready before their first playback request.");
                 ++sampleStarts;
+                sampleSettings.push_back(settings);
             }
             return std::make_unique<Voice>(state_);
         }
@@ -477,7 +484,7 @@ namespace
             std::size_t resumesBefore_{};
         };
       public:
-        explicit ColdStartClient(bool &verified) : verified_(verified) {}
+        explicit ColdStartClient(bool &verified, bool accelerated=false) : verified_(verified), accelerated_(accelerated) {}
         EngineConfig GetEngineConfig() const override
         {
             EngineConfig c;
@@ -491,9 +498,13 @@ namespace
             rendering_ = std::make_unique<Rendering>(services.visual2DRendering, shown_);
             visuals_.Initialize(*rendering_, {1280, 720});
             auto store = std::make_shared<GameplayLaunchStore>();
-            auto loaded = TaikoMode{}.CreateSession(Pattern());
+            PlaySessionOptions options;
+            if (accelerated_)
+            { options.play.accelerate=1.5; options.play.preserveMusicPitch=true; options.play.preserveHitSoundPitch=false; }
+            auto loaded = TaikoMode(options).CreateSession(Pattern());
             Check(loaded.Succeeded(), "Cold-start fixture must load.");
-            store->SetValidated({"probe.ymp", {}, "probe-music.mp3", "Taiko"}, std::move(loaded.session));
+            GameplayLaunchRequest request{"probe.ymp", {}, "probe-music.mp3", "Taiko"}; request.playOptions=options.play;
+            store->SetValidated(request, std::move(loaded.session));
             scene_ = std::make_unique<RhythmTestScene>(store, playback_, visuals_, false, texts_, result_);
             sampleDelayMs = 200;
             const EngineServices wrapped{services.meshRendering, services.textRendering, *rendering_, services.audio,
@@ -518,6 +529,9 @@ namespace
             if (sent_)
             {
                 Check(sampleStarts == before + 2, "The first visible-frame Don and Kat must both request a sample.");
+                if (accelerated_)
+                    Check(!stretchRequests.empty() && stretchRequests.back()==1.5 && musicStarts.back().pitch==1.0F &&
+                          sampleSettings.back().pitch==1.5F, "Cold first-input playback respects independent BGM/hit pitch choices.");
                 verified_ = true;
                 return false;
             }
@@ -536,6 +550,7 @@ namespace
         }
       private:
         bool &verified_;
+        bool accelerated_{};
         bool shown_{}, sent_{};
         InputState input_;
         ScreenVisual2DManager visuals_;
@@ -722,6 +737,34 @@ namespace
       private:
         void CheckTransientVoices(const UpdateContext &ctx)
         {
+            for (bool musicPitch : {false,true}) for (bool hitPitch : {false,true})
+            {
+                GameplayAudioRouter optionRouter(playback_); std::string error;
+                Check(optionRouter.Initialize(ctx.audio,error),error.c_str());
+                Check(optionRouter.RegisterSound("Music.Track","probe-music.mp3",AudioLoadMode::StreamAsyncAccurate,error),error.c_str());
+                Check(optionRouter.RegisterSound("Probe.Hit","probe-hit.wav",AudioLoadMode::SampleAsync,error),error.c_str());
+                Check(optionRouter.RegisterSound("Gameplay.Metronome.Beat","probe-click.wav",AudioLoadMode::SampleAsync,error,false),error.c_str());
+                PlayOptions options;options.accelerate=1.5;options.preserveMusicPitch=musicPitch;options.preserveHitSoundPitch=hitPitch;
+                const auto requests=stretchRequests.size();
+                Check(optionRouter.ConfigurePlayback(options,error),error.c_str());
+                Check(stretchRequests.size()==requests+(musicPitch?1:0),"Only preserved BGM requests offline stretch.");
+                const std::array<AudioCueRequest,1> hit{{{"Probe.Hit"}}};optionRouter.PlayNow(hit);
+                Check(sampleSettings.back().pitch==(hitPitch?1.0F:1.5F),"Hit pitch can be selected independently.");
+                auto ready=optionRouter.PrepareMusicAt(RhythmTime{500'000});
+                const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds{2};
+                while(ready==AudioPreparationState::Loading&&std::chrono::steady_clock::now()<deadline)
+                {std::this_thread::sleep_for(std::chrono::milliseconds{1});ready=optionRouter.PrepareMusicAt(RhythmTime{500'000});}
+                Check(ready==AudioPreparationState::Ready&&musicStarts.back().pitch==(musicPitch?1.0F:1.5F),"BGM pitch follows its own setting.");
+                const auto clock=ctx.audio.CaptureClockSnapshot();RhythmTimer timer;
+                timer.Start(clock.performanceCounterTicks,clock.performanceCounterFrequency,RhythmTime{},1.5);
+                timer.AnchorDspClock(RhythmTime{},clock.dspClock,clock.sampleRate);
+                std::array<AudioCueRequest,2> clicks{{{"Gameplay.Metronome.Beat"},{"Gameplay.Metronome.Beat"}}};
+                clicks[0].timelineTime=RhythmTime{200'000};clicks[1].timelineTime=RhythmTime{700'000};
+                const auto before=playback_.PlaybackCount();optionRouter.Schedule(clicks,timer);
+                Check(playback_.PlaybackCount()==before+2&&sampleSettings.back().pitch==1,"Future metronome clicks are polyphonic and keep their pitch.");
+                optionRouter.Shutdown();
+            }
+
             GameplayAudioRouter router(playback_);
             std::string error;
             Check(router.Initialize(ctx.audio, error), "The audio resume fixture must initialize.");
@@ -947,10 +990,10 @@ int main(int argc, char **argv)
     {
         std::string error;
         Check(InitializeBuiltInAssets(error), error.c_str());
-        if (argc > 1 && std::string_view{argv[1]} == "--cold-start")
+        if (argc > 1 && (std::string_view{argv[1]} == "--cold-start" || std::string_view{argv[1]} == "--cold-start-options"))
         {
             bool verified{};
-            Check(Run(std::make_unique<ColdStartClient>(verified)) == 0 && verified,
+            Check(Run(std::make_unique<ColdStartClient>(verified, std::string_view{argv[1]} == "--cold-start-options")) == 0 && verified,
                   "Cold-start presentation must deliver the very first visible-frame Don and Kat inputs.");
             std::puts("Cold-start first-frame Don/Kat input and presentation readiness passed.");
             return 0;

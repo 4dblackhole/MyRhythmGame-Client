@@ -10,6 +10,7 @@
 #include "GameScene/RhythmTestScene/RhythmTestScene.h"
 #include "Presentation/UiColors.h"
 #include "Texts/GameIdentity.h"
+#include "Records/PlayRecordStore.h"
 
 #include <Windows.h>
 
@@ -107,6 +108,7 @@ std::unique_ptr<GameScene> YOUMUGame::CreateResultScene()
 {
     auto launch = launchRequest_->Snapshot();
     ResultViewContext display{launch.songTitle, launch.patternCreator, launch.IsValid(), launch.songArtist};
+    if (!smokeTest_ && !rhythmDebugMode_ && launch.IsValid()) display.recordDatabase = PlayRecordStore::DefaultPath();
     ResultScene::RetryHandler retry;
     if (display.canRetry)
         retry = [store = launchRequest_, snapshot = std::move(launch)](SceneManager &scenes)

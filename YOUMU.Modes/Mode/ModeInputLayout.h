@@ -1,5 +1,6 @@
 #pragma once
 #include "Common/RhythmTypes.h"
+#include "Mode/PlayOptions.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -22,6 +23,7 @@ struct PlaySessionOptions
 {
     RhythmDuration globalOffset{};
     InputKeyOverrides inputKeys;
+    PlayOptions play;
 };
 // Resolve and validate before publishing settings or constructing a session.
 [[nodiscard]] ModeInputLayout ResolveInputLayout(ModeInputLayout defaults, const InputKeyOverrides &overrides);

@@ -5,6 +5,7 @@
 #include "Texts/TextCatalog.h"
 #include <functional>
 #include <memory>
+#include <future>
 class IResultView;
 class ResultScene final : public GameScene
 {
@@ -26,4 +27,10 @@ class ResultScene final : public GameScene
     std::unique_ptr<IPlayResult> result_;
     std::unique_ptr<IResultView> view_;
     RetryHandler retry_;
+    std::future<std::string> recordWrite_;
+    ScreenVisual2DManager &visuals_;
+    TextCatalog &texts_;
+    ScreenCanvasHandle recordStatusCanvas_;
+    Visual2DNode *recordStatus_{};
+    std::string recordError_;
 };

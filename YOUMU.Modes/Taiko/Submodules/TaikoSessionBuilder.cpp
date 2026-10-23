@@ -8,6 +8,7 @@
 #include "Taiko/Results/TaikoResultCollector.h"
 #include "TaikoBuildSupport.h"
 #include "TaikoChartNotes.h"
+#include "TaikoNoteTransform.h"
 
 namespace
 {
@@ -34,22 +35,31 @@ ModeLoadResult TaikoSessionBuilder::CreateSession(const PatternDocument &pattern
                                       "Taiko charts must explicitly specify Mode: Taiko."});
         return result;
     }
+    options.play.Validate();
+    const auto judgeLevel = options.play.judgeLevel.value_or(pattern.judgementLevel);
+    TaikoNoteTransform transform(options.play);
     auto session = std::make_unique<PlaySession>();
+    session->SetPlayOptions(options.play, pattern.baseBpm);
     Lane &lane = session->Gear().CreateLane();
-    auto defaultRange = std::make_shared<const AccuracyRange>("Taiko.Default", pattern.judgementLevel);
-    auto syncopationRange = std::make_shared<const AccuracyRange>("Taiko.Syncopation", pattern.judgementLevel,
+    auto defaultRange = std::make_shared<const AccuracyRange>("Taiko.Default", judgeLevel);
+    auto syncopationRange = std::make_shared<const AccuracyRange>("Taiko.Syncopation", judgeLevel,
         AccuracyRange::DefaultLevel50Bands(), RhythmDuration{10'000});
 
     MusicalTimeline timeline(pattern, options.globalOffset);
     ValidateEffectPositions(effects, timeline);
     auto compiledEffects = timeline.CompileEffects(effects);
+    if (options.play.ignoreScrollEffects)
+        std::erase_if(compiledEffects, [](const auto &effect) {
+            return effect.command.type == EffectCommandType::NoteSpeed || effect.command.type == EffectCommandType::ScrollSpeed;
+        });
     const EffectLookup effectLookup(compiledEffects);
     auto compiled = PlayableInSourceOrder(timeline.CompileNotes(pattern));
     PlayResultSummary summary;
     summary.patternPath = pattern.sourcePath;
     summary.globalOffset = options.globalOffset;
     summary.patternName = pattern.name;
-    summary.judgementLevel = pattern.judgementLevel;
+    summary.judgementLevel = judgeLevel;
+    summary.playOptions = options.play;
     auto collector = std::make_unique<TaikoResultCollector>(std::move(summary), compiled.size());
     ConfigureHitSounds(*session, pattern, effects, timeline, result.diagnostics);
     if (!result.diagnostics.empty())
@@ -77,10 +87,10 @@ ModeLoadResult TaikoSessionBuilder::CreateSession(const PatternDocument &pattern
 
     for (const CompiledPatternNote &compiledNote : compiled)
     {
-        const PatternNote &source = compiledNote.note;
+        PatternNote source = compiledNote.note;
         const auto profile =
             UsesSyncopation(effectLookup, timeline, source.position) ? syncopationRange : defaultRange;
-        const TaikoNoteType type = static_cast<TaikoNoteType>(source.keyType);
+        TaikoNoteType type = static_cast<TaikoNoteType>(source.keyType);
         const TaikoPatternAction action = static_cast<TaikoPatternAction>(source.actionType);
 
         if (action == TaikoPatternAction::LongNoteStart)
@@ -103,6 +113,7 @@ ModeLoadResult TaikoSessionBuilder::CreateSession(const PatternDocument &pattern
                 continue;
             }
             const auto longNoteId = nextId;
+            transform.Apply(longNoteHead->note);
             AddLongNote(*longNoteHead, compiledNote, timeline,
                         UsesSyncopation(effectLookup, timeline, longNoteHead->note.position) ? syncopationRange
                                                                                              : defaultRange,
@@ -132,6 +143,8 @@ ModeLoadResult TaikoSessionBuilder::CreateSession(const PatternDocument &pattern
             continue;
         }
 
+        transform.Apply(source);
+        type = static_cast<TaikoNoteType>(source.keyType);
         const bool don = IsDonType(type);
         const NoteAction requiredAction = ActionValue(don ? TaikoAction::Don : TaikoAction::Kat);
         const bool big = type == TaikoNoteType::BigDon || type == TaikoNoteType::BigKat;
@@ -184,6 +197,9 @@ ModeLoadResult TaikoSessionBuilder::CreateSession(const PatternDocument &pattern
                              Cue(KatFreeInput, "UserInputFeedback"));
     session->SetMeasureLines(BuildMeasureLines(timeline, effectLookup));
     session->SetEffects(std::move(compiledEffects));
+    if (options.play.metronome && !timeline.MeasureSpans().empty())
+        session->metronomeBeats = CompileQuarterBeats(timeline,
+            static_cast<std::int64_t>(timeline.MeasureSpans().size()) - 1, timeline.MeasureSpans().back().end);
     session->SetTimeline(std::move(timeline));
     session->Gear().Finalize();
     session->SetResultCollector(std::move(collector));

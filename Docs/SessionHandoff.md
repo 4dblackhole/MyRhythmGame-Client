@@ -1,5 +1,22 @@
 # 새 관리자·세션 인수인계
 
+
+## 2026-10-23 최신: Taiko 플레이 옵션·로컬 기록
+
+- [PlayOptions](Gameplay/PlayOptions.md)에 사용자 확정 동작, 스키마/쿼리 필드와 책임 경계를,
+  [검토 보고서](Reviews/PlayOptions-2026-10-23.md)에 검증/기존 진단을 기록했습니다.
+- 게임용 곡 선택 하단은 Game mode/Play options이고 전역 설정은 Ctrl+O입니다.
+  에디터용 곡 선택의 기존 전역 설정 footer는 유지합니다. 옵션은 앱 실행 동안 유지하며
+  launch/session/result/Retry에 값으로 고정합니다. 원본 YMM/YMP/YME는 바꾸지 않습니다.
+- 영속 기록: %LOCALAPPDATA%/YOUMU/Records/plays.sqlite3 (schema 1). 재구축 캐시가
+  아니므로 손상/새 버전에서 삭제하지 않습니다. 조건식은 제한된 비교/AND/OR/NOT입니다.
+- 엔진 main의 216d5d4를 게시하고 같은 submodule pin을 사용합니다. 고정한 MIT
+  Signalsmith Stretch/Linear와 EXE 옆 ThirdPartyNotices를 함께 유지해야 합니다.
+- 기존 에디터 로컬 변경 27개는 보존했습니다. 번역 파일에는 새 절만 부분 커밋하며
+  기존 편집 변경은 여전히 로컬입니다. 전체 stage/reset/checkout으로 덮어쓰지 마세요.
+- Debug/Release 빌드/분석, 70개 로직씩, smoke 8개와 관련 native/에디터 회귀 통과.
+  실제 물리 청취는 하지 않았습니다. exact SHA는 현재 Git/완료 응답으로 확인합니다.
+
 ## 시작
 
 1. 루트 `AGENTS.md`를 읽고 Client/엔진 status 및 submodule gitlink를 확인합니다.

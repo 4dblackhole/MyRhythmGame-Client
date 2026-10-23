@@ -31,7 +31,7 @@ std::unique_ptr<PlaySession> GameplaySessionController::CreateSession()
     auto mode = CreatePlayGameMode(
         launchRequest_.mode,
         {RhythmDuration{static_cast<std::int64_t>(launchRequest_.globalOffsetMs) * 1000},
-         launchRequest_.inputKeys});
+         launchRequest_.inputKeys, launchRequest_.playOptions});
     ModeLoadResult loaded = mode->LoadSession(launchRequest_.patternPath, launchRequest_.effectPath);
     if (!loaded.Succeeded())
     {

@@ -6,6 +6,8 @@
 #include "Texts/TextCatalog.h"
 #include <filesystem>
 #include <vector>
+#include <future>
+#include "Records/PlayRecordStore.h"
 
 enum class SongSelectCommand
 {
@@ -20,14 +22,15 @@ class MusicSelectView final
   public:
     MusicSelectView(ScreenVisual2DManager &visuals, SongSelectionState &state,
                     SongSelectPurpose purpose, TextCatalog &texts,
-                    OptionSettings &options)
+                    OptionSettings &options, std::filesystem::path recordDatabase = {})
         : selection_(state), purpose_(purpose), screenVisuals_(visuals), texts_(texts),
-          settings_(options), options_(texts, options)
+          settings_(options), options_(texts, options), recordDatabase_(std::move(recordDatabase))
     {
     }
     void SetVisible(bool visible)
     {
         if (!visible) CloseAdditionMenu();
+        else ++recordRevision_;
         static_cast<void>(canvasHandle_.SetVisible(visible));
     }
     void Initialize(const EngineServices &services);
@@ -53,6 +56,10 @@ class MusicSelectView final
 
     void CreateCategoryBar();
     void CreateRecordPanel();
+    void UpdateRecords();
+    void ShowRecords(const std::vector<PlayRecord> &records);
+    void EditRecordQuery();
+    void LayoutRecordControls();
     void CreateSongInformationPanel();
     void SetBackgroundPreview(const std::filesystem::path &path);
     void UpdateBackgroundPreviewLayout();
@@ -111,6 +118,7 @@ class MusicSelectView final
     TextCatalog &texts_;
     OptionSettings &settings_;
     OptionsPanel options_;
+    std::filesystem::path recordDatabase_;
     std::filesystem::path previewPath_;
     Size previewImageSize_{};
     std::uint64_t textRevision_{};
@@ -134,6 +142,14 @@ class MusicSelectView final
     Visual2DNode *background_{};
     Visual2DNode *categoryBar_{};
     Visual2DNode *categoryLabel_{};
+    std::future<std::vector<PlayRecord>> recordJob_;
+    std::filesystem::path recordPattern_;
+    std::string recordMode_, recordQuery_;
+    std::size_t recordOffset_{};
+    std::uint64_t recordRevision_{1}, recordJobRevision_{}, recordDisplayRevision_{};
+    bool recordNext_{};
+    Visual2DNode *recordQueryButton_{}, *recordPreviousButton_{}, *recordNextButton_{};
+    Visual2DNode *recordRows_{};
     Visual2DNode *recordPanel_{};
     Visual2DNode *recordSelector_{};
     Visual2DNode *emptyRecordMessage_{};
@@ -160,6 +176,8 @@ class MusicSelectView final
     Visual2DNode *selectedPatternLabel_{};
     Visual2DNode *selectedCreatorLabel_{};
     Visual2DNode *selectedDetailsLabel_{};
+    Visual2DNode *modeSelector_{};
+    NodeId modeSelectorId_{};
     Visual2DNode *optionButton_{};
     Visual2DNode *optionLabel_{};
     Visual2DNode *backButton_{};

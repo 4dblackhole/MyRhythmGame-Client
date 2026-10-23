@@ -98,6 +98,8 @@
   <Target Name="CopyRuntimeFiles" AfterTargets="Build">
     <ItemGroup>
       <LanguageFiles Include="Texts\Languages\*.ini" />
+      <StretchNotice Include="..\Dependencies\PhantomCore\Engine\Audio\ThirdParty\Signalsmith\signalsmith-stretch\LICENSE.txt" />
+      <LinearNotice Include="..\Dependencies\PhantomCore\Engine\Audio\ThirdParty\Signalsmith\signalsmith-linear\LICENSE.txt" />
       <DefaultMusic Include="..\YOUMU.Assets\Assets\Songs\Music\Angeldream\*.*" />
       <DefaultPattern Include="..\YOUMU.Assets\Assets\Songs\Patterns\angeldream\**\*.*" />
     </ItemGroup>
@@ -108,6 +110,8 @@
           Condition="!Exists('$(ProjectDir)Assets\Songs\Music\Angeldream\%(DefaultMusic.Filename)%(DefaultMusic.Extension)')" />
     <Copy SourceFiles="@(DefaultPattern)" DestinationFiles="@(DefaultPattern->'$(ProjectDir)Assets\Songs\Patterns\angeldream\%(RecursiveDir)%(Filename)%(Extension)')"
           Condition="!Exists('$(ProjectDir)Assets\Songs\Patterns\angeldream\%(DefaultPattern.RecursiveDir)%(DefaultPattern.Filename)%(DefaultPattern.Extension)')" />
+    <Copy SourceFiles="@(StretchNotice)" DestinationFolder="$(OutDir)ThirdPartyNotices\SignalsmithStretch" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(LinearNotice)" DestinationFolder="$(OutDir)ThirdPartyNotices\SignalsmithLinear" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(FmodRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(ProjectDir)..\..\OsuTaikoConverter\bin\$(Platform)\$(Configuration)\OsuTaikoConverter.exe"
           DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
@@ -311,4 +315,14 @@
   <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorSelection.cpp" /></ItemGroup>
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorLayout.h" /></ItemGroup>
   <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsSongs.cpp" /></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Presentation\ValueDialog.h" />
+    <ClCompile Include="Presentation\ValueDialog.cpp" />
+    <ClInclude Include="Presentation\PlayOptionsDialog.h" />
+    <ClCompile Include="Presentation\PlayOptionsDialog.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectRecords.cpp" />
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultOptions.cpp" />
+  </ItemGroup>
 </Project>

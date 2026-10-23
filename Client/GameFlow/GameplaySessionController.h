@@ -76,6 +76,8 @@ class GameplaySessionController final : public IPlaySessionController
     std::unique_ptr<PlaySession> CreateLongNoteDebugSession();
     void PrepareDebugLaunchRequest();
     void InitializeAudio(AudioSystem &audio);
+    void ScheduleMetronome();
+    std::size_t metronomeCursor_{};
     void UpdateLoading(const UpdateContext &context);
     void UpdateGameplay(const UpdateContext &context);
     void UpdatePause(const UpdateContext &context);

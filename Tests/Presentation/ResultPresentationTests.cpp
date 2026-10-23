@@ -5,6 +5,8 @@
 #include "GameScene/ResultScene/Submodules/Taiko/TaikoResultGraphs.h"
 #include "GameScene/RhythmTestScene/RhythmTestScene.h"
 #include "Taiko/TaikoMode.h"
+#include "Records/PlayRecordStore.h"
+#include <thread>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -286,6 +288,10 @@ namespace
         MeshRenderSystem meshes;
         TextRenderSystem textRendering;
         AudioSystem audio;
+        auto &options=taiko->summary.playOptions;
+        options.scrollSpeed=2;options.ignoreScrollEffects=true;options.metronome=true;options.mirror=true;
+        options.random=true;options.randomSeed=987654321;options.randomAttemptProbability=.35;
+        options.accelerate=1.5;options.judgeLevel=60;
         auto view = CreateResultView(*result, visuals, texts,
                                      {L"Recorded song", L"Recorded creator", true, L"Recorded artist"});
         view->Initialize({meshes, textRendering, renderer, audio, 1280, 720});
@@ -293,6 +299,8 @@ namespace
         auto *canvas = visuals.FindCanvas(1);
         if (!canvas)
             throw std::runtime_error("Result Canvas must exist.");
+        for(const auto key:{"scrollSpeed","metronome","mirror","random","accelerate","judgeLevel"})
+            Check(FindNode(canvas->Root(),std::string("Result.Option.")+key)!=nullptr,"Applied play option renders a result icon.");
         Check(HasText(*canvas, L"정확도") && HasText(*canvas, L"Recorded song") &&
                   HasText(*canvas, L"Recorded creator") && HasText(*canvas, L"Recorded artist") &&
                   HasText(*canvas, std::format(L"{:.6f}%", taiko->summary.accuracy.Percent())),
@@ -389,6 +397,42 @@ namespace
         taiko->timingErrors.clear();
         data = taiko_result_ui::BuildGraphs(*taiko, scatter, histogram);
         Check(data.rectangles.size() == 2 && data.maximumBinCount == 0, "Empty graphs must not invent samples.");
+    }
+    void TestResultRecordSaving()
+    {
+        const auto directory=std::filesystem::temp_directory_path()/
+            ("YOUMU-result-record-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+        std::filesystem::create_directories(directory);
+        struct Cleanup { std::filesystem::path path; ~Cleanup(){std::error_code e;std::filesystem::remove_all(path,e);} } cleanup{directory};
+        const auto database=directory/"plays.sqlite3", patternPath=directory/"fixture.ymp";
+        std::ofstream(patternPath)<<"Mode: Taiko";
+        NullRenderer renderer;ScreenVisual2DManager visuals;visuals.Initialize(renderer,{1280,720});
+        TextCatalog texts("Client/Texts/Languages");MeshRenderSystem meshes;TextRenderSystem textRendering;AudioSystem audio;
+        PatternDocument pattern;pattern.sourcePath=patternPath;pattern.mode="Taiko";
+        PlaySessionOptions options;options.play.random=true;options.play.randomSeed=123;options.play.judgeLevel=65;
+        auto loaded=TaikoMode(options).CreateSession(pattern);
+        Check(loaded.Succeeded(),"Result persistence fixture loads its actual session summary.");
+        auto result=loaded.session->TakeResult(PlayEndReason::Interrupted,RhythmTime{});
+        ResultViewContext display;display.recordDatabase=database;
+        ResultScene scene(std::move(result),visuals,texts,display);
+        scene.Initialize({meshes,textRendering,renderer,audio,1280,720});scene.BeginScene();
+        InputState input;SceneManager manager;
+        const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds{5};
+        bool saved{};
+        while(std::chrono::steady_clock::now()<deadline)
+        {
+            scene.Update({0,0,0,input,audio,{}},manager);
+            if(std::filesystem::exists(database))
+            {
+                const auto records=PlayRecordStore(database).Query(patternPath,"Taiko","JudgeLevel = 65 AND Random = true",0,10);
+                if(records.size()==1){saved=true;Check(records[0].options.randomSeed==123&&!records[0].completed,"Result worker saves actual options and interrupted state.");break;}
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
+        Check(saved,"Entering the production result scene persists exactly one local record.");
+        for(int i=0;i<5;++i)scene.Update({0,0,0,input,audio,{}},manager);
+        Check(PlayRecordStore(database).Query(patternPath,"Taiko","",0,10).size()==1,"Repeated result updates do not duplicate records.");
+        scene.Shutdown();
     }
     class ReturnRoute final : public GameScene
     {
@@ -492,9 +536,12 @@ namespace
             else if (Scenes().CurrentSceneId() == RhythmTestSceneId && retryRequested_ &&
                      !returnRequested_)
             {
-                Check(sessionCreations_ == 2 && resultCreations_ == 1 && !pending_ &&
-                          ScreenVisuals().CanvasCount() == 1 && !ScreenVisuals().FindCanvas(2),
-                      "Retry must construct fresh gameplay after destroying Result and its Canvas.");
+                Check(sessionCreations_ == 2 && resultCreations_ == 1 && !pending_ && !ScreenVisuals().FindCanvas(2),
+                      "Retry must construct a fresh session and destroy the old Result Canvas.");
+                // Gameplay creates its Canvas only after asynchronous resources
+                // are ready. Scene entry alone is not presentation readiness.
+                if (ScreenVisuals().CanvasCount() == 0) return;
+                Check(ScreenVisuals().CanvasCount() == 1, "Retry publishes exactly one prepared gameplay Canvas.");
                 Check(Scenes().ChangeScene(LobbySceneId), "Queue returning after retry.");
                 returnRequested_ = true;
             }
@@ -536,6 +583,7 @@ int main()
     {
         std::string error;
         Check(InitializeBuiltInAssets(error), error.c_str());
+        TestResultRecordSaving();
         TestAccuracyRanks();
         TestMillisecondHistogram();
         TestHistogramJudgementColors();

@@ -7,6 +7,8 @@
 #include <chrono>
 #include <thread>
 
+using tests::Require;
+
 namespace
 {
     std::size_t NoteRootCount(const Visual2DNode &node)

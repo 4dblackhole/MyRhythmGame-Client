@@ -17,7 +17,8 @@ public:
     void Start(
         std::int64_t performanceCounterTicks,
         std::int64_t performanceCounterFrequency,
-        RhythmTime timelinePosition = RhythmTime::zero());
+        RhythmTime timelinePosition = RhythmTime::zero(),
+        double playbackRate = 1.0);
     void Stop() noexcept;
     void Pause(std::int64_t performanceCounterTicks);
     void Resume(std::int64_t performanceCounterTicks);
@@ -45,6 +46,7 @@ private:
     [[nodiscard]] RhythmDuration ElapsedSinceAnchor(
         std::int64_t performanceCounterTicks) const noexcept;
 
+    double playbackRate_{1.0};
     State state_{State::Stopped};
     RhythmTime timelineAnchor_{};
     std::int64_t counterAnchor_{};

@@ -2,6 +2,7 @@
 
 #include "Judgement/AccuracyScore.h"
 #include "Judgement/JudgeLevel.h"
+#include "Mode/PlayOptions.h"
 #include "Mode/Results/PlayControlEvent.h"
 #include "Note/Submodules/NoteTypes.h"
 #include <filesystem>
@@ -28,6 +29,7 @@ struct PlayResultSummary
     RhythmTime initialTime{};
     RhythmTime endTime{};
     JudgeLevel judgementLevel;
+    PlayOptions playOptions;
     std::map<PhysicalKey, NoteAction> inputMapping;
     // Append order resolves ties at the same microsecond. These are the
     // exact mapped press/release events passed to judgement, including blanks.

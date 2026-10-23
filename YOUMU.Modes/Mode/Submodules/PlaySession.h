@@ -1,5 +1,6 @@
 #pragma once
 #include "Automation/ScrollAutomation.h"
+#include "Timing/MetronomeBeats.h"
 #include "Mode/ModeInputLayout.h"
 #include "Mode/Results/IPlayResultCollector.h"
 #include "Mode/Results/PlayControlEvent.h"
@@ -11,9 +12,13 @@
 class PlaySession final
 {
   public:
+    void SetPlayOptions(PlayOptions options, double baseBpm)
+    { scrollMultiplier_ = options.ScrollMultiplier(baseBpm); playOptions_ = std::move(options); }
+    const PlayOptions &Options() const noexcept { return playOptions_; }
     ScrollGear &Gear() noexcept;
     [[nodiscard]] const ScrollGear &Gear() const noexcept;
     void SetTimeline(MusicalTimeline timeline);
+    std::vector<MetronomeBeat> metronomeBeats;
     [[nodiscard]] const MusicalTimeline &Timeline() const;
     void SetInputLayout(ModeInputLayout layout)
     {
@@ -47,10 +52,10 @@ class PlaySession final
     }
     [[nodiscard]] double MinimumScrollMultiplier() const noexcept
     {
-        return std::min(minimumScrollMultiplier_, minimumMeasureScrollMultiplier_) * scroll_.MinimumMultiplier();
+        return std::min(minimumScrollMultiplier_, minimumMeasureScrollMultiplier_) * scroll_.MinimumMultiplier() * scrollMultiplier_;
     }
     long double ScrollDistance(RhythmTime target, RhythmTime current) const
-    { return scroll_.Distance(target, current); }
+    { return scroll_.Distance(target, current) * scrollMultiplier_; }
     bool IsKiaiActive(RhythmTime time) const;
 
     [[nodiscard]] NoteProcessResult ProcessInput(PhysicalKey physicalKey,
@@ -100,6 +105,8 @@ class PlaySession final
                                             RhythmTime time);
     double EvaluateTrack(std::size_t effectIndex, std::size_t trackIndex, RhythmTime time) const;
 
+    PlayOptions playOptions_;
+    double scrollMultiplier_{1.0};
     ModeInputLayout inputLayout_;
     ScrollGear gear_;
     std::optional<MusicalTimeline> timeline_;

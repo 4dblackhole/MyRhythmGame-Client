@@ -44,7 +44,14 @@ void MusicSelectView::UpdateResponsiveLayout()
     UpdateSongInformationLayout();
     UpdateSongBrowserLayout();
 
-    ResizeBorderedPanel(*optionButton_, responsive.option, 3.0F);
+    if (IsEditorSongSelect()) ResizeBorderedPanel(*optionButton_, responsive.option, 3.0F);
+    else
+    {
+        const float gap = 8.0F;
+        const float half = std::max((responsive.option.width - gap) / 2, 1.0F);
+        if (modeSelector_) modeSelector_->SetBounds({responsive.option.x, responsive.option.y, half, responsive.option.height});
+        ResizeBorderedPanel(*optionButton_, {responsive.option.x + half + gap, responsive.option.y, half, responsive.option.height}, 3.0F);
+    }
     backButton_->SetBounds(responsive.back);
     goButton_->SetBounds(responsive.go);
     UpdateFooterLayout();
@@ -56,6 +63,7 @@ void MusicSelectView::UpdateRecordPanelLayout()
     {
         return;
     }
+    LayoutRecordControls();
     const float panelWidth = recordPanel_->NodeSize().width / DesignToCanvasScale;
     const float innerWidth = std::max(panelWidth - 44.0F, 1.0F);
     recordSelector_->SetBounds(

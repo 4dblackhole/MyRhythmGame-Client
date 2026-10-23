@@ -1,4 +1,5 @@
 #include "MusicSelectView.h"
+#include "Mode/PlayGameModeFactory.h"
 #include "SongSelectLayout.h"
 #include "SongSelectionText.h"
 #include "Texts/GameScene/MusicSelectScene/MusicSelectTexts.h"
@@ -37,6 +38,17 @@ void MusicSelectView::CreateRecordPanel()
     recordBehavior.SetTextColor(DeepBlue);
     recordBehavior.SetSelectedTextColor(PureWhite);
     recordBehavior.SetPopupBackgroundColor(PureWhite);
+    const auto button = [this, &panel](const char *key, const char *name) -> Visual2DNode * {
+        auto &node = CreateButton(panel, {}, std::wstring(texts_.Get(key)), name);
+        ApplyButtonStyle(node, PaleBlue, PureWhite, AccentBlue);
+        auto &caption = RequireComponent<TextVisualComponent>(node);
+        texts_.ApplyFont(caption); caption.SetFontSize(14); caption.SetTextColor(DeepBlue);
+        return &node;
+    };
+    recordQueryButton_ = button("Records.query", "RecordQuery");
+    recordPreviousButton_ = button("Records.previous", "RecordPrevious");
+    recordNextButton_ = button("Records.next", "RecordNext");
+    recordRows_ = &panel.CreateChild("RecordRows");
     emptyRecordMessage_ = &AddLabel(
         panel, layout::EmptyRecordMessage, std::wstring(text.noRecords), 28.0F, DeepBlue,
         "NoRecords", TextAlignment::Center);
@@ -211,6 +223,22 @@ void MusicSelectView::CreateFooter()
                              std::wstring(text.optionSelect), 14.0F,
                              MutedBlue, "OptionLabel", TextAlignment::Center);
     optionButtonId_ = option.Id();
+    if (!IsEditorSongSelect())
+    {
+        std::vector<std::wstring> modes;
+        for (const auto &mode : AvailableInputLayouts())
+            modes.push_back(std::wstring(texts_.Get("PlayOptions.gameMode")) + L": " + std::wstring(mode.modeId.begin(), mode.modeId.end()));
+        auto &selector = CreateComboBox(*board_, ScaleTopLeftBounds(layout::OptionButton, board_->NodeSize().height), std::move(modes), "GameModeSelect");
+        modeSelector_ = &selector;
+        modeSelectorId_ = selector.Id();
+        auto &modeCombo = RequireComponent<ComboBoxBehaviorComponent>(selector);
+        modeCombo.SetFontSize(CanvasFontSize(14.0F));
+        texts_.ApplyFont(modeCombo);
+        modeCombo.SetTextColor(DeepBlue);
+        ApplySpriteStyle(selector, PureWhite, PureWhite);
+
+
+    }
 
     struct EdgeButtonNodes
     {
@@ -312,7 +340,16 @@ void MusicSelectView::ApplyTexts()
     setLabel(difficultyHeading_, text.difficulty);
     setLabel(creatorHeading_, text.creator);
     setLabel(browserHint_, text.browserHint);
-    setLabel(optionLabel_, text.optionSelect);
+    setLabel(optionLabel_, IsEditorSongSelect() ? text.optionSelect : texts_.Get("PlayOptions.title"));
+    if (modeSelector_)
+    {
+        std::vector<std::wstring> items;
+        for (const auto &mode : AvailableInputLayouts())
+            items.push_back(std::wstring(texts_.Get("PlayOptions.gameMode")) + L": " + std::wstring(mode.modeId.begin(), mode.modeId.end()));
+        auto &combo = RequireComponent<ComboBoxBehaviorComponent>(*modeSelector_);
+        combo.SetItems(std::move(items));
+        texts_.ApplyFont(combo);
+    }
     setLabel(backLabel_, text.back);
     setLabel(goLabel_, text.go);
     setLabel(newDifficultyItem_, text.newDifficulty);
@@ -338,6 +375,13 @@ void MusicSelectView::ApplyTexts()
     {
         texts_.ApplyFont(
             RequireComponent<TextVisualComponent>(*searchField_));
+    }
+    if (recordQueryButton_)
+    {
+        setLabel(recordQueryButton_, texts_.Get("Records.query"));
+        setLabel(recordPreviousButton_, texts_.Get("Records.previous"));
+        setLabel(recordNextButton_, texts_.Get("Records.next"));
+        ++recordRevision_;
     }
     options_.RefreshTexts();
     RefreshSelectionPresentation();

@@ -1,4 +1,6 @@
 #include "MusicSelectView.h"
+#include "Presentation/PlayOptionsDialog.h"
+#include "Mode/PlayGameModeFactory.h"
 #include "SongSelectLayout.h"
 #include "SongSelectionText.h"
 
@@ -46,12 +48,21 @@ bool MusicSelectView::ProcessActions()
         }
         if (action.type == ActionType::Clicked && action.source == optionButtonId_)
         {
-            options_.Toggle();
+            searchFocused_ = false;
+            if (IsEditorSongSelect()) options_.Toggle();
+            else static_cast<void>(EditPlayOptions(selection_.playOptions_, texts_));
+            inputRouter_.Reset(*canvas_);
             return true;
         }
         if (options_.IsVisible())
         {
             continue;
+        }
+        if (action.type == ActionType::SelectionChanged && action.source == modeSelectorId_)
+        {
+            const auto modes = AvailableInputLayouts();
+            if (action.selectedIndex < modes.size()) selection_.selectedMode_ = modes[action.selectedIndex].modeId;
+            return true;
         }
         if (action.type == ActionType::SelectionChanged && action.source == sortSelectorId_)
         {
@@ -63,6 +74,19 @@ bool MusicSelectView::ProcessActions()
         if (action.type != ActionType::Clicked)
         {
             continue;
+        }
+        if (recordQueryButton_ && action.source == recordQueryButton_->Id())
+        {
+            EditRecordQuery(); return true;
+        }
+        if (recordPreviousButton_ && action.source == recordPreviousButton_->Id())
+        {
+            recordOffset_ = recordOffset_ >= 6 ? recordOffset_ - 6 : 0;
+            ++recordRevision_; return true;
+        }
+        if (recordNextButton_ && action.source == recordNextButton_->Id() && recordNext_)
+        {
+            recordOffset_ += 6; ++recordRevision_; return true;
         }
         if (action.source == backButtonId_)
         {

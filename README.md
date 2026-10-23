@@ -136,3 +136,5 @@ UI 색상은 `Client/Presentation/UiColors.h`에서 공유하고 옵션 배경�
 모든 옵션은 EXE 옆 `Option.ini`에 저장하고 다음 실행에 복원합니다.
 
 음악 재생과 에디터 파형/스펙트로그램은 엔진의 공통 PCM 시간축을 사용합니다. MP3 패딩과 전체 PCM의 메모리 비용은 [플레이 오디오](Docs/Gameplay/Audio.md)를 참고합니다.
+
+Taiko 플레이 옵션과 재실행 후 유지되는 조건식 기록 조회는 [플레이 옵션](Docs/Gameplay/PlayOptions.md)을 참고합니다.

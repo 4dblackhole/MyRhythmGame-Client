@@ -168,6 +168,7 @@ void TaikoResultView::Build()
     BuildSongBanner(root);
     BuildSummary(root);
     BuildMetadata(root);
+    BuildOptions(root);
     BuildGraphs(root);
     BuildActions(root);
     textRevision_ = texts_.Revision();

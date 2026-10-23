@@ -14,6 +14,7 @@ struct ResultViewContext
     std::wstring patternCreator;
     bool canRetry{};
     std::wstring songArtist;
+    std::filesystem::path recordDatabase;
 };
 class IResultView
 {

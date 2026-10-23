@@ -133,6 +133,7 @@ void GameplaySessionController::UpdateGameplay(const UpdateContext &context)
         ProcessRhythmInput(context.input, exitTicks);
         UpdateSession(context.input, time_, exitTicks.has_value());
         audioRouter_.ApplyAutomation(session_->EvaluateAutomation(time_));
+        if (!exitTicks) ScheduleMetronome();
     }
     if (exitTicks)
         PauseAt(*exitTicks, true);

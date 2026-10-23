@@ -1964,3 +1964,22 @@ presentation·smoke·실제 오디오/렌더링 검사나 수동 확인을 대�
 - 위 결과는 자동 검증입니다. 새 변환 결과의 실제 에디터 화면/청취/물리 입력은 수동 검증하지
   않았습니다. 로그·분석 설정은 ignored `build/converter-offset-20261020/`, 실제 맵 출력은
   변환기 ignored `TestData/OffsetCorrection-20261020/`에 있습니다.
+
+## 2026-10-23 Taiko 플레이 옵션과 로컬 기록
+
+[구현·검토 보고서](Reviews/PlayOptions-2026-10-23.md)와
+[사용 계약](Gameplay/PlayOptions.md)을 따릅니다.
+Debug/Release x64 solution + MSVC Code Analysis, 구성별 로직 70개(0 실패),
+구성별 4개 smoke(총 8개), MusicSelectView/GameplayPause(기본·cold-start·1.5x 옵션)/
+ResultPresentation/GameplayJudgement/AllNotesGameplay/EditorPresentation을 통과했습니다.
+옵션 native 입력·확인·취소, 기록 저장 worker·재열기·조건식·페이지 이동·선택 변경,
+결과 아이콘과 Retry 소유권, 독립 BGM/HIT 음정 및 메트로놈 polyphony를 검사했습니다.
+실제 D3D12/FMOD all-notes는 Debug 1555, Release 1554 frames로 완주했습니다.
+
+엔진도 두 구성 전체 Rebuild와 MSVC 분석, 공개 SDK 기본 검사/--audio-pcm를 통과했습니다.
+0.5/1/1.5/2배속의 PCM 길이·음정·스테레오·transient 정렬·취소·원본 위치 seek를
+검사합니다. pinned 외부 FFT/Stretch 헤더만 external 분석 범위에서 제외하고 어댑터를
+계속 분석합니다. 기존 엔진 3개/기존 SDK 테스트 2개 진단은 보고서에 분리했습니다.
+물리 장치에서 배속 음질을 청취한 검증은 아닙니다.
+
+logs: ignored `build/play-options-20261023` (Client와 엔진 각각).

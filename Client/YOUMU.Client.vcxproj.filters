@@ -224,4 +224,14 @@
   <ItemGroup><ClCompile Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorSelection.cpp"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClCompile></ItemGroup>
   <ItemGroup><ClInclude Include="EditorScene\Submodules\Modes\Taiko\TaikoEditorLayout.h"><Filter>EditorScene\Submodules\Modes\Taiko</Filter></ClInclude></ItemGroup>
   <ItemGroup><ClCompile Include="Presentation\OptionsPanel\Submodules\OptionsSongs.cpp"><Filter>Presentation\OptionsPanel\Submodules</Filter></ClCompile></ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Presentation\ValueDialog.h"><Filter>Presentation</Filter></ClInclude>
+    <ClCompile Include="Presentation\ValueDialog.cpp"><Filter>Presentation</Filter></ClCompile>
+    <ClInclude Include="Presentation\PlayOptionsDialog.h"><Filter>Presentation</Filter></ClInclude>
+    <ClCompile Include="Presentation\PlayOptionsDialog.cpp"><Filter>Presentation</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameScene\MusicSelectScene\Submodules\SongSelectRecords.cpp"><Filter>GameScene\MusicSelectScene\Submodules</Filter></ClCompile>
+    <ClCompile Include="GameScene\ResultScene\Submodules\Taiko\TaikoResultOptions.cpp"><Filter>GameScene\ResultScene\Submodules\Taiko</Filter></ClCompile>
+  </ItemGroup>
 </Project>

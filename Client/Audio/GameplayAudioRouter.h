@@ -32,11 +32,12 @@ public:
         SoundId soundId,
         const std::filesystem::path& path,
         AudioLoadMode loadMode,
-        std::string& errorMessage);
+        std::string& errorMessage, bool restartWhilePlaying = true);
     [[nodiscard]] bool RegisterSoundAliases(std::span<const SoundId> soundIds,
                                             const std::filesystem::path &path, std::string &errorMessage,
                                             AudioLoadMode loadMode = AudioLoadMode::Sample);
     AudioPreparationState PrepareResources();
+    bool ConfigurePlayback(const PlayOptions &options, std::string &error);
 
     // Input-driven cues start immediately. Timeline scheduling remains a
     // separate path for music and other deliberately future playback.
@@ -74,6 +75,7 @@ private:
         AudioEffectType type);
     void ApplyAutomationValue(const AutomationValue& value);
 
+    float musicPitch_{1.0F}, hitSoundPitch_{1.0F};
     AudioSystem* audioSystem_{};
     AudioPlaybackManager& playback_;
     std::map<std::string, std::shared_ptr<AudioBus>, std::less<>>

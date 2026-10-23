@@ -50,6 +50,7 @@ SongSelectCommand MusicSelectView::Update(const InputState &input,
         ApplyTexts();
         RebuildSongCards();
     }
+    UpdateRecords();
     options_.Update(deltaSeconds);
     const bool controlDown =
         input.IsKeyDown(VK_LCONTROL) || input.IsKeyDown(VK_RCONTROL);
@@ -79,6 +80,7 @@ void MusicSelectView::OnResize(const std::uint32_t width, const std::uint32_t he
     {
         CloseAdditionMenu();
         UpdateResponsiveLayout();
+        ++recordRevision_;
         RebuildSongCards();
         EnsureFocusedCardVisible();
         inputRouter_.InvalidateHitTest();
@@ -105,6 +107,8 @@ void MusicSelectView::Shutdown() noexcept
     backButton_ = nullptr;
     optionLabel_ = nullptr;
     optionButton_ = nullptr;
+    modeSelector_ = nullptr;
+    modeSelectorId_ = 0;
     selectedDetailsLabel_ = nullptr;
     selectedCreatorLabel_ = nullptr;
     selectedPatternLabel_ = nullptr;
@@ -133,6 +137,8 @@ void MusicSelectView::Shutdown() noexcept
     emptyRecordMessage_ = nullptr;
     recordSelector_ = nullptr;
     recordPanel_ = nullptr;
+    recordRows_ = recordQueryButton_ = recordPreviousButton_ = recordNextButton_ = nullptr;
+    ++recordRevision_;
     categoryBar_ = nullptr;
     categoryLabel_ = nullptr;
     background_ = nullptr;

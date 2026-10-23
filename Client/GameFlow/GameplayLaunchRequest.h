@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Mode/PlayOptions.h"
 #include <cstdint>
 #include <filesystem>
 #include <map>
@@ -27,6 +28,8 @@ struct GameplayLaunchRequest
     std::filesystem::path backgroundPath;
     double backgroundOffsetX{}, backgroundOffsetY{};
 
+    PlayOptions playOptions;
+
     [[nodiscard]] bool IsValid() const noexcept
     {
         return !patternPath.empty() && !musicPath.empty();
@@ -41,6 +44,7 @@ struct GameplayLaunchRequest
         songTitle.clear();
         patternCreator.clear();
         globalOffsetMs = 0;
+        playOptions = {};
         inputKeys.clear();
         songArtist.clear();
         songsRoot.clear();

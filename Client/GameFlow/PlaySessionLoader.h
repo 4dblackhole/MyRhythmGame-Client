@@ -19,7 +19,7 @@ class PlaySessionLoader final
             try
             {
                 return CreatePlayGameMode(request.mode,
-                    {RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000}, request.inputKeys})
+                    {RhythmDuration{static_cast<std::int64_t>(request.globalOffsetMs) * 1000}, request.inputKeys, request.playOptions})
                     ->LoadSession(request.patternPath, request.effectPath);
             }
             catch (const std::exception &error)

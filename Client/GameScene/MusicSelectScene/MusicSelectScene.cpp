@@ -186,6 +186,7 @@ bool MusicSelectScene::StartSelectedPattern(SceneManager &scenes)
         song.audioPath,      pattern.pattern.mode,
         SongTitle(song),     pattern.pattern.makers.empty() ? L"" : DecodeDisplayText(pattern.pattern.makers.front())};
     request.globalOffsetMs = options_.Values().globalOffsetMs;
+    request.playOptions = selection_->playOptions_;
     request.songsRoot = catalogRoot_;
     if (!pattern.pattern.backgroundFile.empty())
         request.backgroundPath = catalogRoot_ / L"BG" / pattern.pattern.backgroundFile;

@@ -1,5 +1,6 @@
 #pragma once
 #include "Catalog/SongCatalog.h"
+#include "Mode/PlayOptions.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -22,6 +23,8 @@ class SongSelectionState final
         Pattern,
     };
 
+    PlayOptions playOptions_;
+    std::string selectedMode_{"Taiko"};
     SongCatalogLoadResult catalog_;
     bool catalogLoading_{};
     std::vector<std::size_t> visibleSongIndices_;

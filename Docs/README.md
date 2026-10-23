@@ -8,6 +8,7 @@
 | 수정/추가할 기능 | 먼저 읽을 문서 | 코드 진입점 |
 | --- | --- | --- |
 | 제품/프로젝트 이름·EXE·namespace·변환 결과 검증 | [제품 이름과 검증 책임](Reviews/IdentityMigration-2026-10-22.md), [검증](Verification.md) | GameIdentity.props / GenerateGameIdentity; YOUMU.sln; EditorOsuImport / OsuImportValidation |
+| Taiko 플레이 옵션·배속/음정·Random·로컬 기록 조건식 | [PlayOptions](Gameplay/PlayOptions.md) | PlayOptions / TaikoSessionBuilder / RhythmTimer / PlayRecordStore |
 | 노트 판정·정확도·타이머 | [판정 규칙](Gameplay/Rules.md) | `YOUMU.Rhythm/Note`, `Judgement`, `Time` |
 | 공통 PCM·MP3 패딩·재생/파형 시간축 | [오디오](Gameplay/Audio.md), [에디터 분석](ChartEditor.md) | 엔진 Audio/Decode; EditorAnalysisController의 reader 주입 |
 | Taiko 종류·사운드 정책 | [판정 규칙](Gameplay/Rules.md), [오디오](Gameplay/Audio.md) | `YOUMU.Modes/Taiko` |

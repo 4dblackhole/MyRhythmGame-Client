@@ -1,13 +1,19 @@
 #include "Time/RhythmTimer.h"
 
 #include <algorithm>
+#include <cmath>
+#include <stdexcept>
 #include <limits>
 
 void RhythmTimer::Start(
     const std::int64_t performanceCounterTicks,
     const std::int64_t performanceCounterFrequency,
-    const RhythmTime timelinePosition)
+    const RhythmTime timelinePosition,
+    const double playbackRate)
 {
+    if (!std::isfinite(playbackRate) || playbackRate < 0.5 || playbackRate > 2.0)
+        throw std::invalid_argument("Playback rate must be 0.5..2.0.");
+    playbackRate_ = playbackRate;
     counterFrequency_ = std::max<std::int64_t>(
         performanceCounterFrequency,
         1);
@@ -97,7 +103,7 @@ std::uint64_t RhythmTimer::ToDspClock(
     const long double samples =
         static_cast<long double>(
             (timelinePosition - dspTimelineAnchor_).count()) *
-        static_cast<long double>(dspSampleRate_) / 1'000'000.0L;
+        static_cast<long double>(dspSampleRate_) / (1'000'000.0L * playbackRate_);
     if (samples < 0.0L &&
         static_cast<long double>(dspClockAnchor_) < -samples)
     {
@@ -123,7 +129,7 @@ RhythmTime RhythmTimer::FromDspClock(
         static_cast<long double>(dspClock) -
         static_cast<long double>(dspClockAnchor_);
     const auto microseconds = static_cast<RhythmTime::rep>(
-        sampleDelta * 1'000'000.0L /
+        sampleDelta * 1'000'000.0L * playbackRate_ /
         static_cast<long double>(dspSampleRate_));
     return dspTimelineAnchor_ + RhythmTime{microseconds};
 }
@@ -140,5 +146,5 @@ RhythmDuration RhythmTimer::ElapsedSinceAnchor(
             performanceCounterTicks - counterAnchor_) /
         static_cast<long double>(counterFrequency_);
     return RhythmDuration{static_cast<RhythmDuration::rep>(
-        seconds * 1'000'000.0L)};
+        seconds * 1'000'000.0L * playbackRate_)};
 }

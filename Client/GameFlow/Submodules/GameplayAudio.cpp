@@ -40,6 +40,14 @@ void GameplaySessionController::InitializeAudio(AudioSystem &audio)
         }
     }
 
+    if (session_->Options().metronome)
+    {
+        std::string error;
+        for (const bool accent : {false, true})
+            if (!audioRouter_.RegisterSound(accent ? "Gameplay.Metronome.Accent" : "Gameplay.Metronome.Beat",
+                EditorSound(accent ? L"MetronomeAccent.wav" : L"MetronomeBeat.wav"), AudioLoadMode::SampleAsync, error, false)
+                && hitSoundError.empty()) hitSoundError = error;
+    }
     std::string musicError;
     if (launchRequest_.IsValid())
     {
@@ -47,6 +55,8 @@ void GameplaySessionController::InitializeAudio(AudioSystem &audio)
                                                       AudioLoadMode::StreamAsyncAccurate, musicError);
     }
 
+    if (musicError.empty())
+        static_cast<void>(audioRouter_.ConfigurePlayback(session_->Options(), musicError));
     if (!hitSoundError.empty() || !musicError.empty())
     {
         initializationError_ = !musicError.empty() ? musicError : hitSoundError;
@@ -100,3 +110,20 @@ namespace
         errorMessage = std::move(firstError);
     }
 } // namespace
+
+void GameplaySessionController::ScheduleMetronome()
+{
+    const auto &beats = session_->metronomeBeats;
+    const auto horizon = time_ + RhythmDuration{static_cast<RhythmDuration::rep>(100'000 * session_->Options().accelerate)};
+    while (metronomeCursor_ < beats.size() && beats[metronomeCursor_].time <= horizon)
+    {
+        const auto &beat = beats[metronomeCursor_++];
+        // Missed update deadlines never cause a burst of catch-up clicks.
+        if (beat.time < time_) continue;
+        AudioCueRequest cue;
+        cue.sound = beat.accent ? "Gameplay.Metronome.Accent" : "Gameplay.Metronome.Beat";
+        cue.bus = "UI";
+        cue.timelineTime = beat.time;
+        audioRouter_.Schedule(std::span<const AudioCueRequest>{&cue, 1}, timer_);
+    }
+}

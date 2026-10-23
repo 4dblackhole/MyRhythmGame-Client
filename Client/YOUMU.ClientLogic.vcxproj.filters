@@ -16,4 +16,11 @@
     <Filter Include="EditorScene\Submodules\Modes" />
     <Filter Include="EditorScene\Submodules\Modes\Taiko" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Records\PlayRecordStore.h"><Filter>Records</Filter></ClInclude>
+    <ClCompile Include="Records\PlayRecordStore.cpp"><Filter>Records</Filter></ClCompile>
+    <ClInclude Include="Records\RecordCondition.h"><Filter>Records</Filter></ClInclude>
+    <ClCompile Include="Records\RecordCondition.cpp"><Filter>Records</Filter></ClCompile>
+    <Filter Include="Records" />
+  </ItemGroup>
 </Project>
